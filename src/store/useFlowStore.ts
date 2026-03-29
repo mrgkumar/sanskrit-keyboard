@@ -12,6 +12,7 @@ import { transliterate } from '@/lib/vedic/utils';
 import { MAPPING_TRIE } from '@/lib/vedic/mapping';
 import {
   getLexicalSuggestions,
+  normalizeForLexicalLookup,
   shouldLookupLexicalSuggestions,
   type LexicalSuggestion,
 } from '@/lib/vedic/runtimeLexicon';
@@ -765,7 +766,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     set({ recentlyDeletedBlock: null });
   },
   updateLexicalSuggestions: async (prefix) => {
-    const normalizedPrefix = prefix.trim();
+    const normalizedPrefix = normalizeForLexicalLookup(prefix);
     const nextSerial = get().lexicalRequestSerial + 1;
 
     if (!shouldLookupLexicalSuggestions(normalizedPrefix)) {

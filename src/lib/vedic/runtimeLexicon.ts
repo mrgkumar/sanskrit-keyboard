@@ -33,9 +33,15 @@ const SHARD_PREFIX_LENGTH = 2;
 const MIN_LOOKUP_PREFIX_LENGTH = 2;
 const MAX_INDEXED_PREFIX_LENGTH = 12;
 const MAX_INDEXED_SUGGESTIONS = 8;
+const LEXICAL_LOOKUP_SWARA_PATTERN = /\\?(?:''|['"_^])/g;
 
 let manifestPromise: Promise<RuntimeLexiconShardManifest> | null = null;
 const shardCache = new Map<string, Promise<LoadedLexiconShard>>();
+
+export const resetRuntimeLexiconCacheForTests = () => {
+  manifestPromise = null;
+  shardCache.clear();
+};
 
 const compareSuggestions = (left: LexicalSuggestion, right: LexicalSuggestion) => {
   if (right.count !== left.count) {
@@ -125,16 +131,21 @@ const loadShard = async (prefix: string) => {
   return shardCache.get(prefix)!;
 };
 
-export const shouldLookupLexicalSuggestions = (prefix: string) =>
-  prefix.length >= MIN_LOOKUP_PREFIX_LENGTH &&
-  /[A-Za-z]/.test(prefix) &&
-  !prefix.includes('\\');
+export const normalizeForLexicalLookup = (prefix: string) =>
+  prefix.replace(LEXICAL_LOOKUP_SWARA_PATTERN, '').trim();
+
+export const shouldLookupLexicalSuggestions = (prefix: string) => {
+  const normalizedPrefix = normalizeForLexicalLookup(prefix);
+  return normalizedPrefix.length >= MIN_LOOKUP_PREFIX_LENGTH && /[A-Za-z]/.test(normalizedPrefix);
+};
 
 export const getLexicalSuggestions = async (prefix: string, limit = 5) => {
-  if (!shouldLookupLexicalSuggestions(prefix)) {
+  const normalizedPrefix = normalizeForLexicalLookup(prefix);
+
+  if (!shouldLookupLexicalSuggestions(normalizedPrefix)) {
     return [] as LexicalSuggestion[];
   }
 
-  const shard = await loadShard(toShardPrefix(prefix));
-  return (shard.suggestionsByPrefix.get(prefix) ?? []).slice(0, limit);
+  const shard = await loadShard(toShardPrefix(normalizedPrefix));
+  return (shard.suggestionsByPrefix.get(normalizedPrefix) ?? []).slice(0, limit);
 };
