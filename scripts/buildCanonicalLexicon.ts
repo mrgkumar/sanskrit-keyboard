@@ -8,20 +8,10 @@ import {
   parseDatasetIds,
   resolveCorpusDatasets,
   type CorpusDataset,
-  type CanonicalRecordConfig,
 } from '../test-support/corpusRegistry.ts';
 import { tokenizeDevanagariText } from '../test-support/corpusText.ts';
-
-interface CanonicalMappingRecord {
-  id: string;
-  devanagari: string;
-  itrans: string;
-  originalRoman: string;
-  source: string | null;
-  score: number | null;
-  forwardUnicode: string;
-  forwardStatus: 'exact_pass' | 'fail';
-}
+import type { CanonicalRecordConfig } from '../test-support/corpusRegistry.ts';
+import type { CanonicalMappingRecord } from './buildCanonicalLexiconShared.ts';
 
 interface ParseErrorRecord {
   type: 'parse_error';

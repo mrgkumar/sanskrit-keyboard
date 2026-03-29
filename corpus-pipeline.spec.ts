@@ -13,6 +13,7 @@ import {
 } from './test-support/corpusText';
 import { canonicalizeLexicalItrans, normalizeForLexicalLookup } from './src/lib/vedic/lexicalNormalization';
 import { detransliterate, transliterate } from './src/lib/vedic/utils';
+import { processCanonicalRow } from './scripts/buildCanonicalLexiconShared';
 
 test.describe('corpus pipeline registry', () => {
   test('default preset uses san-train plus example corpus for lexical data and example corpus for swara data', () => {
@@ -111,5 +112,57 @@ test.describe('corpus pipeline registry', () => {
     expect(canonicalizeLexicalItrans('tR^itiiya')).toBe('tRRitiiya');
     expect(canonicalizeLexicalItrans('kL^ipta')).toBe('kLLipta');
     expect(normalizeForLexicalLookup('tR^itiiya')).toBe('tRRitiiya');
+  });
+
+  test('validates example-vedic rows with raw reverse itrans before lexical normalization', () => {
+    const dataset = CORPUS_DATASETS['example-vedic'];
+    expect(dataset.format).toBe('devanagari-text');
+    if (dataset.format !== 'devanagari-text' || !dataset.canonical) {
+      throw new Error('example-vedic must be a canonical text dataset');
+    }
+
+    const record = processCanonicalRow({
+      row: { token: 'कॢप्त्यै', source: dataset.id },
+      config: dataset.canonical,
+      rowId: 'example-kL-1',
+      datasetId: dataset.id,
+    });
+
+    expect(record).toEqual({
+      id: 'example-kL-1',
+      devanagari: 'कॢप्त्यै',
+      itrans: 'kLLiptyai',
+      originalRoman: '',
+      source: 'example-vedic',
+      score: null,
+      forwardUnicode: 'कॢप्त्यै',
+      forwardStatus: 'exact_pass',
+    });
+  });
+
+  test('treats swara-marked example-vedic rows as exact passes after stripped comparison', () => {
+    const dataset = CORPUS_DATASETS['example-vedic'];
+    expect(dataset.format).toBe('devanagari-text');
+    if (dataset.format !== 'devanagari-text' || !dataset.canonical) {
+      throw new Error('example-vedic must be a canonical text dataset');
+    }
+
+    const record = processCanonicalRow({
+      row: { token: 'भ॒द्रं', source: dataset.id },
+      config: dataset.canonical,
+      rowId: 'example-swara-1',
+      datasetId: dataset.id,
+    });
+
+    expect(record).toEqual({
+      id: 'example-swara-1',
+      devanagari: 'भद्रं',
+      itrans: 'bhadraM',
+      originalRoman: '',
+      source: 'example-vedic',
+      score: null,
+      forwardUnicode: 'भ॒द्रं',
+      forwardStatus: 'exact_pass',
+    });
   });
 });
