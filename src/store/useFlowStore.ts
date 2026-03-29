@@ -60,6 +60,33 @@ const createSegments = (source: string): Segment[] => {
   return segments;
 };
 
+const isLongBlockSource = (source: string) =>
+  source.length > 100 || source.split(/[\s|]+/).filter(Boolean).length > 10;
+
+const splitIntoBlockSources = (source: string): string[] =>
+  source
+    .replace(/\r/g, '')
+    .split(/\n\s*\n|\n+/)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+
+const createBlockFromSource = (source: string, title: string): CanonicalBlock => {
+  const type = isLongBlockSource(source) ? 'long' : 'short';
+  const block: CanonicalBlock = {
+    id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    type,
+    title,
+    source,
+    rendered: transliterate(source).unicode,
+  };
+
+  if (type === 'long') {
+    block.segments = createSegments(source);
+  }
+
+  return block;
+};
+
 
 // --- MOCK DATA ---
 
@@ -132,6 +159,10 @@ export interface SanskritKeyboardState {
   setPrevChunk: () => void;
   setFocusSpan: (span: 'tight' | 'balanced' | 'wide') => void;
   setViewMode: (mode: 'focus' | 'read' | 'review') => void;
+  activateBlockChunk: (blockId: string, segmentIndex?: number) => void;
+  setActiveChunkIndex: (segmentIndex: number) => void;
+  setNextBlock: () => void;
+  setPrevBlock: () => void;
   updateChunkSource: (newSource: string, selectionStart?: number, selectionEnd?: number) => void;
   toggleReferencePanel: () => void;
   addBlocks: (itransStrings: string[]) => void;
@@ -143,6 +174,7 @@ export interface SanskritKeyboardState {
   exportSessionSnapshot: () => SessionSnapshot;
   loadSessionSnapshot: (snapshot: SessionSnapshot) => void;
   resetSession: () => void;
+  getRenderedDocumentText: () => string;
 
   // Selectors (for convenience)
   getActiveBlock: () => CanonicalBlock | undefined;
@@ -262,6 +294,67 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       editorState: { ...state.editorState, viewMode: mode },
     }));
   },
+  activateBlockChunk: (blockId, segmentIndex = 0) => {
+    const block = get().blocks.find((item) => item.id === blockId);
+    const boundedIndex =
+      block && block.type === 'long' && block.segments
+        ? Math.max(0, Math.min(segmentIndex, block.segments.length - 1))
+        : 0;
+
+    set((state) => ({
+      editorState: {
+        ...state.editorState,
+        activeBlockId: blockId,
+        activeAnchorSegmentIndex: boundedIndex,
+      },
+    }));
+  },
+  setActiveChunkIndex: (segmentIndex) => {
+    const activeBlock = get().getActiveBlock();
+    if (!activeBlock || activeBlock.type === 'short' || !activeBlock.segments) {
+      return;
+    }
+
+    const boundedIndex = Math.max(0, Math.min(segmentIndex, activeBlock.segments.length - 1));
+    set((state) => ({
+      editorState: {
+        ...state.editorState,
+        activeAnchorSegmentIndex: boundedIndex,
+      },
+    }));
+  },
+  setNextBlock: () => {
+    const { blocks, editorState } = get();
+    const currentIndex = blocks.findIndex((block) => block.id === editorState.activeBlockId);
+    if (currentIndex < 0 || currentIndex >= blocks.length - 1) {
+      return;
+    }
+
+    const nextBlock = blocks[currentIndex + 1];
+    set((state) => ({
+      editorState: {
+        ...state.editorState,
+        activeBlockId: nextBlock.id,
+        activeAnchorSegmentIndex: 0,
+      },
+    }));
+  },
+  setPrevBlock: () => {
+    const { blocks, editorState } = get();
+    const currentIndex = blocks.findIndex((block) => block.id === editorState.activeBlockId);
+    if (currentIndex <= 0) {
+      return;
+    }
+
+    const prevBlock = blocks[currentIndex - 1];
+    set((state) => ({
+      editorState: {
+        ...state.editorState,
+        activeBlockId: prevBlock.id,
+        activeAnchorSegmentIndex: 0,
+      },
+    }));
+  },
   updateChunkSource: (newSource, selectionStart, selectionEnd) => {
     const { getActiveBlock, getActiveChunkGroup } = get();
     let activeBlock = getActiveBlock(); // Use 'let' because we might reassign it
@@ -270,8 +363,39 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     const nextSelectionStart = selectionStart ?? get().composerSelectionStart;
     const nextSelectionEnd = selectionEnd ?? nextSelectionStart;
 
-    // Heuristic for determining if a block should be 'long'
-    const isNowLong = newSource.length > 100 || newSource.split(/[\s|]+/).length > 10;
+    const blockSources = splitIntoBlockSources(newSource);
+
+    if (activeBlock.type === 'short' && blockSources.length > 1) {
+      const replacementBlocks = blockSources.map((source, index) =>
+        createBlockFromSource(source, `Pasted Block ${index + 1}`)
+      );
+
+      set((state) => {
+        const blockIndex = state.blocks.findIndex((block) => block.id === activeBlock!.id);
+        const preservedBlocks =
+          blockIndex === -1
+            ? state.blocks
+            : [
+                ...state.blocks.slice(0, blockIndex),
+                ...replacementBlocks,
+                ...state.blocks.slice(blockIndex + 1),
+              ];
+
+        return {
+          blocks: preservedBlocks,
+          editorState: {
+            ...state.editorState,
+            activeBlockId: replacementBlocks[0].id,
+            activeAnchorSegmentIndex: 0,
+          },
+          composerSelectionStart: 0,
+          composerSelectionEnd: 0,
+        };
+      });
+      return;
+    }
+
+    const isNowLong = isLongBlockSource(newSource);
     
     // --- Dynamic Short to Long Block Conversion ---
     if (activeBlock.type === 'short' && isNowLong) {
@@ -436,29 +560,20 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   },
   addBlocks: (itransStrings: string[]) => {
     const newBlocks: CanonicalBlock[] = itransStrings
-      .filter(str => str.trim().length > 0) // Filter out empty strings
-      .map((itransSource, index) => {
-        const id = `block-${Date.now()}-${index}`; // Unique ID
-        const rendered = transliterate(itransSource).unicode;
-        const type = itransSource.length > 100 || itransSource.split(/[\s|]+/).length > 10 ? 'long' : 'short'; // Heuristic for long/short
-        
-        const block: CanonicalBlock = {
-          id,
-          type,
-          title: `Pasted Block ${get().blocks.length + index + 1}`,
-          source: itransSource,
-          rendered: rendered,
-        };
-
-        if (type === 'long') {
-          block.segments = createSegments(itransSource);
-        }
-        return block;
-      });
+      .filter(str => str.trim().length > 0)
+      .flatMap((itransSource) => splitIntoBlockSources(itransSource))
+      .map((itransSource, index) =>
+        createBlockFromSource(itransSource, `Pasted Block ${index + 1}`)
+      );
 
     if (newBlocks.length > 0) {
       set((state) => ({
-        blocks: [...state.blocks, ...newBlocks],
+        blocks:
+          state.blocks.length === 1 &&
+          state.blocks[0].source.trim().length === 0 &&
+          state.blocks[0].rendered.trim().length === 0
+            ? newBlocks
+            : [...state.blocks, ...newBlocks],
         editorState: {
           ...state.editorState,
           activeBlockId: newBlocks[0].id, // Set first new block as active
@@ -543,6 +658,13 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       lastSavedAt: null,
     });
   },
+  getRenderedDocumentText: () => {
+    const { blocks } = get();
+    return blocks
+      .map((block) => block.rendered.trim())
+      .filter((rendered) => rendered.length > 0)
+      .join('\n\n');
+  },
 
 
   // --- SELECTORS ---
@@ -561,7 +683,8 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         startSegmentIndex: 0,
         endSegmentIndex: 0,
         source: activeBlock.source,
-        rendered: activeBlock.rendered
+        rendered: activeBlock.rendered,
+        blockId: activeBlock.id,
       } : undefined;
     }
 
@@ -581,6 +704,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       endSegmentIndex,
       source,
       rendered: transliterate(source).unicode,
+      blockId: activeBlock.id,
     };
   },
 }));

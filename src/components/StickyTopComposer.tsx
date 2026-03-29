@@ -11,7 +11,7 @@ import { detransliterate } from '@/lib/vedic/utils';
 
 export const StickyTopComposer: React.FC = () => {
   const { 
-    getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setFocusSpan, setViewMode, toggleReferencePanel, addBlocks, setDeletedBuffer, setComposerSelection, editorState,
+    getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setNextBlock, setPrevBlock, setFocusSpan, setViewMode, toggleReferencePanel, addBlocks, setDeletedBuffer, setComposerSelection, editorState,
     activeBuffer, // Get activeBuffer for Backspace logic
     isReferencePanelOpen, // To check if panel is open
     composerSelectionStart,
@@ -26,6 +26,17 @@ export const StickyTopComposer: React.FC = () => {
 
   const isLongBlock = activeBlock?.type === 'long';
   const currentChunkSource = activeChunkGroup?.source || ''; // Get current chunk source
+  const totalChunkGroups =
+    activeBlock && activeBlock.type === 'long' && activeBlock.segments
+      ? Math.ceil(activeBlock.segments.length / { tight: 1, balanced: 2, wide: 3 }[focusSpan])
+      : 1;
+  const activeChunkNumber =
+    activeBlock &&
+    activeBlock.type === 'long' &&
+    activeBlock.segments &&
+    activeChunkGroup
+      ? Math.floor(activeChunkGroup.startSegmentIndex / { tight: 1, balanced: 2, wide: 3 }[focusSpan]) + 1
+      : 1;
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const pastedText = e.clipboardData.getData('text');
@@ -59,6 +70,36 @@ export const StickyTopComposer: React.FC = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     setComposerSelection(e.currentTarget.selectionStart, e.currentTarget.selectionEnd);
+
+    if (e.altKey && e.key === 'ArrowDown') {
+      e.preventDefault();
+      setNextChunk();
+      return;
+    }
+
+    if (e.altKey && e.key === 'ArrowUp') {
+      e.preventDefault();
+      setPrevChunk();
+      return;
+    }
+
+    if (e.altKey && e.key === 'PageDown') {
+      e.preventDefault();
+      setNextBlock();
+      return;
+    }
+
+    if (e.altKey && e.key === 'PageUp') {
+      e.preventDefault();
+      setPrevBlock();
+      return;
+    }
+
+    if (e.key === 'Escape' && isReferencePanelOpen) {
+      e.preventDefault();
+      toggleReferencePanel();
+      return;
+    }
 
     if (e.key === 'Backspace') {
       let charToDelete: string | null = null;
@@ -141,7 +182,7 @@ export const StickyTopComposer: React.FC = () => {
           <div className="flex items-center gap-4">
             <span>
               {activeBlock?.title || `Block ${activeBlock?.id}`}:{' '}
-              {isLongBlock && activeChunkGroup ? `Chunk ${activeChunkGroup.startSegmentIndex + 1}-${activeChunkGroup.endSegmentIndex + 1}` : 'Full Block'}
+              {isLongBlock && activeChunkGroup ? `Chunk ${activeChunkNumber} of ${totalChunkGroups}` : 'Full Block'}
             </span>
             {isLongBlock && (
               <div className="flex items-center gap-2">
@@ -217,7 +258,7 @@ export const StickyTopComposer: React.FC = () => {
           onClick={(e) => syncSelection(e.currentTarget)}
           onKeyUp={(e) => syncSelection(e.currentTarget)}
           onFocus={(e) => syncSelection(e.currentTarget)}
-          rows={1}
+          rows={Math.min(6, Math.max(1, currentChunkSource.split('\n').length))}
           placeholder="Type ITRANS here..."
         />
 
@@ -265,7 +306,9 @@ export const StickyTopComposer: React.FC = () => {
               </button>
             </div>
           )}
-          <span></span> {/* Removed Contextual Help (TODO) */}
+          <span className="text-xs text-slate-400">
+            {isLongBlock ? 'Alt+Up/Down: chunks • Alt+PgUp/PgDn: blocks • Esc: close reference' : ''}
+          </span>
         </div>
       </div>
     </div>

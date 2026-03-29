@@ -8,7 +8,7 @@ import { clsx } from 'clsx';
 import { Check, Copy } from 'lucide-react';
 
 export const MainDocumentArea: React.FC = () => {
-  const { blocks, editorState, setActiveBlockId, getActiveChunkGroup, typography } = useFlowStore();
+  const { blocks, editorState, setActiveBlockId, activateBlockChunk, getActiveChunkGroup, typography } = useFlowStore();
   const { activeBlockId, viewMode } = editorState;
   const activeChunkGroup = getActiveChunkGroup(); // Get active chunk group
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
@@ -32,6 +32,14 @@ export const MainDocumentArea: React.FC = () => {
     } catch {
       setCopiedId(`error:${blockId}`);
     }
+  };
+
+  const activateBlock = (blockId: string) => {
+    setActiveBlockId(blockId);
+  };
+
+  const activateChunk = (blockId: string, segmentIndex: number) => {
+    activateBlockChunk(blockId, segmentIndex);
   };
 
   const renderBlock = (block: CanonicalBlock) => {
@@ -97,7 +105,7 @@ export const MainDocumentArea: React.FC = () => {
         <div 
           key={block.id}
           className={clsx(blockClassName, isLongAndActiveInFocus && "bg-blue-100 border-blue-500")}
-          onClick={() => setActiveBlockId(block.id)}
+          onClick={() => activateBlock(block.id)}
         >
           {commonBlockContent}
 
@@ -109,12 +117,25 @@ export const MainDocumentArea: React.FC = () => {
                   <div 
                     key={segment.id} 
                     className={clsx(
-                      "p-2 rounded text-xs font-mono text-blue-700 bg-blue-50",
+                      "p-2 rounded text-xs font-mono text-blue-700 bg-blue-50 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400",
                       activeChunkGroup && 
                       index >= activeChunkGroup.startSegmentIndex && 
                       index <= activeChunkGroup.endSegmentIndex && 
                       "bg-blue-200 border border-blue-400" // Highlight active chunk segments
                     )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      activateChunk(block.id, index);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        activateChunk(block.id, index);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Edit chunk ${index + 1} in ${block.title || block.id}`}
                     style={{
                       fontSize: `${Math.max(12, typography.itransFontSize - 4)}px`,
                       lineHeight: typography.itransLineHeight,
@@ -137,7 +158,7 @@ export const MainDocumentArea: React.FC = () => {
         <div 
           key={block.id}
           className={clsx(blockClassName, isLongAndActiveInReview && "bg-blue-100 border-blue-500")}
-          onClick={() => setActiveBlockId(block.id)}
+          onClick={() => activateBlock(block.id)}
         >
           {commonBlockContent}
 
@@ -149,12 +170,25 @@ export const MainDocumentArea: React.FC = () => {
                   <div 
                     key={segment.id} 
                     className={clsx(
-                      "p-2 rounded bg-slate-50", // Changed background for review mode
+                      "p-2 rounded bg-slate-50 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400",
                       activeChunkGroup && 
                       index >= activeChunkGroup.startSegmentIndex && 
                       index <= activeChunkGroup.endSegmentIndex && 
                       "bg-blue-200 border border-blue-400" // Highlight active chunk segments
                     )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      activateChunk(block.id, index);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        activateChunk(block.id, index);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Review chunk ${index + 1} in ${block.title || block.id}`}
                   >
                     <p
                       className="font-mono text-slate-700 mb-1"

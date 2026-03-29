@@ -48,6 +48,7 @@ export interface ChunkGroup {
   source: string; 
   // The combined rendered Devanagari of all segments in this group
   rendered: string;
+  blockId?: string;
 }
 
 /**

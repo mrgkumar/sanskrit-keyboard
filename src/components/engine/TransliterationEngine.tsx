@@ -19,6 +19,7 @@ export const TransliterationEngine: React.FC = () => {
     sessionId,
     sessionName,
     lastSavedAt,
+    getRenderedDocumentText,
     setTypography,
     setSessionName,
     markSessionSaved,
@@ -121,7 +122,7 @@ export const TransliterationEngine: React.FC = () => {
   };
 
   const handleCopyWholeDocument = async () => {
-    const fullDocument = blocks.map((block) => block.rendered).join('\n\n');
+    const fullDocument = getRenderedDocumentText();
     if (!fullDocument) {
       setCopyAllState('error');
       return;
