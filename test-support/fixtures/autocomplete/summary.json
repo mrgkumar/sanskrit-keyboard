@@ -1,0 +1,14 @@
+{
+  "inputPath": "/home/ganesh/Documents/Research/sanskrit_keyboard/data_corpus/san/san_train.json",
+  "outputDir": "/home/ganesh/Documents/Research/sanskrit_keyboard/app/test-support/fixtures/autocomplete",
+  "processedRows": 1813369,
+  "exactPasses": 1813369,
+  "failures": 0,
+  "skippedRows": 0,
+  "startedAt": "2026-03-29T13:17:34.006Z",
+  "finishedAt": "2026-03-29T13:18:09.853Z",
+  "durationMs": 35847,
+  "limit": null,
+  "workerCount": 8,
+  "batchSize": 2000
+}

@@ -1,5 +1,6 @@
 // app/src/lib/vedic/utils.ts
 import { VEDIC_MAPPINGS, MAPPING_TRIE, DEPENDENT_VOWELS } from './mapping.ts';
+import type { VedicMapping } from './mapping.ts';
 
 export interface CharConfidence {
   char: string;
@@ -27,6 +28,7 @@ export const transliterate = (itrans: string): TransliterationResult => {
   const targetToSourceMap: number[] = [];
   
   let i = 0;
+  let pendingNasalRemap: '~N' | '~n' | null = null;
   
   const matraMap: Record<string, string> = {
     '\u0905': '', '\u0906': 'ा', '\u0907': 'ि', '\u0908': 'ी',
@@ -36,7 +38,12 @@ export const transliterate = (itrans: string): TransliterationResult => {
   };
 
   while (i < itrans.length) {
-    let match = null;
+    if (itrans[i] === '/') {
+      i++;
+      continue;
+    }
+
+    let match: VedicMapping | null = null;
     for (const entry of MAPPING_TRIE) {
       if (itrans.startsWith(entry.itrans, i)) {
         match = entry;
@@ -45,59 +52,188 @@ export const transliterate = (itrans: string): TransliterationResult => {
     }
 
     if (match) {
-      const isVowel = match.category === 'vowel';
+      if (pendingNasalRemap && (match.itrans === 'N' || match.itrans === 'n')) {
+        const remapped = MAPPING_TRIE.find((entry) => entry.itrans === pendingNasalRemap);
+        if (remapped) {
+          match = { ...remapped, itrans: match.itrans };
+        }
+        pendingNasalRemap = null;
+      } else if (pendingNasalRemap) {
+        pendingNasalRemap = null;
+      }
+
+      const nextChar = itrans[i + match.itrans.length] ?? '';
+      const prevInputChar = itrans[i - 1] ?? '';
+
+      if ((match.itrans === 'LLi' || match.itrans === 'LLI') && i > 0) {
+        const consonantalL = MAPPING_TRIE.find(
+          (entry) => entry.itrans === 'L' && entry.category === 'consonant'
+        );
+
+        if (consonantalL) {
+          match = consonantalL;
+        }
+      }
+
+      if ((match.itrans === 'RRi' || match.itrans === 'RRI') && prevInputChar === 'r') {
+        const replacement = match.unicode;
+        const replChars = Array.from(replacement);
+        const currentSourceIndex = i;
+        const targetStart = unicode.length;
+
+        replChars.forEach(() => targetToSourceMap.push(currentSourceIndex));
+        for (let m = 0; m < match.itrans.length; m++) {
+          sourceToTargetMap[i + m] = targetStart;
+        }
+
+        replChars.forEach((c) =>
+          confidences.push({ char: c, confidence: 1.0, rationale: `Explicit vowel after r: ${match!.itrans}` })
+        );
+        unicode += replacement;
+        i += match.itrans.length;
+        continue;
+      }
+
+      if (
+        match.itrans === 'M~' &&
+        /^(~N|~n|n|N|Ch|ch)/.test(itrans.slice(i + match.itrans.length))
+      ) {
+        if (itrans.startsWith('N', i + match.itrans.length)) {
+          pendingNasalRemap = '~N';
+        } else if (
+          itrans.startsWith('n', i + match.itrans.length) ||
+          itrans.startsWith('Ch', i + match.itrans.length) ||
+          itrans.startsWith('ch', i + match.itrans.length)
+        ) {
+          pendingNasalRemap = '~n';
+        }
+        match = { ...match, unicode: '\u0902' };
+      }
+
+      if (
+        match.itrans.endsWith('a') &&
+        nextChar &&
+        /[aAiIuUeEoORL]/.test(nextChar)
+      ) {
+        const consonantalAlternate = MAPPING_TRIE.find(
+          (entry) =>
+            entry.itrans === match!.itrans.slice(0, -1) &&
+            entry.unicode === `${match!.unicode}\u094D`
+        );
+
+        if (consonantalAlternate) {
+          match = consonantalAlternate;
+        }
+      }
+
+      const resolvedMatch = match;
+      const isVowel = resolvedMatch.category === 'vowel';
       const matraValues = Object.values(matraMap).filter(v => v !== '');
-      const startsWithMatra = matraValues.some(v => match.unicode.startsWith(v));
+      const startsWithMatra = matraValues.some(v => resolvedMatch.unicode.startsWith(v));
       const currentSourceIndex = i;
 
       if (
+        resolvedMatch.itrans === 'ai' &&
+        unicode.endsWith('\u093E') &&
+        prevInputChar !== '/'
+      ) {
+        const matra = '\u0948';
+        const matraChars = Array.from(matra);
+        const targetStart = unicode.length;
+
+        matraChars.forEach(() => targetToSourceMap.push(currentSourceIndex));
+        for (let m = 0; m < resolvedMatch.itrans.length; m++) {
+          sourceToTargetMap[i + m] = targetStart;
+        }
+
+        matraChars.forEach((c) =>
+          confidences.push({ char: c, confidence: 1.0, rationale: `Aa+ai composite: ${resolvedMatch.itrans}` })
+        );
+        unicode += matra;
+      } else if (
+        resolvedMatch.itrans === 'o' &&
+        unicode.endsWith('\u093E') &&
+        prevInputChar !== '/'
+      ) {
+        const matra = '\u094B';
+        const matraChars = Array.from(matra);
+        const targetStart = unicode.length;
+
+        matraChars.forEach(() => targetToSourceMap.push(currentSourceIndex));
+        for (let m = 0; m < resolvedMatch.itrans.length; m++) {
+          sourceToTargetMap[i + m] = targetStart;
+        }
+
+        matraChars.forEach((c) =>
+          confidences.push({ char: c, confidence: 1.0, rationale: `Aa+o composite: ${resolvedMatch.itrans}` })
+        );
+        unicode += matra;
+      } else if (
+        resolvedMatch.itrans === 'e' &&
+        unicode.endsWith('\u0913') &&
+        prevInputChar !== '/'
+      ) {
+        const matra = '\u0947';
+        const matraChars = Array.from(matra);
+        const targetStart = unicode.length;
+
+        matraChars.forEach(() => targetToSourceMap.push(currentSourceIndex));
+        for (let m = 0; m < resolvedMatch.itrans.length; m++) {
+          sourceToTargetMap[i + m] = targetStart;
+        }
+
+        matraChars.forEach((c) =>
+          confidences.push({ char: c, confidence: 1.0, rationale: `O+e composite: ${resolvedMatch.itrans}` })
+        );
+        unicode += matra;
+      } else if (
         (isVowel || startsWithMatra) &&
         unicode.endsWith('्') &&
         itrans[i - 1] !== '\u094D'
       ) {
-        const matra = matraMap[match.unicode] !== undefined ? matraMap[match.unicode] : match.unicode;
+        const matra = matraMap[resolvedMatch.unicode] !== undefined ? matraMap[resolvedMatch.unicode] : resolvedMatch.unicode;
         unicode = unicode.slice(0, -1) + matra;
         
         targetToSourceMap.pop();
         const matraChars = Array.from(matra);
         matraChars.forEach(() => targetToSourceMap.push(currentSourceIndex));
         
-        for (let m = 0; m < match.itrans.length; m++) {
+        for (let m = 0; m < resolvedMatch.itrans.length; m++) {
           sourceToTargetMap[i + m] = unicode.length - matraChars.length;
         }
 
         if (confidences.length > 0) confidences.pop();
-        matraChars.forEach(c => confidences.push({ char: c, confidence: 1.0, rationale: `Matra: ${match!.itrans}` }));
+        matraChars.forEach(c => confidences.push({ char: c, confidence: 1.0, rationale: `Matra: ${resolvedMatch.itrans}` }));
       } else if (
         (isVowel || startsWithMatra) &&
         unicode.endsWith('\u093C') &&
         !unicode.endsWith('\u094D\u093C')
       ) {
-        const matra = matraMap[match.unicode] !== undefined ? matraMap[match.unicode] : match.unicode;
+        const matra = matraMap[resolvedMatch.unicode] !== undefined ? matraMap[resolvedMatch.unicode] : resolvedMatch.unicode;
         const matraChars = Array.from(matra);
         const targetStart = unicode.length;
 
         matraChars.forEach(() => targetToSourceMap.push(currentSourceIndex));
-        for (let m = 0; m < match.itrans.length; m++) {
+        for (let m = 0; m < resolvedMatch.itrans.length; m++) {
           sourceToTargetMap[i + m] = targetStart;
         }
 
-        matraChars.forEach(c => confidences.push({ char: c, confidence: 1.0, rationale: `Nukta matra: ${match!.itrans}` }));
+        matraChars.forEach(c => confidences.push({ char: c, confidence: 1.0, rationale: `Nukta matra: ${resolvedMatch.itrans}` }));
         unicode += matra;
       } else {
-        const replacement = match.unicode;
+        const replacement = resolvedMatch.unicode;
         const replChars = Array.from(replacement);
         const targetStart = unicode.length;
         
         replChars.forEach(() => targetToSourceMap.push(currentSourceIndex));
-        for (let m = 0; m < match.itrans.length; m++) {
+        for (let m = 0; m < resolvedMatch.itrans.length; m++) {
           sourceToTargetMap[i + m] = targetStart;
         }
         
-        replChars.forEach(c => confidences.push({ char: c, confidence: 1.0, rationale: `Match: ${match!.itrans}` }));
+        replChars.forEach(c => confidences.push({ char: c, confidence: 1.0, rationale: `Match: ${resolvedMatch.itrans}` }));
         unicode += replacement;
       }
-      i += match.itrans.length;
+      i += resolvedMatch.itrans.length;
     } else if (itrans[i] === '\\' && i + 1 < itrans.length) {
       const literalChar = itrans[i + 1];
       sourceToTargetMap[i] = unicode.length;
@@ -160,6 +296,17 @@ for (const [indep, matra] of Object.entries(DEPENDENT_VOWELS)) {
   }
 }
 
+const dependentVowelOverrides: Record<string, string> = {
+  '\u0943': 'R^i',
+  '\u0944': 'R^I',
+  '\u0962': 'L^i',
+  '\u0963': 'L^I',
+};
+
+for (const [uni, itrans] of Object.entries(dependentVowelOverrides)) {
+  addReverse(uni, itrans, 'mark', true);
+}
+
 // 3. Requested shortcuts and essential vowels/symbols
 const overrides: Record<string, string> = {
   '\u0951': "'",   // Svarita
@@ -185,11 +332,17 @@ const REVERSE_MAPPING_TRIE: ReverseMappingEntry[] = Array.from(REVERSE_TRIE_MAP.
   .map(([unicode, { itrans, category }]) => ({ unicode, itrans, category }))
   .sort((a, b) => b.unicode.length - a.unicode.length);
 
+const DEPENDENT_VOWEL_SET = new Set(Object.values(DEPENDENT_VOWELS));
+const INDEPENDENT_VOWEL_UNICODE_SET = new Set(
+  VEDIC_MAPPINGS.filter((entry) => entry.category === 'vowel').map((entry) => entry.unicode)
+);
+
 
 export const detransliterate = (unicode: string): string => {
   let itrans = '';
   let i = 0;
   const unicodeChars = Array.from(unicode); // Handle surrogate pairs correctly
+  let lastExplicitConsonantToken: string | null = null;
 
   while (i < unicodeChars.length) {
     let match: ReverseMappingEntry | null = null;
@@ -232,25 +385,65 @@ export const detransliterate = (unicode: string): string => {
           if (nextMatch.unicode === '\u094D') {
             // Consonant + Virama -> output base itrans only
             itrans += match.itrans;
+            lastExplicitConsonantToken = match.itrans;
             i += matchLen + 1;
           } else {
             // Consonant + Matra -> output base itrans + matra itrans
+            const needsClusterSeparator =
+              i > 0 &&
+              unicodeChars[i - 1] === '\u094D' &&
+              lastExplicitConsonantToken !== null &&
+              VEDIC_MAPPINGS.some((entry) => entry.itrans === `${lastExplicitConsonantToken}${match.itrans}`);
+
+            if (needsClusterSeparator) {
+              itrans += '/';
+            }
+
             itrans += match.itrans + nextMatch.itrans;
+            lastExplicitConsonantToken = null;
             i += matchLen + Array.from(nextMatch.unicode).length;
           }
         } else {
           // Consonant alone -> output base itrans + implicit 'a'
+          const nextUnicodeChar = unicodeChars[nextIdx] ?? '';
+          const needsClusterSeparator =
+            i > 0 &&
+            unicodeChars[i - 1] === '\u094D' &&
+            lastExplicitConsonantToken !== null &&
+            VEDIC_MAPPINGS.some((entry) => entry.itrans === `${lastExplicitConsonantToken}${match.itrans}`);
+          const needsHiatusSeparator = INDEPENDENT_VOWEL_UNICODE_SET.has(nextUnicodeChar);
+
+          if (needsClusterSeparator) {
+            itrans += '/';
+          }
+
           itrans += match.itrans + 'a';
+          if (needsHiatusSeparator) {
+            itrans += '/';
+          }
+          lastExplicitConsonantToken = null;
           i += matchLen;
         }
       } else {
         // Not a bare consonant, output itrans as-is
+        const previousUnicodeChar = unicodeChars[i - 1] ?? '';
+        const needsVowelSeparator =
+          match.category === 'vowel' &&
+          (INDEPENDENT_VOWEL_UNICODE_SET.has(previousUnicodeChar) || DEPENDENT_VOWEL_SET.has(previousUnicodeChar));
+
+        if (needsVowelSeparator) {
+          itrans += '/';
+        }
+
         itrans += match.itrans;
+        lastExplicitConsonantToken =
+          match.category === 'consonant' && match.unicode.endsWith('\u094D') ? match.itrans : null;
         i += matchLen;
       }
     } else {
       // If no specific match, append char as-is
       itrans += unicodeChars[i];
+      lastExplicitConsonantToken = null;
       i++;
     }
   }
