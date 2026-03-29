@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { parseDatasetIds, resolveCorpusPreset } from '../test-support/corpusRegistry.ts';
+import { getAutocompleteDataRoot } from '../src/lib/server/autocompleteDataRoot.ts';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = path.resolve(SCRIPT_DIR, '..');
@@ -22,7 +23,7 @@ const parseArgs = () => {
     preset: 'sanskrit-default',
     canonicalDatasets: [] as string[],
     swaraDatasets: [] as string[],
-    outputDir: path.resolve(APP_ROOT, 'test-support/fixtures/autocomplete'),
+    outputDir: getAutocompleteDataRoot(),
     canonicalLimit: null as number | null,
     runtimeLimit: null as number | null,
     swaraLimit: null as number | null,

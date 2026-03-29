@@ -14,6 +14,7 @@ import {
   hasLexicalSvaraMarkers,
   normalizeForLexicalLookup,
 } from '../src/lib/vedic/lexicalNormalization.ts';
+import { getAutocompleteDataRoot } from '../src/lib/server/autocompleteDataRoot.ts';
 import { detransliterate } from '../src/lib/vedic/utils.ts';
 
 interface SwaraVariantRecord {
@@ -33,7 +34,7 @@ interface SwaraLexiconEntry {
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const APP_ROOT = path.resolve(SCRIPT_DIR, '..');
 const DEFAULT_INPUT_PATH = path.resolve(APP_ROOT, '../archive/example.txt');
-const DEFAULT_OUTPUT_PATH = path.resolve(APP_ROOT, 'test-support/fixtures/autocomplete/swara-lexicon.json');
+const DEFAULT_OUTPUT_PATH = path.resolve(getAutocompleteDataRoot(), 'swara-lexicon.json');
 
 const shouldLookupLexicalSuggestions = (value: string) =>
   value.length >= 2 && /[A-Za-z]/.test(value);

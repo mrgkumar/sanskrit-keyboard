@@ -1,8 +1,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { NextResponse } from 'next/server';
+import { getAutocompleteDataRoot } from '@/lib/server/autocompleteDataRoot';
 
-const AUTOCOMPLETE_ROOT = path.join(process.cwd(), 'test-support', 'fixtures', 'autocomplete');
+const AUTOCOMPLETE_ROOT = getAutocompleteDataRoot();
 
 const isAllowedAsset = (assetPath: string) =>
   assetPath === 'runtime-lexicon-shards-manifest.json' ||

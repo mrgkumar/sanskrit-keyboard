@@ -1,9 +1,0 @@
-{
-  "version": 1,
-  "prefix": "lm",
-  "entries": [
-    {"itrans":"lma","devanagari":"ल्म","count":1},
-    {"itrans":"lmakena","devanagari":"ल्मकेन","count":1},
-    {"itrans":"lmine","devanagari":"ल्मिने","count":1}
-  ]
-}

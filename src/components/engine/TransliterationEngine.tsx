@@ -9,8 +9,17 @@ import { Check, Copy, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide
 import { clsx } from 'clsx';
 import { SessionSnapshot } from '@/store/types';
 
-const STORAGE_KEY = 'sanskrit-keyboard.sessions.v1';
+const LEGACY_STORAGE_KEY = 'sanskrit-keyboard.sessions.v1';
+const SESSION_INDEX_KEY = 'sanskrit-keyboard.session-index.v2';
+const SESSION_SNAPSHOT_PREFIX = 'sanskrit-keyboard.session.v2.';
 const LEXICAL_HISTORY_KEY = 'sanskrit-keyboard.lexical-history.v1';
+const LEGACY_AUTOLOAD_BYTES_LIMIT = 1_000_000;
+
+interface SessionListItem {
+  sessionId: string;
+  sessionName: string;
+  updatedAt: string;
+}
 
 interface PersistedLexicalLearningSnapshot {
   version: 1;
@@ -18,6 +27,76 @@ interface PersistedLexicalLearningSnapshot {
   userLexicalUsage: Record<string, number>;
   userExactFormUsage: Record<string, Record<string, number>>;
 }
+
+const sortSessionList = (sessions: SessionListItem[]) =>
+  [...sessions].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+const getSessionStorageKey = (sessionId: string) => `${SESSION_SNAPSHOT_PREFIX}${sessionId}`;
+
+const readSessionIndex = () => {
+  const raw = window.localStorage.getItem(SESSION_INDEX_KEY);
+  if (!raw) {
+    return [] as SessionListItem[];
+  }
+
+  try {
+    return sortSessionList(JSON.parse(raw) as SessionListItem[]);
+  } catch {
+    return [] as SessionListItem[];
+  }
+};
+
+const writeSessionIndex = (items: SessionListItem[]) => {
+  const nextItems = sortSessionList(items).slice(0, 25);
+  window.localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(nextItems));
+  return nextItems;
+};
+
+const readStoredSessionSnapshot = (sessionId: string) => {
+  const raw = window.localStorage.getItem(getSessionStorageKey(sessionId));
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as SessionSnapshot;
+  } catch {
+    return null;
+  }
+};
+
+const migrateLegacySessionsIfNeeded = () => {
+  if (window.localStorage.getItem(SESSION_INDEX_KEY)) {
+    return null;
+  }
+
+  const legacyRaw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+  if (!legacyRaw) {
+    return null;
+  }
+
+  if (legacyRaw.length > LEGACY_AUTOLOAD_BYTES_LIMIT) {
+    return { skipped: true as const, sessions: [] as SessionListItem[] };
+  }
+
+  try {
+    const parsed = JSON.parse(legacyRaw) as SessionSnapshot[];
+    const nextIndex = writeSessionIndex(
+      parsed.map((snapshot) => ({
+        sessionId: snapshot.sessionId,
+        sessionName: snapshot.sessionName,
+        updatedAt: snapshot.updatedAt,
+      }))
+    );
+    for (const snapshot of parsed) {
+      window.localStorage.setItem(getSessionStorageKey(snapshot.sessionId), JSON.stringify(snapshot));
+    }
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    return { skipped: false as const, sessions: nextIndex };
+  } catch {
+    return null;
+  }
+};
 
 export const TransliterationEngine: React.FC = () => {
   const {
@@ -43,7 +122,7 @@ export const TransliterationEngine: React.FC = () => {
     loadSessionSnapshot,
     resetSession,
   } = useFlowStore();
-  const [savedSessions, setSavedSessions] = React.useState<SessionSnapshot[]>([]);
+  const [savedSessions, setSavedSessions] = React.useState<SessionListItem[]>([]);
   const [copyAllState, setCopyAllState] = React.useState<'idle' | 'copied' | 'error'>('idle');
   const [isDisplayMenuOpen, setIsDisplayMenuOpen] = React.useState(false);
   const [isWorkspacePanelOpen, setIsWorkspacePanelOpen] = React.useState(false);
@@ -55,15 +134,16 @@ export const TransliterationEngine: React.FC = () => {
   );
 
   const persistSnapshot = React.useCallback((snapshot: SessionSnapshot) => {
-    const existing = typeof window !== 'undefined'
-      ? JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '[]') as SessionSnapshot[]
-      : [];
-    const nextSessions = [
-      snapshot,
-      ...existing.filter((item) => item.sessionId !== snapshot.sessionId),
-    ].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextSessions.slice(0, 25)));
-    setSavedSessions(nextSessions.slice(0, 25));
+    window.localStorage.setItem(getSessionStorageKey(snapshot.sessionId), JSON.stringify(snapshot));
+    const nextSessions = writeSessionIndex([
+      {
+        sessionId: snapshot.sessionId,
+        sessionName: snapshot.sessionName,
+        updatedAt: snapshot.updatedAt,
+      },
+      ...readSessionIndex().filter((item) => item.sessionId !== snapshot.sessionId),
+    ]);
+    setSavedSessions(nextSessions);
     markSessionSaved(snapshot.updatedAt);
   }, [markSessionSaved]);
 
@@ -93,25 +173,37 @@ export const TransliterationEngine: React.FC = () => {
   }, [hydratePersistedLexicalLearning]);
 
   React.useEffect(() => {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
+    const migrationResult = migrateLegacySessionsIfNeeded();
+    const indexedSessions =
+      migrationResult?.sessions ?? readSessionIndex();
+    setSavedSessions(indexedSessions);
+
+    const latestSession = indexedSessions[0];
+    if (latestSession) {
+      const runRestore = () => {
+        const snapshot = readStoredSessionSnapshot(latestSession.sessionId);
+        if (snapshot) {
+          loadSessionSnapshot(snapshot);
+        }
+      };
+
+      const idleWindow = window as Window & {
+        requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+        cancelIdleCallback?: (handle: number) => void;
+      };
+
+      if (idleWindow.requestIdleCallback) {
+        const idleId = idleWindow.requestIdleCallback(runRestore, { timeout: 1500 });
+        hasLoadedSessions.current = true;
+        return () => idleWindow.cancelIdleCallback?.(idleId);
+      }
+
+      const timeoutId = window.setTimeout(runRestore, 0);
       hasLoadedSessions.current = true;
-      return;
+      return () => window.clearTimeout(timeoutId);
     }
 
-    try {
-      const parsed = JSON.parse(raw) as SessionSnapshot[];
-      const sortedSessions = parsed.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-      setSavedSessions(sortedSessions);
-      const latestSession = sortedSessions[0];
-      if (latestSession) {
-        loadSessionSnapshot(latestSession);
-      }
-    } catch {
-      setSavedSessions([]);
-    } finally {
-      hasLoadedSessions.current = true;
-    }
+    hasLoadedSessions.current = true;
   }, [loadSessionSnapshot]);
 
   React.useEffect(() => {
@@ -176,7 +268,7 @@ export const TransliterationEngine: React.FC = () => {
   };
 
   const handleLoadSession = (nextSessionId: string) => {
-    const nextSession = savedSessions.find((item) => item.sessionId === nextSessionId);
+    const nextSession = readStoredSessionSnapshot(nextSessionId);
     if (nextSession) {
       loadSessionSnapshot(nextSession);
     }

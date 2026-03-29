@@ -1,8 +1,0 @@
-{
-  "version": 1,
-  "prefix": "e/",
-  "entries": [
-    {"itrans":"e/emasii","devanagari":"एएमसी","count":1},
-    {"itrans":"e/ugen","devanagari":"एउगेन्","count":1}
-  ]
-}

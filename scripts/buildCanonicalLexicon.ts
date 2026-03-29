@@ -10,6 +10,7 @@ import {
   type CorpusDataset,
 } from '../test-support/corpusRegistry.ts';
 import { tokenizeDevanagariText } from '../test-support/corpusText.ts';
+import { getAutocompleteDataRoot } from '../src/lib/server/autocompleteDataRoot.ts';
 import type { CanonicalRecordConfig } from '../test-support/corpusRegistry.ts';
 import type { CanonicalMappingRecord } from './buildCanonicalLexiconShared.ts';
 
@@ -63,7 +64,7 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WORKSPACE_ROOT = path.resolve(SCRIPT_DIR, '..', '..');
 const APP_ROOT = path.resolve(SCRIPT_DIR, '..');
 const DEFAULT_INPUT_PATH = path.resolve(WORKSPACE_ROOT, 'data_corpus/san/san_train.json');
-const DEFAULT_OUTPUT_DIR = path.resolve(APP_ROOT, 'test-support/fixtures/autocomplete');
+const DEFAULT_OUTPUT_DIR = getAutocompleteDataRoot();
 const DEFAULT_BATCH_SIZE = 2000;
 const DEFAULT_PROGRESS_EVERY = 25000;
 const DEFAULT_WORKER_COUNT = Math.max(1, Math.min(os.availableParallelism() - 1, 8));
