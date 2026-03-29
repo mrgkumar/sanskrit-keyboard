@@ -50,7 +50,11 @@ export const transliterate = (itrans: string): TransliterationResult => {
       const startsWithMatra = matraValues.some(v => match.unicode.startsWith(v));
       const currentSourceIndex = i;
 
-      if ((isVowel || startsWithMatra) && unicode.endsWith('्')) {
+      if (
+        (isVowel || startsWithMatra) &&
+        unicode.endsWith('्') &&
+        itrans[i - 1] !== '\u094D'
+      ) {
         const matra = matraMap[match.unicode] !== undefined ? matraMap[match.unicode] : match.unicode;
         unicode = unicode.slice(0, -1) + matra;
         
@@ -64,6 +68,22 @@ export const transliterate = (itrans: string): TransliterationResult => {
 
         if (confidences.length > 0) confidences.pop();
         matraChars.forEach(c => confidences.push({ char: c, confidence: 1.0, rationale: `Matra: ${match!.itrans}` }));
+      } else if (
+        (isVowel || startsWithMatra) &&
+        unicode.endsWith('\u093C') &&
+        !unicode.endsWith('\u094D\u093C')
+      ) {
+        const matra = matraMap[match.unicode] !== undefined ? matraMap[match.unicode] : match.unicode;
+        const matraChars = Array.from(matra);
+        const targetStart = unicode.length;
+
+        matraChars.forEach(() => targetToSourceMap.push(currentSourceIndex));
+        for (let m = 0; m < match.itrans.length; m++) {
+          sourceToTargetMap[i + m] = targetStart;
+        }
+
+        matraChars.forEach(c => confidences.push({ char: c, confidence: 1.0, rationale: `Nukta matra: ${match!.itrans}` }));
+        unicode += matra;
       } else {
         const replacement = match.unicode;
         const replChars = Array.from(replacement);
@@ -142,18 +162,23 @@ for (const [indep, matra] of Object.entries(DEPENDENT_VOWELS)) {
 
 // 3. Requested shortcuts and essential vowels/symbols
 const overrides: Record<string, string> = {
-  '\u0951': "'",   // Udatta
+  '\u0951': "'",   // Svarita
   '\u0952': "_",   // Anudatta
-  '\uF176': "''",  // Svarita
+  '\uF176': "''",  // Dirgha Svarita
   '\u0903': ":",   // Visarga
   '\u0905': "a",   // Independent a
+  '\u0901': '.N',  // Canonical chandrabindu to avoid ~n/~N ambiguity in forward transliteration
   '\u0964': "|",   // Danda
   '\u0965': "||",  // Double Danda
   '\u0956': "MM",  // Vedic Anusvara
+  '\u1CD6': "''",  // Normalize extended double-svarita style to dirgha-svarita input
 };
 for (const [uni, itrans] of Object.entries(overrides)) {
   addReverse(uni, itrans, 'special', true);
 }
+
+addReverse('\u0903\uF176', ":''", 'special', true);
+addReverse('\u0952\uF156\u0952', '_M~_', 'special', true);
 
 // Convert Map to sorted array for greedy matching
 const REVERSE_MAPPING_TRIE: ReverseMappingEntry[] = Array.from(REVERSE_TRIE_MAP.entries())

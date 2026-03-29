@@ -17,6 +17,22 @@ const assertNoFailures = (
   ).toEqual([]);
 };
 
+test('Accent scheme maps forward with the new canonical inputs', () => {
+  expect(transliterate("ga'").unicode).toBe('ग॑');
+  expect(transliterate('ga_').unicode).toBe('ग॒');
+  expect(transliterate("ga''").unicode).toBe('ग');
+  expect(transliterate('ga"').unicode).toBe('ग');
+  expect(transliterate("ga:''").unicode).toBe('गः');
+});
+
+test('Accent scheme maps backward with canonical outputs', () => {
+  expect(detransliterate('ग॑')).toBe("ga'");
+  expect(detransliterate('ग॒')).toBe('ga_');
+  expect(detransliterate('ग')).toBe("ga''");
+  expect(detransliterate('ग᳖')).toBe("ga''");
+  expect(detransliterate('गः')).toBe("ga:''");
+});
+
 test('Forward mapping preserves every direct mapping entry', () => {
   const failures: string[] = [];
   const seen = new Set<string>();

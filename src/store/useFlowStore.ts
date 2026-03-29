@@ -345,7 +345,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     const svaraGroups = [
       ["'", "\\'"],
       ["_", "\\_"],
-      ["^", "\\^", "''", '"']
+      ["''", '"']
     ];
     
     for (const group of svaraGroups) {
