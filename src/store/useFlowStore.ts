@@ -11,9 +11,16 @@ import {
 import { transliterate } from '@/lib/vedic/utils';
 import { MAPPING_TRIE } from '@/lib/vedic/mapping';
 import {
+  applyLearnedSwaraVariants,
+  accumulateExactFormUsageFromText,
+  incrementExactFormUsage,
   getLexicalSuggestions,
+  mergeLexicalSuggestionsWithSessionCounts,
   normalizeForLexicalLookup,
+  preloadRuntimeLexiconAssets,
   shouldLookupLexicalSuggestions,
+  type ExactFormUsageCounts,
+  type LexicalUsageCounts,
   type LexicalSuggestion,
 } from '@/lib/vedic/runtimeLexicon';
 
@@ -157,6 +164,72 @@ const createDefaultSessionName = () => {
   const now = new Date();
   return `Session ${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 };
+const SESSION_LEXICAL_TOKEN_PATTERN = /[A-Za-z\\^'"_~.=\/]+/g;
+const COMMIT_DELIMITER_PATTERN = /[\s|.,;!?\n]/;
+const DEFAULT_SWARA_PREDICTION_ENABLED = true;
+
+const extractLexicalTokens = (source: string) =>
+  source.match(SESSION_LEXICAL_TOKEN_PATTERN) ?? [];
+
+export const incrementSessionLexicalUsage = (counts: LexicalUsageCounts, rawValue: string) => {
+  const normalized = normalizeForLexicalLookup(rawValue);
+  if (!shouldLookupLexicalSuggestions(normalized)) {
+    return counts;
+  }
+
+  return {
+    ...counts,
+    [normalized]: (counts[normalized] ?? 0) + 1,
+  };
+};
+
+export const accumulateSessionLexicalUsageFromText = (
+  counts: LexicalUsageCounts,
+  source: string
+) => {
+  let nextCounts = counts;
+  const matches = extractLexicalTokens(source);
+
+  for (const token of matches) {
+    nextCounts = incrementSessionLexicalUsage(nextCounts, token);
+  }
+
+  return nextCounts;
+};
+
+export const accumulateSessionExactFormUsageFromText = (
+  counts: ExactFormUsageCounts,
+  source: string
+) => accumulateExactFormUsageFromText(counts, extractLexicalTokens(source));
+
+const deriveSessionLexicalUsageFromBlocks = (blocks: CanonicalBlock[]) => {
+  let counts: LexicalUsageCounts = {};
+
+  for (const block of blocks) {
+    counts = accumulateSessionLexicalUsageFromText(counts, block.source);
+  }
+
+  return counts;
+};
+
+const deriveSessionExactFormUsageFromBlocks = (blocks: CanonicalBlock[]) => {
+  let counts: ExactFormUsageCounts = {};
+
+  for (const block of blocks) {
+    counts = accumulateSessionExactFormUsageFromText(counts, block.source);
+  }
+
+  return counts;
+};
+
+const shouldRecordCommittedBuffer = (activeBuffer: string, source: string, caret: number) => {
+  if (!activeBuffer || caret <= 0) {
+    return false;
+  }
+
+  const delimiter = source.slice(caret - 1, caret);
+  return COMMIT_DELIMITER_PATTERN.test(delimiter);
+};
 
 interface DeletedBlockSnapshot {
   block: CanonicalBlock;
@@ -179,6 +252,12 @@ export interface SanskritKeyboardState {
   lexicalQuery: string;
   isLexicalSuggestionsLoading: boolean;
   lexicalRequestSerial: number;
+  lexicalSelectedSuggestionIndex: number;
+  sessionLexicalUsage: LexicalUsageCounts;
+  userLexicalUsage: LexicalUsageCounts;
+  sessionExactFormUsage: ExactFormUsageCounts;
+  userExactFormUsage: ExactFormUsageCounts;
+  swaraPredictionEnabled: boolean;
   selectedSuggestionIndex: number;
   ghostText: string | null;
   composerSelectionStart: number;
@@ -211,6 +290,18 @@ export interface SanskritKeyboardState {
   dismissDeletedBlock: () => void;
   updateLexicalSuggestions: (prefix: string) => Promise<void>;
   clearLexicalSuggestions: () => void;
+  setLexicalSelectedSuggestionIndex: (index: number) => void;
+  recordSessionLexicalUse: (rawWord: string) => void;
+  recordSessionLexicalText: (source: string) => void;
+  setSwaraPredictionEnabled: (enabled: boolean) => void;
+  hydratePersistedLexicalLearning: (payload: {
+    userLexicalUsage?: LexicalUsageCounts;
+    userExactFormUsage?: ExactFormUsageCounts;
+    swaraPredictionEnabled?: boolean;
+  }) => void;
+  clearSessionLexicalLearning: () => void;
+  clearPersistedLexicalLearning: () => void;
+  preloadLexicalAssets: () => void;
   setDeletedBuffer: (char: string | null) => void;
   setComposerSelection: (start: number, end: number) => void;
   setTypography: (patch: Partial<TypographySettings>) => void;
@@ -243,6 +334,12 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   lexicalQuery: '',
   isLexicalSuggestionsLoading: false,
   lexicalRequestSerial: 0,
+  lexicalSelectedSuggestionIndex: 0,
+  sessionLexicalUsage: {},
+  userLexicalUsage: {},
+  sessionExactFormUsage: {},
+  userExactFormUsage: {},
+  swaraPredictionEnabled: DEFAULT_SWARA_PREDICTION_ENABLED,
   selectedSuggestionIndex: 0,
   ghostText: null,
   composerSelectionStart: 0,
@@ -410,6 +507,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     let activeBlock = getActiveBlock(); // Use 'let' because we might reassign it
 
     if (!activeBlock) return;
+    const previousActiveBuffer = get().activeBuffer;
     const nextSelectionStart = selectionStart ?? get().composerSelectionStart;
     const nextSelectionEnd = selectionEnd ?? nextSelectionStart;
 
@@ -634,10 +732,14 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       suggestions, 
       alternateSuggestions, 
       ghostText: ghostUnicode,
+      lexicalSelectedSuggestionIndex: 0,
       selectedSuggestionIndex: 0, // Reset selected suggestion index
       composerSelectionStart: nextSelectionStart,
       composerSelectionEnd: nextSelectionEnd,
     });
+    if (shouldRecordCommittedBuffer(previousActiveBuffer, newSource, nextSelectionEnd)) {
+      get().recordSessionLexicalUse(previousActiveBuffer);
+    }
     void get().updateLexicalSuggestions(activeBuffer);
   },
   addBlocks: (itransStrings: string[]) => {
@@ -661,6 +763,14 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
           activeBlockId: newBlocks[0].id, // Set first new block as active
           activeAnchorSegmentIndex: 0,
         },
+        sessionLexicalUsage: deriveSessionLexicalUsageFromBlocks([
+          ...state.blocks,
+          ...newBlocks,
+        ]),
+        sessionExactFormUsage: deriveSessionExactFormUsageFromBlocks([
+          ...state.blocks,
+          ...newBlocks,
+        ]),
       }));
     }
   },
@@ -693,6 +803,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         lexicalSuggestions: [],
         lexicalQuery: '',
         isLexicalSuggestionsLoading: false,
+        lexicalSelectedSuggestionIndex: 0,
         ghostText: null,
         composerSelectionStart: 0,
         composerSelectionEnd: 0,
@@ -722,9 +833,12 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       lexicalSuggestions: shouldMoveFocus ? [] : state.lexicalSuggestions,
       lexicalQuery: shouldMoveFocus ? '' : state.lexicalQuery,
       isLexicalSuggestionsLoading: false,
+      lexicalSelectedSuggestionIndex: shouldMoveFocus ? 0 : state.lexicalSelectedSuggestionIndex,
       ghostText: shouldMoveFocus ? null : state.ghostText,
       composerSelectionStart: 0,
       composerSelectionEnd: 0,
+      sessionLexicalUsage: state.sessionLexicalUsage,
+      sessionExactFormUsage: state.sessionExactFormUsage,
       recentlyDeletedBlock: {
         block: deletedBlock,
         index: blockIndex,
@@ -775,6 +889,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         lexicalQuery: normalizedPrefix,
         isLexicalSuggestionsLoading: false,
         lexicalRequestSerial: nextSerial,
+        lexicalSelectedSuggestionIndex: 0,
       });
       return;
     }
@@ -786,15 +901,35 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     });
 
     try {
-      const lexicalSuggestions = await getLexicalSuggestions(normalizedPrefix, 5);
+      const baseSuggestions = await getLexicalSuggestions(normalizedPrefix, 8);
+      if (get().lexicalRequestSerial !== nextSerial) {
+        return;
+      }
+
+      const lexicalSuggestions = mergeLexicalSuggestionsWithSessionCounts({
+        prefix: normalizedPrefix,
+        baseSuggestions,
+        sessionUsageCounts: get().sessionLexicalUsage,
+        userUsageCounts: get().userLexicalUsage,
+        limit: 5,
+      });
+      const withSwaraVariants = await applyLearnedSwaraVariants({
+        suggestions: lexicalSuggestions,
+        typedPrefix: prefix,
+        enabled: get().swaraPredictionEnabled,
+        sessionExactForms: get().sessionExactFormUsage,
+        userExactForms: get().userExactFormUsage,
+      });
+
       if (get().lexicalRequestSerial !== nextSerial) {
         return;
       }
 
       set({
-        lexicalSuggestions,
+        lexicalSuggestions: withSwaraVariants,
         lexicalQuery: normalizedPrefix,
         isLexicalSuggestionsLoading: false,
+        lexicalSelectedSuggestionIndex: 0,
       });
     } catch {
       if (get().lexicalRequestSerial !== nextSerial) {
@@ -805,6 +940,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         lexicalSuggestions: [],
         lexicalQuery: normalizedPrefix,
         isLexicalSuggestionsLoading: false,
+        lexicalSelectedSuggestionIndex: 0,
       });
     }
   },
@@ -814,7 +950,60 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       lexicalQuery: '',
       isLexicalSuggestionsLoading: false,
       lexicalRequestSerial: state.lexicalRequestSerial + 1,
+      lexicalSelectedSuggestionIndex: 0,
     }));
+  },
+  setLexicalSelectedSuggestionIndex: (index) => {
+    set((state) => ({
+      lexicalSelectedSuggestionIndex:
+        state.lexicalSuggestions.length === 0
+          ? 0
+          : Math.max(0, Math.min(index, state.lexicalSuggestions.length - 1)),
+    }));
+  },
+  recordSessionLexicalUse: (rawWord) => {
+    set((state) => ({
+      sessionLexicalUsage: incrementSessionLexicalUsage(state.sessionLexicalUsage, rawWord),
+      userLexicalUsage: incrementSessionLexicalUsage(state.userLexicalUsage, rawWord),
+      sessionExactFormUsage: incrementExactFormUsage(state.sessionExactFormUsage, rawWord),
+      userExactFormUsage: incrementExactFormUsage(state.userExactFormUsage, rawWord),
+    }));
+  },
+  recordSessionLexicalText: (source) => {
+    set((state) => ({
+      sessionLexicalUsage: accumulateSessionLexicalUsageFromText(state.sessionLexicalUsage, source),
+      userLexicalUsage: accumulateSessionLexicalUsageFromText(state.userLexicalUsage, source),
+      sessionExactFormUsage: accumulateSessionExactFormUsageFromText(state.sessionExactFormUsage, source),
+      userExactFormUsage: accumulateSessionExactFormUsageFromText(state.userExactFormUsage, source),
+    }));
+  },
+  setSwaraPredictionEnabled: (enabled) => {
+    set({ swaraPredictionEnabled: enabled });
+    void get().updateLexicalSuggestions(get().activeBuffer);
+  },
+  hydratePersistedLexicalLearning: (payload) => {
+    set({
+      userLexicalUsage: payload.userLexicalUsage ?? {},
+      userExactFormUsage: payload.userExactFormUsage ?? {},
+      swaraPredictionEnabled: payload.swaraPredictionEnabled ?? DEFAULT_SWARA_PREDICTION_ENABLED,
+    });
+  },
+  clearSessionLexicalLearning: () => {
+    set({
+      sessionLexicalUsage: {},
+      sessionExactFormUsage: {},
+    });
+    void get().updateLexicalSuggestions(get().activeBuffer);
+  },
+  clearPersistedLexicalLearning: () => {
+    set({
+      userLexicalUsage: {},
+      userExactFormUsage: {},
+    });
+    void get().updateLexicalSuggestions(get().activeBuffer);
+  },
+  preloadLexicalAssets: () => {
+    preloadRuntimeLexiconAssets(get().swaraPredictionEnabled);
   },
   setDeletedBuffer: (char: string | null) => {
     set({ deletedBuffer: char });
@@ -868,6 +1057,9 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       lexicalQuery: '',
       isLexicalSuggestionsLoading: false,
       lexicalRequestSerial: 0,
+      lexicalSelectedSuggestionIndex: 0,
+      sessionLexicalUsage: deriveSessionLexicalUsageFromBlocks(snapshot.blocks),
+      sessionExactFormUsage: deriveSessionExactFormUsageFromBlocks(snapshot.blocks),
       recentlyDeletedBlock: null,
     });
   },
@@ -889,6 +1081,9 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       lexicalQuery: '',
       isLexicalSuggestionsLoading: false,
       lexicalRequestSerial: 0,
+      lexicalSelectedSuggestionIndex: 0,
+      sessionLexicalUsage: {},
+      sessionExactFormUsage: {},
       selectedSuggestionIndex: 0,
       ghostText: null,
       composerSelectionStart: 0,

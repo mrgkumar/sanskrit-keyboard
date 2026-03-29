@@ -8,6 +8,7 @@ const isAllowedAsset = (assetPath: string) =>
   assetPath === 'runtime-lexicon-shards-manifest.json' ||
   assetPath === 'runtime-lexicon-summary.json' ||
   assetPath === 'runtime-lexicon.json' ||
+  assetPath === 'swara-lexicon.json' ||
   (assetPath.startsWith('runtime-lexicon-shards/') && assetPath.endsWith('.json'));
 
 export async function GET(

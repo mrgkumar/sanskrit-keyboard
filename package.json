@@ -11,6 +11,7 @@
     "build:canonical-lexicon:sample": "node --experimental-strip-types scripts/buildCanonicalLexicon.ts --limit 2000",
     "build:runtime-lexicon": "node --experimental-strip-types scripts/buildRuntimeLexicon.ts",
     "build:runtime-lexicon:sample": "node --experimental-strip-types scripts/buildRuntimeLexicon.ts --limit 20000",
+    "build:swara-lexicon": "node --experimental-strip-types scripts/buildSwaraLexicon.ts",
     "test:transliteration": "playwright test transliteration.spec.ts",
     "test:transliteration:forward": "playwright test transliteration.spec.ts --grep \"Forward\"",
     "test:transliteration:reverse": "playwright test transliteration.spec.ts --grep \"Reverse\"",

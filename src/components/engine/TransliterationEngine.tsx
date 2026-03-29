@@ -10,6 +10,14 @@ import { clsx } from 'clsx';
 import { SessionSnapshot } from '@/store/types';
 
 const STORAGE_KEY = 'sanskrit-keyboard.sessions.v1';
+const LEXICAL_HISTORY_KEY = 'sanskrit-keyboard.lexical-history.v1';
+
+interface PersistedLexicalLearningSnapshot {
+  version: 1;
+  swaraPredictionEnabled: boolean;
+  userLexicalUsage: Record<string, number>;
+  userExactFormUsage: Record<string, Record<string, number>>;
+}
 
 export const TransliterationEngine: React.FC = () => {
   const {
@@ -19,10 +27,18 @@ export const TransliterationEngine: React.FC = () => {
     sessionId,
     sessionName,
     lastSavedAt,
+    swaraPredictionEnabled,
+    userLexicalUsage,
+    userExactFormUsage,
     getRenderedDocumentText,
+    preloadLexicalAssets,
     setTypography,
     setSessionName,
+    setSwaraPredictionEnabled,
     markSessionSaved,
+    hydratePersistedLexicalLearning,
+    clearSessionLexicalLearning,
+    clearPersistedLexicalLearning,
     exportSessionSnapshot,
     loadSessionSnapshot,
     resetSession,
@@ -32,6 +48,7 @@ export const TransliterationEngine: React.FC = () => {
   const [isDisplayMenuOpen, setIsDisplayMenuOpen] = React.useState(false);
   const [isWorkspacePanelOpen, setIsWorkspacePanelOpen] = React.useState(false);
   const hasLoadedSessions = React.useRef(false);
+  const hasLoadedLexicalLearning = React.useRef(false);
   const hasMeaningfulContent = React.useMemo(
     () => blocks.some((block) => block.source.trim().length > 0 || block.rendered.trim().length > 0),
     [blocks]
@@ -49,6 +66,31 @@ export const TransliterationEngine: React.FC = () => {
     setSavedSessions(nextSessions.slice(0, 25));
     markSessionSaved(snapshot.updatedAt);
   }, [markSessionSaved]);
+
+  React.useEffect(() => {
+    const raw = window.localStorage.getItem(LEXICAL_HISTORY_KEY);
+    if (!raw) {
+      hasLoadedLexicalLearning.current = true;
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as PersistedLexicalLearningSnapshot;
+      hydratePersistedLexicalLearning({
+        userLexicalUsage: parsed.userLexicalUsage,
+        userExactFormUsage: parsed.userExactFormUsage,
+        swaraPredictionEnabled: parsed.swaraPredictionEnabled,
+      });
+    } catch {
+      hydratePersistedLexicalLearning({
+        userLexicalUsage: {},
+        userExactFormUsage: {},
+        swaraPredictionEnabled: true,
+      });
+    } finally {
+      hasLoadedLexicalLearning.current = true;
+    }
+  }, [hydratePersistedLexicalLearning]);
 
   React.useEffect(() => {
     const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -85,6 +127,35 @@ export const TransliterationEngine: React.FC = () => {
 
     return () => window.clearTimeout(timeoutId);
   }, [blocks, editorState, typography, sessionId, sessionName, exportSessionSnapshot, persistSnapshot]);
+
+  React.useEffect(() => {
+    if (!hasLoadedLexicalLearning.current) {
+      return;
+    }
+
+    const payload: PersistedLexicalLearningSnapshot = {
+      version: 1,
+      swaraPredictionEnabled,
+      userLexicalUsage,
+      userExactFormUsage,
+    };
+    window.localStorage.setItem(LEXICAL_HISTORY_KEY, JSON.stringify(payload));
+  }, [swaraPredictionEnabled, userExactFormUsage, userLexicalUsage]);
+
+  React.useEffect(() => {
+    const runPreload = () => preloadLexicalAssets();
+    const idleWindow = window as Window & {
+      requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+    if (idleWindow.requestIdleCallback) {
+      const idleId = idleWindow.requestIdleCallback(runPreload, { timeout: 1200 });
+      return () => idleWindow.cancelIdleCallback?.(idleId);
+    }
+
+    const timeoutId = globalThis.setTimeout(runPreload, 250);
+    return () => globalThis.clearTimeout(timeoutId);
+  }, [preloadLexicalAssets, swaraPredictionEnabled]);
 
   React.useEffect(() => {
     if (copyAllState === 'idle') {
@@ -136,6 +207,23 @@ export const TransliterationEngine: React.FC = () => {
     } catch {
       setCopyAllState('error');
     }
+  };
+
+  const handleClearSessionLearning = () => {
+    if (!window.confirm('Clear autocomplete learning from the current session?')) {
+      return;
+    }
+
+    clearSessionLexicalLearning();
+  };
+
+  const handlePurgeSavedLearning = () => {
+    if (!window.confirm('Purge saved autocomplete learning across sessions?')) {
+      return;
+    }
+
+    clearPersistedLexicalLearning();
+    window.localStorage.removeItem(LEXICAL_HISTORY_KEY);
   };
 
   return (
@@ -239,6 +327,46 @@ export const TransliterationEngine: React.FC = () => {
               {copyAllState === 'copied' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copyAllState === 'copied' ? 'Copied Whole Document' : copyAllState === 'error' ? 'Copy Failed' : 'Copy Whole Document'}
             </button>
+          </section>
+
+          <section className="space-y-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Autocomplete</p>
+              <p className="mt-1 text-xs text-slate-500">Word prediction can prefer learned swara-marked forms from corpus and personal history.</p>
+            </div>
+            <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+              <input
+                checked={swaraPredictionEnabled}
+                data-testid="swara-prediction-toggle"
+                onChange={(e) => setSwaraPredictionEnabled(e.target.checked)}
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <span>
+                <span className="block text-xs font-bold uppercase text-slate-700">Show Learned Swara Forms</span>
+                <span className="mt-1 block text-xs text-slate-500">Enabled suggestions can surface accented Vedic forms like <span className="font-mono">bha_draM</span> instead of only plain lexical stems.</span>
+              </span>
+            </label>
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                data-testid="clear-session-learning"
+                onClick={handleClearSessionLearning}
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-100"
+                type="button"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Clear Session Learning
+              </button>
+              <button
+                data-testid="purge-saved-learning"
+                onClick={handlePurgeSavedLearning}
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold uppercase text-rose-700 hover:bg-rose-100"
+                type="button"
+              >
+                <X className="h-4 w-4" />
+                Purge Saved Learning
+              </button>
+            </div>
           </section>
 
           <section className="space-y-3">

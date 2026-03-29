@@ -84,8 +84,12 @@ export const ShortcutHUD: React.FC = () => {
     alternateSuggestions, 
     lexicalSuggestions,
     isLexicalSuggestionsLoading,
+    lexicalSelectedSuggestionIndex,
     selectedSuggestionIndex,
+    swaraPredictionEnabled,
     getActiveChunkGroup,
+    recordSessionLexicalUse,
+    setLexicalSelectedSuggestionIndex,
     updateChunkSource,
     composerSelectionStart,
     composerSelectionEnd,
@@ -115,6 +119,12 @@ export const ShortcutHUD: React.FC = () => {
       currentChunkSource.slice(end);
     const nextCaret = start + itrans.length;
     updateChunkSource(newSource, nextCaret, nextCaret);
+  };
+
+  const handleLexicalInsert = (itrans: string, index: number) => {
+    setLexicalSelectedSuggestionIndex(index);
+    handleInsert(itrans, activeBuffer);
+    recordSessionLexicalUse(itrans);
   };
 
   // --- Phonetic Completions Logic ---
@@ -195,23 +205,28 @@ export const ShortcutHUD: React.FC = () => {
                       Word Predictions{isLexicalSuggestionsLoading ? '…' : ''}
                     </p>
                     <p className="mt-1 text-xs text-emerald-900/80">
-                      Complete <span className="font-mono font-semibold">{activeBuffer}</span> with a full lexical form.
+                      Complete <span className="font-mono font-semibold">{activeBuffer}</span> with a full lexical form{swaraPredictionEnabled ? ' or a learned swara-marked variant' : ''}.
                     </p>
                   </div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">
                     <kbd className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px]">Tab</kbd>
-                    Top suggestion
+                    Cycle
+                    <kbd className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px]">Enter</kbd>
+                    Accept
                   </div>
                 </div>
+                {isLexicalSuggestionsLoading && (
+                  <p className="mt-2 text-xs font-medium text-emerald-700/80">Loading word predictions for this prefix…</p>
+                )}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {lexicalSuggestions.map((entry, index) => (
                     <button
                       key={`lex-${index}`}
                       data-testid={`lexical-suggestion-${index}`}
-                      onClick={() => handleInsert(entry.itrans, activeBuffer)}
+                      onClick={() => handleLexicalInsert(entry.itrans, index)}
                       className={clsx(
                         'min-w-[10rem] rounded-xl border px-3 py-2 text-left transition-all active:scale-[0.99]',
-                        index === 0
+                        index === lexicalSelectedSuggestionIndex
                           ? 'border-emerald-400 bg-emerald-100 shadow-sm hover:bg-emerald-200'
                           : 'border-emerald-200 bg-white hover:border-emerald-300 hover:bg-emerald-50'
                       )}
@@ -224,9 +239,16 @@ export const ShortcutHUD: React.FC = () => {
                             {entry.itrans}
                           </kbd>
                         </div>
-                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">
-                          {entry.count}
-                        </span>
+                        <div className="flex flex-col items-end gap-1">
+                          {index === lexicalSelectedSuggestionIndex && (
+                            <span className="rounded-full bg-emerald-700 px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-white">
+                              Selected
+                            </span>
+                          )}
+                          <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">
+                            {entry.count}
+                          </span>
+                        </div>
                       </div>
                     </button>
                   ))}

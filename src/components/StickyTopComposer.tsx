@@ -13,9 +13,10 @@ import { applyShortcutPeekCorrection } from '@/lib/vedic/correction';
 
 export const StickyTopComposer: React.FC = () => {
   const { 
-    getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setNextBlock, setPrevBlock, setFocusSpan, setViewMode, toggleReferencePanel, addBlocks, deleteBlock, restoreDeletedBlock, dismissDeletedBlock, setDeletedBuffer, setComposerSelection, editorState,
+    getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setNextBlock, setPrevBlock, setFocusSpan, setViewMode, toggleReferencePanel, addBlocks, deleteBlock, restoreDeletedBlock, dismissDeletedBlock, setDeletedBuffer, setComposerSelection, setLexicalSelectedSuggestionIndex, recordSessionLexicalText, recordSessionLexicalUse, editorState,
     activeBuffer, // Get activeBuffer for Backspace logic
     lexicalSuggestions,
+    lexicalSelectedSuggestionIndex,
     deletedBuffer,
     isReferencePanelOpen, // To check if panel is open
     composerSelectionStart,
@@ -77,6 +78,29 @@ export const StickyTopComposer: React.FC = () => {
 
   const shortcutPeekQuery = shortcutPeekState.query;
   const shortcutPeekMappings = shortcutPeekState.mappings;
+  const hasLexicalSuggestions = lexicalSuggestions.length > 0 && activeBuffer.length > 1;
+
+  const acceptLexicalSuggestion = (index: number) => {
+    const suggestion = lexicalSuggestions[index];
+    if (!suggestion) {
+      return false;
+    }
+
+    const replacementLength = activeBuffer.length;
+    const replaceEnd = composerSelectionEnd ?? currentChunkSource.length;
+    const replaceStart = Math.max(0, replaceEnd - replacementLength);
+    const newSource =
+      currentChunkSource.slice(0, replaceStart) +
+      suggestion.itrans +
+      currentChunkSource.slice(replaceEnd);
+    const nextCaret = replaceStart + suggestion.itrans.length;
+    updateChunkSource(newSource, nextCaret, nextCaret);
+    setLexicalSelectedSuggestionIndex(0);
+    recordSessionLexicalUse(suggestion.itrans);
+    setDeletedBuffer(null);
+    setIsShortcutPeekVisible(false);
+    return true;
+  };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const pastedText = e.clipboardData.getData('text');
@@ -105,27 +129,27 @@ export const StickyTopComposer: React.FC = () => {
       const nextCaret = selectionStart + itransText.length;
 
       updateChunkSource(newSource, nextCaret, nextCaret);
+      recordSessionLexicalText(itransText);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     setComposerSelection(e.currentTarget.selectionStart, e.currentTarget.selectionEnd);
 
-    if (!e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'Tab' && lexicalSuggestions.length > 0 && activeBuffer.length > 1) {
+    if (!e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'Tab' && hasLexicalSuggestions) {
       e.preventDefault();
-      const topSuggestion = lexicalSuggestions[0];
-      const replacementLength = activeBuffer.length;
-      const replaceEnd = composerSelectionEnd ?? currentChunkSource.length;
-      const replaceStart = Math.max(0, replaceEnd - replacementLength);
-      const newSource =
-        currentChunkSource.slice(0, replaceStart) +
-        topSuggestion.itrans +
-        currentChunkSource.slice(replaceEnd);
-      const nextCaret = replaceStart + topSuggestion.itrans.length;
-      updateChunkSource(newSource, nextCaret, nextCaret);
-      setDeletedBuffer(null);
-      setIsShortcutPeekVisible(false);
+      const direction = e.shiftKey ? -1 : 1;
+      const nextIndex =
+        (lexicalSelectedSuggestionIndex + direction + lexicalSuggestions.length) % lexicalSuggestions.length;
+      setLexicalSelectedSuggestionIndex(nextIndex);
       return;
+    }
+
+    if (!e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'Enter' && hasLexicalSuggestions) {
+      if (acceptLexicalSuggestion(lexicalSelectedSuggestionIndex)) {
+        e.preventDefault();
+        return;
+      }
     }
 
     if (e.altKey && e.key === 'ArrowDown') {
