@@ -49,11 +49,28 @@ test('Canonical slash separators survive reverse transliteration', () => {
   expect(detransliterate('राउत')).toBe('raa/uta');
 });
 
+test('Canonical slash separators survive reverse transliteration across swara-marked hiatus', () => {
+  expect(detransliterate('वाज॑सातय॒इति॒')).toBe("vaaja'saataya/_iti_");
+  expect(detransliterate('पि॒तृभ्य॑इ॒दं')).toBe("pi_tR^ibhya/'i_daM");
+  expect(detransliterate('अ॒ग्रे॒पु॒व॒इत्य॑ग्रे')).toBe("a_gre_pu_va/_itya'gre");
+});
+
 test('Vocalic r round-trips through dependent vowel forms', () => {
   expect(detransliterate('कृत')).toBe('kR^ita');
   expect(transliterate('kR^ita').unicode).toBe('कृत');
   expect(detransliterate('कॄ')).toBe('kR^I');
   expect(transliterate('kR^I').unicode).toBe('कॄ');
+});
+
+test('Distinct vedic anusvara variants keep separate round-trip aliases', () => {
+  expect(transliterate('MM').unicode).toBe('ॖ');
+  expect(detransliterate('ॖ')).toBe('MM');
+  expect(transliterate('MM~').unicode).toBe('ꣳ');
+  expect(detransliterate('ꣳ')).toBe('MM~');
+  expect(transliterate('_MM~_').unicode).toBe('॒ꣳ॒');
+  expect(detransliterate('॒ꣳ॒')).toBe('_MM~_');
+  expect(transliterate('_M~M_').unicode).toBe('॒ं॒');
+  expect(detransliterate('॒ं॒')).toBe('_M~M_');
 });
 
 test('Forward mapping preserves every direct mapping entry', () => {

@@ -17,6 +17,69 @@ export interface CanonicalMappingRecord {
   forwardStatus: 'exact_pass' | 'fail';
 }
 
+const repairCanonicalHiatusItrans = ({
+  rawItrans,
+  expectedUnicode,
+  normalizeForLexicon,
+}: {
+  rawItrans: string;
+  expectedUnicode: string;
+  normalizeForLexicon: boolean;
+}) => {
+  const candidates = new Set<string>();
+  const queue = [rawItrans];
+  const seen = new Set<string>(queue);
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+
+    const nextVariants = [
+      current.replaceAll('ai', 'a/i'),
+      current.replaceAll('au', 'a/u'),
+      current.replaceAll('_MM~_', ''),
+      current.replaceAll('MM~', ''),
+      current.replaceAll('_M~_', ''),
+      current.replaceAll('M~', ''),
+      current.replaceAll('_M_', ''),
+      current.replaceAll('M', ''),
+    ];
+
+    for (const variant of nextVariants) {
+      if (variant === current || seen.has(variant)) {
+        continue;
+      }
+
+      seen.add(variant);
+      queue.push(variant);
+      candidates.add(variant);
+    }
+  }
+
+  for (const candidate of candidates) {
+    const validationItrans = normalizeForLexicon
+      ? normalizeForCanonicalValidation(candidate)
+      : candidate;
+    const validationUnicode = transliterate(validationItrans).unicode;
+    const comparableForwardUnicode = normalizeForLexicon
+      ? stripDevanagariLexicalMarks(validationUnicode)
+      : validationUnicode;
+
+    if (comparableForwardUnicode !== expectedUnicode) {
+      continue;
+    }
+
+    return {
+      lexicalItrans: normalizeForLexicon
+        ? normalizeForCanonicalLexiconTraining(candidate)
+        : candidate,
+      validationUnicode,
+      forwardStatus: 'exact_pass' as const,
+    };
+  }
+
+  return null;
+};
+
 export const processCanonicalRow = ({
   row,
   config,
@@ -58,17 +121,33 @@ export const processCanonicalRow = ({
   const comparableForwardUnicode = extracted.normalizeForLexicon
     ? stripDevanagariLexicalMarks(validationUnicode)
     : validationUnicode;
-  const forwardStatus: CanonicalMappingRecord['forwardStatus'] =
+  let forwardStatus: CanonicalMappingRecord['forwardStatus'] =
     comparableForwardUnicode === expectedUnicode ? 'exact_pass' : 'fail';
+  let finalLexicalItrans = lexicalItrans;
+  let finalForwardUnicode = validationUnicode;
+
+  if (forwardStatus === 'fail') {
+    const repaired = repairCanonicalHiatusItrans({
+      rawItrans,
+      expectedUnicode,
+      normalizeForLexicon: extracted.normalizeForLexicon,
+    });
+
+    if (repaired) {
+      finalLexicalItrans = repaired.lexicalItrans;
+      finalForwardUnicode = repaired.validationUnicode;
+      forwardStatus = repaired.forwardStatus;
+    }
+  }
 
   return {
     id: extracted.id,
     devanagari: expectedUnicode,
-    itrans: lexicalItrans,
+    itrans: finalLexicalItrans,
     originalRoman: extracted.originalRoman,
     source: extracted.source,
     score: extracted.score,
-    forwardUnicode: validationUnicode,
+    forwardUnicode: finalForwardUnicode,
     forwardStatus,
   };
 };

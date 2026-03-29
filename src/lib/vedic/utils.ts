@@ -16,6 +16,7 @@ export interface TransliterationResult {
 }
 
 const TRANSLITERATION_CACHE = new Map<string, TransliterationResult>();
+const TRANSLITERATION_CACHE_MAX = 50000;
 
 export const transliterate = (itrans: string): TransliterationResult => {
   if (TRANSLITERATION_CACHE.has(itrans)) {
@@ -253,7 +254,11 @@ export const transliterate = (itrans: string): TransliterationResult => {
 
   const result = { unicode, confidences, sourceToTargetMap, targetToSourceMap };
   if (itrans.length > 0 && itrans.length < 50) {
-     TRANSLITERATION_CACHE.set(itrans, result);
+    if (TRANSLITERATION_CACHE.size >= TRANSLITERATION_CACHE_MAX) {
+      TRANSLITERATION_CACHE.clear();
+    }
+
+    TRANSLITERATION_CACHE.set(itrans, result);
   }
   return result;
 };
@@ -318,6 +323,7 @@ const overrides: Record<string, string> = {
   '\u0964': "|",   // Danda
   '\u0965': "||",  // Double Danda
   '\u0956': "MM",  // Vedic Anusvara
+  '\uA8F3': "MM~", // Distinct Vedic anusvara variant used in corpus samples
   '\u1CD6': "''",  // Normalize extended double-svarita style to dirgha-svarita input
 };
 for (const [uni, itrans] of Object.entries(overrides)) {
@@ -326,6 +332,8 @@ for (const [uni, itrans] of Object.entries(overrides)) {
 
 addReverse('\u0903\uF176', ":''", 'special', true);
 addReverse('\u0952\uF156\u0952', '_M~_', 'special', true);
+addReverse('\u0952\uF156\u0902\u0952', '_M~M_', 'special', true);
+addReverse('\u0952\uA8F3\u0952', '_MM~_', 'special', true);
 
 // Convert Map to sorted array for greedy matching
 const REVERSE_MAPPING_TRIE: ReverseMappingEntry[] = Array.from(REVERSE_TRIE_MAP.entries())
@@ -336,6 +344,29 @@ const DEPENDENT_VOWEL_SET = new Set(Object.values(DEPENDENT_VOWELS));
 const INDEPENDENT_VOWEL_UNICODE_SET = new Set(
   VEDIC_MAPPINGS.filter((entry) => entry.category === 'vowel').map((entry) => entry.unicode)
 );
+const HIATUS_IGNORABLE_PATTERN = /[\u0951\u0952\u1CD0-\u1CFF\uA8E0-\uA8FF\uF000-\uF8FF]/u;
+
+const getNextSignificantUnicodeChar = (chars: string[], startIndex: number) => {
+  for (let index = startIndex; index < chars.length; index++) {
+    const value = chars[index];
+    if (!HIATUS_IGNORABLE_PATTERN.test(value)) {
+      return value;
+    }
+  }
+
+  return '';
+};
+
+const getPreviousSignificantUnicodeChar = (chars: string[], startIndex: number) => {
+  for (let index = startIndex; index >= 0; index--) {
+    const value = chars[index];
+    if (!HIATUS_IGNORABLE_PATTERN.test(value)) {
+      return value;
+    }
+  }
+
+  return '';
+};
 
 
 export const detransliterate = (unicode: string): string => {
@@ -389,23 +420,31 @@ export const detransliterate = (unicode: string): string => {
             i += matchLen + 1;
           } else {
             // Consonant + Matra -> output base itrans + matra itrans
+            const nextSignificantUnicodeChar = getNextSignificantUnicodeChar(
+              unicodeChars,
+              nextIdx + Array.from(nextMatch.unicode).length
+            );
             const needsClusterSeparator =
               i > 0 &&
               unicodeChars[i - 1] === '\u094D' &&
               lastExplicitConsonantToken !== null &&
               VEDIC_MAPPINGS.some((entry) => entry.itrans === `${lastExplicitConsonantToken}${match.itrans}`);
+            const needsHiatusSeparator = INDEPENDENT_VOWEL_UNICODE_SET.has(nextSignificantUnicodeChar);
 
             if (needsClusterSeparator) {
               itrans += '/';
             }
 
             itrans += match.itrans + nextMatch.itrans;
+            if (needsHiatusSeparator) {
+              itrans += '/';
+            }
             lastExplicitConsonantToken = null;
             i += matchLen + Array.from(nextMatch.unicode).length;
           }
         } else {
           // Consonant alone -> output base itrans + implicit 'a'
-          const nextUnicodeChar = unicodeChars[nextIdx] ?? '';
+          const nextUnicodeChar = getNextSignificantUnicodeChar(unicodeChars, nextIdx);
           const needsClusterSeparator =
             i > 0 &&
             unicodeChars[i - 1] === '\u094D' &&
@@ -426,9 +465,10 @@ export const detransliterate = (unicode: string): string => {
         }
       } else {
         // Not a bare consonant, output itrans as-is
-        const previousUnicodeChar = unicodeChars[i - 1] ?? '';
+        const previousUnicodeChar = getPreviousSignificantUnicodeChar(unicodeChars, i - 1);
         const needsVowelSeparator =
           match.category === 'vowel' &&
+          !itrans.endsWith('/') &&
           (INDEPENDENT_VOWEL_UNICODE_SET.has(previousUnicodeChar) || DEPENDENT_VOWEL_SET.has(previousUnicodeChar));
 
         if (needsVowelSeparator) {

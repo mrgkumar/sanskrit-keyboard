@@ -80,6 +80,16 @@ const parseArgs = () => {
   return options;
 };
 
+const appendTokens = (target: string[], nextTokens: string[], limit: number | null) => {
+  for (const token of nextTokens) {
+    if (limit !== null && target.length >= limit) {
+      return;
+    }
+
+    target.push(token);
+  }
+};
+
 const main = async () => {
   const options = parseArgs();
   const datasets: CorpusDataset[] =
@@ -99,7 +109,7 @@ const main = async () => {
   for (const dataset of datasets) {
     if (dataset.format === 'devanagari-text') {
       const source = fs.readFileSync(dataset.path, 'utf8');
-      tokens.push(...tokenizeDevanagariText(source));
+      appendTokens(tokens, tokenizeDevanagariText(source), options.limit);
     } else if (dataset.format === 'ndjson-records' && dataset.swara) {
       const rl = readline.createInterface({
         input: fs.createReadStream(dataset.path, { encoding: 'utf8' }),
@@ -119,7 +129,7 @@ const main = async () => {
           const row = JSON.parse(line) as Record<string, unknown>;
           const text = extractSwaraRecordText(dataset, row);
           if (text) {
-            tokens.push(...tokenizeDevanagariText(text));
+            appendTokens(tokens, tokenizeDevanagariText(text), options.limit);
           }
         }
       } finally {

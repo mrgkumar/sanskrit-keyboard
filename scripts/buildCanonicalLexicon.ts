@@ -1,5 +1,4 @@
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import readline from 'node:readline';
 import { Worker } from 'node:worker_threads';
@@ -12,7 +11,10 @@ import {
 import { tokenizeDevanagariText } from '../test-support/corpusText.ts';
 import { getAutocompleteDataRoot } from '../src/lib/server/autocompleteDataRoot.ts';
 import type { CanonicalRecordConfig } from '../test-support/corpusRegistry.ts';
-import type { CanonicalMappingRecord } from './buildCanonicalLexiconShared.ts';
+import {
+  processCanonicalRow,
+  type CanonicalMappingRecord,
+} from './buildCanonicalLexiconShared.ts';
 
 interface ParseErrorRecord {
   type: 'parse_error';
@@ -62,12 +64,11 @@ interface WorkerState {
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const WORKSPACE_ROOT = path.resolve(SCRIPT_DIR, '..', '..');
-const APP_ROOT = path.resolve(SCRIPT_DIR, '..');
 const DEFAULT_INPUT_PATH = path.resolve(WORKSPACE_ROOT, 'data_corpus/san/san_train.json');
 const DEFAULT_OUTPUT_DIR = getAutocompleteDataRoot();
 const DEFAULT_BATCH_SIZE = 2000;
 const DEFAULT_PROGRESS_EVERY = 25000;
-const DEFAULT_WORKER_COUNT = Math.max(1, Math.min(os.availableParallelism() - 1, 8));
+const DEFAULT_WORKER_COUNT = 1;
 const MAX_PENDING_BATCHES = DEFAULT_WORKER_COUNT * 4;
 
 const parseIntegerArg = (value: string | undefined, fallback: number) => {
@@ -153,6 +154,67 @@ const waitForDrain = (stream: fs.WriteStream) =>
     stream.once('drain', resolve);
   });
 
+const processBatchLocally = (message: WorkerInput): WorkerOutput => {
+  const records: CanonicalMappingRecord[] = [];
+  const failedRecords: WorkerOutput['failedRecords'] = [];
+  let processedRows = 0;
+  let exactPasses = 0;
+  let failures = 0;
+  let skippedRows = 0;
+
+  for (const line of message.lines) {
+    if (!line.trim()) {
+      continue;
+    }
+
+    let row: Record<string, unknown>;
+    try {
+      row = JSON.parse(line) as Record<string, unknown>;
+    } catch (error) {
+      skippedRows++;
+      failedRecords.push({
+        type: 'parse_error',
+        line,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      continue;
+    }
+
+    const record = processCanonicalRow({
+      row,
+      config: message.config,
+      rowId: `batch-${message.batchId}-row-${processedRows + skippedRows + 1}`,
+      datasetId: message.datasetId,
+    });
+
+    if (!record) {
+      skippedRows++;
+      continue;
+    }
+
+    records.push(record);
+    processedRows++;
+
+    if (record.forwardStatus === 'exact_pass') {
+      exactPasses++;
+    } else {
+      failures++;
+      failedRecords.push(record);
+    }
+  }
+
+  return {
+    type: 'batch_result',
+    batchId: message.batchId,
+    processedRows,
+    exactPasses,
+    failures,
+    skippedRows,
+    records,
+    failedRecords,
+  };
+};
+
 const main = async () => {
   const startedAt = new Date();
   const options = parseArgs();
@@ -207,6 +269,7 @@ const main = async () => {
   const queue: WorkerInput[] = [];
   const workerStates: WorkerState[] = [];
   const inflight = new Set<number>();
+  const useWorkers = options.workers > 1;
 
   const flushBatchToStreams = async (result: WorkerOutput) => {
     for (const record of result.records) {
@@ -227,6 +290,10 @@ const main = async () => {
   };
 
   const maybeDispatch = () => {
+    if (!useWorkers) {
+      return;
+    }
+
     for (const state of workerStates) {
       if (state.busy || queue.length === 0) {
         continue;
@@ -240,12 +307,35 @@ const main = async () => {
   };
 
   const waitForQueueSpace = async () => {
+    if (!useWorkers) {
+      return;
+    }
+
     while (queue.length + inflight.size >= MAX_PENDING_BATCHES) {
       await new Promise<void>((resolve) => setTimeout(resolve, 5));
     }
   };
 
+  const handleResult = async (result: WorkerOutput) => {
+    processedRows += result.processedRows;
+    exactPasses += result.exactPasses;
+    failures += result.failures;
+    skippedRows += result.skippedRows;
+
+    await flushBatchToStreams(result);
+
+    if (processedRows > 0 && processedRows % options.progressEvery < result.processedRows) {
+      console.log(
+        `[buildCanonicalLexicon] processed=${processedRows} exactPasses=${exactPasses} failures=${failures} skipped=${skippedRows} inflight=${inflight.size} queued=${queue.length}`
+      );
+    }
+  };
+
   for (let index = 0; index < options.workers; index++) {
+    if (!useWorkers) {
+      break;
+    }
+
     const worker = new Worker(workerScriptPath, {
       execArgv: ['--experimental-strip-types'],
     });
@@ -257,21 +347,10 @@ const main = async () => {
       state.busy = false;
       inflight.delete(result.batchId);
 
-      processedRows += result.processedRows;
-      exactPasses += result.exactPasses;
-      failures += result.failures;
-      skippedRows += result.skippedRows;
-
       try {
-        await flushBatchToStreams(result);
+        await handleResult(result);
       } catch (error) {
         mainLoopError = error instanceof Error ? error : new Error(String(error));
-      }
-
-      if (processedRows > 0 && processedRows % options.progressEvery < result.processedRows) {
-        console.log(
-          `[buildCanonicalLexicon] processed=${processedRows} exactPasses=${exactPasses} failures=${failures} skipped=${skippedRows} inflight=${inflight.size} queued=${queue.length}`
-        );
       }
 
       maybeDispatch();
@@ -306,29 +385,41 @@ const main = async () => {
           continue;
         }
 
-        await waitForQueueSpace();
-        queue.push({
+        const job: WorkerInput = {
           type: 'process_batch',
           batchId: nextBatchId++,
           lines: currentBatch,
           datasetId: dataset.id,
           config: dataset.config,
-        });
+        };
         currentBatch = [];
-        maybeDispatch();
+
+        if (useWorkers) {
+          await waitForQueueSpace();
+          queue.push(job);
+          maybeDispatch();
+        } else {
+          await handleResult(processBatchLocally(job));
+        }
       }
 
       if (currentBatch.length > 0) {
-        await waitForQueueSpace();
-        queue.push({
+        const job: WorkerInput = {
           type: 'process_batch',
           batchId: nextBatchId++,
           lines: currentBatch,
           datasetId: dataset.id,
           config: dataset.config,
-        });
+        };
         currentBatch = [];
-        maybeDispatch();
+
+        if (useWorkers) {
+          await waitForQueueSpace();
+          queue.push(job);
+          maybeDispatch();
+        } else {
+          await handleResult(processBatchLocally(job));
+        }
       }
 
       if (options.limit !== null && seenLines >= options.limit) {
@@ -361,32 +452,44 @@ const main = async () => {
           continue;
         }
 
-        await waitForQueueSpace();
-        queue.push({
+        const job: WorkerInput = {
           type: 'process_batch',
           batchId: nextBatchId++,
           lines: currentBatch,
           datasetId: dataset.id,
           config: dataset.config,
-        });
+        };
         currentBatch = [];
-        maybeDispatch();
+
+        if (useWorkers) {
+          await waitForQueueSpace();
+          queue.push(job);
+          maybeDispatch();
+        } else {
+          await handleResult(processBatchLocally(job));
+        }
       }
     } finally {
       rl.close();
     }
 
     if (currentBatch.length > 0) {
-      await waitForQueueSpace();
-      queue.push({
+      const job: WorkerInput = {
         type: 'process_batch',
         batchId: nextBatchId++,
         lines: currentBatch,
         datasetId: dataset.id,
         config: dataset.config,
-      });
+      };
       currentBatch = [];
-      maybeDispatch();
+
+      if (useWorkers) {
+        await waitForQueueSpace();
+        queue.push(job);
+        maybeDispatch();
+      } else {
+        await handleResult(processBatchLocally(job));
+      }
     }
 
     if (options.limit !== null && seenLines >= options.limit) {
@@ -396,7 +499,7 @@ const main = async () => {
 
   allInputDispatched = true;
 
-  while ((queue.length > 0 || inflight.size > 0) && !mainLoopError) {
+  while (useWorkers && (queue.length > 0 || inflight.size > 0) && !mainLoopError) {
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
   }
 

@@ -1,5 +1,5 @@
 export const LEXICAL_LOOKUP_SWARA_PATTERN = /\\?(?:''|['"_^])/g;
-export const CANONICAL_CORPUS_NON_LEXICAL_PATTERN = /_?M~_?/g;
+export const CANONICAL_CORPUS_NON_LEXICAL_PATTERN = /_(?:MM~|M~)_/g;
 export const CANONICAL_VALIDATION_SWARA_PATTERN = /\\?(?:''|['"_])/g;
 const VOCALIC_ALIAS_PATTERNS: Array<[RegExp, string]> = [
   [/R\^I/g, 'RRI'],

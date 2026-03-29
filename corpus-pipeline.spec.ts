@@ -109,6 +109,8 @@ test.describe('corpus pipeline registry', () => {
 
   test('sanitizes corpus tokens by trimming punctuation and rejecting unsupported private-use marks', () => {
     expect(sanitizeDevanagariCorpusToken('।सुप्रजा')).toBe('सुप्रजा');
+    expect(sanitizeDevanagariCorpusToken('ििक्रू॒ऱञ्च॒कार॒')).toBeNull();
+    expect(sanitizeDevanagariCorpusToken('एातां')).toBeNull();
     expect(sanitizeDevanagariCorpusToken('शुक्रपा')).toBeNull();
     expect(sanitizeDevanagariCorpusToken('ग')).toBe('ग');
   });
@@ -118,8 +120,8 @@ test.describe('corpus pipeline registry', () => {
     expect(canonicalizeLexicalItrans('kL^ipta')).toBe('kLLipta');
     expect(normalizeForLexicalLookup('tR^itiiya')).toBe('tRRitiiya');
     expect(normalizeForCanonicalValidation('kL^iptyai')).toBe('kL^iptyai');
-    expect(normalizeForCanonicalLexiconTraining('puNyaM~')).toBe('puNya');
-    expect(normalizeForCanonicalLexiconTraining('naaraashaM~syarchaa.abhiSi~nchati')).toBe(
+    expect(normalizeForCanonicalValidation('puNya_M~_')).toBe('puNya');
+    expect(normalizeForCanonicalLexiconTraining('naaraasha_M~_syarchaa.abhiSi~nchati')).toBe(
       'naaraashasyarchaa.abhiSi~nchati'
     );
   });
@@ -176,10 +178,36 @@ test.describe('corpus pipeline registry', () => {
     });
   });
 
+  test('keeps phonemic M~ in exact-pass rows where the stripped unicode still requires it', () => {
+    const dataset = CORPUS_DATASETS['example-vedic'];
+    expect(dataset.format).toBe('devanagari-text');
+    if (dataset.format !== 'devanagari-text' || !dataset.canonical) {
+      throw new Error('example-vedic must be a canonical text dataset');
+    }
+
+    const record = processCanonicalRow({
+      row: { token: 'वा॒रु॒णांञ्चतु॑ष्कपालान्', source: dataset.id },
+      config: dataset.canonical,
+      rowId: 'example-mtilde-1',
+      datasetId: dataset.id,
+    });
+
+    expect(record).toEqual({
+      id: 'example-mtilde-1',
+      devanagari: 'वारुणांञ्चतुष्कपालान्',
+      itrans: 'vaaruNaaM~nchatuSkapaalaan',
+      originalRoman: '',
+      source: 'example-vedic',
+      score: null,
+      forwardUnicode: 'वारुणांञ्चतुष्कपालान्',
+      forwardStatus: 'exact_pass',
+    });
+  });
+
   test('drops non-lexical M~ markers during canonical corpus training', () => {
-    expect(normalizeForCanonicalValidation('puNyaM~')).toBe('puNya');
-    expect(normalizeForCanonicalLexiconTraining('puNyaM~')).toBe('puNya');
-    expect(normalizeForCanonicalValidation('naaraashaM~syarchaa.abhiSi~nchati')).toBe(
+    expect(normalizeForCanonicalValidation('puNya_M~_')).toBe('puNya');
+    expect(normalizeForCanonicalLexiconTraining('puNya_M~_')).toBe('puNya');
+    expect(normalizeForCanonicalValidation('naaraasha_M~_syarchaa.abhiSi~nchati')).toBe(
       'naaraashasyarchaa.abhiSi~nchati'
     );
   });
