@@ -2,7 +2,7 @@
   "version": 1,
   "prefix": "ek",
   "entries": [
-    {"itrans":"eka","devanagari":"एक","count":3},
+    {"itrans":"eka","devanagari":"एक","count":4},
     {"itrans":"eka:","devanagari":"एकः","count":1},
     {"itrans":"eka:mahattvapuurNa:","devanagari":"एकःमहत्त्वपूर्णः","count":1},
     {"itrans":"eka:sahasra","devanagari":"एकःसहस्र","count":1},

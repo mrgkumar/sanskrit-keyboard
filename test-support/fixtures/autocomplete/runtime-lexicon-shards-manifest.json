@@ -76,8 +76,8 @@
     {
       "prefix": "ab",
       "file": "runtime-lexicon-shards/0061-0062.json",
-      "entryCount": 9061,
-      "bytes": 817999
+      "entryCount": 9062,
+      "bytes": 818095
     },
     {
       "prefix": "Ab",
@@ -124,8 +124,8 @@
     {
       "prefix": "Ad",
       "file": "runtime-lexicon-shards/0041-0064.json",
-      "entryCount": 3832,
-      "bytes": 355313
+      "entryCount": 3833,
+      "bytes": 355442
     },
     {
       "prefix": "AD",
@@ -136,8 +136,8 @@
     {
       "prefix": "ag",
       "file": "runtime-lexicon-shards/0061-0067.json",
-      "entryCount": 4046,
-      "bytes": 370259
+      "entryCount": 4048,
+      "bytes": 370507
     },
     {
       "prefix": "Ag",
@@ -160,8 +160,8 @@
     {
       "prefix": "ai",
       "file": "runtime-lexicon-shards/0061-0069.json",
-      "entryCount": 1894,
-      "bytes": 174428
+      "entryCount": 1895,
+      "bytes": 174610
     },
     {
       "prefix": "aj",
@@ -178,8 +178,8 @@
     {
       "prefix": "ak",
       "file": "runtime-lexicon-shards/0061-006b.json",
-      "entryCount": 4259,
-      "bytes": 391258
+      "entryCount": 4261,
+      "bytes": 391395
     },
     {
       "prefix": "Ak",
@@ -202,8 +202,8 @@
     {
       "prefix": "am",
       "file": "runtime-lexicon-shards/0061-006d.json",
-      "entryCount": 4428,
-      "bytes": 400720
+      "entryCount": 4429,
+      "bytes": 400824
     },
     {
       "prefix": "aM",
@@ -226,8 +226,8 @@
     {
       "prefix": "an",
       "file": "runtime-lexicon-shards/0061-006e.json",
-      "entryCount": 21247,
-      "bytes": 1971913
+      "entryCount": 21250,
+      "bytes": 1972162
     },
     {
       "prefix": "aN",
@@ -238,8 +238,8 @@
     {
       "prefix": "An",
       "file": "runtime-lexicon-shards/0041-006e.json",
-      "entryCount": 2111,
-      "bytes": 196499
+      "entryCount": 2112,
+      "bytes": 196576
     },
     {
       "prefix": "AN",
@@ -256,8 +256,8 @@
     {
       "prefix": "Ap",
       "file": "runtime-lexicon-shards/0041-0070.json",
-      "entryCount": 1615,
-      "bytes": 141349
+      "entryCount": 1616,
+      "bytes": 141417
     },
     {
       "prefix": "ar",
@@ -274,8 +274,8 @@
     {
       "prefix": "as",
       "file": "runtime-lexicon-shards/0061-0073.json",
-      "entryCount": 10712,
-      "bytes": 974689
+      "entryCount": 10715,
+      "bytes": 974959
     },
     {
       "prefix": "aS",
@@ -298,8 +298,8 @@
     {
       "prefix": "at",
       "file": "runtime-lexicon-shards/0061-0074.json",
-      "entryCount": 8189,
-      "bytes": 758655
+      "entryCount": 8190,
+      "bytes": 758719
     },
     {
       "prefix": "aT",
@@ -346,8 +346,8 @@
     {
       "prefix": "Ay",
       "file": "runtime-lexicon-shards/0041-0079.json",
-      "entryCount": 1365,
-      "bytes": 121509
+      "entryCount": 1366,
+      "bytes": 121590
     },
     {
       "prefix": "ba",
@@ -382,8 +382,8 @@
     {
       "prefix": "bh",
       "file": "runtime-lexicon-shards/0062-0068.json",
-      "entryCount": 58394,
-      "bytes": 5558955
+      "entryCount": 58395,
+      "bytes": 5559056
     },
     {
       "prefix": "bi",
@@ -418,8 +418,8 @@
     {
       "prefix": "br",
       "file": "runtime-lexicon-shards/0062-0072.json",
-      "entryCount": 8782,
-      "bytes": 900781
+      "entryCount": 8783,
+      "bytes": 900912
     },
     {
       "prefix": "bR",
@@ -454,20 +454,20 @@
     {
       "prefix": "ch",
       "file": "runtime-lexicon-shards/0063-0068.json",
-      "entryCount": 42736,
-      "bytes": 4031591
+      "entryCount": 42739,
+      "bytes": 4032178
     },
     {
       "prefix": "Ch",
       "file": "runtime-lexicon-shards/0043-0068.json",
-      "entryCount": 3162,
-      "bytes": 292297
+      "entryCount": 3164,
+      "bytes": 292501
     },
     {
       "prefix": "da",
       "file": "runtime-lexicon-shards/0064-0061.json",
-      "entryCount": 25037,
-      "bytes": 2337235
+      "entryCount": 25039,
+      "bytes": 2337383
     },
     {
       "prefix": "Da",
@@ -526,8 +526,8 @@
     {
       "prefix": "di",
       "file": "runtime-lexicon-shards/0064-0069.json",
-      "entryCount": 10468,
-      "bytes": 987118
+      "entryCount": 10469,
+      "bytes": 987227
     },
     {
       "prefix": "Di",
@@ -616,8 +616,8 @@
     {
       "prefix": "du",
       "file": "runtime-lexicon-shards/0064-0075.json",
-      "entryCount": 11895,
-      "bytes": 1118974
+      "entryCount": 11896,
+      "bytes": 1119053
     },
     {
       "prefix": "Du",
@@ -772,14 +772,14 @@
     {
       "prefix": "eS",
       "file": "runtime-lexicon-shards/0065-0053.json",
-      "entryCount": 440,
-      "bytes": 38309
+      "entryCount": 441,
+      "bytes": 38446
     },
     {
       "prefix": "et",
       "file": "runtime-lexicon-shards/0065-0074.json",
-      "entryCount": 3592,
-      "bytes": 340886
+      "entryCount": 3594,
+      "bytes": 341112
     },
     {
       "prefix": "eT",
@@ -790,8 +790,8 @@
     {
       "prefix": "ev",
       "file": "runtime-lexicon-shards/0065-0076.json",
-      "entryCount": 3132,
-      "bytes": 293613
+      "entryCount": 3135,
+      "bytes": 293866
     },
     {
       "prefix": "ey",
@@ -802,8 +802,8 @@
     {
       "prefix": "ga",
       "file": "runtime-lexicon-shards/0067-0061.json",
-      "entryCount": 22751,
-      "bytes": 2106193
+      "entryCount": 22752,
+      "bytes": 2106281
     },
     {
       "prefix": "gb",
@@ -874,8 +874,8 @@
     {
       "prefix": "go",
       "file": "runtime-lexicon-shards/0067-006f.json",
-      "entryCount": 7029,
-      "bytes": 655658
+      "entryCount": 7030,
+      "bytes": 655755
     },
     {
       "prefix": "gp",
@@ -886,8 +886,8 @@
     {
       "prefix": "gr",
       "file": "runtime-lexicon-shards/0067-0072.json",
-      "entryCount": 4529,
-      "bytes": 436357
+      "entryCount": 4530,
+      "bytes": 436446
     },
     {
       "prefix": "gR",
@@ -934,8 +934,8 @@
     {
       "prefix": "ha",
       "file": "runtime-lexicon-shards/0068-0061.json",
-      "entryCount": 16560,
-      "bytes": 1519005
+      "entryCount": 16561,
+      "bytes": 1519064
     },
     {
       "prefix": "hb",
@@ -982,8 +982,8 @@
     {
       "prefix": "hi",
       "file": "runtime-lexicon-shards/0068-0069.json",
-      "entryCount": 4949,
-      "bytes": 463702
+      "entryCount": 4951,
+      "bytes": 463837
     },
     {
       "prefix": "hj",
@@ -1060,8 +1060,8 @@
     {
       "prefix": "hu",
       "file": "runtime-lexicon-shards/0068-0075.json",
-      "entryCount": 865,
-      "bytes": 75203
+      "entryCount": 866,
+      "bytes": 75261
     },
     {
       "prefix": "hv",
@@ -1240,8 +1240,8 @@
     {
       "prefix": "in",
       "file": "runtime-lexicon-shards/0069-006e.json",
-      "entryCount": 2488,
-      "bytes": 242305
+      "entryCount": 2489,
+      "bytes": 242441
     },
     {
       "prefix": "iN",
@@ -1288,8 +1288,8 @@
     {
       "prefix": "iS",
       "file": "runtime-lexicon-shards/0069-0053.json",
-      "entryCount": 1011,
-      "bytes": 92876
+      "entryCount": 1012,
+      "bytes": 92937
     },
     {
       "prefix": "Is",
@@ -1342,8 +1342,8 @@
     {
       "prefix": "iy",
       "file": "runtime-lexicon-shards/0069-0079.json",
-      "entryCount": 329,
-      "bytes": 27275
+      "entryCount": 330,
+      "bytes": 27366
     },
     {
       "prefix": "Iy",
@@ -1498,8 +1498,8 @@
     {
       "prefix": "ka",
       "file": "runtime-lexicon-shards/006b-0061.json",
-      "entryCount": 67965,
-      "bytes": 6468036
+      "entryCount": 67966,
+      "bytes": 6468105
     },
     {
       "prefix": "kb",
@@ -1540,8 +1540,8 @@
     {
       "prefix": "ki",
       "file": "runtime-lexicon-shards/006b-0069.json",
-      "entryCount": 7597,
-      "bytes": 719383
+      "entryCount": 7599,
+      "bytes": 719534
     },
     {
       "prefix": "kj",
@@ -1560,6 +1560,12 @@
       "file": "runtime-lexicon-shards/006b-006c.json",
       "entryCount": 1286,
       "bytes": 121440
+    },
+    {
+      "prefix": "kL",
+      "file": "runtime-lexicon-shards/006b-004c.json",
+      "entryCount": 7,
+      "bytes": 698
     },
     {
       "prefix": "km",
@@ -1582,8 +1588,8 @@
     {
       "prefix": "ko",
       "file": "runtime-lexicon-shards/006b-006f.json",
-      "entryCount": 4395,
-      "bytes": 401470
+      "entryCount": 4396,
+      "bytes": 401533
     },
     {
       "prefix": "kp",
@@ -1600,8 +1606,8 @@
     {
       "prefix": "kR",
       "file": "runtime-lexicon-shards/006b-0052.json",
-      "entryCount": 11977,
-      "bytes": 1164484
+      "entryCount": 11978,
+      "bytes": 1164566
     },
     {
       "prefix": "ks",
@@ -1624,8 +1630,8 @@
     {
       "prefix": "ku",
       "file": "runtime-lexicon-shards/006b-0075.json",
-      "entryCount": 16755,
-      "bytes": 1565398
+      "entryCount": 16756,
+      "bytes": 1565503
     },
     {
       "prefix": "kv",
@@ -1786,8 +1792,8 @@
     {
       "prefix": "ma",
       "file": "runtime-lexicon-shards/006d-0061.json",
-      "entryCount": 69849,
-      "bytes": 6570761
+      "entryCount": 69850,
+      "bytes": 6570919
     },
     {
       "prefix": "mb",
@@ -1942,8 +1948,8 @@
     {
       "prefix": "na",
       "file": "runtime-lexicon-shards/006e-0061.json",
-      "entryCount": 39612,
-      "bytes": 3724171
+      "entryCount": 39615,
+      "bytes": 3724504
     },
     {
       "prefix": "Na",
@@ -2170,8 +2176,8 @@
     {
       "prefix": "oj",
       "file": "runtime-lexicon-shards/006f-006a.json",
-      "entryCount": 187,
-      "bytes": 15824
+      "entryCount": 188,
+      "bytes": 15902
     },
     {
       "prefix": "ok",
@@ -2266,8 +2272,8 @@
     {
       "prefix": "pa",
       "file": "runtime-lexicon-shards/0070-0061.json",
-      "entryCount": 71794,
-      "bytes": 6799901
+      "entryCount": 71798,
+      "bytes": 6800269
     },
     {
       "prefix": "pb",
@@ -2296,8 +2302,8 @@
     {
       "prefix": "pi",
       "file": "runtime-lexicon-shards/0070-0069.json",
-      "entryCount": 7610,
-      "bytes": 706168
+      "entryCount": 7611,
+      "bytes": 706256
     },
     {
       "prefix": "pk",
@@ -2362,8 +2368,8 @@
     {
       "prefix": "pu",
       "file": "runtime-lexicon-shards/0070-0075.json",
-      "entryCount": 28386,
-      "bytes": 2752433
+      "entryCount": 28388,
+      "bytes": 2752622
     },
     {
       "prefix": "pv",
@@ -2536,8 +2542,8 @@
     {
       "prefix": "sa",
       "file": "runtime-lexicon-shards/0073-0061.json",
-      "entryCount": 129682,
-      "bytes": 12458903
+      "entryCount": 129705,
+      "bytes": 12461234
     },
     {
       "prefix": "Sa",
@@ -2596,8 +2602,8 @@
     {
       "prefix": "sh",
       "file": "runtime-lexicon-shards/0073-0068.json",
-      "entryCount": 87237,
-      "bytes": 8420581
+      "entryCount": 87240,
+      "bytes": 8420823
     },
     {
       "prefix": "si",
@@ -2680,8 +2686,8 @@
     {
       "prefix": "sp",
       "file": "runtime-lexicon-shards/0073-0070.json",
-      "entryCount": 3364,
-      "bytes": 319352
+      "entryCount": 3365,
+      "bytes": 319451
     },
     {
       "prefix": "Sp",
@@ -2722,8 +2728,8 @@
     {
       "prefix": "st",
       "file": "runtime-lexicon-shards/0073-0074.json",
-      "entryCount": 11924,
-      "bytes": 1142831
+      "entryCount": 11925,
+      "bytes": 1143050
     },
     {
       "prefix": "sT",
@@ -2740,8 +2746,8 @@
     {
       "prefix": "su",
       "file": "runtime-lexicon-shards/0073-0075.json",
-      "entryCount": 32956,
-      "bytes": 3034252
+      "entryCount": 32958,
+      "bytes": 3034482
     },
     {
       "prefix": "Su",
@@ -2782,8 +2788,8 @@
     {
       "prefix": "ta",
       "file": "runtime-lexicon-shards/0074-0061.json",
-      "entryCount": 59131,
-      "bytes": 5656043
+      "entryCount": 59141,
+      "bytes": 5657033
     },
     {
       "prefix": "Ta",
@@ -2812,8 +2818,8 @@
     {
       "prefix": "te",
       "file": "runtime-lexicon-shards/0074-0065.json",
-      "entryCount": 3796,
-      "bytes": 355875
+      "entryCount": 3797,
+      "bytes": 355957
     },
     {
       "prefix": "Te",
@@ -2902,8 +2908,8 @@
     {
       "prefix": "tr",
       "file": "runtime-lexicon-shards/0074-0072.json",
-      "entryCount": 9881,
-      "bytes": 962501
+      "entryCount": 9882,
+      "bytes": 962576
     },
     {
       "prefix": "tR",
@@ -2950,8 +2956,8 @@
     {
       "prefix": "tv",
       "file": "runtime-lexicon-shards/0074-0076.json",
-      "entryCount": 8211,
-      "bytes": 777382
+      "entryCount": 8212,
+      "bytes": 777487
     },
     {
       "prefix": "Tv",
@@ -3004,8 +3010,8 @@
     {
       "prefix": "ub",
       "file": "runtime-lexicon-shards/0075-0062.json",
-      "entryCount": 845,
-      "bytes": 78158
+      "entryCount": 846,
+      "bytes": 78255
     },
     {
       "prefix": "Ub",
@@ -3160,8 +3166,8 @@
     {
       "prefix": "up",
       "file": "runtime-lexicon-shards/0075-0070.json",
-      "entryCount": 9077,
-      "bytes": 803983
+      "entryCount": 9078,
+      "bytes": 804113
     },
     {
       "prefix": "Up",
@@ -3178,8 +3184,8 @@
     {
       "prefix": "Ur",
       "file": "runtime-lexicon-shards/0055-0072.json",
-      "entryCount": 1368,
-      "bytes": 126454
+      "entryCount": 1369,
+      "bytes": 126542
     },
     {
       "prefix": "us",
@@ -3256,8 +3262,8 @@
     {
       "prefix": "va",
       "file": "runtime-lexicon-shards/0076-0061.json",
-      "entryCount": 56165,
-      "bytes": 5210227
+      "entryCount": 56169,
+      "bytes": 5210556
     },
     {
       "prefix": "vb",
@@ -3280,8 +3286,8 @@
     {
       "prefix": "ve",
       "file": "runtime-lexicon-shards/0076-0065.json",
-      "entryCount": 8083,
-      "bytes": 756682
+      "entryCount": 8084,
+      "bytes": 756768
     },
     {
       "prefix": "vg",
@@ -3298,8 +3304,8 @@
     {
       "prefix": "vi",
       "file": "runtime-lexicon-shards/0076-0069.json",
-      "entryCount": 68514,
-      "bytes": 6508970
+      "entryCount": 68515,
+      "bytes": 6509042
     },
     {
       "prefix": "vj",
@@ -3352,8 +3358,8 @@
     {
       "prefix": "vR",
       "file": "runtime-lexicon-shards/0076-0052.json",
-      "entryCount": 7792,
-      "bytes": 751253
+      "entryCount": 7793,
+      "bytes": 751377
     },
     {
       "prefix": "vs",
@@ -3388,8 +3394,8 @@
     {
       "prefix": "ya",
       "file": "runtime-lexicon-shards/0079-0061.json",
-      "entryCount": 35519,
-      "bytes": 3341506
+      "entryCount": 35530,
+      "bytes": 3342553
     },
     {
       "prefix": "yb",
@@ -3454,8 +3460,8 @@
     {
       "prefix": "yo",
       "file": "runtime-lexicon-shards/0079-006f.json",
-      "entryCount": 6790,
-      "bytes": 636797
+      "entryCount": 6791,
+      "bytes": 636858
     },
     {
       "prefix": "yp",

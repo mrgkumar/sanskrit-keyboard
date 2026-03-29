@@ -2,6 +2,7 @@
   "version": 1,
   "prefix": "ki",
   "entries": [
+    {"itrans":"ki","devanagari":"कि","count":6},
     {"itrans":"ki/AriiM","devanagari":"किआरीं","count":1},
     {"itrans":"ki/u.Nre","devanagari":"किउँरे","count":1},
     {"itrans":"ki~ncha","devanagari":"किञ्च","count":3},
@@ -7106,6 +7107,7 @@
     {"itrans":"kistvaaranagaram","devanagari":"किस्त्वारनगरम्","count":1},
     {"itrans":"kiSTvadrathiitaro","devanagari":"किष्ट्वद्रथीतरो","count":1},
     {"itrans":"kisu","devanagari":"किसु","count":1},
+    {"itrans":"kisvidvana~Nka","devanagari":"किस्विद्वनङ्क","count":1},
     {"itrans":"kiSyate","devanagari":"किष्यते","count":1},
     {"itrans":"kiTa","devanagari":"किट","count":1},
     {"itrans":"kita:ra","devanagari":"कितःर","count":1},

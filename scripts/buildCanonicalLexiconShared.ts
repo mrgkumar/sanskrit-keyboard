@@ -1,5 +1,8 @@
 import { stripDevanagariLexicalMarks } from '../test-support/corpusText.ts';
-import { normalizeForLexicalLookup } from '../src/lib/vedic/lexicalNormalization.ts';
+import {
+  normalizeForCanonicalValidation,
+  normalizeForCanonicalLexiconTraining,
+} from '../src/lib/vedic/lexicalNormalization.ts';
 import { detransliterate, transliterate } from '../src/lib/vedic/utils.ts';
 import { extractCanonicalRow, type CanonicalRecordConfig } from '../test-support/corpusRegistry.ts';
 
@@ -35,7 +38,7 @@ export const processCanonicalRow = ({
       ? extracted.itrans
       : detransliterate(extracted.devanagari);
   const lexicalItrans = extracted.normalizeForLexicon
-    ? normalizeForLexicalLookup(rawItrans)
+    ? normalizeForCanonicalLexiconTraining(rawItrans)
     : rawItrans;
 
   if (!lexicalItrans || (extracted.normalizeForLexicon && !/[A-Za-z]/.test(lexicalItrans))) {
@@ -48,7 +51,10 @@ export const processCanonicalRow = ({
       : config.mode === 'from_itrans' && extracted.devanagari
       ? extracted.devanagari
       : extracted.devanagari;
-  const validationUnicode = transliterate(rawItrans).unicode;
+  const validationItrans = extracted.normalizeForLexicon
+    ? normalizeForCanonicalValidation(rawItrans)
+    : rawItrans;
+  const validationUnicode = transliterate(validationItrans).unicode;
   const comparableForwardUnicode = extracted.normalizeForLexicon
     ? stripDevanagariLexicalMarks(validationUnicode)
     : validationUnicode;

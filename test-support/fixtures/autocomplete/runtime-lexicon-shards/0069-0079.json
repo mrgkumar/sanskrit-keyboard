@@ -2,10 +2,11 @@
   "version": 1,
   "prefix": "iy",
   "entries": [
-    {"itrans":"iya","devanagari":"इय","count":2},
+    {"itrans":"iya","devanagari":"इय","count":3},
     {"itrans":"iya:","devanagari":"इयः","count":1},
     {"itrans":"iya~ncha","devanagari":"इयञ्च","count":1},
     {"itrans":"iya~nchaasti","devanagari":"इयञ्चास्ति","count":1},
+    {"itrans":"iya~NkLLipti:","devanagari":"इयङ्कॢप्तिः","count":2},
     {"itrans":"iyaa","devanagari":"इया","count":1},
     {"itrans":"iyaa.Nlaabha","devanagari":"इयाँलाभ","count":1},
     {"itrans":"iyaachi","devanagari":"इयाचि","count":1},

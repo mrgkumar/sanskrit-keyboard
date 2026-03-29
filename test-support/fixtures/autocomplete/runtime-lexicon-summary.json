@@ -2,26 +2,26 @@
   "inputPath": "/home/ganesh/Documents/Research/sanskrit_keyboard/app/test-support/fixtures/autocomplete/canonical-mapping.ndjson",
   "outputDir": "/home/ganesh/Documents/Research/sanskrit_keyboard/app/test-support/fixtures/autocomplete",
   "tempBucketDir": "/home/ganesh/Documents/Research/sanskrit_keyboard/app/test-support/fixtures/autocomplete/.runtime-lexicon-buckets",
-  "processedRows": 1860974,
-  "entryCount": 1826489,
+  "processedRows": 1861218,
+  "entryCount": 1826624,
   "shardPrefixLength": 2,
-  "startedAt": "2026-03-29T17:05:30.873Z",
-  "finishedAt": "2026-03-29T17:05:48.949Z",
-  "durationMs": 18076,
+  "startedAt": "2026-03-29T17:24:32.013Z",
+  "finishedAt": "2026-03-29T17:24:50.211Z",
+  "durationMs": 18198,
   "singleFile": {
     "file": "runtime-lexicon.json",
-    "bytes": 172096355
+    "bytes": 172109582
   },
   "sharded": {
     "dir": "runtime-lexicon-shards",
     "manifestFile": "runtime-lexicon-shards-manifest.json",
-    "totalBytes": 172129312,
-    "shardCount": 590,
+    "totalBytes": 172142595,
+    "shardCount": 591,
     "largestShard": {
       "prefix": "sa",
       "file": "runtime-lexicon-shards/0073-0061.json",
-      "entryCount": 129682,
-      "bytes": 12458903
+      "entryCount": 129705,
+      "bytes": 12461234
     }
   }
 }

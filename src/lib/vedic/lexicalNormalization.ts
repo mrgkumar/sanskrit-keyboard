@@ -1,4 +1,6 @@
 export const LEXICAL_LOOKUP_SWARA_PATTERN = /\\?(?:''|['"_^])/g;
+export const CANONICAL_CORPUS_NON_LEXICAL_PATTERN = /_?M~_?/g;
+export const CANONICAL_VALIDATION_SWARA_PATTERN = /\\?(?:''|['"_])/g;
 const VOCALIC_ALIAS_PATTERNS: Array<[RegExp, string]> = [
   [/R\^I/g, 'RRI'],
   [/R\^i/g, 'RRi'],
@@ -20,3 +22,12 @@ export const normalizeForLexicalLookup = (value: string) =>
 
 export const hasLexicalSvaraMarkers = (value: string) =>
   normalizeForLexicalLookup(value) !== value;
+
+export const normalizeForCanonicalValidation = (value: string) =>
+  value
+    .replace(CANONICAL_CORPUS_NON_LEXICAL_PATTERN, '')
+    .replace(CANONICAL_VALIDATION_SWARA_PATTERN, '')
+    .trim();
+
+export const normalizeForCanonicalLexiconTraining = (value: string) =>
+  normalizeForLexicalLookup(normalizeForCanonicalValidation(value));

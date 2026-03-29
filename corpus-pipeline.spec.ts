@@ -11,7 +11,12 @@ import {
   stripDevanagariLexicalMarks,
   tokenizeDevanagariText,
 } from './test-support/corpusText';
-import { canonicalizeLexicalItrans, normalizeForLexicalLookup } from './src/lib/vedic/lexicalNormalization';
+import {
+  canonicalizeLexicalItrans,
+  normalizeForCanonicalValidation,
+  normalizeForCanonicalLexiconTraining,
+  normalizeForLexicalLookup,
+} from './src/lib/vedic/lexicalNormalization';
 import { detransliterate, transliterate } from './src/lib/vedic/utils';
 import { processCanonicalRow } from './scripts/buildCanonicalLexiconShared';
 
@@ -112,6 +117,11 @@ test.describe('corpus pipeline registry', () => {
     expect(canonicalizeLexicalItrans('tR^itiiya')).toBe('tRRitiiya');
     expect(canonicalizeLexicalItrans('kL^ipta')).toBe('kLLipta');
     expect(normalizeForLexicalLookup('tR^itiiya')).toBe('tRRitiiya');
+    expect(normalizeForCanonicalValidation('kL^iptyai')).toBe('kL^iptyai');
+    expect(normalizeForCanonicalLexiconTraining('puNyaM~')).toBe('puNya');
+    expect(normalizeForCanonicalLexiconTraining('naaraashaM~syarchaa.abhiSi~nchati')).toBe(
+      'naaraashasyarchaa.abhiSi~nchati'
+    );
   });
 
   test('validates example-vedic rows with raw reverse itrans before lexical normalization', () => {
@@ -161,8 +171,16 @@ test.describe('corpus pipeline registry', () => {
       originalRoman: '',
       source: 'example-vedic',
       score: null,
-      forwardUnicode: 'भ॒द्रं',
+      forwardUnicode: 'भद्रं',
       forwardStatus: 'exact_pass',
     });
+  });
+
+  test('drops non-lexical M~ markers during canonical corpus training', () => {
+    expect(normalizeForCanonicalValidation('puNyaM~')).toBe('puNya');
+    expect(normalizeForCanonicalLexiconTraining('puNyaM~')).toBe('puNya');
+    expect(normalizeForCanonicalValidation('naaraashaM~syarchaa.abhiSi~nchati')).toBe(
+      'naaraashasyarchaa.abhiSi~nchati'
+    );
   });
 });
