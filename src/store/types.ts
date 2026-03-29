@@ -60,3 +60,19 @@ export interface EditorState {
   viewMode: 'focus' | 'read' | 'review';
   ghostAssistEnabled: boolean;
 }
+
+export interface TypographySettings {
+  itransFontSize: number;
+  itransLineHeight: number;
+  renderedFontSize: number;
+  renderedLineHeight: number;
+}
+
+export interface SessionSnapshot {
+  sessionId: string;
+  sessionName: string;
+  blocks: CanonicalBlock[];
+  editorState: EditorState;
+  typography: TypographySettings;
+  updatedAt: string;
+}

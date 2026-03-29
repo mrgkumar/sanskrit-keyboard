@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { useFlowStore } from '@/store/useFlowStore';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
 import { BookOpen } from 'lucide-react';
 import { clsx } from 'clsx';
 import { ShortcutHUD } from '@/components/engine/ShortcutHUD';
@@ -16,8 +16,10 @@ export const StickyTopComposer: React.FC = () => {
     isReferencePanelOpen, // To check if panel is open
     composerSelectionStart,
     composerSelectionEnd,
+    typography,
   } = useFlowStore();
   const composerRef = React.useRef<HTMLTextAreaElement>(null);
+  const [copyState, setCopyState] = React.useState<'idle' | 'copied' | 'error'>('idle');
   const activeBlock = getActiveBlock();
   const activeChunkGroup = getActiveChunkGroup();
   const { focusSpan, viewMode } = editorState;
@@ -101,6 +103,36 @@ export const StickyTopComposer: React.FC = () => {
     }
   }, [currentChunkSource, composerSelectionStart, composerSelectionEnd]);
 
+  React.useEffect(() => {
+    if (copyState === 'idle') {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCopyState('idle');
+    }, 1500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [copyState]);
+
+  const handleCopyRendered = async () => {
+    const textToCopy = viewMode === 'focus'
+      ? activeChunkGroup?.rendered || ''
+      : activeBlock?.rendered || '';
+
+    if (!textToCopy) {
+      setCopyState('error');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setCopyState('copied');
+    } catch {
+      setCopyState('error');
+    }
+  };
+
   return (
     <div className="sticky top-0 z-50 bg-white shadow-lg p-4 border-b border-slate-200">
       <div className="max-w-5xl mx-auto flex flex-col gap-2">
@@ -163,6 +195,7 @@ export const StickyTopComposer: React.FC = () => {
           <button
             onClick={toggleReferencePanel}
             className="px-3 py-1 bg-slate-100 rounded-md hover:bg-slate-200 text-xs font-bold uppercase text-slate-700 flex items-center gap-1"
+            type="button"
           >
             <BookOpen className="w-4 h-4" /> Reference
           </button>
@@ -172,6 +205,10 @@ export const StickyTopComposer: React.FC = () => {
         <textarea
           ref={composerRef}
           className="w-full text-lg font-mono p-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          style={{
+            fontSize: `${typography.itransFontSize}px`,
+            lineHeight: typography.itransLineHeight,
+          }}
           value={activeChunkGroup?.source || ''}
           onChange={(e) => updateChunkSource(e.target.value, e.target.selectionStart, e.target.selectionEnd)}
           onPaste={handlePaste} // Add onPaste listener
@@ -185,8 +222,32 @@ export const StickyTopComposer: React.FC = () => {
         />
 
         {/* Immediate Live Devanagari Confirmation */}
-        <div className="min-h-[2.5rem] flex items-center bg-blue-50 p-2 rounded-md text-2xl font-serif text-blue-800">
-          {activeChunkGroup?.rendered || 'Devanagari preview'}
+        <div className="min-h-[2.5rem] flex items-start justify-between gap-3 bg-blue-50 p-2 rounded-md text-blue-800">
+          <div
+            className="flex-1 font-serif"
+            style={{
+              fontSize: `${typography.renderedFontSize}px`,
+              lineHeight: typography.renderedLineHeight,
+            }}
+          >
+            {activeChunkGroup?.rendered || 'Devanagari preview'}
+          </div>
+          <button
+            onClick={handleCopyRendered}
+            className={clsx(
+              'mt-1 rounded-md border p-2',
+              copyState === 'copied'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : copyState === 'error'
+                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                  : 'bg-white text-slate-700 border-blue-200 hover:bg-blue-100'
+            )}
+            type="button"
+            aria-label="Copy rendered Sanskrit"
+            title={copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : 'Copy Sanskrit'}
+          >
+            {copyState === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+          </button>
         </div>
 
         {/* Shortcut HUD */}

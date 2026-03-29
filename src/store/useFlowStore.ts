@@ -5,6 +5,8 @@ import {
   Segment,
   ChunkGroup,
   EditorState,
+  TypographySettings,
+  SessionSnapshot,
 } from './types';
 import { transliterate } from '@/lib/vedic/utils';
 import { MAPPING_TRIE } from '@/lib/vedic/mapping';
@@ -80,6 +82,24 @@ const MOCK_LONG_BLOCK: CanonicalBlock = {
 };
 
 const INITIAL_BLOCKS = [MOCK_SHORT_BLOCK, MOCK_LONG_BLOCK];
+const createBlankBlock = (): CanonicalBlock => ({
+  id: `block-${Date.now()}`,
+  type: 'short',
+  title: 'Untitled Block',
+  source: '',
+  rendered: '',
+});
+const DEFAULT_TYPOGRAPHY: TypographySettings = {
+  itransFontSize: 18,
+  itransLineHeight: 1.6,
+  renderedFontSize: 32,
+  renderedLineHeight: 1.7,
+};
+const createSessionId = () => `session-${Date.now()}`;
+const createDefaultSessionName = () => {
+  const now = new Date();
+  return `Session ${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+};
 
 
 // --- STORE DEFINITION ---
@@ -101,6 +121,10 @@ export interface SanskritKeyboardState {
   // UI State
   isReferencePanelOpen: boolean;
   deletedBuffer: string | null;
+  typography: TypographySettings;
+  sessionId: string;
+  sessionName: string;
+  lastSavedAt: string | null;
 
   // Actions
   setActiveBlockId: (id: string | null) => void;
@@ -113,6 +137,12 @@ export interface SanskritKeyboardState {
   addBlocks: (itransStrings: string[]) => void;
   setDeletedBuffer: (char: string | null) => void;
   setComposerSelection: (start: number, end: number) => void;
+  setTypography: (patch: Partial<TypographySettings>) => void;
+  setSessionName: (name: string) => void;
+  markSessionSaved: (savedAt?: string) => void;
+  exportSessionSnapshot: () => SessionSnapshot;
+  loadSessionSnapshot: (snapshot: SessionSnapshot) => void;
+  resetSession: () => void;
 
   // Selectors (for convenience)
   getActiveBlock: () => CanonicalBlock | undefined;
@@ -138,6 +168,10 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   composerSelectionEnd: 0,
   isReferencePanelOpen: false, // Initialize here
   deletedBuffer: null, // Initialize here
+  typography: DEFAULT_TYPOGRAPHY,
+  sessionId: createSessionId(),
+  sessionName: createDefaultSessionName(),
+  lastSavedAt: null,
 
   // --- ACTIONS ---
   setActiveBlockId: (id) => {
@@ -438,6 +472,76 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   },
   setComposerSelection: (start: number, end: number) => {
     set({ composerSelectionStart: start, composerSelectionEnd: end });
+  },
+  setTypography: (patch) => {
+    set((state) => ({
+      typography: { ...state.typography, ...patch },
+    }));
+  },
+  setSessionName: (name) => {
+    set({ sessionName: name });
+  },
+  markSessionSaved: (savedAt) => {
+    set({ lastSavedAt: savedAt ?? new Date().toISOString() });
+  },
+  exportSessionSnapshot: () => {
+    const {
+      blocks,
+      editorState,
+      typography,
+      sessionId,
+      sessionName,
+      lastSavedAt,
+    } = get();
+
+    return {
+      sessionId,
+      sessionName: sessionName.trim() || createDefaultSessionName(),
+      blocks,
+      editorState,
+      typography,
+      updatedAt: lastSavedAt ?? new Date().toISOString(),
+    };
+  },
+  loadSessionSnapshot: (snapshot) => {
+    set({
+      blocks: snapshot.blocks,
+      editorState: snapshot.editorState,
+      typography: snapshot.typography,
+      sessionId: snapshot.sessionId,
+      sessionName: snapshot.sessionName,
+      lastSavedAt: snapshot.updatedAt,
+      composerSelectionStart: 0,
+      composerSelectionEnd: 0,
+      deletedBuffer: null,
+      isReferencePanelOpen: false,
+    });
+  },
+  resetSession: () => {
+    const blankBlock = createBlankBlock();
+    set({
+      blocks: [blankBlock],
+      editorState: {
+        activeBlockId: blankBlock.id,
+        activeAnchorSegmentIndex: 0,
+        focusSpan: 'balanced',
+        viewMode: 'focus',
+        ghostAssistEnabled: true,
+      },
+      activeBuffer: '',
+      suggestions: [],
+      alternateSuggestions: [],
+      selectedSuggestionIndex: 0,
+      ghostText: null,
+      composerSelectionStart: 0,
+      composerSelectionEnd: 0,
+      isReferencePanelOpen: false,
+      deletedBuffer: null,
+      typography: DEFAULT_TYPOGRAPHY,
+      sessionId: createSessionId(),
+      sessionName: createDefaultSessionName(),
+      lastSavedAt: null,
+    });
   },
 
 
