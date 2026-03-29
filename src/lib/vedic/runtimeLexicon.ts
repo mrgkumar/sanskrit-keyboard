@@ -1,4 +1,9 @@
 import { transliterate } from '@/lib/vedic/utils';
+import {
+  hasLexicalSvaraMarkers,
+  normalizeForLexicalLookup,
+} from '@/lib/vedic/lexicalNormalization';
+export { hasLexicalSvaraMarkers, normalizeForLexicalLookup } from '@/lib/vedic/lexicalNormalization';
 
 export interface LexicalSuggestion {
   itrans: string;
@@ -57,7 +62,6 @@ const SHARD_PREFIX_LENGTH = 2;
 const MIN_LOOKUP_PREFIX_LENGTH = 2;
 const MAX_INDEXED_PREFIX_LENGTH = 12;
 const MAX_INDEXED_SUGGESTIONS = 8;
-const LEXICAL_LOOKUP_SWARA_PATTERN = /\\?(?:''|['"_^])/g;
 const SESSION_USAGE_WEIGHT = 100;
 const USER_USAGE_WEIGHT = 40;
 const SWARA_CORPUS_WEIGHT = 1;
@@ -161,12 +165,6 @@ const loadShard = async (prefix: string) => {
 
   return shardCache.get(prefix)!;
 };
-
-export const normalizeForLexicalLookup = (prefix: string) =>
-  prefix.replace(LEXICAL_LOOKUP_SWARA_PATTERN, '').trim();
-
-export const hasLexicalSvaraMarkers = (value: string) =>
-  normalizeForLexicalLookup(value) !== value;
 
 export const shouldLookupLexicalSuggestions = (prefix: string) => {
   const normalizedPrefix = normalizeForLexicalLookup(prefix);

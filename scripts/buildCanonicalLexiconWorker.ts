@@ -1,5 +1,7 @@
 import { parentPort } from 'node:worker_threads';
 import { extractCanonicalRow, type CanonicalRecordConfig } from '../test-support/corpusRegistry.ts';
+import { stripDevanagariLexicalMarks } from '../test-support/corpusText.ts';
+import { normalizeForLexicalLookup } from '../src/lib/vedic/lexicalNormalization.ts';
 import { detransliterate, transliterate } from '../src/lib/vedic/utils.ts';
 
 interface WorkerInput {
@@ -77,13 +79,22 @@ parentPort.on('message', (message: WorkerInput) => {
       continue;
     }
 
-    const itrans =
+    const rawItrans =
       message.config.mode === 'from_itrans' && extracted.itrans
         ? extracted.itrans
         : detransliterate(extracted.devanagari);
+    const itrans = extracted.normalizeForLexicon
+      ? normalizeForLexicalLookup(rawItrans)
+      : rawItrans;
+    if (!itrans || (extracted.normalizeForLexicon && !/[A-Za-z]/.test(itrans))) {
+      skippedRows++;
+      continue;
+    }
     const forwardUnicode = transliterate(itrans).unicode;
     const expectedUnicode =
-      message.config.mode === 'from_itrans' && extracted.devanagari
+      extracted.normalizeForLexicon
+        ? stripDevanagariLexicalMarks(extracted.devanagari)
+        : message.config.mode === 'from_itrans' && extracted.devanagari
         ? extracted.devanagari
         : extracted.devanagari || forwardUnicode;
     const forwardStatus: CanonicalMappingRecord['forwardStatus'] =

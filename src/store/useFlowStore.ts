@@ -159,6 +159,8 @@ const DEFAULT_TYPOGRAPHY: TypographySettings = {
   renderedFontSize: 32,
   renderedLineHeight: 1.7,
 };
+const INITIAL_SESSION_ID = 'session-initial';
+const INITIAL_SESSION_NAME = 'Current Session';
 const createSessionId = () => `session-${Date.now()}`;
 const createDefaultSessionName = () => {
   const now = new Date();
@@ -347,8 +349,8 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   isReferencePanelOpen: false, // Initialize here
   deletedBuffer: null, // Initialize here
   typography: DEFAULT_TYPOGRAPHY,
-  sessionId: createSessionId(),
-  sessionName: createDefaultSessionName(),
+  sessionId: INITIAL_SESSION_ID,
+  sessionName: INITIAL_SESSION_NAME,
   lastSavedAt: null,
   recentlyDeletedBlock: null,
 

@@ -7,8 +7,10 @@ import { fileURLToPath } from 'node:url';
 import {
   parseDatasetIds,
   resolveCorpusDatasets,
+  type CorpusDataset,
   type CanonicalRecordConfig,
 } from '../test-support/corpusRegistry.ts';
+import { tokenizeDevanagariText } from '../test-support/corpusText.ts';
 
 interface CanonicalMappingRecord {
   id: string;
@@ -163,10 +165,10 @@ const waitForDrain = (stream: fs.WriteStream) =>
 const main = async () => {
   const startedAt = new Date();
   const options = parseArgs();
-  const datasetConfigs: Array<{ id: string; path: string; config: CanonicalRecordConfig }> =
+  const datasetConfigs: Array<{ id: string; path: string; config: CanonicalRecordConfig; format: CorpusDataset['format'] }> =
     options.datasets.length > 0
       ? resolveCorpusDatasets(options.datasets).map((dataset) => {
-          if (dataset.format !== 'ndjson-records' || !dataset.canonical) {
+          if (!dataset.canonical) {
             throw new Error(`Dataset "${dataset.id}" is not configured for canonical lexicon builds`);
           }
 
@@ -174,12 +176,14 @@ const main = async () => {
             id: dataset.id,
             path: dataset.path,
             config: dataset.canonical,
+            format: dataset.format,
           };
         })
       : [
           {
             id: 'legacy-input',
             path: options.input,
+            format: 'ndjson-records' as const,
             config: {
               mode: 'from_devanagari',
               idField: 'unique_identifier',
@@ -215,6 +219,10 @@ const main = async () => {
 
   const flushBatchToStreams = async (result: WorkerOutput) => {
     for (const record of result.records) {
+      if (record.forwardStatus !== 'exact_pass') {
+        continue;
+      }
+
       if (!canonicalStream.write(`${JSON.stringify(record)}\n`)) {
         await waitForDrain(canonicalStream);
       }
@@ -287,6 +295,58 @@ const main = async () => {
   let seenLines = 0;
 
   for (const dataset of datasetConfigs) {
+    if (dataset.format === 'devanagari-text') {
+      const source = fs.readFileSync(dataset.path, 'utf8');
+      const tokens = tokenizeDevanagariText(source);
+
+      for (const token of tokens) {
+        if (mainLoopError) {
+          throw mainLoopError;
+        }
+
+        if (options.limit !== null && seenLines >= options.limit) {
+          break;
+        }
+
+        seenLines++;
+        currentBatch.push(JSON.stringify({ token, source: dataset.id }));
+
+        if (currentBatch.length < options.batchSize) {
+          continue;
+        }
+
+        await waitForQueueSpace();
+        queue.push({
+          type: 'process_batch',
+          batchId: nextBatchId++,
+          lines: currentBatch,
+          datasetId: dataset.id,
+          config: dataset.config,
+        });
+        currentBatch = [];
+        maybeDispatch();
+      }
+
+      if (currentBatch.length > 0) {
+        await waitForQueueSpace();
+        queue.push({
+          type: 'process_batch',
+          batchId: nextBatchId++,
+          lines: currentBatch,
+          datasetId: dataset.id,
+          config: dataset.config,
+        });
+        currentBatch = [];
+        maybeDispatch();
+      }
+
+      if (options.limit !== null && seenLines >= options.limit) {
+        break;
+      }
+
+      continue;
+    }
+
     const input = fs.createReadStream(dataset.path, { encoding: 'utf8' });
     const rl = readline.createInterface({
       input,

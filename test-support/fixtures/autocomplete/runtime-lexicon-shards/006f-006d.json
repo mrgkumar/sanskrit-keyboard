@@ -2,6 +2,7 @@
   "version": 1,
   "prefix": "om",
   "entries": [
+    {"itrans":"om","devanagari":"ओम्","count":23},
     {"itrans":"oma:kaara","devanagari":"ओमःकार","count":1},
     {"itrans":"oma~Nkaara","devanagari":"ओमङ्कार","count":1},
     {"itrans":"oma~Nkushena","devanagari":"ओमङ्कुशेन","count":1},
@@ -33,6 +34,7 @@
     {"itrans":"omanukramaya","devanagari":"ओमनुक्रमय","count":1},
     {"itrans":"omanvantaM","devanagari":"ओमन्वन्तं","count":1},
     {"itrans":"omanvat","devanagari":"ओमन्वत्","count":1},
+    {"itrans":"omanvatii","devanagari":"ओमन्वती","count":1},
     {"itrans":"omapaala","devanagari":"ओमपाल","count":1},
     {"itrans":"omaprakaasha","devanagari":"ओमप्रकाश","count":1},
     {"itrans":"omaprakaasha:","devanagari":"ओमप्रकाशः","count":1},

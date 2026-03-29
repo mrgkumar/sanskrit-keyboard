@@ -10,6 +10,7 @@ export interface CanonicalRecordConfig {
   romanField?: string;
   sourceField?: string;
   scoreField?: string;
+  normalizeForLexicon?: boolean;
 }
 
 export interface SwaraRecordConfig {
@@ -30,6 +31,7 @@ export interface DevanagariTextDataset {
   label: string;
   format: 'devanagari-text';
   path: string;
+  canonical?: CanonicalRecordConfig;
   swara: {
     enabled: true;
   };
@@ -50,6 +52,7 @@ export interface CanonicalExtraction {
   originalRoman: string;
   source: string | null;
   score: number | null;
+  normalizeForLexicon: boolean;
 }
 
 const APP_ROOT = process.cwd();
@@ -103,6 +106,12 @@ export const CORPUS_DATASETS: Record<string, CorpusDataset> = {
     label: 'Archived Vedic example corpus',
     format: 'devanagari-text',
     path: path.resolve(WORKSPACE_ROOT, 'archive/example.txt'),
+    canonical: {
+      mode: 'from_devanagari',
+      devanagariField: 'token',
+      sourceField: 'source',
+      normalizeForLexicon: true,
+    },
     swara: {
       enabled: true,
     },
@@ -112,12 +121,12 @@ export const CORPUS_DATASETS: Record<string, CorpusDataset> = {
 export const CORPUS_PRESETS: Record<string, CorpusPreset> = {
   'sanskrit-default': {
     id: 'sanskrit-default',
-    canonicalDatasets: ['san-train'],
+    canonicalDatasets: ['san-train', 'example-vedic'],
     swaraDatasets: ['example-vedic'],
   },
   'sanskrit-all-splits': {
     id: 'sanskrit-all-splits',
-    canonicalDatasets: ['san-train', 'san-valid', 'san-test'],
+    canonicalDatasets: ['san-train', 'san-valid', 'san-test', 'example-vedic'],
     swaraDatasets: ['example-vedic'],
   },
 };
@@ -184,6 +193,7 @@ export const extractCanonicalRow = (
       originalRoman: roman,
       source: typeof rawSource === 'string' ? rawSource : datasetId ?? null,
       score: typeof rawScore === 'number' ? rawScore : null,
+      normalizeForLexicon: Boolean(config.normalizeForLexicon),
     };
   }
 
@@ -200,6 +210,7 @@ export const extractCanonicalRow = (
     originalRoman: roman,
     source: typeof rawSource === 'string' ? rawSource : datasetId ?? null,
     score: typeof rawScore === 'number' ? rawScore : null,
+    normalizeForLexicon: Boolean(config.normalizeForLexicon),
   };
 };
 

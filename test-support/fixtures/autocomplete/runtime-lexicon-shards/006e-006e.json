@@ -2,6 +2,7 @@
   "version": 1,
   "prefix": "nn",
   "entries": [
+    {"itrans":"nna","devanagari":"न्न","count":1},
     {"itrans":"nna:","devanagari":"न्नः","count":1},
     {"itrans":"nnaa~ncha","devanagari":"न्नाञ्च","count":1},
     {"itrans":"nnaabhaati","devanagari":"न्नाभाति","count":1},
@@ -207,6 +208,8 @@
     {"itrans":"nniraata~NkaM","devanagari":"न्निरातङ्कं","count":1},
     {"itrans":"nnirarthako.ayaM","devanagari":"न्निरर्थकोऽयं","count":1},
     {"itrans":"nnirasyedahantaaM","devanagari":"न्निरस्येदहन्तां","count":1},
+    {"itrans":"nniravapanmahaavriihiiNaam","devanagari":"न्निरवपन्महाव्रीहीणाम्","count":1},
+    {"itrans":"nniravapataam","devanagari":"न्निरवपताम्","count":1},
     {"itrans":"nnirdvaito","devanagari":"न्निर्द्वैतो","count":1},
     {"itrans":"nnirgantuM","devanagari":"न्निर्गन्तुं","count":1},
     {"itrans":"nnirgata","devanagari":"न्निर्गत","count":1},

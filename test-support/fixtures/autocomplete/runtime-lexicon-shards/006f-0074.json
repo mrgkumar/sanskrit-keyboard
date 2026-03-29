@@ -2,6 +2,7 @@
   "version": 1,
   "prefix": "ot",
   "entries": [
+    {"itrans":"ota","devanagari":"ओत","count":1},
     {"itrans":"ota:","devanagari":"ओतः","count":1},
     {"itrans":"ota:protaa:","devanagari":"ओतःप्रोताः","count":1},
     {"itrans":"otaa","devanagari":"ओता","count":1},
@@ -67,6 +68,7 @@
     {"itrans":"otsavyai","devanagari":"ओत्सव्यै","count":1},
     {"itrans":"ottaa","devanagari":"ओत्ता","count":1},
     {"itrans":"ottaM","devanagari":"ओत्तं","count":1},
+    {"itrans":"ottaraadadharaagaa","devanagari":"ओत्तरादधरागा","count":2},
     {"itrans":"otto","devanagari":"ओत्तो","count":1},
     {"itrans":"ottvaabhaavo","devanagari":"ओत्त्वाभावो","count":1},
     {"itrans":"ottvaM","devanagari":"ओत्त्वं","count":1},

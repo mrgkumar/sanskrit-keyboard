@@ -3,6 +3,7 @@
   "prefix": "ir",
   "entries": [
     {"itrans":"ir","devanagari":"इर्","count":1},
+    {"itrans":"iraa","devanagari":"इरा","count":1},
     {"itrans":"iraachara","devanagari":"इराचर","count":1},
     {"itrans":"iraadeshaatpraageva","devanagari":"इरादेशात्प्रागेव","count":1},
     {"itrans":"iraadhaamne","devanagari":"इराधाम्ने","count":1},
@@ -54,12 +55,13 @@
     {"itrans":"iraavatyaaM","devanagari":"इरावत्यां","count":1},
     {"itrans":"iraavatyai","devanagari":"इरावत्यै","count":1},
     {"itrans":"iraavatyormadhye","devanagari":"इरावत्योर्मध्ये","count":1},
+    {"itrans":"iraayai","devanagari":"इरायै","count":1},
     {"itrans":"iradarshane","devanagari":"इरदर्शने","count":1},
     {"itrans":"iradh","devanagari":"इरध्","count":1},
     {"itrans":"iradhanta","devanagari":"इरधन्त","count":1},
     {"itrans":"iradhyai","devanagari":"इरध्यै","count":1},
     {"itrans":"iraivanike","devanagari":"इरैवनिके","count":1},
-    {"itrans":"irajyantaa","devanagari":"इरज्यन्ता","count":1},
+    {"itrans":"irajyantaa","devanagari":"इरज्यन्ता","count":2},
     {"itrans":"irajyasi","devanagari":"इरज्यसि","count":1},
     {"itrans":"irammada","devanagari":"इरम्मद","count":1},
     {"itrans":"irammada:","devanagari":"इरम्मदः","count":1},
@@ -117,7 +119,7 @@
     {"itrans":"iriNaaMkuradhaanyadaaya","devanagari":"इरिणांकुरधान्यदाय","count":1},
     {"itrans":"iriNaM","devanagari":"इरिणं","count":1},
     {"itrans":"iriNanaamakaM","devanagari":"इरिणनामकं","count":1},
-    {"itrans":"iriNe","devanagari":"इरिणे","count":1},
+    {"itrans":"iriNe","devanagari":"इरिणे","count":4},
     {"itrans":"iriNya:","devanagari":"इरिण्यः","count":1},
     {"itrans":"iriNyaa","devanagari":"इरिण्या","count":1},
     {"itrans":"iriNyaaya","devanagari":"इरिण्याय","count":1},
@@ -173,7 +175,9 @@
     {"itrans":"iryaaya","devanagari":"इर्याय","count":1},
     {"itrans":"iryagyonashcha","devanagari":"इर्यग्योनश्च","count":1},
     {"itrans":"iryagyular","devanagari":"इर्यग्युलर्","count":1},
+    {"itrans":"iryataayaa","devanagari":"इर्यताया","count":1},
     {"itrans":"iryeva","devanagari":"इर्येव","count":1},
+    {"itrans":"iryo","devanagari":"इर्यो","count":1},
     {"itrans":"iryo.ayaM","devanagari":"इर्योऽयं","count":1}
   ]
 }

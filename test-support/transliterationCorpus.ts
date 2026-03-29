@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { tokenizeDevanagariText } from './corpusText';
 
 export interface CorpusSample {
   token: string;
@@ -7,16 +8,8 @@ export interface CorpusSample {
   index: number;
 }
 
-const TOKEN_REGEX =
-  /[\p{Script_Extensions=Devanagari}\u1CD0-\u1CFF\uA8E0-\uA8FF\uF000-\uF8FF]+/gu;
-
 const SIMPLE_MARKS_REGEX =
   /[\u0951\u0952\u0956\u0964\u0965\u1CD0-\u1CFF\uA8E0-\uA8FF\uF000-\uF8FF]/u;
-
-const tokenizeCorpus = (text: string): string[] =>
-  [...text.matchAll(TOKEN_REGEX)]
-    .map((match) => match[0].trim())
-    .filter(Boolean);
 
 const isSimpleToken = (token: string): boolean => {
   if (token.length < 2 || token.length > 14) {
@@ -60,7 +53,7 @@ const evenlySample = (tokens: string[], targetCount: number): string[] => {
 export const loadCorpusSamples = (): CorpusSample[] => {
   const corpusPath = path.resolve(__dirname, '../../archive/example.txt');
   const text = fs.readFileSync(corpusPath, 'utf8');
-  const tokens = tokenizeCorpus(text);
+  const tokens = tokenizeDevanagariText(text);
 
   const simplePool = tokens.filter(isSimpleToken);
   const hardPool = tokens.filter((token) => !isSimpleToken(token));

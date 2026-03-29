@@ -3681,6 +3681,21 @@
     {"itrans":"dR^itvaa","devanagari":"दृत्वा","count":1},
     {"itrans":"dR^ityaa","devanagari":"दृत्या","count":1},
     {"itrans":"dR^ityaadibhya:","devanagari":"दृत्यादिभ्यः","count":1},
-    {"itrans":"dR^ityaM","devanagari":"दृत्यं","count":1}
+    {"itrans":"dR^ityaM","devanagari":"दृत्यं","count":1},
+    {"itrans":"dRRi","devanagari":"दृ","count":15},
+    {"itrans":"dRRiDha:","devanagari":"दृढः","count":1},
+    {"itrans":"dRRiDhaa","devanagari":"दृढा","count":1},
+    {"itrans":"dRRiDhaanyaughnaadushamaana","devanagari":"दृढान्यौघ्नादुशमान","count":1},
+    {"itrans":"dRRiDhamuurvam","devanagari":"दृढमूर्वम्","count":1},
+    {"itrans":"dRRiDho","devanagari":"दृढो","count":1},
+    {"itrans":"dRRiDho.ashithilassyaamiti","devanagari":"दृढोऽशिथिलस्स्यामिति","count":1},
+    {"itrans":"dRRiDho.ashithilo.abhavat","devanagari":"दृढोऽशिथिलोऽभवत्","count":1},
+    {"itrans":"dRRiSada:","devanagari":"दृषदः","count":1},
+    {"itrans":"dRRiSadi","devanagari":"दृषदि","count":1},
+    {"itrans":"dRRishaye","devanagari":"दृशये","count":1},
+    {"itrans":"dRRishe","devanagari":"दृशे","count":1},
+    {"itrans":"dRRishyate","devanagari":"दृश्यते","count":2},
+    {"itrans":"dRRiSTaa~NghRRitapadiim","devanagari":"दृष्टाङ्घृतपदीम्","count":1},
+    {"itrans":"dRRiSTvaa","devanagari":"दृष्ट्वा","count":2}
   ]
 }

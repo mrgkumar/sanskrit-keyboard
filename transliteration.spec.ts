@@ -49,6 +49,13 @@ test('Canonical slash separators survive reverse transliteration', () => {
   expect(detransliterate('राउत')).toBe('raa/uta');
 });
 
+test('Vocalic r round-trips through dependent vowel forms', () => {
+  expect(detransliterate('कृत')).toBe('kR^ita');
+  expect(transliterate('kR^ita').unicode).toBe('कृत');
+  expect(detransliterate('कॄ')).toBe('kR^I');
+  expect(transliterate('kR^I').unicode).toBe('कॄ');
+});
+
 test('Forward mapping preserves every direct mapping entry', () => {
   const failures: string[] = [];
   const seen = new Set<string>();

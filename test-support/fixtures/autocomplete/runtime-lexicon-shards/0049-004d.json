@@ -2,6 +2,7 @@
   "version": 1,
   "prefix": "IM",
   "entries": [
+    {"itrans":"IM","devanagari":"ईं","count":2},
     {"itrans":"IMnama:","devanagari":"ईंनमः","count":1},
     {"itrans":"IMnamo","devanagari":"ईंनमो","count":1},
     {"itrans":"IMshaanaatmane","devanagari":"ईंशानात्मने","count":1},

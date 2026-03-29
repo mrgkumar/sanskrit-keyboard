@@ -2,7 +2,11 @@
   "version": 1,
   "prefix": "Su",
   "entries": [
+    {"itrans":"Su","devanagari":"षु","count":1},
+    {"itrans":"Sukassyaaditi","devanagari":"षुकस्स्यादिति","count":1},
+    {"itrans":"Suko","devanagari":"षुको","count":1},
     {"itrans":"SuraasuranamaskR^itaayai","devanagari":"षुरासुरनमस्कृतायै","count":1},
-    {"itrans":"SuSTi:","devanagari":"षुष्टिः","count":1}
+    {"itrans":"SuSTi:","devanagari":"षुष्टिः","count":1},
+    {"itrans":"Suu","devanagari":"षू","count":1}
   ]
 }

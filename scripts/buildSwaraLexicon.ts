@@ -9,6 +9,11 @@ import {
   resolveCorpusDatasets,
   type CorpusDataset,
 } from '../test-support/corpusRegistry.ts';
+import { tokenizeDevanagariText } from '../test-support/corpusText.ts';
+import {
+  hasLexicalSvaraMarkers,
+  normalizeForLexicalLookup,
+} from '../src/lib/vedic/lexicalNormalization.ts';
 import { detransliterate } from '../src/lib/vedic/utils.ts';
 
 interface SwaraVariantRecord {
@@ -30,18 +35,8 @@ const APP_ROOT = path.resolve(SCRIPT_DIR, '..');
 const DEFAULT_INPUT_PATH = path.resolve(APP_ROOT, '../archive/example.txt');
 const DEFAULT_OUTPUT_PATH = path.resolve(APP_ROOT, 'test-support/fixtures/autocomplete/swara-lexicon.json');
 
-const TOKEN_REGEX =
-  /[\p{Script_Extensions=Devanagari}\u1CD0-\u1CFF\uA8E0-\uA8FF\uF000-\uF8FF]+/gu;
-const LEXICAL_LOOKUP_SWARA_PATTERN = /\\?(?:''|['"_^])/g;
-
-const normalizeForLexicalLookup = (value: string) =>
-  value.replace(LEXICAL_LOOKUP_SWARA_PATTERN, '').trim();
-
 const shouldLookupLexicalSuggestions = (value: string) =>
   value.length >= 2 && /[A-Za-z]/.test(value);
-
-const hasLexicalSvaraMarkers = (value: string) =>
-  normalizeForLexicalLookup(value) !== value;
 
 const parseArgs = () => {
   const args = process.argv.slice(2);
@@ -84,11 +79,6 @@ const parseArgs = () => {
   return options;
 };
 
-const tokenize = (text: string) =>
-  [...text.matchAll(TOKEN_REGEX)]
-    .map((match) => match[0].trim())
-    .filter(Boolean);
-
 const main = async () => {
   const options = parseArgs();
   const datasets: CorpusDataset[] =
@@ -108,7 +98,7 @@ const main = async () => {
   for (const dataset of datasets) {
     if (dataset.format === 'devanagari-text') {
       const source = fs.readFileSync(dataset.path, 'utf8');
-      tokens.push(...tokenize(source));
+      tokens.push(...tokenizeDevanagariText(source));
     } else if (dataset.format === 'ndjson-records' && dataset.swara) {
       const rl = readline.createInterface({
         input: fs.createReadStream(dataset.path, { encoding: 'utf8' }),
@@ -128,7 +118,7 @@ const main = async () => {
           const row = JSON.parse(line) as Record<string, unknown>;
           const text = extractSwaraRecordText(dataset, row);
           if (text) {
-            tokens.push(...tokenize(text));
+            tokens.push(...tokenizeDevanagariText(text));
           }
         }
       } finally {
