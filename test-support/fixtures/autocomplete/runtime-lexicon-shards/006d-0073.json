@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "prefix": "ms",
+  "entries": [
+    {"itrans":"msaa","devanagari":"म्सा","count":1},
+    {"itrans":"msau","devanagari":"म्सौ","count":1},
+    {"itrans":"msvarNasteyabhujaM","devanagari":"म्स्वर्णस्तेयभुजं","count":1}
+  ]
+}

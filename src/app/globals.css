@@ -1,26 +1,53 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Chandas';
+  src: url('/fonts/chandas.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Siddhanta';
+  src: url('/fonts/siddhanta.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Sampradaya';
+  src: url('/fonts/sampradaya.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
+  --font-serif: "Chandas", "Siddhanta", "Sampradaya", "Tiro Devanagari Sanskrit", "Georgia", serif;
+  --font-display: "Playfair Display", "serif";
+  --font-mono: "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", monospace;
+
+  @keyframes caret {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  --animate-caret: caret 1s step-end infinite;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--background);
+}
+
+kbd {
+  box-shadow: 0 1px 0 rgba(0,0,0,0.1);
 }

@@ -30,12 +30,6 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
     }
   };
 
-  const escapeCssSelector = (str: string) => {
-    // Escapes characters with special meaning in CSS selectors.
-    // The characters to escape are: ", ', \, and /
-    return str.replace(/["'\\/]/g, '\\$&');
-  };
-
   const fuzzySearch = (term: string, text: string) => {
     const termChars = term.replace(/\s+/g, '').toLowerCase();
     const textChars = text.toLowerCase();
@@ -78,8 +72,8 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
     }
 
     if (targetItrans && containerRef.current) {
-      const safeSelector = escapeCssSelector(targetItrans);
-      const element = containerRef.current.querySelector(`[data-itrans="${safeSelector}"]`);
+      const element = Array.from(containerRef.current.querySelectorAll<HTMLElement>('[data-itrans]'))
+        .find((node) => node.dataset.itrans === targetItrans);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }

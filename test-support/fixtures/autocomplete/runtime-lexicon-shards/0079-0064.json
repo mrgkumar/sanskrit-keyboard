@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "prefix": "yd",
+  "entries": [
+    {"itrans":"ydaa","devanagari":"य्दा","count":1},
+    {"itrans":"ydavaa","devanagari":"य्दवा","count":1},
+    {"itrans":"yddhaM","devanagari":"य्द्धं","count":1},
+    {"itrans":"ydha","devanagari":"य्ध","count":1},
+    {"itrans":"ydi","devanagari":"य्दि","count":1}
+  ]
+}

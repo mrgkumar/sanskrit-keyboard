@@ -5,10 +5,10 @@ import React from 'react';
 import { useFlowStore } from '@/store/useFlowStore';
 import { CanonicalBlock } from '@/store/types';
 import { clsx } from 'clsx';
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, Trash2 } from 'lucide-react';
 
 export const MainDocumentArea: React.FC = () => {
-  const { blocks, editorState, setActiveBlockId, activateBlockChunk, getActiveChunkGroup, typography } = useFlowStore();
+  const { blocks, editorState, setActiveBlockId, activateBlockChunk, deleteBlock, getActiveChunkGroup, typography } = useFlowStore();
   const { activeBlockId, viewMode } = editorState;
   const activeChunkGroup = getActiveChunkGroup(); // Get active chunk group
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
@@ -45,36 +45,53 @@ export const MainDocumentArea: React.FC = () => {
   const renderBlock = (block: CanonicalBlock) => {
     const isActive = block.id === activeBlockId;
     const isLongBlock = block.type === 'long';
+    const showModeSourceCard = viewMode === 'focus' ? isActive : viewMode === 'review';
 
     // Base styling for all blocks
     const blockClassName = clsx(
       "p-4 rounded-lg cursor-pointer transition-all",
-      isActive ? "bg-blue-50 border-2 border-blue-300 shadow-md" : "hover:bg-slate-50 border border-transparent"
+      isActive ? "bg-blue-50 border-2 border-blue-300 shadow-md" : "hover:bg-slate-50 border border-transparent",
+      viewMode === 'focus' && !isActive && 'opacity-80',
+      viewMode === 'read' && 'bg-white border border-slate-200 shadow-sm'
     );
 
     const commonBlockContent = (
       <>
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-sm font-bold text-slate-400">{block.title || `Block ${block.id}`}</h3>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              void handleCopyBlock(block.id, block.rendered);
-            }}
-            className={clsx(
-              'rounded-md border p-2',
-              copiedId === block.id
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : copiedId === `error:${block.id}`
-                  ? 'bg-rose-50 text-rose-700 border-rose-200'
-                  : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
-            )}
-            type="button"
-            aria-label={`Copy ${block.title || block.id}`}
-            title={copiedId === block.id ? 'Copied' : copiedId === `error:${block.id}` ? 'Copy failed' : 'Copy block'}
-          >
-            {copiedId === block.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteBlock(block.id);
+              }}
+              className="rounded-md border border-rose-200 bg-white p-2 text-rose-700 hover:bg-rose-100"
+              type="button"
+              aria-label={`Delete ${block.title || block.id}`}
+              title="Delete block"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                void handleCopyBlock(block.id, block.rendered);
+              }}
+              className={clsx(
+                'rounded-md border p-2',
+                copiedId === block.id
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : copiedId === `error:${block.id}`
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                    : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'
+              )}
+              type="button"
+              aria-label={`Copy ${block.title || block.id}`}
+              title={copiedId === block.id ? 'Copied' : copiedId === `error:${block.id}` ? 'Copy failed' : 'Copy block'}
+            >
+              {copiedId === block.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
         <p
           className="font-serif text-slate-800 mt-2"
@@ -85,13 +102,29 @@ export const MainDocumentArea: React.FC = () => {
         >
           {block.rendered}
         </p>
+        {showModeSourceCard && (
+          <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+              {viewMode === 'focus' ? 'Focused Source' : 'ITRANS Source'}
+            </p>
+            <p
+              className="mt-2 font-mono text-slate-700"
+              style={{
+                fontSize: `${Math.max(12, typography.itransFontSize - (viewMode === 'focus' ? 0 : 2))}px`,
+                lineHeight: typography.itransLineHeight,
+              }}
+            >
+              {block.source || 'No source text in this block yet.'}
+            </p>
+          </div>
+        )}
       </>
     );
 
     // --- Read Mode ---
     if (viewMode === 'read') {
       return (
-        <div key={block.id} className={blockClassName} onClick={() => setActiveBlockId(block.id)}>
+        <div key={block.id} className={blockClassName} onClick={() => setActiveBlockId(block.id)} data-testid="document-read-mode">
           {commonBlockContent}
         </div>
       );
@@ -106,6 +139,7 @@ export const MainDocumentArea: React.FC = () => {
           key={block.id}
           className={clsx(blockClassName, isLongAndActiveInFocus && "bg-blue-100 border-blue-500")}
           onClick={() => activateBlock(block.id)}
+          data-testid="document-focus-mode"
         >
           {commonBlockContent}
 
@@ -159,6 +193,7 @@ export const MainDocumentArea: React.FC = () => {
           key={block.id}
           className={clsx(blockClassName, isLongAndActiveInReview && "bg-blue-100 border-blue-500")}
           onClick={() => activateBlock(block.id)}
+          data-testid="document-review-mode"
         >
           {commonBlockContent}
 

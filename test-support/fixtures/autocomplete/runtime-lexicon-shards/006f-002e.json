@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "prefix": "o.",
+  "entries": [
+    {"itrans":"o.adhishabda:","devanagari":"ओऽधिशब्दः","count":1},
+    {"itrans":"o.agniriti","devanagari":"ओऽग्निरिति","count":1},
+    {"itrans":"o.api","devanagari":"ओऽपि","count":1},
+    {"itrans":"o.arkirjanayatyashiilaM","devanagari":"ओऽर्किर्जनयत्यशीलं","count":1},
+    {"itrans":"o.artha:","devanagari":"ओऽर्थः","count":1},
+    {"itrans":"o.artii","devanagari":"ओऽर्ती","count":1},
+    {"itrans":"o.asi","devanagari":"ओऽसि","count":1},
+    {"itrans":"o.atha","devanagari":"ओऽथ","count":1}
+  ]
+}

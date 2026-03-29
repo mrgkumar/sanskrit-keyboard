@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "prefix": "hd",
+  "entries": [
+    {"itrans":"hda","devanagari":"ह्द","count":1},
+    {"itrans":"hdaya","devanagari":"ह्दय","count":1},
+    {"itrans":"hdaya:","devanagari":"ह्दयः","count":1},
+    {"itrans":"hdayaahlaadaka","devanagari":"ह्दयाह्लादक","count":1},
+    {"itrans":"hdha","devanagari":"ह्ध","count":1}
+  ]
+}

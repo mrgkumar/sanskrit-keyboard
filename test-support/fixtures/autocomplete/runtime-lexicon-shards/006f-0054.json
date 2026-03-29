@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "prefix": "oT",
+  "entries": [
+    {"itrans":"oToman","devanagari":"ओटोमन्","count":1},
+    {"itrans":"oToriksaa","devanagari":"ओटोरिक्सा","count":1},
+    {"itrans":"oTs","devanagari":"ओट्स्","count":1},
+    {"itrans":"oTTo","devanagari":"ओट्टो","count":1}
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "prefix": "kd",
+  "entries": [
+    {"itrans":"kdaachit","devanagari":"क्दाचित्","count":1},
+    {"itrans":"kdadaasi","devanagari":"क्ददासि","count":1},
+    {"itrans":"kdanti","devanagari":"क्दन्ति","count":1},
+    {"itrans":"kdha","devanagari":"क्ध","count":1}
+  ]
+}

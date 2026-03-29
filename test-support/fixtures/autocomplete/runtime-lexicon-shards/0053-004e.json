@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "prefix": "SN",
+  "entries": [
+    {"itrans":"SNa:","devanagari":"ष्णः","count":1},
+    {"itrans":"SNaa","devanagari":"ष्णा","count":1},
+    {"itrans":"SNaa:","devanagari":"ष्णाः","count":1},
+    {"itrans":"SNaanta","devanagari":"ष्णान्त","count":1},
+    {"itrans":"SNaantaa:","devanagari":"ष्णान्ताः","count":1},
+    {"itrans":"SNaantaM","devanagari":"ष्णान्तं","count":1},
+    {"itrans":"SNaantatve.api","devanagari":"ष्णान्तत्वेऽपि","count":1},
+    {"itrans":"SNaante","devanagari":"ष्णान्ते","count":1},
+    {"itrans":"SNaanteti","devanagari":"ष्णान्तेति","count":1},
+    {"itrans":"SNadhamanyordiirghashcha","devanagari":"ष्णधमन्योर्दीर्घश्च","count":1},
+    {"itrans":"SNaM","devanagari":"ष्णं","count":1},
+    {"itrans":"SNatramiti","devanagari":"ष्णत्रमिति","count":1},
+    {"itrans":"SNau","devanagari":"ष्णौ","count":1},
+    {"itrans":"SNiheti","devanagari":"ष्णिहेति","count":1},
+    {"itrans":"SNo","devanagari":"ष्णो","count":1},
+    {"itrans":"SNo:","devanagari":"ष्णोः","count":1},
+    {"itrans":"SNu","devanagari":"ष्णु","count":1},
+    {"itrans":"SNubhi:","devanagari":"ष्णुभिः","count":1},
+    {"itrans":"SNubhirviSpardhaso","devanagari":"ष्णुभिर्विष्पर्धसो","count":1},
+    {"itrans":"SNujuktau","devanagari":"ष्णुजुक्तौ","count":1},
+    {"itrans":"SNunaa","devanagari":"ष्णुना","count":1},
+    {"itrans":"SNusu","devanagari":"ष्णुसु","count":1}
+  ]
+}

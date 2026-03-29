@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "prefix": "ob",
+  "entries": [
+    {"itrans":"obaama:","devanagari":"ओबामः","count":1},
+    {"itrans":"obaamaavarya:","devanagari":"ओबामावर्यः","count":1},
+    {"itrans":"obaamaavaryam","devanagari":"ओबामावर्यम्","count":1},
+    {"itrans":"obarshlaibhaim","devanagari":"ओबर्श्लैभैम्","count":1},
+    {"itrans":"obavva","devanagari":"ओबव्व","count":1},
+    {"itrans":"obavvaa","devanagari":"ओबव्वा","count":2},
+    {"itrans":"obavvaayaa:","devanagari":"ओबव्वायाः","count":1},
+    {"itrans":"obavvana","devanagari":"ओबव्वन","count":1},
+    {"itrans":"obavvanaamikaa","devanagari":"ओबव्वनामिका","count":1},
+    {"itrans":"obeli:","devanagari":"ओबेलिः","count":1},
+    {"itrans":"oberaan","devanagari":"ओबेरान्","count":1},
+    {"itrans":"oberaaya","devanagari":"ओबेराय","count":1},
+    {"itrans":"obhaa","devanagari":"ओभा","count":1},
+    {"itrans":"obhaavashcha","devanagari":"ओभावश्च","count":1},
+    {"itrans":"obhe","devanagari":"ओभे","count":1},
+    {"itrans":"obhisa","devanagari":"ओभिस","count":1},
+    {"itrans":"obhojaa:","devanagari":"ओभोजाः","count":1},
+    {"itrans":"obhya:","devanagari":"ओभ्यः","count":1},
+    {"itrans":"obhyo","devanagari":"ओभ्यो","count":1}
+  ]
+}

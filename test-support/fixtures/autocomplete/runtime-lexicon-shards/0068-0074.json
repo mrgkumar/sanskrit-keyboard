@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "prefix": "ht",
+  "entries": [
+    {"itrans":"hta","devanagari":"ह्त","count":1},
+    {"itrans":"htaashaa:","devanagari":"ह्ताशाः","count":1},
+    {"itrans":"htha","devanagari":"ह्थ","count":1},
+    {"itrans":"hti","devanagari":"ह्ति","count":1},
+    {"itrans":"htishabdasya","devanagari":"ह्तिशब्दस्य","count":1}
+  ]
+}

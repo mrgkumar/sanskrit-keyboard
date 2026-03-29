@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "prefix": "mp",
+  "entries": [
+    {"itrans":"mpaa","devanagari":"म्पा","count":1},
+    {"itrans":"mpaati:","devanagari":"म्पातिः","count":1},
+    {"itrans":"mpaatiM","devanagari":"म्पातिं","count":1},
+    {"itrans":"mparaavidhaanaadanavasthaa","devanagari":"म्पराविधानादनवस्था","count":1},
+    {"itrans":"mparkeNa","devanagari":"म्पर्केण","count":1},
+    {"itrans":"mpatanti","devanagari":"म्पतन्ति","count":1},
+    {"itrans":"mphaadiinaa~ncha","devanagari":"म्फादीनाञ्च","count":1},
+    {"itrans":"mprati","devanagari":"म्प्रति","count":1},
+    {"itrans":"mpratiSTha","devanagari":"म्प्रतिष्ठ","count":1},
+    {"itrans":"mproktaM","devanagari":"म्प्रोक्तं","count":1},
+    {"itrans":"mpumaaMsaM","devanagari":"म्पुमांसं","count":1}
+  ]
+}

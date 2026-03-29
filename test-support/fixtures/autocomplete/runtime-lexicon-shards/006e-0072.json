@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "prefix": "nr",
+  "entries": [
+    {"itrans":"nra","devanagari":"न्र","count":1},
+    {"itrans":"nra:","devanagari":"न्रः","count":1},
+    {"itrans":"nraa","devanagari":"न्रा","count":1},
+    {"itrans":"nraadheyaguptaansaha","devanagari":"न्राधेयगुप्तान्सह","count":1},
+    {"itrans":"nraajendra","devanagari":"न्राजेन्द्र","count":1},
+    {"itrans":"nraakShasa:","devanagari":"न्राक्षसः","count":1},
+    {"itrans":"nraaM","devanagari":"न्रां","count":1},
+    {"itrans":"nraarthi:","devanagari":"न्रार्थिः","count":1},
+    {"itrans":"nraNe","devanagari":"न्रणे","count":1},
+    {"itrans":"nrasthibhuuSaNa:","devanagari":"न्रस्थिभूषणः","count":1},
+    {"itrans":"nrasthimaalin","devanagari":"न्रस्थिमालिन्","count":1},
+    {"itrans":"nrau","devanagari":"न्रौ","count":1},
+    {"itrans":"nraudre","devanagari":"न्रौद्रे","count":1},
+    {"itrans":"nre","devanagari":"न्रे","count":1},
+    {"itrans":"nro:","devanagari":"न्रोः","count":1},
+    {"itrans":"nrohati","devanagari":"न्रोहति","count":1}
+  ]
+}

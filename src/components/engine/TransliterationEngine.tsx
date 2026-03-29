@@ -5,7 +5,7 @@ import { StickyTopComposer } from '@/components/StickyTopComposer';
 import { MainDocumentArea } from '@/components/MainDocumentArea';
 import { ReferenceSidePanel } from '@/components/ReferenceSidePanel'; // Import the side panel
 import { useFlowStore } from '@/store/useFlowStore';
-import { Check, Copy, RefreshCw, Save, SlidersHorizontal } from 'lucide-react';
+import { Check, Copy, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { SessionSnapshot } from '@/store/types';
 
@@ -30,8 +30,12 @@ export const TransliterationEngine: React.FC = () => {
   const [savedSessions, setSavedSessions] = React.useState<SessionSnapshot[]>([]);
   const [copyAllState, setCopyAllState] = React.useState<'idle' | 'copied' | 'error'>('idle');
   const [isDisplayMenuOpen, setIsDisplayMenuOpen] = React.useState(false);
+  const [isWorkspacePanelOpen, setIsWorkspacePanelOpen] = React.useState(false);
   const hasLoadedSessions = React.useRef(false);
-  const displayMenuRef = React.useRef<HTMLDivElement>(null);
+  const hasMeaningfulContent = React.useMemo(
+    () => blocks.some((block) => block.source.trim().length > 0 || block.rendered.trim().length > 0),
+    [blocks]
+  );
 
   const persistSnapshot = React.useCallback((snapshot: SessionSnapshot) => {
     const existing = typeof window !== 'undefined'
@@ -55,17 +59,18 @@ export const TransliterationEngine: React.FC = () => {
 
     try {
       const parsed = JSON.parse(raw) as SessionSnapshot[];
-      setSavedSessions(parsed);
-      const matchingSession = parsed.find((item) => item.sessionId === sessionId);
-      if (matchingSession) {
-        loadSessionSnapshot(matchingSession);
+      const sortedSessions = parsed.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      setSavedSessions(sortedSessions);
+      const latestSession = sortedSessions[0];
+      if (latestSession) {
+        loadSessionSnapshot(latestSession);
       }
     } catch {
       setSavedSessions([]);
     } finally {
       hasLoadedSessions.current = true;
     }
-  }, [loadSessionSnapshot, sessionId]);
+  }, [loadSessionSnapshot]);
 
   React.useEffect(() => {
     if (!hasLoadedSessions.current) {
@@ -93,21 +98,6 @@ export const TransliterationEngine: React.FC = () => {
     return () => window.clearTimeout(timeoutId);
   }, [copyAllState]);
 
-  React.useEffect(() => {
-    if (!isDisplayMenuOpen) {
-      return;
-    }
-
-    const handlePointerDown = (event: MouseEvent) => {
-      if (displayMenuRef.current && !displayMenuRef.current.contains(event.target as Node)) {
-        setIsDisplayMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handlePointerDown);
-    return () => document.removeEventListener('mousedown', handlePointerDown);
-  }, [isDisplayMenuOpen]);
-
   const handleSaveNow = () => {
     const snapshot = exportSessionSnapshot();
     snapshot.updatedAt = new Date().toISOString();
@@ -119,6 +109,18 @@ export const TransliterationEngine: React.FC = () => {
     if (nextSession) {
       loadSessionSnapshot(nextSession);
     }
+  };
+
+  const handleResetSession = () => {
+    if (
+      hasMeaningfulContent &&
+      !window.confirm('Start a new blank session? The current session is autosaved and can still be reloaded later.')
+    ) {
+      return;
+    }
+
+    resetSession();
+    setIsWorkspacePanelOpen(false);
   };
 
   const handleCopyWholeDocument = async () => {
@@ -138,13 +140,45 @@ export const TransliterationEngine: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 font-sans relative">
-      <div className="border-b border-slate-200 bg-white px-4 py-3 shadow-sm">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setIsWorkspacePanelOpen((open) => !open)}
+        className="fixed left-4 top-4 z-[80] inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-xs font-bold uppercase text-slate-700 shadow-sm backdrop-blur hover:bg-white"
+      >
+        {isWorkspacePanelOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+        Workspace
+      </button>
+
+      <div
+        className={clsx(
+          'fixed left-0 top-0 z-[75] flex h-full w-80 flex-col border-r border-slate-200 bg-white shadow-xl transition-transform duration-300 ease-in-out',
+          isWorkspacePanelOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Workspace</p>
+            <p className="mt-1 text-sm text-slate-500">Session and document-level controls.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsWorkspacePanelOpen(false)}
+            className="rounded-md border border-slate-200 p-2 text-slate-500 hover:bg-slate-100"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
+          <section className="space-y-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Session</p>
+              <p className="mt-1 text-xs text-slate-500">{lastSavedAt ? `Autosaved ${new Date(lastSavedAt).toLocaleString()}` : 'Autosave pending'}</p>
+            </div>
             <input
               value={sessionName}
               onChange={(e) => setSessionName(e.target.value)}
-              className="min-w-[16rem] rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800"
               placeholder="Session name"
             />
             <select
@@ -152,8 +186,9 @@ export const TransliterationEngine: React.FC = () => {
               onChange={(e) => {
                 handleLoadSession(e.target.value);
                 e.currentTarget.value = '';
+                setIsWorkspacePanelOpen(false);
               }}
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
             >
               <option value="" disabled>Load session</option>
               {savedSessions.map((session) => (
@@ -162,96 +197,37 @@ export const TransliterationEngine: React.FC = () => {
                 </option>
               ))}
             </select>
-            <button
-              onClick={handleSaveNow}
-              className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-200"
-              type="button"
-            >
-              <Save className="h-4 w-4" />
-              Save Now
-            </button>
-            <button
-              onClick={resetSession}
-              className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-100"
-              type="button"
-            >
-              <RefreshCw className="h-4 w-4" />
-              New Session
-            </button>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-            <span>{lastSavedAt ? `Autosaved ${new Date(lastSavedAt).toLocaleString()}` : 'Autosave pending'}</span>
-            <div className="relative" ref={displayMenuRef}>
+            <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => setIsDisplayMenuOpen((open) => !open)}
-                className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-100"
+                onClick={handleSaveNow}
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-200"
                 type="button"
               >
-                <SlidersHorizontal className="h-4 w-4" />
-                Display
+                <Save className="h-4 w-4" />
+                Save
               </button>
-              {isDisplayMenuOpen && (
-                <div className="absolute right-0 top-full z-[70] mt-2 w-80 rounded-xl border border-slate-200 bg-white p-4 shadow-xl ring-1 ring-slate-100">
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Display</p>
-                      <p className="mt-1 text-xs text-slate-500">Adjust typography only when needed; keep it out of the main typing lane.</p>
-                    </div>
-                    <label className="block text-xs font-semibold uppercase text-slate-600">
-                      ITRANS Size
-                      <input
-                        className="mt-2 w-full"
-                        type="range"
-                        min="14"
-                        max="28"
-                        value={typography.itransFontSize}
-                        onChange={(e) => setTypography({ itransFontSize: Number(e.target.value) })}
-                      />
-                    </label>
-                    <label className="block text-xs font-semibold uppercase text-slate-600">
-                      ITRANS Height
-                      <input
-                        className="mt-2 w-full"
-                        type="range"
-                        min="1.2"
-                        max="2.4"
-                        step="0.1"
-                        value={typography.itransLineHeight}
-                        onChange={(e) => setTypography({ itransLineHeight: Number(e.target.value) })}
-                      />
-                    </label>
-                    <label className="block text-xs font-semibold uppercase text-slate-600">
-                      Sanskrit Size
-                      <input
-                        className="mt-2 w-full"
-                        type="range"
-                        min="24"
-                        max="56"
-                        value={typography.renderedFontSize}
-                        onChange={(e) => setTypography({ renderedFontSize: Number(e.target.value) })}
-                      />
-                    </label>
-                    <label className="block text-xs font-semibold uppercase text-slate-600">
-                      Sanskrit Height
-                      <input
-                        className="mt-2 w-full"
-                        type="range"
-                        min="1.2"
-                        max="2.4"
-                        step="0.1"
-                        value={typography.renderedLineHeight}
-                        onChange={(e) => setTypography({ renderedLineHeight: Number(e.target.value) })}
-                      />
-                    </label>
-                  </div>
-                </div>
-              )}
+              <button
+                onClick={handleResetSession}
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-100"
+                type="button"
+              >
+                <RefreshCw className="h-4 w-4" />
+                New
+              </button>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Document</p>
+                <p className="mt-1 text-xs text-slate-500">Whole-document actions stay out of the typing lane.</p>
+              </div>
             </div>
             <button
               onClick={handleCopyWholeDocument}
               className={clsx(
-                'inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-bold uppercase',
+                'inline-flex w-full items-center justify-center gap-2 rounded-md border px-3 py-2 text-xs font-bold uppercase',
                 copyAllState === 'copied'
                   ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                   : copyAllState === 'error'
@@ -263,7 +239,70 @@ export const TransliterationEngine: React.FC = () => {
               {copyAllState === 'copied' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copyAllState === 'copied' ? 'Copied Whole Document' : copyAllState === 'error' ? 'Copy Failed' : 'Copy Whole Document'}
             </button>
-          </div>
+          </section>
+
+          <section className="space-y-3">
+            <button
+              onClick={() => setIsDisplayMenuOpen((open) => !open)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-100"
+              type="button"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Display
+            </button>
+            {isDisplayMenuOpen && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="space-y-3">
+                  <label className="block text-xs font-semibold uppercase text-slate-600">
+                    ITRANS Size
+                    <input
+                      className="mt-2 w-full"
+                      type="range"
+                      min="14"
+                      max="28"
+                      value={typography.itransFontSize}
+                      onChange={(e) => setTypography({ itransFontSize: Number(e.target.value) })}
+                    />
+                  </label>
+                  <label className="block text-xs font-semibold uppercase text-slate-600">
+                    ITRANS Height
+                    <input
+                      className="mt-2 w-full"
+                      type="range"
+                      min="1.2"
+                      max="2.4"
+                      step="0.1"
+                      value={typography.itransLineHeight}
+                      onChange={(e) => setTypography({ itransLineHeight: Number(e.target.value) })}
+                    />
+                  </label>
+                  <label className="block text-xs font-semibold uppercase text-slate-600">
+                    Sanskrit Size
+                    <input
+                      className="mt-2 w-full"
+                      type="range"
+                      min="24"
+                      max="56"
+                      value={typography.renderedFontSize}
+                      onChange={(e) => setTypography({ renderedFontSize: Number(e.target.value) })}
+                    />
+                  </label>
+                  <label className="block text-xs font-semibold uppercase text-slate-600">
+                    Sanskrit Height
+                    <input
+                      className="mt-2 w-full"
+                      type="range"
+                      min="1.2"
+                      max="2.4"
+                      step="0.1"
+                      value={typography.renderedLineHeight}
+                      onChange={(e) => setTypography({ renderedLineHeight: Number(e.target.value) })}
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+          </section>
         </div>
       </div>
       <StickyTopComposer />

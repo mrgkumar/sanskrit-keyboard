@@ -1,0 +1,3479 @@
+{
+  "version": 1,
+  "shards": [
+    {
+      "prefix": "~n",
+      "file": "runtime-lexicon-shards/007e-006e.json",
+      "entryCount": 69,
+      "bytes": 5860
+    },
+    {
+      "prefix": "~N",
+      "file": "runtime-lexicon-shards/007e-004e.json",
+      "entryCount": 75,
+      "bytes": 6191
+    },
+    {
+      "prefix": "a:",
+      "file": "runtime-lexicon-shards/0061-003a.json",
+      "entryCount": 13,
+      "bytes": 1310
+    },
+    {
+      "prefix": "A:",
+      "file": "runtime-lexicon-shards/0041-003a.json",
+      "entryCount": 1,
+      "bytes": 131
+    },
+    {
+      "prefix": "a.",
+      "file": "runtime-lexicon-shards/0061-002e.json",
+      "entryCount": 1,
+      "bytes": 186
+    },
+    {
+      "prefix": "A.",
+      "file": "runtime-lexicon-shards/0041-002e.json",
+      "entryCount": 1,
+      "bytes": 127
+    },
+    {
+      "prefix": "a/",
+      "file": "runtime-lexicon-shards/0061-002f.json",
+      "entryCount": 1,
+      "bytes": 177
+    },
+    {
+      "prefix": "A/",
+      "file": "runtime-lexicon-shards/0041-002f.json",
+      "entryCount": 105,
+      "bytes": 8235
+    },
+    {
+      "prefix": "a~",
+      "file": "runtime-lexicon-shards/0061-007e.json",
+      "entryCount": 2045,
+      "bytes": 193131
+    },
+    {
+      "prefix": "A~",
+      "file": "runtime-lexicon-shards/0041-007e.json",
+      "entryCount": 509,
+      "bytes": 49655
+    },
+    {
+      "prefix": "ab",
+      "file": "runtime-lexicon-shards/0061-0062.json",
+      "entryCount": 8989,
+      "bytes": 811124
+    },
+    {
+      "prefix": "Ab",
+      "file": "runtime-lexicon-shards/0041-0062.json",
+      "entryCount": 712,
+      "bytes": 62778
+    },
+    {
+      "prefix": "ac",
+      "file": "runtime-lexicon-shards/0061-0063.json",
+      "entryCount": 1265,
+      "bytes": 114182
+    },
+    {
+      "prefix": "aC",
+      "file": "runtime-lexicon-shards/0061-0043.json",
+      "entryCount": 13,
+      "bytes": 1007
+    },
+    {
+      "prefix": "Ac",
+      "file": "runtime-lexicon-shards/0041-0063.json",
+      "entryCount": 1150,
+      "bytes": 107767
+    },
+    {
+      "prefix": "AC",
+      "file": "runtime-lexicon-shards/0041-0043.json",
+      "entryCount": 1,
+      "bytes": 162
+    },
+    {
+      "prefix": "ad",
+      "file": "runtime-lexicon-shards/0061-0064.json",
+      "entryCount": 7480,
+      "bytes": 682448
+    },
+    {
+      "prefix": "aD",
+      "file": "runtime-lexicon-shards/0061-0044.json",
+      "entryCount": 64,
+      "bytes": 5903
+    },
+    {
+      "prefix": "Ad",
+      "file": "runtime-lexicon-shards/0041-0064.json",
+      "entryCount": 3769,
+      "bytes": 348860
+    },
+    {
+      "prefix": "AD",
+      "file": "runtime-lexicon-shards/0041-0044.json",
+      "entryCount": 44,
+      "bytes": 4032
+    },
+    {
+      "prefix": "ag",
+      "file": "runtime-lexicon-shards/0061-0067.json",
+      "entryCount": 3845,
+      "bytes": 348272
+    },
+    {
+      "prefix": "Ag",
+      "file": "runtime-lexicon-shards/0041-0067.json",
+      "entryCount": 1211,
+      "bytes": 106468
+    },
+    {
+      "prefix": "ah",
+      "file": "runtime-lexicon-shards/0061-0068.json",
+      "entryCount": 2196,
+      "bytes": 200623
+    },
+    {
+      "prefix": "Ah",
+      "file": "runtime-lexicon-shards/0041-0068.json",
+      "entryCount": 1089,
+      "bytes": 94483
+    },
+    {
+      "prefix": "ai",
+      "file": "runtime-lexicon-shards/0061-0069.json",
+      "entryCount": 1870,
+      "bytes": 171625
+    },
+    {
+      "prefix": "aj",
+      "file": "runtime-lexicon-shards/0061-006a.json",
+      "entryCount": 2339,
+      "bytes": 212278
+    },
+    {
+      "prefix": "Aj",
+      "file": "runtime-lexicon-shards/0041-006a.json",
+      "entryCount": 740,
+      "bytes": 65465
+    },
+    {
+      "prefix": "ak",
+      "file": "runtime-lexicon-shards/0061-006b.json",
+      "entryCount": 4225,
+      "bytes": 388126
+    },
+    {
+      "prefix": "Ak",
+      "file": "runtime-lexicon-shards/0041-006b.json",
+      "entryCount": 2314,
+      "bytes": 211024
+    },
+    {
+      "prefix": "al",
+      "file": "runtime-lexicon-shards/0061-006c.json",
+      "entryCount": 2554,
+      "bytes": 231377
+    },
+    {
+      "prefix": "Al",
+      "file": "runtime-lexicon-shards/0041-006c.json",
+      "entryCount": 656,
+      "bytes": 55913
+    },
+    {
+      "prefix": "am",
+      "file": "runtime-lexicon-shards/0061-006d.json",
+      "entryCount": 4367,
+      "bytes": 395224
+    },
+    {
+      "prefix": "aM",
+      "file": "runtime-lexicon-shards/0061-004d.json",
+      "entryCount": 644,
+      "bytes": 55459
+    },
+    {
+      "prefix": "Am",
+      "file": "runtime-lexicon-shards/0041-006d.json",
+      "entryCount": 908,
+      "bytes": 78831
+    },
+    {
+      "prefix": "AM",
+      "file": "runtime-lexicon-shards/0041-004d.json",
+      "entryCount": 81,
+      "bytes": 7411
+    },
+    {
+      "prefix": "an",
+      "file": "runtime-lexicon-shards/0061-006e.json",
+      "entryCount": 21012,
+      "bytes": 1948233
+    },
+    {
+      "prefix": "aN",
+      "file": "runtime-lexicon-shards/0061-004e.json",
+      "entryCount": 245,
+      "bytes": 24532
+    },
+    {
+      "prefix": "An",
+      "file": "runtime-lexicon-shards/0041-006e.json",
+      "entryCount": 2102,
+      "bytes": 195775
+    },
+    {
+      "prefix": "AN",
+      "file": "runtime-lexicon-shards/0041-004e.json",
+      "entryCount": 49,
+      "bytes": 4159
+    },
+    {
+      "prefix": "ap",
+      "file": "runtime-lexicon-shards/0061-0070.json",
+      "entryCount": 8460,
+      "bytes": 753955
+    },
+    {
+      "prefix": "Ap",
+      "file": "runtime-lexicon-shards/0041-0070.json",
+      "entryCount": 1585,
+      "bytes": 138742
+    },
+    {
+      "prefix": "ar",
+      "file": "runtime-lexicon-shards/0061-0072.json",
+      "entryCount": 6139,
+      "bytes": 554679
+    },
+    {
+      "prefix": "Ar",
+      "file": "runtime-lexicon-shards/0041-0072.json",
+      "entryCount": 3088,
+      "bytes": 276258
+    },
+    {
+      "prefix": "as",
+      "file": "runtime-lexicon-shards/0061-0073.json",
+      "entryCount": 10557,
+      "bytes": 959729
+    },
+    {
+      "prefix": "aS",
+      "file": "runtime-lexicon-shards/0061-0053.json",
+      "entryCount": 1779,
+      "bytes": 178140
+    },
+    {
+      "prefix": "As",
+      "file": "runtime-lexicon-shards/0041-0073.json",
+      "entryCount": 3787,
+      "bytes": 339223
+    },
+    {
+      "prefix": "AS",
+      "file": "runtime-lexicon-shards/0041-0053.json",
+      "entryCount": 45,
+      "bytes": 4490
+    },
+    {
+      "prefix": "at",
+      "file": "runtime-lexicon-shards/0061-0074.json",
+      "entryCount": 8094,
+      "bytes": 749586
+    },
+    {
+      "prefix": "aT",
+      "file": "runtime-lexicon-shards/0061-0054.json",
+      "entryCount": 151,
+      "bytes": 13636
+    },
+    {
+      "prefix": "At",
+      "file": "runtime-lexicon-shards/0041-0074.json",
+      "entryCount": 3812,
+      "bytes": 361471
+    },
+    {
+      "prefix": "AT",
+      "file": "runtime-lexicon-shards/0041-0054.json",
+      "entryCount": 35,
+      "bytes": 2757
+    },
+    {
+      "prefix": "au",
+      "file": "runtime-lexicon-shards/0061-0075.json",
+      "entryCount": 1786,
+      "bytes": 157569
+    },
+    {
+      "prefix": "av",
+      "file": "runtime-lexicon-shards/0061-0076.json",
+      "entryCount": 8768,
+      "bytes": 777069
+    },
+    {
+      "prefix": "Av",
+      "file": "runtime-lexicon-shards/0041-0076.json",
+      "entryCount": 1720,
+      "bytes": 148613
+    },
+    {
+      "prefix": "ay",
+      "file": "runtime-lexicon-shards/0061-0079.json",
+      "entryCount": 1644,
+      "bytes": 144657
+    },
+    {
+      "prefix": "Ay",
+      "file": "runtime-lexicon-shards/0041-0079.json",
+      "entryCount": 1323,
+      "bytes": 117531
+    },
+    {
+      "prefix": "ba",
+      "file": "runtime-lexicon-shards/0062-0061.json",
+      "entryCount": 21368,
+      "bytes": 1976305
+    },
+    {
+      "prefix": "bb",
+      "file": "runtime-lexicon-shards/0062-0062.json",
+      "entryCount": 12,
+      "bytes": 975
+    },
+    {
+      "prefix": "bd",
+      "file": "runtime-lexicon-shards/0062-0064.json",
+      "entryCount": 16,
+      "bytes": 1358
+    },
+    {
+      "prefix": "be",
+      "file": "runtime-lexicon-shards/0062-0065.json",
+      "entryCount": 461,
+      "bytes": 38706
+    },
+    {
+      "prefix": "bg",
+      "file": "runtime-lexicon-shards/0062-0067.json",
+      "entryCount": 1,
+      "bytes": 141
+    },
+    {
+      "prefix": "bh",
+      "file": "runtime-lexicon-shards/0062-0068.json",
+      "entryCount": 58054,
+      "bytes": 5527918
+    },
+    {
+      "prefix": "bi",
+      "file": "runtime-lexicon-shards/0062-0069.json",
+      "entryCount": 4137,
+      "bytes": 366576
+    },
+    {
+      "prefix": "bj",
+      "file": "runtime-lexicon-shards/0062-006a.json",
+      "entryCount": 1,
+      "bytes": 117
+    },
+    {
+      "prefix": "bl",
+      "file": "runtime-lexicon-shards/0062-006c.json",
+      "entryCount": 68,
+      "bytes": 5598
+    },
+    {
+      "prefix": "bn",
+      "file": "runtime-lexicon-shards/0062-006e.json",
+      "entryCount": 3,
+      "bytes": 282
+    },
+    {
+      "prefix": "bo",
+      "file": "runtime-lexicon-shards/0062-006f.json",
+      "entryCount": 1337,
+      "bytes": 113989
+    },
+    {
+      "prefix": "br",
+      "file": "runtime-lexicon-shards/0062-0072.json",
+      "entryCount": 8664,
+      "bytes": 887761
+    },
+    {
+      "prefix": "bR",
+      "file": "runtime-lexicon-shards/0062-0052.json",
+      "entryCount": 1925,
+      "bytes": 188102
+    },
+    {
+      "prefix": "bt",
+      "file": "runtime-lexicon-shards/0062-0074.json",
+      "entryCount": 1,
+      "bytes": 114
+    },
+    {
+      "prefix": "bu",
+      "file": "runtime-lexicon-shards/0062-0075.json",
+      "entryCount": 3391,
+      "bytes": 320923
+    },
+    {
+      "prefix": "bv",
+      "file": "runtime-lexicon-shards/0062-0076.json",
+      "entryCount": 7,
+      "bytes": 587
+    },
+    {
+      "prefix": "by",
+      "file": "runtime-lexicon-shards/0062-0079.json",
+      "entryCount": 133,
+      "bytes": 10972
+    },
+    {
+      "prefix": "ch",
+      "file": "runtime-lexicon-shards/0063-0068.json",
+      "entryCount": 42504,
+      "bytes": 4009028
+    },
+    {
+      "prefix": "Ch",
+      "file": "runtime-lexicon-shards/0043-0068.json",
+      "entryCount": 3133,
+      "bytes": 289572
+    },
+    {
+      "prefix": "da",
+      "file": "runtime-lexicon-shards/0064-0061.json",
+      "entryCount": 24841,
+      "bytes": 2319341
+    },
+    {
+      "prefix": "Da",
+      "file": "runtime-lexicon-shards/0044-0061.json",
+      "entryCount": 330,
+      "bytes": 31738
+    },
+    {
+      "prefix": "db",
+      "file": "runtime-lexicon-shards/0064-0062.json",
+      "entryCount": 85,
+      "bytes": 7450
+    },
+    {
+      "prefix": "dc",
+      "file": "runtime-lexicon-shards/0064-0063.json",
+      "entryCount": 2,
+      "bytes": 183
+    },
+    {
+      "prefix": "dd",
+      "file": "runtime-lexicon-shards/0064-0064.json",
+      "entryCount": 190,
+      "bytes": 16314
+    },
+    {
+      "prefix": "de",
+      "file": "runtime-lexicon-shards/0064-0065.json",
+      "entryCount": 12010,
+      "bytes": 1136539
+    },
+    {
+      "prefix": "De",
+      "file": "runtime-lexicon-shards/0044-0065.json",
+      "entryCount": 65,
+      "bytes": 5431
+    },
+    {
+      "prefix": "dg",
+      "file": "runtime-lexicon-shards/0064-0067.json",
+      "entryCount": 46,
+      "bytes": 3925
+    },
+    {
+      "prefix": "dh",
+      "file": "runtime-lexicon-shards/0064-0068.json",
+      "entryCount": 23957,
+      "bytes": 2259415
+    },
+    {
+      "prefix": "Dh",
+      "file": "runtime-lexicon-shards/0044-0068.json",
+      "entryCount": 108,
+      "bytes": 11423
+    },
+    {
+      "prefix": "di",
+      "file": "runtime-lexicon-shards/0064-0069.json",
+      "entryCount": 10355,
+      "bytes": 977012
+    },
+    {
+      "prefix": "Di",
+      "file": "runtime-lexicon-shards/0044-0069.json",
+      "entryCount": 187,
+      "bytes": 16662
+    },
+    {
+      "prefix": "dk",
+      "file": "runtime-lexicon-shards/0064-006b.json",
+      "entryCount": 6,
+      "bytes": 496
+    },
+    {
+      "prefix": "dl",
+      "file": "runtime-lexicon-shards/0064-006c.json",
+      "entryCount": 1,
+      "bytes": 147
+    },
+    {
+      "prefix": "dm",
+      "file": "runtime-lexicon-shards/0064-006d.json",
+      "entryCount": 6,
+      "bytes": 503
+    },
+    {
+      "prefix": "dn",
+      "file": "runtime-lexicon-shards/0064-006e.json",
+      "entryCount": 2,
+      "bytes": 228
+    },
+    {
+      "prefix": "do",
+      "file": "runtime-lexicon-shards/0064-006f.json",
+      "entryCount": 1608,
+      "bytes": 142832
+    },
+    {
+      "prefix": "Do",
+      "file": "runtime-lexicon-shards/0044-006f.json",
+      "entryCount": 76,
+      "bytes": 6224
+    },
+    {
+      "prefix": "dp",
+      "file": "runtime-lexicon-shards/0064-0070.json",
+      "entryCount": 1,
+      "bytes": 178
+    },
+    {
+      "prefix": "dr",
+      "file": "runtime-lexicon-shards/0064-0072.json",
+      "entryCount": 3648,
+      "bytes": 350708
+    },
+    {
+      "prefix": "dR",
+      "file": "runtime-lexicon-shards/0064-0052.json",
+      "entryCount": 3680,
+      "bytes": 353336
+    },
+    {
+      "prefix": "Dr",
+      "file": "runtime-lexicon-shards/0044-0072.json",
+      "entryCount": 15,
+      "bytes": 1223
+    },
+    {
+      "prefix": "ds",
+      "file": "runtime-lexicon-shards/0064-0073.json",
+      "entryCount": 7,
+      "bytes": 622
+    },
+    {
+      "prefix": "dS",
+      "file": "runtime-lexicon-shards/0064-0053.json",
+      "entryCount": 4,
+      "bytes": 375
+    },
+    {
+      "prefix": "dt",
+      "file": "runtime-lexicon-shards/0064-0074.json",
+      "entryCount": 2,
+      "bytes": 187
+    },
+    {
+      "prefix": "du",
+      "file": "runtime-lexicon-shards/0064-0075.json",
+      "entryCount": 11843,
+      "bytes": 1114111
+    },
+    {
+      "prefix": "Du",
+      "file": "runtime-lexicon-shards/0044-0075.json",
+      "entryCount": 41,
+      "bytes": 3592
+    },
+    {
+      "prefix": "dv",
+      "file": "runtime-lexicon-shards/0064-0076.json",
+      "entryCount": 10025,
+      "bytes": 981047
+    },
+    {
+      "prefix": "Dv",
+      "file": "runtime-lexicon-shards/0044-0076.json",
+      "entryCount": 2,
+      "bytes": 206
+    },
+    {
+      "prefix": "dy",
+      "file": "runtime-lexicon-shards/0064-0079.json",
+      "entryCount": 1425,
+      "bytes": 129217
+    },
+    {
+      "prefix": "Dy",
+      "file": "runtime-lexicon-shards/0044-0079.json",
+      "entryCount": 3,
+      "bytes": 327
+    },
+    {
+      "prefix": "e_",
+      "file": "runtime-lexicon-shards/0065-005f.json",
+      "entryCount": 1,
+      "bytes": 129
+    },
+    {
+      "prefix": "e.",
+      "file": "runtime-lexicon-shards/0065-002e.json",
+      "entryCount": 1,
+      "bytes": 118
+    },
+    {
+      "prefix": "e/",
+      "file": "runtime-lexicon-shards/0065-002f.json",
+      "entryCount": 2,
+      "bytes": 193
+    },
+    {
+      "prefix": "e~",
+      "file": "runtime-lexicon-shards/0065-007e.json",
+      "entryCount": 14,
+      "bytes": 1346
+    },
+    {
+      "prefix": "eb",
+      "file": "runtime-lexicon-shards/0065-0062.json",
+      "entryCount": 153,
+      "bytes": 14630
+    },
+    {
+      "prefix": "ec",
+      "file": "runtime-lexicon-shards/0065-0063.json",
+      "entryCount": 30,
+      "bytes": 2561
+    },
+    {
+      "prefix": "ed",
+      "file": "runtime-lexicon-shards/0065-0064.json",
+      "entryCount": 243,
+      "bytes": 20421
+    },
+    {
+      "prefix": "eD",
+      "file": "runtime-lexicon-shards/0065-0044.json",
+      "entryCount": 55,
+      "bytes": 4394
+    },
+    {
+      "prefix": "eg",
+      "file": "runtime-lexicon-shards/0065-0067.json",
+      "entryCount": 12,
+      "bytes": 941
+    },
+    {
+      "prefix": "eh",
+      "file": "runtime-lexicon-shards/0065-0068.json",
+      "entryCount": 50,
+      "bytes": 3892
+    },
+    {
+      "prefix": "ej",
+      "file": "runtime-lexicon-shards/0065-006a.json",
+      "entryCount": 55,
+      "bytes": 4402
+    },
+    {
+      "prefix": "ek",
+      "file": "runtime-lexicon-shards/0065-006b.json",
+      "entryCount": 5482,
+      "bytes": 510684
+    },
+    {
+      "prefix": "el",
+      "file": "runtime-lexicon-shards/0065-006c.json",
+      "entryCount": 161,
+      "bytes": 13867
+    },
+    {
+      "prefix": "em",
+      "file": "runtime-lexicon-shards/0065-006d.json",
+      "entryCount": 56,
+      "bytes": 4366
+    },
+    {
+      "prefix": "eM",
+      "file": "runtime-lexicon-shards/0065-004d.json",
+      "entryCount": 5,
+      "bytes": 440
+    },
+    {
+      "prefix": "en",
+      "file": "runtime-lexicon-shards/0065-006e.json",
+      "entryCount": 234,
+      "bytes": 20272
+    },
+    {
+      "prefix": "eN",
+      "file": "runtime-lexicon-shards/0065-004e.json",
+      "entryCount": 14,
+      "bytes": 1396
+    },
+    {
+      "prefix": "ep",
+      "file": "runtime-lexicon-shards/0065-0070.json",
+      "entryCount": 41,
+      "bytes": 3545
+    },
+    {
+      "prefix": "er",
+      "file": "runtime-lexicon-shards/0065-0072.json",
+      "entryCount": 123,
+      "bytes": 10176
+    },
+    {
+      "prefix": "es",
+      "file": "runtime-lexicon-shards/0065-0073.json",
+      "entryCount": 74,
+      "bytes": 6167
+    },
+    {
+      "prefix": "eS",
+      "file": "runtime-lexicon-shards/0065-0053.json",
+      "entryCount": 415,
+      "bytes": 35937
+    },
+    {
+      "prefix": "et",
+      "file": "runtime-lexicon-shards/0065-0074.json",
+      "entryCount": 3430,
+      "bytes": 325357
+    },
+    {
+      "prefix": "eT",
+      "file": "runtime-lexicon-shards/0065-0054.json",
+      "entryCount": 6,
+      "bytes": 602
+    },
+    {
+      "prefix": "ev",
+      "file": "runtime-lexicon-shards/0065-0076.json",
+      "entryCount": 2999,
+      "bytes": 279981
+    },
+    {
+      "prefix": "ey",
+      "file": "runtime-lexicon-shards/0065-0079.json",
+      "entryCount": 38,
+      "bytes": 2924
+    },
+    {
+      "prefix": "ga",
+      "file": "runtime-lexicon-shards/0067-0061.json",
+      "entryCount": 22614,
+      "bytes": 2093898
+    },
+    {
+      "prefix": "gb",
+      "file": "runtime-lexicon-shards/0067-0062.json",
+      "entryCount": 2,
+      "bytes": 179
+    },
+    {
+      "prefix": "gd",
+      "file": "runtime-lexicon-shards/0067-0064.json",
+      "entryCount": 6,
+      "bytes": 482
+    },
+    {
+      "prefix": "ge",
+      "file": "runtime-lexicon-shards/0067-0065.json",
+      "entryCount": 312,
+      "bytes": 26134
+    },
+    {
+      "prefix": "gg",
+      "file": "runtime-lexicon-shards/0067-0067.json",
+      "entryCount": 3,
+      "bytes": 258
+    },
+    {
+      "prefix": "gh",
+      "file": "runtime-lexicon-shards/0067-0068.json",
+      "entryCount": 6202,
+      "bytes": 553253
+    },
+    {
+      "prefix": "gi",
+      "file": "runtime-lexicon-shards/0067-0069.json",
+      "entryCount": 3242,
+      "bytes": 303475
+    },
+    {
+      "prefix": "gj",
+      "file": "runtime-lexicon-shards/0067-006a.json",
+      "entryCount": 2,
+      "bytes": 209
+    },
+    {
+      "prefix": "gk",
+      "file": "runtime-lexicon-shards/0067-006b.json",
+      "entryCount": 5,
+      "bytes": 548
+    },
+    {
+      "prefix": "gl",
+      "file": "runtime-lexicon-shards/0067-006c.json",
+      "entryCount": 268,
+      "bytes": 23567
+    },
+    {
+      "prefix": "gm",
+      "file": "runtime-lexicon-shards/0067-006d.json",
+      "entryCount": 17,
+      "bytes": 1497
+    },
+    {
+      "prefix": "gn",
+      "file": "runtime-lexicon-shards/0067-006e.json",
+      "entryCount": 33,
+      "bytes": 2659
+    },
+    {
+      "prefix": "go",
+      "file": "runtime-lexicon-shards/0067-006f.json",
+      "entryCount": 6994,
+      "bytes": 652478
+    },
+    {
+      "prefix": "gp",
+      "file": "runtime-lexicon-shards/0067-0070.json",
+      "entryCount": 4,
+      "bytes": 488
+    },
+    {
+      "prefix": "gr",
+      "file": "runtime-lexicon-shards/0067-0072.json",
+      "entryCount": 4498,
+      "bytes": 433151
+    },
+    {
+      "prefix": "gR",
+      "file": "runtime-lexicon-shards/0067-0052.json",
+      "entryCount": 2914,
+      "bytes": 274634
+    },
+    {
+      "prefix": "gs",
+      "file": "runtime-lexicon-shards/0067-0073.json",
+      "entryCount": 9,
+      "bytes": 882
+    },
+    {
+      "prefix": "gS",
+      "file": "runtime-lexicon-shards/0067-0053.json",
+      "entryCount": 1,
+      "bytes": 113
+    },
+    {
+      "prefix": "gt",
+      "file": "runtime-lexicon-shards/0067-0074.json",
+      "entryCount": 4,
+      "bytes": 406
+    },
+    {
+      "prefix": "gu",
+      "file": "runtime-lexicon-shards/0067-0075.json",
+      "entryCount": 11419,
+      "bytes": 1076236
+    },
+    {
+      "prefix": "gv",
+      "file": "runtime-lexicon-shards/0067-0076.json",
+      "entryCount": 55,
+      "bytes": 5004
+    },
+    {
+      "prefix": "gy",
+      "file": "runtime-lexicon-shards/0067-0079.json",
+      "entryCount": 13,
+      "bytes": 1223
+    },
+    {
+      "prefix": "ha",
+      "file": "runtime-lexicon-shards/0068-0061.json",
+      "entryCount": 16351,
+      "bytes": 1500462
+    },
+    {
+      "prefix": "hb",
+      "file": "runtime-lexicon-shards/0068-0062.json",
+      "entryCount": 1,
+      "bytes": 126
+    },
+    {
+      "prefix": "hc",
+      "file": "runtime-lexicon-shards/0068-0063.json",
+      "entryCount": 1,
+      "bytes": 114
+    },
+    {
+      "prefix": "hC",
+      "file": "runtime-lexicon-shards/0068-0043.json",
+      "entryCount": 1,
+      "bytes": 133
+    },
+    {
+      "prefix": "hd",
+      "file": "runtime-lexicon-shards/0068-0064.json",
+      "entryCount": 5,
+      "bytes": 391
+    },
+    {
+      "prefix": "he",
+      "file": "runtime-lexicon-shards/0068-0065.json",
+      "entryCount": 2486,
+      "bytes": 229905
+    },
+    {
+      "prefix": "hg",
+      "file": "runtime-lexicon-shards/0068-0067.json",
+      "entryCount": 4,
+      "bytes": 321
+    },
+    {
+      "prefix": "hh",
+      "file": "runtime-lexicon-shards/0068-0068.json",
+      "entryCount": 1,
+      "bytes": 113
+    },
+    {
+      "prefix": "hi",
+      "file": "runtime-lexicon-shards/0068-0069.json",
+      "entryCount": 4882,
+      "bytes": 457465
+    },
+    {
+      "prefix": "hj",
+      "file": "runtime-lexicon-shards/0068-006a.json",
+      "entryCount": 2,
+      "bytes": 179
+    },
+    {
+      "prefix": "hk",
+      "file": "runtime-lexicon-shards/0068-006b.json",
+      "entryCount": 1,
+      "bytes": 124
+    },
+    {
+      "prefix": "hl",
+      "file": "runtime-lexicon-shards/0068-006c.json",
+      "entryCount": 99,
+      "bytes": 8060
+    },
+    {
+      "prefix": "hm",
+      "file": "runtime-lexicon-shards/0068-006d.json",
+      "entryCount": 102,
+      "bytes": 8945
+    },
+    {
+      "prefix": "hn",
+      "file": "runtime-lexicon-shards/0068-006e.json",
+      "entryCount": 32,
+      "bytes": 2433
+    },
+    {
+      "prefix": "ho",
+      "file": "runtime-lexicon-shards/0068-006f.json",
+      "entryCount": 1096,
+      "bytes": 95475
+    },
+    {
+      "prefix": "hp",
+      "file": "runtime-lexicon-shards/0068-0070.json",
+      "entryCount": 1,
+      "bytes": 113
+    },
+    {
+      "prefix": "hr",
+      "file": "runtime-lexicon-shards/0068-0072.json",
+      "entryCount": 1480,
+      "bytes": 139689
+    },
+    {
+      "prefix": "hR",
+      "file": "runtime-lexicon-shards/0068-0052.json",
+      "entryCount": 2904,
+      "bytes": 275842
+    },
+    {
+      "prefix": "hs",
+      "file": "runtime-lexicon-shards/0068-0073.json",
+      "entryCount": 42,
+      "bytes": 3535
+    },
+    {
+      "prefix": "hS",
+      "file": "runtime-lexicon-shards/0068-0053.json",
+      "entryCount": 1,
+      "bytes": 113
+    },
+    {
+      "prefix": "ht",
+      "file": "runtime-lexicon-shards/0068-0074.json",
+      "entryCount": 5,
+      "bytes": 396
+    },
+    {
+      "prefix": "hu",
+      "file": "runtime-lexicon-shards/0068-0075.json",
+      "entryCount": 849,
+      "bytes": 73915
+    },
+    {
+      "prefix": "hv",
+      "file": "runtime-lexicon-shards/0068-0076.json",
+      "entryCount": 137,
+      "bytes": 10751
+    },
+    {
+      "prefix": "hy",
+      "file": "runtime-lexicon-shards/0068-0079.json",
+      "entryCount": 4292,
+      "bytes": 398965
+    },
+    {
+      "prefix": "i/",
+      "file": "runtime-lexicon-shards/0069-002f.json",
+      "entryCount": 45,
+      "bytes": 3836
+    },
+    {
+      "prefix": "i~",
+      "file": "runtime-lexicon-shards/0069-007e.json",
+      "entryCount": 150,
+      "bytes": 14279
+    },
+    {
+      "prefix": "I~",
+      "file": "runtime-lexicon-shards/0049-007e.json",
+      "entryCount": 15,
+      "bytes": 1357
+    },
+    {
+      "prefix": "Ia",
+      "file": "runtime-lexicon-shards/0049-0061.json",
+      "entryCount": 3,
+      "bytes": 317
+    },
+    {
+      "prefix": "ib",
+      "file": "runtime-lexicon-shards/0069-0062.json",
+      "entryCount": 80,
+      "bytes": 7127
+    },
+    {
+      "prefix": "Ib",
+      "file": "runtime-lexicon-shards/0049-0062.json",
+      "entryCount": 1,
+      "bytes": 152
+    },
+    {
+      "prefix": "ic",
+      "file": "runtime-lexicon-shards/0069-0063.json",
+      "entryCount": 550,
+      "bytes": 51006
+    },
+    {
+      "prefix": "Ic",
+      "file": "runtime-lexicon-shards/0049-0063.json",
+      "entryCount": 10,
+      "bytes": 859
+    },
+    {
+      "prefix": "id",
+      "file": "runtime-lexicon-shards/0069-0064.json",
+      "entryCount": 988,
+      "bytes": 87929
+    },
+    {
+      "prefix": "iD",
+      "file": "runtime-lexicon-shards/0069-0044.json",
+      "entryCount": 41,
+      "bytes": 4177
+    },
+    {
+      "prefix": "Id",
+      "file": "runtime-lexicon-shards/0049-0064.json",
+      "entryCount": 188,
+      "bytes": 16218
+    },
+    {
+      "prefix": "ID",
+      "file": "runtime-lexicon-shards/0049-0044.json",
+      "entryCount": 46,
+      "bytes": 3941
+    },
+    {
+      "prefix": "ig",
+      "file": "runtime-lexicon-shards/0069-0067.json",
+      "entryCount": 105,
+      "bytes": 9441
+    },
+    {
+      "prefix": "Ig",
+      "file": "runtime-lexicon-shards/0049-0067.json",
+      "entryCount": 5,
+      "bytes": 409
+    },
+    {
+      "prefix": "ih",
+      "file": "runtime-lexicon-shards/0069-0068.json",
+      "entryCount": 501,
+      "bytes": 44667
+    },
+    {
+      "prefix": "Ih",
+      "file": "runtime-lexicon-shards/0049-0068.json",
+      "entryCount": 76,
+      "bytes": 6566
+    },
+    {
+      "prefix": "ij",
+      "file": "runtime-lexicon-shards/0069-006a.json",
+      "entryCount": 88,
+      "bytes": 7610
+    },
+    {
+      "prefix": "Ij",
+      "file": "runtime-lexicon-shards/0049-006a.json",
+      "entryCount": 44,
+      "bytes": 3312
+    },
+    {
+      "prefix": "ik",
+      "file": "runtime-lexicon-shards/0069-006b.json",
+      "entryCount": 496,
+      "bytes": 46454
+    },
+    {
+      "prefix": "Ik",
+      "file": "runtime-lexicon-shards/0049-006b.json",
+      "entryCount": 190,
+      "bytes": 17239
+    },
+    {
+      "prefix": "il",
+      "file": "runtime-lexicon-shards/0069-006c.json",
+      "entryCount": 168,
+      "bytes": 14119
+    },
+    {
+      "prefix": "Il",
+      "file": "runtime-lexicon-shards/0049-006c.json",
+      "entryCount": 14,
+      "bytes": 1438
+    },
+    {
+      "prefix": "im",
+      "file": "runtime-lexicon-shards/0069-006d.json",
+      "entryCount": 303,
+      "bytes": 26906
+    },
+    {
+      "prefix": "iM",
+      "file": "runtime-lexicon-shards/0069-004d.json",
+      "entryCount": 82,
+      "bytes": 7516
+    },
+    {
+      "prefix": "Im",
+      "file": "runtime-lexicon-shards/0049-006d.json",
+      "entryCount": 19,
+      "bytes": 1664
+    },
+    {
+      "prefix": "IM",
+      "file": "runtime-lexicon-shards/0049-004d.json",
+      "entryCount": 7,
+      "bytes": 644
+    },
+    {
+      "prefix": "in",
+      "file": "runtime-lexicon-shards/0069-006e.json",
+      "entryCount": 2384,
+      "bytes": 230803
+    },
+    {
+      "prefix": "iN",
+      "file": "runtime-lexicon-shards/0069-004e.json",
+      "entryCount": 50,
+      "bytes": 4889
+    },
+    {
+      "prefix": "In",
+      "file": "runtime-lexicon-shards/0049-006e.json",
+      "entryCount": 26,
+      "bytes": 2183
+    },
+    {
+      "prefix": "ip",
+      "file": "runtime-lexicon-shards/0069-0070.json",
+      "entryCount": 21,
+      "bytes": 1730
+    },
+    {
+      "prefix": "Ip",
+      "file": "runtime-lexicon-shards/0049-0070.json",
+      "entryCount": 147,
+      "bytes": 13243
+    },
+    {
+      "prefix": "ir",
+      "file": "runtime-lexicon-shards/0069-0072.json",
+      "entryCount": 173,
+      "bytes": 14251
+    },
+    {
+      "prefix": "Ir",
+      "file": "runtime-lexicon-shards/0049-0072.json",
+      "entryCount": 188,
+      "bytes": 15746
+    },
+    {
+      "prefix": "is",
+      "file": "runtime-lexicon-shards/0069-0073.json",
+      "entryCount": 181,
+      "bytes": 14674
+    },
+    {
+      "prefix": "iS",
+      "file": "runtime-lexicon-shards/0069-0053.json",
+      "entryCount": 976,
+      "bytes": 89616
+    },
+    {
+      "prefix": "Is",
+      "file": "runtime-lexicon-shards/0049-0073.json",
+      "entryCount": 1258,
+      "bytes": 118868
+    },
+    {
+      "prefix": "IS",
+      "file": "runtime-lexicon-shards/0049-0053.json",
+      "entryCount": 249,
+      "bytes": 23591
+    },
+    {
+      "prefix": "it",
+      "file": "runtime-lexicon-shards/0069-0074.json",
+      "entryCount": 7893,
+      "bytes": 769327
+    },
+    {
+      "prefix": "iT",
+      "file": "runtime-lexicon-shards/0069-0054.json",
+      "entryCount": 10,
+      "bytes": 953
+    },
+    {
+      "prefix": "It",
+      "file": "runtime-lexicon-shards/0049-0074.json",
+      "entryCount": 98,
+      "bytes": 8800
+    },
+    {
+      "prefix": "IT",
+      "file": "runtime-lexicon-shards/0049-0054.json",
+      "entryCount": 2,
+      "bytes": 186
+    },
+    {
+      "prefix": "iv",
+      "file": "runtime-lexicon-shards/0069-0076.json",
+      "entryCount": 979,
+      "bytes": 84897
+    },
+    {
+      "prefix": "Iv",
+      "file": "runtime-lexicon-shards/0049-0076.json",
+      "entryCount": 15,
+      "bytes": 1106
+    },
+    {
+      "prefix": "iy",
+      "file": "runtime-lexicon-shards/0069-0079.json",
+      "entryCount": 308,
+      "bytes": 25343
+    },
+    {
+      "prefix": "Iy",
+      "file": "runtime-lexicon-shards/0049-0079.json",
+      "entryCount": 58,
+      "bytes": 4585
+    },
+    {
+      "prefix": "j~",
+      "file": "runtime-lexicon-shards/006a-007e.json",
+      "entryCount": 5208,
+      "bytes": 520610
+    },
+    {
+      "prefix": "ja",
+      "file": "runtime-lexicon-shards/006a-0061.json",
+      "entryCount": 25457,
+      "bytes": 2339572
+    },
+    {
+      "prefix": "jb",
+      "file": "runtime-lexicon-shards/006a-0062.json",
+      "entryCount": 2,
+      "bytes": 176
+    },
+    {
+      "prefix": "jc",
+      "file": "runtime-lexicon-shards/006a-0063.json",
+      "entryCount": 1,
+      "bytes": 114
+    },
+    {
+      "prefix": "jd",
+      "file": "runtime-lexicon-shards/006a-0064.json",
+      "entryCount": 2,
+      "bytes": 189
+    },
+    {
+      "prefix": "je",
+      "file": "runtime-lexicon-shards/006a-0065.json",
+      "entryCount": 368,
+      "bytes": 29721
+    },
+    {
+      "prefix": "jg",
+      "file": "runtime-lexicon-shards/006a-0067.json",
+      "entryCount": 6,
+      "bytes": 505
+    },
+    {
+      "prefix": "jh",
+      "file": "runtime-lexicon-shards/006a-0068.json",
+      "entryCount": 1107,
+      "bytes": 98198
+    },
+    {
+      "prefix": "ji",
+      "file": "runtime-lexicon-shards/006a-0069.json",
+      "entryCount": 6502,
+      "bytes": 596759
+    },
+    {
+      "prefix": "jj",
+      "file": "runtime-lexicon-shards/006a-006a.json",
+      "entryCount": 62,
+      "bytes": 5334
+    },
+    {
+      "prefix": "jk",
+      "file": "runtime-lexicon-shards/006a-006b.json",
+      "entryCount": 1,
+      "bytes": 114
+    },
+    {
+      "prefix": "jl",
+      "file": "runtime-lexicon-shards/006a-006c.json",
+      "entryCount": 4,
+      "bytes": 346
+    },
+    {
+      "prefix": "jm",
+      "file": "runtime-lexicon-shards/006a-006d.json",
+      "entryCount": 2,
+      "bytes": 226
+    },
+    {
+      "prefix": "jn",
+      "file": "runtime-lexicon-shards/006a-006e.json",
+      "entryCount": 1,
+      "bytes": 172
+    },
+    {
+      "prefix": "jo",
+      "file": "runtime-lexicon-shards/006a-006f.json",
+      "entryCount": 365,
+      "bytes": 29084
+    },
+    {
+      "prefix": "jp",
+      "file": "runtime-lexicon-shards/006a-0070.json",
+      "entryCount": 5,
+      "bytes": 440
+    },
+    {
+      "prefix": "jr",
+      "file": "runtime-lexicon-shards/006a-0072.json",
+      "entryCount": 22,
+      "bytes": 1692
+    },
+    {
+      "prefix": "jR",
+      "file": "runtime-lexicon-shards/006a-0052.json",
+      "entryCount": 118,
+      "bytes": 10796
+    },
+    {
+      "prefix": "jS",
+      "file": "runtime-lexicon-shards/006a-0053.json",
+      "entryCount": 1,
+      "bytes": 113
+    },
+    {
+      "prefix": "jt",
+      "file": "runtime-lexicon-shards/006a-0074.json",
+      "entryCount": 2,
+      "bytes": 175
+    },
+    {
+      "prefix": "ju",
+      "file": "runtime-lexicon-shards/006a-0075.json",
+      "entryCount": 901,
+      "bytes": 76432
+    },
+    {
+      "prefix": "jv",
+      "file": "runtime-lexicon-shards/006a-0076.json",
+      "entryCount": 1106,
+      "bytes": 106530
+    },
+    {
+      "prefix": "jy",
+      "file": "runtime-lexicon-shards/006a-0079.json",
+      "entryCount": 1879,
+      "bytes": 185331
+    },
+    {
+      "prefix": "k~",
+      "file": "runtime-lexicon-shards/006b-007e.json",
+      "entryCount": 1,
+      "bytes": 132
+    },
+    {
+      "prefix": "ka",
+      "file": "runtime-lexicon-shards/006b-0061.json",
+      "entryCount": 67772,
+      "bytes": 6451155
+    },
+    {
+      "prefix": "kb",
+      "file": "runtime-lexicon-shards/006b-0062.json",
+      "entryCount": 2,
+      "bytes": 181
+    },
+    {
+      "prefix": "kc",
+      "file": "runtime-lexicon-shards/006b-0063.json",
+      "entryCount": 6,
+      "bytes": 600
+    },
+    {
+      "prefix": "kd",
+      "file": "runtime-lexicon-shards/006b-0064.json",
+      "entryCount": 4,
+      "bytes": 337
+    },
+    {
+      "prefix": "ke",
+      "file": "runtime-lexicon-shards/006b-0065.json",
+      "entryCount": 5149,
+      "bytes": 490564
+    },
+    {
+      "prefix": "kg",
+      "file": "runtime-lexicon-shards/006b-0067.json",
+      "entryCount": 2,
+      "bytes": 182
+    },
+    {
+      "prefix": "kh",
+      "file": "runtime-lexicon-shards/006b-0068.json",
+      "entryCount": 6602,
+      "bytes": 583910
+    },
+    {
+      "prefix": "ki",
+      "file": "runtime-lexicon-shards/006b-0069.json",
+      "entryCount": 7564,
+      "bytes": 716407
+    },
+    {
+      "prefix": "kj",
+      "file": "runtime-lexicon-shards/006b-006a.json",
+      "entryCount": 1,
+      "bytes": 149
+    },
+    {
+      "prefix": "kk",
+      "file": "runtime-lexicon-shards/006b-006b.json",
+      "entryCount": 59,
+      "bytes": 4881
+    },
+    {
+      "prefix": "kl",
+      "file": "runtime-lexicon-shards/006b-006c.json",
+      "entryCount": 1283,
+      "bytes": 121193
+    },
+    {
+      "prefix": "km",
+      "file": "runtime-lexicon-shards/006b-006d.json",
+      "entryCount": 9,
+      "bytes": 790
+    },
+    {
+      "prefix": "kn",
+      "file": "runtime-lexicon-shards/006b-006e.json",
+      "entryCount": 44,
+      "bytes": 3386
+    },
+    {
+      "prefix": "kN",
+      "file": "runtime-lexicon-shards/006b-004e.json",
+      "entryCount": 1,
+      "bytes": 137
+    },
+    {
+      "prefix": "ko",
+      "file": "runtime-lexicon-shards/006b-006f.json",
+      "entryCount": 4389,
+      "bytes": 400890
+    },
+    {
+      "prefix": "kp",
+      "file": "runtime-lexicon-shards/006b-0070.json",
+      "entryCount": 7,
+      "bytes": 623
+    },
+    {
+      "prefix": "kr",
+      "file": "runtime-lexicon-shards/006b-0072.json",
+      "entryCount": 7049,
+      "bytes": 677305
+    },
+    {
+      "prefix": "kR",
+      "file": "runtime-lexicon-shards/006b-0052.json",
+      "entryCount": 11896,
+      "bytes": 1157271
+    },
+    {
+      "prefix": "ks",
+      "file": "runtime-lexicon-shards/006b-0073.json",
+      "entryCount": 83,
+      "bytes": 6943
+    },
+    {
+      "prefix": "kS",
+      "file": "runtime-lexicon-shards/006b-0053.json",
+      "entryCount": 9632,
+      "bytes": 928139
+    },
+    {
+      "prefix": "kt",
+      "file": "runtime-lexicon-shards/006b-0074.json",
+      "entryCount": 342,
+      "bytes": 31052
+    },
+    {
+      "prefix": "ku",
+      "file": "runtime-lexicon-shards/006b-0075.json",
+      "entryCount": 16721,
+      "bytes": 1562367
+    },
+    {
+      "prefix": "kv",
+      "file": "runtime-lexicon-shards/006b-0076.json",
+      "entryCount": 1371,
+      "bytes": 132174
+    },
+    {
+      "prefix": "ky",
+      "file": "runtime-lexicon-shards/006b-0079.json",
+      "entryCount": 183,
+      "bytes": 15687
+    },
+    {
+      "prefix": "la",
+      "file": "runtime-lexicon-shards/006c-0061.json",
+      "entryCount": 12053,
+      "bytes": 1120404
+    },
+    {
+      "prefix": "lb",
+      "file": "runtime-lexicon-shards/006c-0062.json",
+      "entryCount": 2,
+      "bytes": 182
+    },
+    {
+      "prefix": "lc",
+      "file": "runtime-lexicon-shards/006c-0063.json",
+      "entryCount": 1,
+      "bytes": 114
+    },
+    {
+      "prefix": "ld",
+      "file": "runtime-lexicon-shards/006c-0064.json",
+      "entryCount": 2,
+      "bytes": 206
+    },
+    {
+      "prefix": "lD",
+      "file": "runtime-lexicon-shards/006c-0044.json",
+      "entryCount": 1,
+      "bytes": 139
+    },
+    {
+      "prefix": "le",
+      "file": "runtime-lexicon-shards/006c-0065.json",
+      "entryCount": 929,
+      "bytes": 78260
+    },
+    {
+      "prefix": "lg",
+      "file": "runtime-lexicon-shards/006c-0067.json",
+      "entryCount": 3,
+      "bytes": 267
+    },
+    {
+      "prefix": "lh",
+      "file": "runtime-lexicon-shards/006c-0068.json",
+      "entryCount": 6,
+      "bytes": 449
+    },
+    {
+      "prefix": "li",
+      "file": "runtime-lexicon-shards/006c-0069.json",
+      "entryCount": 2735,
+      "bytes": 251596
+    },
+    {
+      "prefix": "lj",
+      "file": "runtime-lexicon-shards/006c-006a.json",
+      "entryCount": 1,
+      "bytes": 145
+    },
+    {
+      "prefix": "lk",
+      "file": "runtime-lexicon-shards/006c-006b.json",
+      "entryCount": 4,
+      "bytes": 345
+    },
+    {
+      "prefix": "ll",
+      "file": "runtime-lexicon-shards/006c-006c.json",
+      "entryCount": 117,
+      "bytes": 9779
+    },
+    {
+      "prefix": "lm",
+      "file": "runtime-lexicon-shards/006c-006d.json",
+      "entryCount": 3,
+      "bytes": 251
+    },
+    {
+      "prefix": "lo",
+      "file": "runtime-lexicon-shards/006c-006f.json",
+      "entryCount": 6248,
+      "bytes": 584229
+    },
+    {
+      "prefix": "lp",
+      "file": "runtime-lexicon-shards/006c-0070.json",
+      "entryCount": 15,
+      "bytes": 1311
+    },
+    {
+      "prefix": "lr",
+      "file": "runtime-lexicon-shards/006c-0072.json",
+      "entryCount": 16,
+      "bytes": 1399
+    },
+    {
+      "prefix": "lR",
+      "file": "runtime-lexicon-shards/006c-0052.json",
+      "entryCount": 83,
+      "bytes": 7452
+    },
+    {
+      "prefix": "ls",
+      "file": "runtime-lexicon-shards/006c-0073.json",
+      "entryCount": 2,
+      "bytes": 243
+    },
+    {
+      "prefix": "lS",
+      "file": "runtime-lexicon-shards/006c-0053.json",
+      "entryCount": 1,
+      "bytes": 113
+    },
+    {
+      "prefix": "lt",
+      "file": "runtime-lexicon-shards/006c-0074.json",
+      "entryCount": 11,
+      "bytes": 1068
+    },
+    {
+      "prefix": "lT",
+      "file": "runtime-lexicon-shards/006c-0054.json",
+      "entryCount": 1,
+      "bytes": 113
+    },
+    {
+      "prefix": "lu",
+      "file": "runtime-lexicon-shards/006c-0075.json",
+      "entryCount": 1107,
+      "bytes": 99532
+    },
+    {
+      "prefix": "lv",
+      "file": "runtime-lexicon-shards/006c-0076.json",
+      "entryCount": 16,
+      "bytes": 1283
+    },
+    {
+      "prefix": "ly",
+      "file": "runtime-lexicon-shards/006c-0079.json",
+      "entryCount": 101,
+      "bytes": 8566
+    },
+    {
+      "prefix": "ma",
+      "file": "runtime-lexicon-shards/006d-0061.json",
+      "entryCount": 69439,
+      "bytes": 6534012
+    },
+    {
+      "prefix": "mb",
+      "file": "runtime-lexicon-shards/006d-0062.json",
+      "entryCount": 32,
+      "bytes": 2548
+    },
+    {
+      "prefix": "md",
+      "file": "runtime-lexicon-shards/006d-0064.json",
+      "entryCount": 3,
+      "bytes": 281
+    },
+    {
+      "prefix": "me",
+      "file": "runtime-lexicon-shards/006d-0065.json",
+      "entryCount": 3214,
+      "bytes": 287923
+    },
+    {
+      "prefix": "mg",
+      "file": "runtime-lexicon-shards/006d-0067.json",
+      "entryCount": 2,
+      "bytes": 174
+    },
+    {
+      "prefix": "mh",
+      "file": "runtime-lexicon-shards/006d-0068.json",
+      "entryCount": 115,
+      "bytes": 8940
+    },
+    {
+      "prefix": "mi",
+      "file": "runtime-lexicon-shards/006d-0069.json",
+      "entryCount": 4635,
+      "bytes": 430646
+    },
+    {
+      "prefix": "mj",
+      "file": "runtime-lexicon-shards/006d-006a.json",
+      "entryCount": 1,
+      "bytes": 113
+    },
+    {
+      "prefix": "mk",
+      "file": "runtime-lexicon-shards/006d-006b.json",
+      "entryCount": 1,
+      "bytes": 114
+    },
+    {
+      "prefix": "Mk",
+      "file": "runtime-lexicon-shards/004d-006b.json",
+      "entryCount": 1,
+      "bytes": 130
+    },
+    {
+      "prefix": "ml",
+      "file": "runtime-lexicon-shards/006d-006c.json",
+      "entryCount": 188,
+      "bytes": 17308
+    },
+    {
+      "prefix": "mm",
+      "file": "runtime-lexicon-shards/006d-006d.json",
+      "entryCount": 10,
+      "bytes": 775
+    },
+    {
+      "prefix": "mn",
+      "file": "runtime-lexicon-shards/006d-006e.json",
+      "entryCount": 14,
+      "bytes": 1064
+    },
+    {
+      "prefix": "mo",
+      "file": "runtime-lexicon-shards/006d-006f.json",
+      "entryCount": 3626,
+      "bytes": 331049
+    },
+    {
+      "prefix": "mp",
+      "file": "runtime-lexicon-shards/006d-0070.json",
+      "entryCount": 11,
+      "bytes": 958
+    },
+    {
+      "prefix": "mr",
+      "file": "runtime-lexicon-shards/006d-0072.json",
+      "entryCount": 127,
+      "bytes": 10971
+    },
+    {
+      "prefix": "mR",
+      "file": "runtime-lexicon-shards/006d-0052.json",
+      "entryCount": 5291,
+      "bytes": 500551
+    },
+    {
+      "prefix": "ms",
+      "file": "runtime-lexicon-shards/006d-0073.json",
+      "entryCount": 3,
+      "bytes": 292
+    },
+    {
+      "prefix": "mS",
+      "file": "runtime-lexicon-shards/006d-0053.json",
+      "entryCount": 1,
+      "bytes": 113
+    },
+    {
+      "prefix": "Ms",
+      "file": "runtime-lexicon-shards/004d-0073.json",
+      "entryCount": 8,
+      "bytes": 740
+    },
+    {
+      "prefix": "mt",
+      "file": "runtime-lexicon-shards/006d-0074.json",
+      "entryCount": 7,
+      "bytes": 593
+    },
+    {
+      "prefix": "mu",
+      "file": "runtime-lexicon-shards/006d-0075.json",
+      "entryCount": 14755,
+      "bytes": 1394623
+    },
+    {
+      "prefix": "mv",
+      "file": "runtime-lexicon-shards/006d-0076.json",
+      "entryCount": 11,
+      "bytes": 836
+    },
+    {
+      "prefix": "Mv",
+      "file": "runtime-lexicon-shards/004d-0076.json",
+      "entryCount": 2,
+      "bytes": 233
+    },
+    {
+      "prefix": "my",
+      "file": "runtime-lexicon-shards/006d-0079.json",
+      "entryCount": 55,
+      "bytes": 4595
+    },
+    {
+      "prefix": "na",
+      "file": "runtime-lexicon-shards/006e-0061.json",
+      "entryCount": 39331,
+      "bytes": 3699292
+    },
+    {
+      "prefix": "nb",
+      "file": "runtime-lexicon-shards/006e-0062.json",
+      "entryCount": 27,
+      "bytes": 2344
+    },
+    {
+      "prefix": "nc",
+      "file": "runtime-lexicon-shards/006e-0063.json",
+      "entryCount": 1,
+      "bytes": 114
+    },
+    {
+      "prefix": "nC",
+      "file": "runtime-lexicon-shards/006e-0043.json",
+      "entryCount": 1,
+      "bytes": 131
+    },
+    {
+      "prefix": "nd",
+      "file": "runtime-lexicon-shards/006e-0064.json",
+      "entryCount": 99,
+      "bytes": 8231
+    },
+    {
+      "prefix": "ND",
+      "file": "runtime-lexicon-shards/004e-0044.json",
+      "entryCount": 3,
+      "bytes": 328
+    },
+    {
+      "prefix": "ne",
+      "file": "runtime-lexicon-shards/006e-0065.json",
+      "entryCount": 2267,
+      "bytes": 202871
+    },
+    {
+      "prefix": "ng",
+      "file": "runtime-lexicon-shards/006e-0067.json",
+      "entryCount": 19,
+      "bytes": 1839
+    },
+    {
+      "prefix": "nh",
+      "file": "runtime-lexicon-shards/006e-0068.json",
+      "entryCount": 17,
+      "bytes": 1333
+    },
+    {
+      "prefix": "ni",
+      "file": "runtime-lexicon-shards/006e-0069.json",
+      "entryCount": 37070,
+      "bytes": 3480574
+    },
+    {
+      "prefix": "nj",
+      "file": "runtime-lexicon-shards/006e-006a.json",
+      "entryCount": 2,
+      "bytes": 174
+    },
+    {
+      "prefix": "nk",
+      "file": "runtime-lexicon-shards/006e-006b.json",
+      "entryCount": 29,
+      "bytes": 2505
+    },
+    {
+      "prefix": "nl",
+      "file": "runtime-lexicon-shards/006e-006c.json",
+      "entryCount": 4,
+      "bytes": 376
+    },
+    {
+      "prefix": "nm",
+      "file": "runtime-lexicon-shards/006e-006d.json",
+      "entryCount": 123,
+      "bytes": 10764
+    },
+    {
+      "prefix": "nn",
+      "file": "runtime-lexicon-shards/006e-006e.json",
+      "entryCount": 297,
+      "bytes": 26585
+    },
+    {
+      "prefix": "no",
+      "file": "runtime-lexicon-shards/006e-006f.json",
+      "entryCount": 1308,
+      "bytes": 114853
+    },
+    {
+      "prefix": "np",
+      "file": "runtime-lexicon-shards/006e-0070.json",
+      "entryCount": 57,
+      "bytes": 5153
+    },
+    {
+      "prefix": "nr",
+      "file": "runtime-lexicon-shards/006e-0072.json",
+      "entryCount": 16,
+      "bytes": 1261
+    },
+    {
+      "prefix": "nR",
+      "file": "runtime-lexicon-shards/006e-0052.json",
+      "entryCount": 2691,
+      "bytes": 253090
+    },
+    {
+      "prefix": "ns",
+      "file": "runtime-lexicon-shards/006e-0073.json",
+      "entryCount": 65,
+      "bytes": 5998
+    },
+    {
+      "prefix": "nS",
+      "file": "runtime-lexicon-shards/006e-0053.json",
+      "entryCount": 2,
+      "bytes": 195
+    },
+    {
+      "prefix": "nt",
+      "file": "runtime-lexicon-shards/006e-0074.json",
+      "entryCount": 210,
+      "bytes": 18119
+    },
+    {
+      "prefix": "nu",
+      "file": "runtime-lexicon-shards/006e-0075.json",
+      "entryCount": 1295,
+      "bytes": 116588
+    },
+    {
+      "prefix": "nv",
+      "file": "runtime-lexicon-shards/006e-0076.json",
+      "entryCount": 143,
+      "bytes": 11630
+    },
+    {
+      "prefix": "Nv",
+      "file": "runtime-lexicon-shards/004e-0076.json",
+      "entryCount": 1,
+      "bytes": 179
+    },
+    {
+      "prefix": "ny",
+      "file": "runtime-lexicon-shards/006e-0079.json",
+      "entryCount": 2601,
+      "bytes": 247060
+    },
+    {
+      "prefix": "o.",
+      "file": "runtime-lexicon-shards/006f-002e.json",
+      "entryCount": 8,
+      "bytes": 673
+    },
+    {
+      "prefix": "o/",
+      "file": "runtime-lexicon-shards/006f-002f.json",
+      "entryCount": 3,
+      "bytes": 258
+    },
+    {
+      "prefix": "o~",
+      "file": "runtime-lexicon-shards/006f-007e.json",
+      "entryCount": 385,
+      "bytes": 40902
+    },
+    {
+      "prefix": "ob",
+      "file": "runtime-lexicon-shards/006f-0062.json",
+      "entryCount": 19,
+      "bytes": 1452
+    },
+    {
+      "prefix": "oc",
+      "file": "runtime-lexicon-shards/006f-0063.json",
+      "entryCount": 3,
+      "bytes": 255
+    },
+    {
+      "prefix": "oC",
+      "file": "runtime-lexicon-shards/006f-0043.json",
+      "entryCount": 1,
+      "bytes": 118
+    },
+    {
+      "prefix": "od",
+      "file": "runtime-lexicon-shards/006f-0064.json",
+      "entryCount": 115,
+      "bytes": 9197
+    },
+    {
+      "prefix": "oD",
+      "file": "runtime-lexicon-shards/006f-0044.json",
+      "entryCount": 87,
+      "bytes": 8024
+    },
+    {
+      "prefix": "og",
+      "file": "runtime-lexicon-shards/006f-0067.json",
+      "entryCount": 89,
+      "bytes": 7104
+    },
+    {
+      "prefix": "oh",
+      "file": "runtime-lexicon-shards/006f-0068.json",
+      "entryCount": 20,
+      "bytes": 1466
+    },
+    {
+      "prefix": "oj",
+      "file": "runtime-lexicon-shards/006f-006a.json",
+      "entryCount": 177,
+      "bytes": 15017
+    },
+    {
+      "prefix": "ok",
+      "file": "runtime-lexicon-shards/006f-006b.json",
+      "entryCount": 125,
+      "bytes": 10155
+    },
+    {
+      "prefix": "ol",
+      "file": "runtime-lexicon-shards/006f-006c.json",
+      "entryCount": 65,
+      "bytes": 5254
+    },
+    {
+      "prefix": "om",
+      "file": "runtime-lexicon-shards/006f-006d.json",
+      "entryCount": 118,
+      "bytes": 10680
+    },
+    {
+      "prefix": "oM",
+      "file": "runtime-lexicon-shards/006f-004d.json",
+      "entryCount": 64,
+      "bytes": 6791
+    },
+    {
+      "prefix": "on",
+      "file": "runtime-lexicon-shards/006f-006e.json",
+      "entryCount": 17,
+      "bytes": 1358
+    },
+    {
+      "prefix": "oN",
+      "file": "runtime-lexicon-shards/006f-004e.json",
+      "entryCount": 3,
+      "bytes": 296
+    },
+    {
+      "prefix": "op",
+      "file": "runtime-lexicon-shards/006f-0070.json",
+      "entryCount": 34,
+      "bytes": 2420
+    },
+    {
+      "prefix": "or",
+      "file": "runtime-lexicon-shards/006f-0072.json",
+      "entryCount": 95,
+      "bytes": 7605
+    },
+    {
+      "prefix": "os",
+      "file": "runtime-lexicon-shards/006f-0073.json",
+      "entryCount": 65,
+      "bytes": 5786
+    },
+    {
+      "prefix": "oS",
+      "file": "runtime-lexicon-shards/006f-0053.json",
+      "entryCount": 290,
+      "bytes": 25580
+    },
+    {
+      "prefix": "ot",
+      "file": "runtime-lexicon-shards/006f-0074.json",
+      "entryCount": 88,
+      "bytes": 7315
+    },
+    {
+      "prefix": "oT",
+      "file": "runtime-lexicon-shards/006f-0054.json",
+      "entryCount": 4,
+      "bytes": 333
+    },
+    {
+      "prefix": "ov",
+      "file": "runtime-lexicon-shards/006f-0076.json",
+      "entryCount": 21,
+      "bytes": 1543
+    },
+    {
+      "prefix": "oy",
+      "file": "runtime-lexicon-shards/006f-0079.json",
+      "entryCount": 9,
+      "bytes": 658
+    },
+    {
+      "prefix": "p~",
+      "file": "runtime-lexicon-shards/0070-007e.json",
+      "entryCount": 1,
+      "bytes": 170
+    },
+    {
+      "prefix": "pa",
+      "file": "runtime-lexicon-shards/0070-0061.json",
+      "entryCount": 71059,
+      "bytes": 6729391
+    },
+    {
+      "prefix": "pb",
+      "file": "runtime-lexicon-shards/0070-0062.json",
+      "entryCount": 1,
+      "bytes": 114
+    },
+    {
+      "prefix": "pd",
+      "file": "runtime-lexicon-shards/0070-0064.json",
+      "entryCount": 2,
+      "bytes": 207
+    },
+    {
+      "prefix": "pe",
+      "file": "runtime-lexicon-shards/0070-0065.json",
+      "entryCount": 677,
+      "bytes": 57060
+    },
+    {
+      "prefix": "ph",
+      "file": "runtime-lexicon-shards/0070-0068.json",
+      "entryCount": 5156,
+      "bytes": 463118
+    },
+    {
+      "prefix": "pi",
+      "file": "runtime-lexicon-shards/0070-0069.json",
+      "entryCount": 7494,
+      "bytes": 694992
+    },
+    {
+      "prefix": "pk",
+      "file": "runtime-lexicon-shards/0070-006b.json",
+      "entryCount": 10,
+      "bytes": 862
+    },
+    {
+      "prefix": "pl",
+      "file": "runtime-lexicon-shards/0070-006c.json",
+      "entryCount": 685,
+      "bytes": 61648
+    },
+    {
+      "prefix": "pn",
+      "file": "runtime-lexicon-shards/0070-006e.json",
+      "entryCount": 12,
+      "bytes": 982
+    },
+    {
+      "prefix": "po",
+      "file": "runtime-lexicon-shards/0070-006f.json",
+      "entryCount": 732,
+      "bytes": 60640
+    },
+    {
+      "prefix": "pp",
+      "file": "runtime-lexicon-shards/0070-0070.json",
+      "entryCount": 7,
+      "bytes": 675
+    },
+    {
+      "prefix": "pr",
+      "file": "runtime-lexicon-shards/0070-0072.json",
+      "entryCount": 69936,
+      "bytes": 6855127
+    },
+    {
+      "prefix": "pR",
+      "file": "runtime-lexicon-shards/0070-0052.json",
+      "entryCount": 3589,
+      "bytes": 344966
+    },
+    {
+      "prefix": "ps",
+      "file": "runtime-lexicon-shards/0070-0073.json",
+      "entryCount": 23,
+      "bytes": 1802
+    },
+    {
+      "prefix": "pS",
+      "file": "runtime-lexicon-shards/0070-0053.json",
+      "entryCount": 3,
+      "bytes": 252
+    },
+    {
+      "prefix": "pt",
+      "file": "runtime-lexicon-shards/0070-0074.json",
+      "entryCount": 34,
+      "bytes": 2856
+    },
+    {
+      "prefix": "pu",
+      "file": "runtime-lexicon-shards/0070-0075.json",
+      "entryCount": 28078,
+      "bytes": 2720765
+    },
+    {
+      "prefix": "pv",
+      "file": "runtime-lexicon-shards/0070-0076.json",
+      "entryCount": 10,
+      "bytes": 870
+    },
+    {
+      "prefix": "py",
+      "file": "runtime-lexicon-shards/0070-0079.json",
+      "entryCount": 146,
+      "bytes": 12317
+    },
+    {
+      "prefix": "ra",
+      "file": "runtime-lexicon-shards/0072-0061.json",
+      "entryCount": 37713,
+      "bytes": 3579438
+    },
+    {
+      "prefix": "rb",
+      "file": "runtime-lexicon-shards/0072-0062.json",
+      "entryCount": 138,
+      "bytes": 12013
+    },
+    {
+      "prefix": "rc",
+      "file": "runtime-lexicon-shards/0072-0063.json",
+      "entryCount": 11,
+      "bytes": 894
+    },
+    {
+      "prefix": "rC",
+      "file": "runtime-lexicon-shards/0072-0043.json",
+      "entryCount": 1,
+      "bytes": 152
+    },
+    {
+      "prefix": "rd",
+      "file": "runtime-lexicon-shards/0072-0064.json",
+      "entryCount": 116,
+      "bytes": 10446
+    },
+    {
+      "prefix": "re",
+      "file": "runtime-lexicon-shards/0072-0065.json",
+      "entryCount": 1508,
+      "bytes": 133555
+    },
+    {
+      "prefix": "rg",
+      "file": "runtime-lexicon-shards/0072-0067.json",
+      "entryCount": 121,
+      "bytes": 10904
+    },
+    {
+      "prefix": "rh",
+      "file": "runtime-lexicon-shards/0072-0068.json",
+      "entryCount": 55,
+      "bytes": 4781
+    },
+    {
+      "prefix": "ri",
+      "file": "runtime-lexicon-shards/0072-0069.json",
+      "entryCount": 1611,
+      "bytes": 143244
+    },
+    {
+      "prefix": "rj",
+      "file": "runtime-lexicon-shards/0072-006a.json",
+      "entryCount": 92,
+      "bytes": 7899
+    },
+    {
+      "prefix": "rk",
+      "file": "runtime-lexicon-shards/0072-006b.json",
+      "entryCount": 12,
+      "bytes": 889
+    },
+    {
+      "prefix": "rl",
+      "file": "runtime-lexicon-shards/0072-006c.json",
+      "entryCount": 38,
+      "bytes": 3499
+    },
+    {
+      "prefix": "rm",
+      "file": "runtime-lexicon-shards/0072-006d.json",
+      "entryCount": 154,
+      "bytes": 13767
+    },
+    {
+      "prefix": "rn",
+      "file": "runtime-lexicon-shards/0072-006e.json",
+      "entryCount": 110,
+      "bytes": 10387
+    },
+    {
+      "prefix": "rN",
+      "file": "runtime-lexicon-shards/0072-004e.json",
+      "entryCount": 14,
+      "bytes": 1123
+    },
+    {
+      "prefix": "ro",
+      "file": "runtime-lexicon-shards/0072-006f.json",
+      "entryCount": 2666,
+      "bytes": 235019
+    },
+    {
+      "prefix": "rp",
+      "file": "runtime-lexicon-shards/0072-0070.json",
+      "entryCount": 14,
+      "bytes": 1061
+    },
+    {
+      "prefix": "rr",
+      "file": "runtime-lexicon-shards/0072-0072.json",
+      "entryCount": 1,
+      "bytes": 133
+    },
+    {
+      "prefix": "RR",
+      "file": "runtime-lexicon-shards/0052-0052.json",
+      "entryCount": 4039,
+      "bytes": 371321
+    },
+    {
+      "prefix": "rs",
+      "file": "runtime-lexicon-shards/0072-0073.json",
+      "entryCount": 6,
+      "bytes": 624
+    },
+    {
+      "prefix": "rS",
+      "file": "runtime-lexicon-shards/0072-0053.json",
+      "entryCount": 25,
+      "bytes": 1921
+    },
+    {
+      "prefix": "rt",
+      "file": "runtime-lexicon-shards/0072-0074.json",
+      "entryCount": 74,
+      "bytes": 5844
+    },
+    {
+      "prefix": "ru",
+      "file": "runtime-lexicon-shards/0072-0075.json",
+      "entryCount": 6531,
+      "bytes": 608067
+    },
+    {
+      "prefix": "rv",
+      "file": "runtime-lexicon-shards/0072-0076.json",
+      "entryCount": 321,
+      "bytes": 28741
+    },
+    {
+      "prefix": "ry",
+      "file": "runtime-lexicon-shards/0072-0079.json",
+      "entryCount": 123,
+      "bytes": 10417
+    },
+    {
+      "prefix": "sa",
+      "file": "runtime-lexicon-shards/0073-0061.json",
+      "entryCount": 128738,
+      "bytes": 12370680
+    },
+    {
+      "prefix": "Sa",
+      "file": "runtime-lexicon-shards/0053-0061.json",
+      "entryCount": 4116,
+      "bytes": 398217
+    },
+    {
+      "prefix": "sb",
+      "file": "runtime-lexicon-shards/0073-0062.json",
+      "entryCount": 7,
+      "bytes": 558
+    },
+    {
+      "prefix": "sc",
+      "file": "runtime-lexicon-shards/0073-0063.json",
+      "entryCount": 1,
+      "bytes": 141
+    },
+    {
+      "prefix": "sC",
+      "file": "runtime-lexicon-shards/0073-0043.json",
+      "entryCount": 4,
+      "bytes": 407
+    },
+    {
+      "prefix": "sd",
+      "file": "runtime-lexicon-shards/0073-0064.json",
+      "entryCount": 15,
+      "bytes": 1252
+    },
+    {
+      "prefix": "SD",
+      "file": "runtime-lexicon-shards/0053-0044.json",
+      "entryCount": 2,
+      "bytes": 177
+    },
+    {
+      "prefix": "se",
+      "file": "runtime-lexicon-shards/0073-0065.json",
+      "entryCount": 2552,
+      "bytes": 226818
+    },
+    {
+      "prefix": "Se",
+      "file": "runtime-lexicon-shards/0053-0065.json",
+      "entryCount": 9,
+      "bytes": 775
+    },
+    {
+      "prefix": "sg",
+      "file": "runtime-lexicon-shards/0073-0067.json",
+      "entryCount": 2,
+      "bytes": 174
+    },
+    {
+      "prefix": "sh",
+      "file": "runtime-lexicon-shards/0073-0068.json",
+      "entryCount": 86698,
+      "bytes": 8371358
+    },
+    {
+      "prefix": "si",
+      "file": "runtime-lexicon-shards/0073-0069.json",
+      "entryCount": 8399,
+      "bytes": 795167
+    },
+    {
+      "prefix": "Si",
+      "file": "runtime-lexicon-shards/0053-0069.json",
+      "entryCount": 34,
+      "bytes": 3279
+    },
+    {
+      "prefix": "sj",
+      "file": "runtime-lexicon-shards/0073-006a.json",
+      "entryCount": 2,
+      "bytes": 174
+    },
+    {
+      "prefix": "sk",
+      "file": "runtime-lexicon-shards/0073-006b.json",
+      "entryCount": 878,
+      "bytes": 82232
+    },
+    {
+      "prefix": "Sk",
+      "file": "runtime-lexicon-shards/0053-006b.json",
+      "entryCount": 13,
+      "bytes": 1148
+    },
+    {
+      "prefix": "sl",
+      "file": "runtime-lexicon-shards/0073-006c.json",
+      "entryCount": 19,
+      "bytes": 1508
+    },
+    {
+      "prefix": "Sl",
+      "file": "runtime-lexicon-shards/0053-006c.json",
+      "entryCount": 1,
+      "bytes": 128
+    },
+    {
+      "prefix": "sm",
+      "file": "runtime-lexicon-shards/0073-006d.json",
+      "entryCount": 3005,
+      "bytes": 286297
+    },
+    {
+      "prefix": "sn",
+      "file": "runtime-lexicon-shards/0073-006e.json",
+      "entryCount": 1910,
+      "bytes": 183526
+    },
+    {
+      "prefix": "SN",
+      "file": "runtime-lexicon-shards/0053-004e.json",
+      "entryCount": 22,
+      "bytes": 1739
+    },
+    {
+      "prefix": "so",
+      "file": "runtime-lexicon-shards/0073-006f.json",
+      "entryCount": 4695,
+      "bytes": 426169
+    },
+    {
+      "prefix": "So",
+      "file": "runtime-lexicon-shards/0053-006f.json",
+      "entryCount": 729,
+      "bytes": 71864
+    },
+    {
+      "prefix": "sp",
+      "file": "runtime-lexicon-shards/0073-0070.json",
+      "entryCount": 3349,
+      "bytes": 317936
+    },
+    {
+      "prefix": "Sp",
+      "file": "runtime-lexicon-shards/0053-0070.json",
+      "entryCount": 24,
+      "bytes": 2083
+    },
+    {
+      "prefix": "sr",
+      "file": "runtime-lexicon-shards/0073-0072.json",
+      "entryCount": 783,
+      "bytes": 69740
+    },
+    {
+      "prefix": "sR",
+      "file": "runtime-lexicon-shards/0073-0052.json",
+      "entryCount": 1328,
+      "bytes": 124357
+    },
+    {
+      "prefix": "Sr",
+      "file": "runtime-lexicon-shards/0053-0072.json",
+      "entryCount": 1,
+      "bytes": 136
+    },
+    {
+      "prefix": "ss",
+      "file": "runtime-lexicon-shards/0073-0073.json",
+      "entryCount": 54,
+      "bytes": 4166
+    },
+    {
+      "prefix": "sS",
+      "file": "runtime-lexicon-shards/0073-0053.json",
+      "entryCount": 1,
+      "bytes": 148
+    },
+    {
+      "prefix": "st",
+      "file": "runtime-lexicon-shards/0073-0074.json",
+      "entryCount": 11839,
+      "bytes": 1135327
+    },
+    {
+      "prefix": "sT",
+      "file": "runtime-lexicon-shards/0073-0054.json",
+      "entryCount": 82,
+      "bytes": 6697
+    },
+    {
+      "prefix": "ST",
+      "file": "runtime-lexicon-shards/0053-0054.json",
+      "entryCount": 217,
+      "bytes": 18404
+    },
+    {
+      "prefix": "su",
+      "file": "runtime-lexicon-shards/0073-0075.json",
+      "entryCount": 32713,
+      "bytes": 3011436
+    },
+    {
+      "prefix": "Su",
+      "file": "runtime-lexicon-shards/0053-0075.json",
+      "entryCount": 2,
+      "bytes": 248
+    },
+    {
+      "prefix": "sv",
+      "file": "runtime-lexicon-shards/0073-0076.json",
+      "entryCount": 23488,
+      "bytes": 2298121
+    },
+    {
+      "prefix": "Sv",
+      "file": "runtime-lexicon-shards/0053-0076.json",
+      "entryCount": 3,
+      "bytes": 315
+    },
+    {
+      "prefix": "sy",
+      "file": "runtime-lexicon-shards/0073-0079.json",
+      "entryCount": 4427,
+      "bytes": 437309
+    },
+    {
+      "prefix": "ta",
+      "file": "runtime-lexicon-shards/0074-0061.json",
+      "entryCount": 58236,
+      "bytes": 5563793
+    },
+    {
+      "prefix": "Ta",
+      "file": "runtime-lexicon-shards/0054-0061.json",
+      "entryCount": 225,
+      "bytes": 21083
+    },
+    {
+      "prefix": "tb",
+      "file": "runtime-lexicon-shards/0074-0062.json",
+      "entryCount": 5,
+      "bytes": 405
+    },
+    {
+      "prefix": "tc",
+      "file": "runtime-lexicon-shards/0074-0063.json",
+      "entryCount": 4,
+      "bytes": 346
+    },
+    {
+      "prefix": "td",
+      "file": "runtime-lexicon-shards/0074-0064.json",
+      "entryCount": 16,
+      "bytes": 1532
+    },
+    {
+      "prefix": "te",
+      "file": "runtime-lexicon-shards/0074-0065.json",
+      "entryCount": 3669,
+      "bytes": 343491
+    },
+    {
+      "prefix": "Te",
+      "file": "runtime-lexicon-shards/0054-0065.json",
+      "entryCount": 79,
+      "bytes": 6849
+    },
+    {
+      "prefix": "tg",
+      "file": "runtime-lexicon-shards/0074-0067.json",
+      "entryCount": 1,
+      "bytes": 142
+    },
+    {
+      "prefix": "th",
+      "file": "runtime-lexicon-shards/0074-0068.json",
+      "entryCount": 544,
+      "bytes": 42616
+    },
+    {
+      "prefix": "Th",
+      "file": "runtime-lexicon-shards/0054-0068.json",
+      "entryCount": 279,
+      "bytes": 24670
+    },
+    {
+      "prefix": "ti",
+      "file": "runtime-lexicon-shards/0074-0069.json",
+      "entryCount": 5675,
+      "bytes": 528951
+    },
+    {
+      "prefix": "Ti",
+      "file": "runtime-lexicon-shards/0054-0069.json",
+      "entryCount": 142,
+      "bytes": 13045
+    },
+    {
+      "prefix": "tj",
+      "file": "runtime-lexicon-shards/0074-006a.json",
+      "entryCount": 4,
+      "bytes": 336
+    },
+    {
+      "prefix": "tk",
+      "file": "runtime-lexicon-shards/0074-006b.json",
+      "entryCount": 80,
+      "bytes": 7277
+    },
+    {
+      "prefix": "tl",
+      "file": "runtime-lexicon-shards/0074-006c.json",
+      "entryCount": 2,
+      "bytes": 186
+    },
+    {
+      "prefix": "tm",
+      "file": "runtime-lexicon-shards/0074-006d.json",
+      "entryCount": 49,
+      "bytes": 4007
+    },
+    {
+      "prefix": "tn",
+      "file": "runtime-lexicon-shards/0074-006e.json",
+      "entryCount": 12,
+      "bytes": 969
+    },
+    {
+      "prefix": "to",
+      "file": "runtime-lexicon-shards/0074-006f.json",
+      "entryCount": 890,
+      "bytes": 74869
+    },
+    {
+      "prefix": "To",
+      "file": "runtime-lexicon-shards/0054-006f.json",
+      "entryCount": 31,
+      "bytes": 2522
+    },
+    {
+      "prefix": "tp",
+      "file": "runtime-lexicon-shards/0074-0070.json",
+      "entryCount": 133,
+      "bytes": 12389
+    },
+    {
+      "prefix": "tr",
+      "file": "runtime-lexicon-shards/0074-0072.json",
+      "entryCount": 9782,
+      "bytes": 952431
+    },
+    {
+      "prefix": "tR",
+      "file": "runtime-lexicon-shards/0074-0052.json",
+      "entryCount": 2323,
+      "bytes": 221634
+    },
+    {
+      "prefix": "Tr",
+      "file": "runtime-lexicon-shards/0054-0072.json",
+      "entryCount": 32,
+      "bytes": 2593
+    },
+    {
+      "prefix": "ts",
+      "file": "runtime-lexicon-shards/0074-0073.json",
+      "entryCount": 177,
+      "bytes": 15330
+    },
+    {
+      "prefix": "tS",
+      "file": "runtime-lexicon-shards/0074-0053.json",
+      "entryCount": 1,
+      "bytes": 113
+    },
+    {
+      "prefix": "tt",
+      "file": "runtime-lexicon-shards/0074-0074.json",
+      "entryCount": 205,
+      "bytes": 17710
+    },
+    {
+      "prefix": "tu",
+      "file": "runtime-lexicon-shards/0074-0075.json",
+      "entryCount": 4977,
+      "bytes": 459075
+    },
+    {
+      "prefix": "Tu",
+      "file": "runtime-lexicon-shards/0054-0075.json",
+      "entryCount": 14,
+      "bytes": 1181
+    },
+    {
+      "prefix": "tv",
+      "file": "runtime-lexicon-shards/0074-0076.json",
+      "entryCount": 8099,
+      "bytes": 766565
+    },
+    {
+      "prefix": "Tv",
+      "file": "runtime-lexicon-shards/0054-0076.json",
+      "entryCount": 3,
+      "bytes": 308
+    },
+    {
+      "prefix": "ty",
+      "file": "runtime-lexicon-shards/0074-0079.json",
+      "entryCount": 2331,
+      "bytes": 218006
+    },
+    {
+      "prefix": "Ty",
+      "file": "runtime-lexicon-shards/0054-0079.json",
+      "entryCount": 7,
+      "bytes": 615
+    },
+    {
+      "prefix": "u:",
+      "file": "runtime-lexicon-shards/0075-003a.json",
+      "entryCount": 3,
+      "bytes": 267
+    },
+    {
+      "prefix": "u/",
+      "file": "runtime-lexicon-shards/0075-002f.json",
+      "entryCount": 2,
+      "bytes": 225
+    },
+    {
+      "prefix": "u~",
+      "file": "runtime-lexicon-shards/0075-007e.json",
+      "entryCount": 26,
+      "bytes": 2303
+    },
+    {
+      "prefix": "U~",
+      "file": "runtime-lexicon-shards/0055-007e.json",
+      "entryCount": 2,
+      "bytes": 217
+    },
+    {
+      "prefix": "ub",
+      "file": "runtime-lexicon-shards/0075-0062.json",
+      "entryCount": 819,
+      "bytes": 75585
+    },
+    {
+      "prefix": "Ub",
+      "file": "runtime-lexicon-shards/0055-0062.json",
+      "entryCount": 8,
+      "bytes": 594
+    },
+    {
+      "prefix": "uc",
+      "file": "runtime-lexicon-shards/0075-0063.json",
+      "entryCount": 1402,
+      "bytes": 132605
+    },
+    {
+      "prefix": "uC",
+      "file": "runtime-lexicon-shards/0075-0043.json",
+      "entryCount": 3,
+      "bytes": 269
+    },
+    {
+      "prefix": "Uc",
+      "file": "runtime-lexicon-shards/0055-0063.json",
+      "entryCount": 104,
+      "bytes": 9251
+    },
+    {
+      "prefix": "ud",
+      "file": "runtime-lexicon-shards/0075-0064.json",
+      "entryCount": 5333,
+      "bytes": 469463
+    },
+    {
+      "prefix": "uD",
+      "file": "runtime-lexicon-shards/0075-0044.json",
+      "entryCount": 118,
+      "bytes": 10625
+    },
+    {
+      "prefix": "Ud",
+      "file": "runtime-lexicon-shards/0055-0064.json",
+      "entryCount": 113,
+      "bytes": 9692
+    },
+    {
+      "prefix": "UD",
+      "file": "runtime-lexicon-shards/0055-0044.json",
+      "entryCount": 36,
+      "bytes": 3018
+    },
+    {
+      "prefix": "ug",
+      "file": "runtime-lexicon-shards/0075-0067.json",
+      "entryCount": 621,
+      "bytes": 54156
+    },
+    {
+      "prefix": "Ug",
+      "file": "runtime-lexicon-shards/0055-0067.json",
+      "entryCount": 6,
+      "bytes": 468
+    },
+    {
+      "prefix": "uh",
+      "file": "runtime-lexicon-shards/0075-0068.json",
+      "entryCount": 42,
+      "bytes": 3378
+    },
+    {
+      "prefix": "Uh",
+      "file": "runtime-lexicon-shards/0055-0068.json",
+      "entryCount": 117,
+      "bytes": 9719
+    },
+    {
+      "prefix": "uj",
+      "file": "runtime-lexicon-shards/0075-006a.json",
+      "entryCount": 347,
+      "bytes": 30830
+    },
+    {
+      "prefix": "uk",
+      "file": "runtime-lexicon-shards/0075-006b.json",
+      "entryCount": 871,
+      "bytes": 77902
+    },
+    {
+      "prefix": "Uk",
+      "file": "runtime-lexicon-shards/0055-006b.json",
+      "entryCount": 36,
+      "bytes": 2816
+    },
+    {
+      "prefix": "ul",
+      "file": "runtime-lexicon-shards/0075-006c.json",
+      "entryCount": 607,
+      "bytes": 51843
+    },
+    {
+      "prefix": "Ul",
+      "file": "runtime-lexicon-shards/0055-006c.json",
+      "entryCount": 9,
+      "bytes": 694
+    },
+    {
+      "prefix": "um",
+      "file": "runtime-lexicon-shards/0075-006d.json",
+      "entryCount": 404,
+      "bytes": 35882
+    },
+    {
+      "prefix": "uM",
+      "file": "runtime-lexicon-shards/0075-004d.json",
+      "entryCount": 9,
+      "bytes": 728
+    },
+    {
+      "prefix": "Um",
+      "file": "runtime-lexicon-shards/0055-006d.json",
+      "entryCount": 9,
+      "bytes": 680
+    },
+    {
+      "prefix": "UM",
+      "file": "runtime-lexicon-shards/0055-004d.json",
+      "entryCount": 6,
+      "bytes": 477
+    },
+    {
+      "prefix": "un",
+      "file": "runtime-lexicon-shards/0075-006e.json",
+      "entryCount": 1075,
+      "bytes": 95693
+    },
+    {
+      "prefix": "uN",
+      "file": "runtime-lexicon-shards/0075-004e.json",
+      "entryCount": 34,
+      "bytes": 3272
+    },
+    {
+      "prefix": "Un",
+      "file": "runtime-lexicon-shards/0055-006e.json",
+      "entryCount": 85,
+      "bytes": 7665
+    },
+    {
+      "prefix": "UN",
+      "file": "runtime-lexicon-shards/0055-004e.json",
+      "entryCount": 2,
+      "bytes": 191
+    },
+    {
+      "prefix": "up",
+      "file": "runtime-lexicon-shards/0075-0070.json",
+      "entryCount": 8963,
+      "bytes": 793181
+    },
+    {
+      "prefix": "Up",
+      "file": "runtime-lexicon-shards/0055-0070.json",
+      "entryCount": 38,
+      "bytes": 2785
+    },
+    {
+      "prefix": "ur",
+      "file": "runtime-lexicon-shards/0075-0072.json",
+      "entryCount": 886,
+      "bytes": 75887
+    },
+    {
+      "prefix": "Ur",
+      "file": "runtime-lexicon-shards/0055-0072.json",
+      "entryCount": 1333,
+      "bytes": 122978
+    },
+    {
+      "prefix": "us",
+      "file": "runtime-lexicon-shards/0075-0073.json",
+      "entryCount": 219,
+      "bytes": 17738
+    },
+    {
+      "prefix": "uS",
+      "file": "runtime-lexicon-shards/0075-0053.json",
+      "entryCount": 671,
+      "bytes": 58164
+    },
+    {
+      "prefix": "Us",
+      "file": "runtime-lexicon-shards/0055-0073.json",
+      "entryCount": 18,
+      "bytes": 1407
+    },
+    {
+      "prefix": "US",
+      "file": "runtime-lexicon-shards/0055-0053.json",
+      "entryCount": 164,
+      "bytes": 13776
+    },
+    {
+      "prefix": "ut",
+      "file": "runtime-lexicon-shards/0075-0074.json",
+      "entryCount": 5340,
+      "bytes": 501228
+    },
+    {
+      "prefix": "uT",
+      "file": "runtime-lexicon-shards/0075-0054.json",
+      "entryCount": 54,
+      "bytes": 3786
+    },
+    {
+      "prefix": "Ut",
+      "file": "runtime-lexicon-shards/0055-0074.json",
+      "entryCount": 70,
+      "bytes": 5804
+    },
+    {
+      "prefix": "UT",
+      "file": "runtime-lexicon-shards/0055-0054.json",
+      "entryCount": 12,
+      "bytes": 1123
+    },
+    {
+      "prefix": "uv",
+      "file": "runtime-lexicon-shards/0075-0076.json",
+      "entryCount": 140,
+      "bytes": 11960
+    },
+    {
+      "prefix": "Uv",
+      "file": "runtime-lexicon-shards/0055-0076.json",
+      "entryCount": 11,
+      "bytes": 806
+    },
+    {
+      "prefix": "uy",
+      "file": "runtime-lexicon-shards/0075-0079.json",
+      "entryCount": 9,
+      "bytes": 819
+    },
+    {
+      "prefix": "Uy",
+      "file": "runtime-lexicon-shards/0055-0079.json",
+      "entryCount": 14,
+      "bytes": 1021
+    },
+    {
+      "prefix": "va",
+      "file": "runtime-lexicon-shards/0076-0061.json",
+      "entryCount": 55583,
+      "bytes": 5155832
+    },
+    {
+      "prefix": "vb",
+      "file": "runtime-lexicon-shards/0076-0062.json",
+      "entryCount": 5,
+      "bytes": 492
+    },
+    {
+      "prefix": "vc",
+      "file": "runtime-lexicon-shards/0076-0063.json",
+      "entryCount": 2,
+      "bytes": 237
+    },
+    {
+      "prefix": "vd",
+      "file": "runtime-lexicon-shards/0076-0064.json",
+      "entryCount": 35,
+      "bytes": 3312
+    },
+    {
+      "prefix": "ve",
+      "file": "runtime-lexicon-shards/0076-0065.json",
+      "entryCount": 8036,
+      "bytes": 752590
+    },
+    {
+      "prefix": "vg",
+      "file": "runtime-lexicon-shards/0076-0067.json",
+      "entryCount": 2,
+      "bytes": 206
+    },
+    {
+      "prefix": "vh",
+      "file": "runtime-lexicon-shards/0076-0068.json",
+      "entryCount": 27,
+      "bytes": 2127
+    },
+    {
+      "prefix": "vi",
+      "file": "runtime-lexicon-shards/0076-0069.json",
+      "entryCount": 68108,
+      "bytes": 6469972
+    },
+    {
+      "prefix": "vj",
+      "file": "runtime-lexicon-shards/0076-006a.json",
+      "entryCount": 1,
+      "bytes": 126
+    },
+    {
+      "prefix": "vk",
+      "file": "runtime-lexicon-shards/0076-006b.json",
+      "entryCount": 6,
+      "bytes": 574
+    },
+    {
+      "prefix": "vl",
+      "file": "runtime-lexicon-shards/0076-006c.json",
+      "entryCount": 19,
+      "bytes": 1441
+    },
+    {
+      "prefix": "vm",
+      "file": "runtime-lexicon-shards/0076-006d.json",
+      "entryCount": 1,
+      "bytes": 135
+    },
+    {
+      "prefix": "vn",
+      "file": "runtime-lexicon-shards/0076-006e.json",
+      "entryCount": 2,
+      "bytes": 207
+    },
+    {
+      "prefix": "vo",
+      "file": "runtime-lexicon-shards/0076-006f.json",
+      "entryCount": 427,
+      "bytes": 34603
+    },
+    {
+      "prefix": "vp",
+      "file": "runtime-lexicon-shards/0076-0070.json",
+      "entryCount": 2,
+      "bytes": 230
+    },
+    {
+      "prefix": "vr",
+      "file": "runtime-lexicon-shards/0076-0072.json",
+      "entryCount": 2112,
+      "bytes": 194486
+    },
+    {
+      "prefix": "vR",
+      "file": "runtime-lexicon-shards/0076-0052.json",
+      "entryCount": 7652,
+      "bytes": 738685
+    },
+    {
+      "prefix": "vs",
+      "file": "runtime-lexicon-shards/0076-0073.json",
+      "entryCount": 5,
+      "bytes": 428
+    },
+    {
+      "prefix": "vt",
+      "file": "runtime-lexicon-shards/0076-0074.json",
+      "entryCount": 4,
+      "bytes": 421
+    },
+    {
+      "prefix": "vu",
+      "file": "runtime-lexicon-shards/0076-0075.json",
+      "entryCount": 163,
+      "bytes": 13389
+    },
+    {
+      "prefix": "vv",
+      "file": "runtime-lexicon-shards/0076-0076.json",
+      "entryCount": 25,
+      "bytes": 1980
+    },
+    {
+      "prefix": "vy",
+      "file": "runtime-lexicon-shards/0076-0079.json",
+      "entryCount": 12283,
+      "bytes": 1189151
+    },
+    {
+      "prefix": "ya",
+      "file": "runtime-lexicon-shards/0079-0061.json",
+      "entryCount": 34408,
+      "bytes": 3230589
+    },
+    {
+      "prefix": "yb",
+      "file": "runtime-lexicon-shards/0079-0062.json",
+      "entryCount": 1,
+      "bytes": 118
+    },
+    {
+      "prefix": "yd",
+      "file": "runtime-lexicon-shards/0079-0064.json",
+      "entryCount": 5,
+      "bytes": 370
+    },
+    {
+      "prefix": "ye",
+      "file": "runtime-lexicon-shards/0079-0065.json",
+      "entryCount": 1177,
+      "bytes": 105015
+    },
+    {
+      "prefix": "yg",
+      "file": "runtime-lexicon-shards/0079-0067.json",
+      "entryCount": 2,
+      "bytes": 175
+    },
+    {
+      "prefix": "yh",
+      "file": "runtime-lexicon-shards/0079-0068.json",
+      "entryCount": 1,
+      "bytes": 113
+    },
+    {
+      "prefix": "yi",
+      "file": "runtime-lexicon-shards/0079-0069.json",
+      "entryCount": 116,
+      "bytes": 9947
+    },
+    {
+      "prefix": "yk",
+      "file": "runtime-lexicon-shards/0079-006b.json",
+      "entryCount": 2,
+      "bytes": 190
+    },
+    {
+      "prefix": "yl",
+      "file": "runtime-lexicon-shards/0079-006c.json",
+      "entryCount": 1,
+      "bytes": 121
+    },
+    {
+      "prefix": "ym",
+      "file": "runtime-lexicon-shards/0079-006d.json",
+      "entryCount": 2,
+      "bytes": 177
+    },
+    {
+      "prefix": "yn",
+      "file": "runtime-lexicon-shards/0079-006e.json",
+      "entryCount": 1,
+      "bytes": 113
+    },
+    {
+      "prefix": "yo",
+      "file": "runtime-lexicon-shards/0079-006f.json",
+      "entryCount": 6743,
+      "bytes": 632427
+    },
+    {
+      "prefix": "yp",
+      "file": "runtime-lexicon-shards/0079-0070.json",
+      "entryCount": 1,
+      "bytes": 113
+    },
+    {
+      "prefix": "yr",
+      "file": "runtime-lexicon-shards/0079-0072.json",
+      "entryCount": 5,
+      "bytes": 410
+    },
+    {
+      "prefix": "ys",
+      "file": "runtime-lexicon-shards/0079-0073.json",
+      "entryCount": 3,
+      "bytes": 370
+    },
+    {
+      "prefix": "yS",
+      "file": "runtime-lexicon-shards/0079-0053.json",
+      "entryCount": 1,
+      "bytes": 176
+    },
+    {
+      "prefix": "yt",
+      "file": "runtime-lexicon-shards/0079-0074.json",
+      "entryCount": 2,
+      "bytes": 210
+    },
+    {
+      "prefix": "yu",
+      "file": "runtime-lexicon-shards/0079-0075.json",
+      "entryCount": 5691,
+      "bytes": 532864
+    },
+    {
+      "prefix": "yv",
+      "file": "runtime-lexicon-shards/0079-0076.json",
+      "entryCount": 23,
+      "bytes": 2001
+    },
+    {
+      "prefix": "yy",
+      "file": "runtime-lexicon-shards/0079-0079.json",
+      "entryCount": 5,
+      "bytes": 390
+    },
+    {
+      "prefix": "ऑk",
+      "file": "runtime-lexicon-shards/0911-006b.json",
+      "entryCount": 2,
+      "bytes": 302
+    },
+    {
+      "prefix": "ऑp",
+      "file": "runtime-lexicon-shards/0911-0070.json",
+      "entryCount": 1,
+      "bytes": 135
+    },
+    {
+      "prefix": "ऑr",
+      "file": "runtime-lexicon-shards/0911-0072.json",
+      "entryCount": 3,
+      "bytes": 340
+    },
+    {
+      "prefix": "ऑs",
+      "file": "runtime-lexicon-shards/0911-0073.json",
+      "entryCount": 2,
+      "bytes": 268
+    },
+    {
+      "prefix": "ऑt",
+      "file": "runtime-lexicon-shards/0911-0074.json",
+      "entryCount": 1,
+      "bytes": 138
+    },
+    {
+      "prefix": "ऑT",
+      "file": "runtime-lexicon-shards/0911-0054.json",
+      "entryCount": 1,
+      "bytes": 139
+    }
+  ]
+}

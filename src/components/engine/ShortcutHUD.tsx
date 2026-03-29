@@ -82,6 +82,8 @@ export const ShortcutHUD: React.FC = () => {
     activeBuffer,
     suggestions, 
     alternateSuggestions, 
+    lexicalSuggestions,
+    isLexicalSuggestionsLoading,
     selectedSuggestionIndex,
     getActiveChunkGroup,
     updateChunkSource,
@@ -153,14 +155,16 @@ export const ShortcutHUD: React.FC = () => {
   const showAlternatives = alternateSuggestions.length > 0;
   const showCompletions = completions.length > 0 && activeBuffer.length > 0; // Only show completions if active buffer exists
   const showSuggestions = suggestions.length > 0 && activeBuffer.length > 0;
+  const showLexicalSuggestions = lexicalSuggestions.length > 0 && activeBuffer.length > 1;
 
-  const showAnyDynamicHUD = showAlternatives || showCompletions || showSuggestions;
+  const showAnyDynamicHUD = showAlternatives || showCompletions || showSuggestions || showLexicalSuggestions;
+  const showCharacterAssist = showAlternatives || showSuggestions || showCompletions;
 
 
   return (
-    <div className="flex items-center gap-3 overflow-x-auto h-16 w-full max-w-5xl px-4 scrollbar-hide">
+    <div className="w-full max-w-5xl px-4">
       {!showAnyDynamicHUD && (
-        <>
+        <div className="flex items-center gap-3 overflow-x-auto h-16 scrollbar-hide">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mr-2 shrink-0">Quick Ref:</span>
           <div className="flex items-center gap-2 overflow-x-auto py-2">
             {DEFAULT_SHORTCUTS.map((m, i) => (
@@ -174,72 +178,118 @@ export const ShortcutHUD: React.FC = () => {
               </button>
             ))}
           </div>
-        </>
+        </div>
       )}
 
-      {showAlternatives && (
+      {showAnyDynamicHUD && (
         <>
-          <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter mr-2 shrink-0">Alternatives:</span>
-          <div className="flex items-center gap-2 overflow-x-auto py-2">
-            {alternateSuggestions.map((m, i) => (
-              <button
-                key={`alt-${i}`}
-                onClick={() => handleInsert(m.itrans, activeBuffer)}
-                className={clsx(
-                  "flex items-center gap-2 pl-2 pr-3 py-1.5 border rounded-lg transition-all shrink-0 active:scale-95 group",
-                  i === selectedSuggestionIndex 
-                    ? "bg-blue-600 text-white border-blue-500 shadow-lg" 
-                    : "bg-white border-slate-200 hover:border-blue-300 hover:bg-blue-50"
-                )}
+          <div className="flex flex-col gap-3 py-2">
+            {showLexicalSuggestions && (
+              <section
+                data-testid="lexical-suggestions"
+                className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-emerald-50/60 px-3 py-3 shadow-sm"
               >
-                <span className={clsx("text-xs font-bold -ml-1 mr-2 tabular-nums w-4 h-4 rounded-full flex items-center justify-center", i === selectedSuggestionIndex ? "bg-white/20" : "bg-slate-100 text-slate-400")}>{i + 1}</span>
-                <span className={clsx("text-xl font-serif text-slate-900 group-hover:scale-110 transition-transform", i === selectedSuggestionIndex && "text-white")}>{m.unicode}</span>
-                <kbd className={clsx("text-[10px] font-mono font-bold tracking-tighter", i === selectedSuggestionIndex ? "text-blue-100" : "text-blue-600 opacity-60")}>{m.itrans}</kbd>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+                      Word Predictions{isLexicalSuggestionsLoading ? '…' : ''}
+                    </p>
+                    <p className="mt-1 text-xs text-emerald-900/80">
+                      Complete <span className="font-mono font-semibold">{activeBuffer}</span> with a full lexical form.
+                    </p>
+                  </div>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">
+                    <kbd className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px]">Tab</kbd>
+                    Top suggestion
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {lexicalSuggestions.map((entry, index) => (
+                    <button
+                      key={`lex-${index}`}
+                      data-testid={`lexical-suggestion-${index}`}
+                      onClick={() => handleInsert(entry.itrans, activeBuffer)}
+                      className={clsx(
+                        'min-w-[10rem] rounded-xl border px-3 py-2 text-left transition-all active:scale-[0.99]',
+                        index === 0
+                          ? 'border-emerald-400 bg-emerald-100 shadow-sm hover:bg-emerald-200'
+                          : 'border-emerald-200 bg-white hover:border-emerald-300 hover:bg-emerald-50'
+                      )}
+                      aria-label={`Use word prediction ${entry.itrans}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-lg font-serif text-slate-900">{entry.devanagari}</div>
+                          <kbd className="mt-1 inline-block text-[11px] font-mono font-bold tracking-tight text-emerald-800">
+                            {entry.itrans}
+                          </kbd>
+                        </div>
+                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">
+                          {entry.count}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
 
-      {showSuggestions && (
-        <>
-          <span className="text-[10px] font-black text-blue-600 uppercase tracking-tighter mr-2 shrink-0">Suggestions:</span>
-          <div className="flex items-center gap-2 overflow-x-auto py-2">
-            {suggestions.map((m, i) => (
-              <button
-                key={`sug-${i}`}
-                onClick={() => handleInsert(m.itrans, activeBuffer)}
-                className={clsx(
-                  "flex items-center gap-2 pl-2 pr-3 py-1.5 border rounded-lg transition-all shrink-0 active:scale-95 group",
-                  i === selectedSuggestionIndex 
-                    ? "bg-blue-600 text-white border-blue-500 shadow-lg" 
-                    : "bg-white border-slate-200 hover:border-blue-300 hover:bg-blue-50"
-                )}
-              >
-                <span className={clsx("text-xs font-bold -ml-1 mr-2 tabular-nums w-4 h-4 rounded-full flex items-center justify-center", i === selectedSuggestionIndex ? "bg-white/20" : "bg-slate-100 text-slate-400")}>{i + 1}</span>
-                <span className={clsx("text-xl font-serif text-slate-900 group-hover:scale-110 transition-transform", i === selectedSuggestionIndex && "text-white")}>{m.unicode}</span>
-                <kbd className={clsx("text-[10px] font-mono font-bold tracking-tighter", i === selectedSuggestionIndex ? "text-blue-100" : "text-blue-600 opacity-60")}>{m.itrans}</kbd>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+            {showCharacterAssist && (
+              <section className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                <div className="flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                  <span>Character Assist</span>
+                  <span className="font-normal normal-case tracking-normal text-slate-400">
+                    Mapping and sound-level options stay available below the word strip.
+                  </span>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {showAlternatives && alternateSuggestions.map((m, i) => (
+                    <button
+                      key={`alt-${i}`}
+                      onClick={() => handleInsert(m.itrans, activeBuffer)}
+                      className={clsx(
+                        'flex items-center gap-2 pl-2 pr-3 py-1.5 border rounded-lg transition-all shrink-0 active:scale-95 group',
+                        i === selectedSuggestionIndex
+                          ? 'bg-blue-600 text-white border-blue-500 shadow-lg'
+                          : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-blue-50'
+                      )}
+                    >
+                      <span className={clsx('text-xs font-bold -ml-1 mr-2 tabular-nums w-4 h-4 rounded-full flex items-center justify-center', i === selectedSuggestionIndex ? 'bg-white/20' : 'bg-slate-100 text-slate-400')}>{i + 1}</span>
+                      <span className={clsx('text-xl font-serif text-slate-900 group-hover:scale-110 transition-transform', i === selectedSuggestionIndex && 'text-white')}>{m.unicode}</span>
+                      <kbd className={clsx('text-[10px] font-mono font-bold tracking-tighter', i === selectedSuggestionIndex ? 'text-blue-100' : 'text-blue-600 opacity-60')}>{m.itrans}</kbd>
+                    </button>
+                  ))}
 
-      {showCompletions && (
-        <>
-          <div className="w-px h-6 bg-slate-200 mx-4 shrink-0" />
-          <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter mr-2 shrink-0">Similar Sounds:</span>
-          <div className="flex items-center gap-2 overflow-x-auto py-2">
-            {completions.map((m, i) => (
-              <button
-                key={`comp-${i}`}
-                onClick={() => handleInsert(m.itrans, m.tail)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all shrink-0 active:scale-95 group"
-              >
-                <span className="text-xl font-serif text-slate-900 group-hover:scale-110 transition-transform">{m.unicode}</span>
-                <kbd className="text-[10px] font-mono font-bold text-blue-600 opacity-60 tracking-tighter">{m.itrans}</kbd>
-              </button>
-            ))}
+                  {showSuggestions && suggestions.map((m, i) => (
+                    <button
+                      key={`sug-${i}`}
+                      onClick={() => handleInsert(m.itrans, activeBuffer)}
+                      className={clsx(
+                        'flex items-center gap-2 pl-2 pr-3 py-1.5 border rounded-lg transition-all shrink-0 active:scale-95 group',
+                        i === selectedSuggestionIndex
+                          ? 'bg-blue-600 text-white border-blue-500 shadow-lg'
+                          : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-blue-50'
+                      )}
+                    >
+                      <span className={clsx('text-xs font-bold -ml-1 mr-2 tabular-nums w-4 h-4 rounded-full flex items-center justify-center', i === selectedSuggestionIndex ? 'bg-white/20' : 'bg-slate-100 text-slate-400')}>{i + 1}</span>
+                      <span className={clsx('text-xl font-serif text-slate-900 group-hover:scale-110 transition-transform', i === selectedSuggestionIndex && 'text-white')}>{m.unicode}</span>
+                      <kbd className={clsx('text-[10px] font-mono font-bold tracking-tighter', i === selectedSuggestionIndex ? 'text-blue-100' : 'text-blue-600 opacity-60')}>{m.itrans}</kbd>
+                    </button>
+                  ))}
+
+                  {showCompletions && completions.map((m, i) => (
+                    <button
+                      key={`comp-${i}`}
+                      onClick={() => handleInsert(m.itrans, m.tail)}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all shrink-0 active:scale-95 group"
+                    >
+                      <span className="text-xl font-serif text-slate-900 group-hover:scale-110 transition-transform">{m.unicode}</span>
+                      <kbd className="text-[10px] font-mono font-bold text-blue-600 opacity-60 tracking-tighter">{m.itrans}</kbd>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
           </div>
         </>
       )}

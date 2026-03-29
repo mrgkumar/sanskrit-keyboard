@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "prefix": "tc",
+  "entries": [
+    {"itrans":"tcha","devanagari":"त्च","count":1},
+    {"itrans":"tchaM","devanagari":"त्चं","count":1},
+    {"itrans":"tchanmuule","devanagari":"त्चन्मूले","count":1},
+    {"itrans":"tchechatsaama","devanagari":"त्चेचत्साम","count":1}
+  ]
+}

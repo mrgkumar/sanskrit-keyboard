@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "prefix": "yv",
+  "entries": [
+    {"itrans":"yva","devanagari":"य्व","count":1},
+    {"itrans":"yvaabhyaaM","devanagari":"य्वाभ्यां","count":1},
+    {"itrans":"yvaabhyaami","devanagari":"य्वाभ्यामि","count":1},
+    {"itrans":"yvaabhyaamiti","devanagari":"य्वाभ्यामिति","count":1},
+    {"itrans":"yvaadervo","devanagari":"य्वादेर्वो","count":1},
+    {"itrans":"yvaaditi","devanagari":"य्वादिति","count":1},
+    {"itrans":"yvaadoti","devanagari":"य्वादोति","count":1},
+    {"itrans":"yvaaghraM","devanagari":"य्वाघ्रं","count":1},
+    {"itrans":"yvaaguli","devanagari":"य्वागुलि","count":1},
+    {"itrans":"yvaavachi","devanagari":"य्वावचि","count":1},
+    {"itrans":"yvaavidutoryadayaM","devanagari":"य्वाविदुतोर्यदयं","count":1},
+    {"itrans":"yvaaviti","devanagari":"य्वाविति","count":1},
+    {"itrans":"yvanaraajaduutena","devanagari":"य्वनराजदूतेन","count":1},
+    {"itrans":"yvantamekaakSharam","devanagari":"य्वन्तमेकाक्षरम्","count":1},
+    {"itrans":"yvantasyaayaM","devanagari":"य्वन्तस्यायं","count":1},
+    {"itrans":"yvarachyanta","devanagari":"य्वरच्यन्त","count":1},
+    {"itrans":"yvau","devanagari":"य्वौ","count":1},
+    {"itrans":"yvo","devanagari":"य्वो","count":1},
+    {"itrans":"yvo:","devanagari":"य्वोः","count":1},
+    {"itrans":"yvoranaadesha:","devanagari":"य्वोरनादेशः","count":1},
+    {"itrans":"yvorapi","devanagari":"य्वोरपि","count":1},
+    {"itrans":"yvorityanuvartate","devanagari":"य्वोरित्यनुवर्तते","count":1},
+    {"itrans":"yvorvisheSaNatvaat","devanagari":"य्वोर्विशेषणत्वात्","count":1}
+  ]
+}

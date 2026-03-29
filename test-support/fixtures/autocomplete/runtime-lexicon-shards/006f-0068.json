@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "prefix": "oh",
+  "entries": [
+    {"itrans":"ohaak","devanagari":"ओहाक्","count":1},
+    {"itrans":"ohaano.avasaagamiSTha:","devanagari":"ओहानोऽवसागमिष्ठः","count":1},
+    {"itrans":"ohabrahman","devanagari":"ओहब्रह्मन्","count":1},
+    {"itrans":"ohade","devanagari":"ओहदे","count":1},
+    {"itrans":"ohai","devanagari":"ओहै","count":1},
+    {"itrans":"ohai:","devanagari":"ओहैः","count":1},
+    {"itrans":"ohai/o","devanagari":"ओहैओ","count":1},
+    {"itrans":"ohali","devanagari":"ओहलि","count":1},
+    {"itrans":"ohamindraaya","devanagari":"ओहमिन्द्राय","count":1},
+    {"itrans":"ohas","devanagari":"ओहस्","count":1},
+    {"itrans":"ohasaa","devanagari":"ओहसा","count":1},
+    {"itrans":"ohase","devanagari":"ओहसे","count":1},
+    {"itrans":"ohata","devanagari":"ओहत","count":1},
+    {"itrans":"ohate","devanagari":"ओहते","count":1},
+    {"itrans":"ohinda","devanagari":"ओहिन्द","count":1},
+    {"itrans":"ohitenaabhiSekena","devanagari":"ओहितेनाभिषेकेन","count":1},
+    {"itrans":"ohiti","devanagari":"ओहिति","count":1},
+    {"itrans":"ohiyo","devanagari":"ओहियो","count":1},
+    {"itrans":"ohrate","devanagari":"ओह्रते","count":1},
+    {"itrans":"ohyate","devanagari":"ओह्यते","count":1}
+  ]
+}

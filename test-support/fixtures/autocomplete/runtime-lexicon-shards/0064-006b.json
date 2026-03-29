@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "prefix": "dk",
+  "entries": [
+    {"itrans":"dkha","devanagari":"द्ख","count":1},
+    {"itrans":"dkhe","devanagari":"द्खे","count":1},
+    {"itrans":"dkhii","devanagari":"द्खी","count":1},
+    {"itrans":"dkSha","devanagari":"द्क्ष","count":1},
+    {"itrans":"dkShavaama","devanagari":"द्क्षवाम","count":1},
+    {"itrans":"dkShiNasamudratiire","devanagari":"द्क्षिणसमुद्रतीरे","count":1}
+  ]
+}

@@ -3,23 +3,30 @@
 
 import React from 'react';
 import { useFlowStore } from '@/store/useFlowStore';
-import { Check, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Copy, Trash2, Undo2 } from 'lucide-react';
 import { BookOpen } from 'lucide-react';
 import { clsx } from 'clsx';
 import { ShortcutHUD } from '@/components/engine/ShortcutHUD';
 import { detransliterate } from '@/lib/vedic/utils';
+import { VEDIC_MAPPINGS } from '@/lib/vedic/mapping';
+import { applyShortcutPeekCorrection } from '@/lib/vedic/correction';
 
 export const StickyTopComposer: React.FC = () => {
   const { 
-    getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setNextBlock, setPrevBlock, setFocusSpan, setViewMode, toggleReferencePanel, addBlocks, setDeletedBuffer, setComposerSelection, editorState,
+    getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setNextBlock, setPrevBlock, setFocusSpan, setViewMode, toggleReferencePanel, addBlocks, deleteBlock, restoreDeletedBlock, dismissDeletedBlock, setDeletedBuffer, setComposerSelection, editorState,
     activeBuffer, // Get activeBuffer for Backspace logic
+    lexicalSuggestions,
+    deletedBuffer,
     isReferencePanelOpen, // To check if panel is open
     composerSelectionStart,
     composerSelectionEnd,
+    recentlyDeletedBlock,
     typography,
   } = useFlowStore();
   const composerRef = React.useRef<HTMLTextAreaElement>(null);
   const [copyState, setCopyState] = React.useState<'idle' | 'copied' | 'error'>('idle');
+  const [isShortcutPeekVisible, setIsShortcutPeekVisible] = React.useState(false);
+  const [deleteToastProgress, setDeleteToastProgress] = React.useState(1);
   const activeBlock = getActiveBlock();
   const activeChunkGroup = getActiveChunkGroup();
   const { focusSpan, viewMode } = editorState;
@@ -37,6 +44,39 @@ export const StickyTopComposer: React.FC = () => {
     activeChunkGroup
       ? Math.floor(activeChunkGroup.startSegmentIndex / { tight: 1, balanced: 2, wide: 3 }[focusSpan]) + 1
       : 1;
+  const resolvePeekMappings = (query: string) =>
+    VEDIC_MAPPINGS
+      .filter((mapping) =>
+        mapping.itrans.toLowerCase().startsWith(query.toLowerCase()) ||
+        (mapping.name || '').toLowerCase().includes(query.toLowerCase())
+      )
+      .slice(0, 6);
+
+  let shortcutPeekState: { query: string; mappings: typeof VEDIC_MAPPINGS } = {
+    query: deletedBuffer || activeBuffer,
+    mappings: [],
+  };
+
+  if (deletedBuffer) {
+    const deletedMatches = resolvePeekMappings(deletedBuffer);
+    if (deletedMatches.length > 0) {
+      shortcutPeekState = { query: deletedBuffer, mappings: deletedMatches };
+    }
+  }
+
+  if (shortcutPeekState.mappings.length === 0) {
+    for (let index = 0; index < activeBuffer.length; index++) {
+      const suffix = activeBuffer.slice(index);
+      const suffixMatches = resolvePeekMappings(suffix);
+      if (suffixMatches.length > 0) {
+        shortcutPeekState = { query: suffix, mappings: suffixMatches };
+        break;
+      }
+    }
+  }
+
+  const shortcutPeekQuery = shortcutPeekState.query;
+  const shortcutPeekMappings = shortcutPeekState.mappings;
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const pastedText = e.clipboardData.getData('text');
@@ -71,6 +111,23 @@ export const StickyTopComposer: React.FC = () => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     setComposerSelection(e.currentTarget.selectionStart, e.currentTarget.selectionEnd);
 
+    if (!e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'Tab' && lexicalSuggestions.length > 0 && activeBuffer.length > 1) {
+      e.preventDefault();
+      const topSuggestion = lexicalSuggestions[0];
+      const replacementLength = activeBuffer.length;
+      const replaceEnd = composerSelectionEnd ?? currentChunkSource.length;
+      const replaceStart = Math.max(0, replaceEnd - replacementLength);
+      const newSource =
+        currentChunkSource.slice(0, replaceStart) +
+        topSuggestion.itrans +
+        currentChunkSource.slice(replaceEnd);
+      const nextCaret = replaceStart + topSuggestion.itrans.length;
+      updateChunkSource(newSource, nextCaret, nextCaret);
+      setDeletedBuffer(null);
+      setIsShortcutPeekVisible(false);
+      return;
+    }
+
     if (e.altKey && e.key === 'ArrowDown') {
       e.preventDefault();
       setNextChunk();
@@ -95,10 +152,19 @@ export const StickyTopComposer: React.FC = () => {
       return;
     }
 
-    if (e.key === 'Escape' && isReferencePanelOpen) {
-      e.preventDefault();
-      toggleReferencePanel();
-      return;
+    if (e.key === 'Escape') {
+      if (isShortcutPeekVisible) {
+        e.preventDefault();
+        setIsShortcutPeekVisible(false);
+        setDeletedBuffer(null);
+        return;
+      }
+
+      if (isReferencePanelOpen) {
+        e.preventDefault();
+        toggleReferencePanel();
+        return;
+      }
     }
 
     if (e.key === 'Backspace') {
@@ -114,23 +180,11 @@ export const StickyTopComposer: React.FC = () => {
 
       if (charToDelete) {
         setDeletedBuffer(charToDelete);
-        if (!isReferencePanelOpen) { // Only open if not already open (manual open should keep it open)
-          const { selectionStart, selectionEnd } = e.currentTarget;
-          toggleReferencePanel();
-          requestAnimationFrame(() => {
-            if (composerRef.current) {
-              composerRef.current.focus();
-              composerRef.current.setSelectionRange(selectionStart, selectionEnd);
-            }
-          });
-        }
+        setIsShortcutPeekVisible(true);
       }
     } else {
-      // Any other key clears deletedBuffer and potentially closes panel
       setDeletedBuffer(null);
-      // Optional: if panel was opened by backspace and no longer needed, close it.
-      // This might require a more sophisticated tracking of how panel was opened.
-      // For now, let's keep it open or let user close it manually for other keys.
+      setIsShortcutPeekVisible(false);
     }
   };
 
@@ -156,6 +210,29 @@ export const StickyTopComposer: React.FC = () => {
     return () => window.clearTimeout(timeoutId);
   }, [copyState]);
 
+  React.useEffect(() => {
+    if (!recentlyDeletedBlock) {
+      setDeleteToastProgress(1);
+      return;
+    }
+
+    const durationMs = 20000;
+    const startedAt = window.performance.now();
+    setDeleteToastProgress(1);
+
+    const intervalId = window.setInterval(() => {
+      const elapsedMs = window.performance.now() - startedAt;
+      const nextProgress = Math.max(0, 1 - elapsedMs / durationMs);
+      setDeleteToastProgress(nextProgress);
+      if (nextProgress <= 0) {
+        window.clearInterval(intervalId);
+        dismissDeletedBlock();
+      }
+    }, 100);
+
+    return () => window.clearInterval(intervalId);
+  }, [dismissDeletedBlock, recentlyDeletedBlock]);
+
   const handleCopyRendered = async () => {
     const textToCopy = viewMode === 'focus'
       ? activeChunkGroup?.rendered || ''
@@ -172,6 +249,34 @@ export const StickyTopComposer: React.FC = () => {
     } catch {
       setCopyState('error');
     }
+  };
+
+  const handleDeleteBlock = () => {
+    if (!activeBlock) {
+      return;
+    }
+
+    deleteBlock(activeBlock.id);
+    setDeletedBuffer(null);
+    setIsShortcutPeekVisible(false);
+  };
+
+  const handlePeekInsert = (itrans: string) => {
+    const { nextSource, nextCaret } = applyShortcutPeekCorrection({
+      currentSource: currentChunkSource,
+      selectionStart: composerSelectionStart,
+      selectionEnd: composerSelectionEnd,
+      replacement: itrans,
+      deletedBuffer,
+      shortcutPeekQuery,
+    });
+    updateChunkSource(nextSource, nextCaret, nextCaret);
+    setIsShortcutPeekVisible(false);
+    setDeletedBuffer(null);
+    requestAnimationFrame(() => {
+      composerRef.current?.focus();
+      composerRef.current?.setSelectionRange(nextCaret, nextCaret);
+    });
   };
 
   return (
@@ -273,23 +378,98 @@ export const StickyTopComposer: React.FC = () => {
           >
             {activeChunkGroup?.rendered || 'Devanagari preview'}
           </div>
-          <button
-            onClick={handleCopyRendered}
-            className={clsx(
-              'mt-1 rounded-md border p-2',
-              copyState === 'copied'
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : copyState === 'error'
-                  ? 'bg-rose-50 text-rose-700 border-rose-200'
-                  : 'bg-white text-slate-700 border-blue-200 hover:bg-blue-100'
-            )}
-            type="button"
-            aria-label="Copy rendered Sanskrit"
-            title={copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : 'Copy Sanskrit'}
-          >
-            {copyState === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          </button>
+          <div className="mt-1 flex items-center gap-2">
+            <button
+              onClick={handleDeleteBlock}
+              className="rounded-md border border-rose-200 bg-white p-2 text-rose-700 hover:bg-rose-100"
+              type="button"
+              aria-label="Delete active block"
+              title="Delete block"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleCopyRendered}
+              className={clsx(
+                'rounded-md border p-2',
+                copyState === 'copied'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : copyState === 'error'
+                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                    : 'bg-white text-slate-700 border-blue-200 hover:bg-blue-100'
+              )}
+              type="button"
+              aria-label="Copy rendered Sanskrit"
+              title={copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : 'Copy Sanskrit'}
+            >
+              {copyState === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
+
+        {recentlyDeletedBlock && (
+          <div
+            data-testid="recently-deleted-block"
+            className="flex items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900"
+          >
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Block Deleted</p>
+              <p className="mt-1 text-xs">
+                {recentlyDeletedBlock.block.title || 'Untitled Block'} was removed from the document.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={restoreDeletedBlock}
+              className="inline-flex items-center gap-2 rounded-md border border-amber-300 bg-white px-3 py-2 text-xs font-bold uppercase text-amber-800 hover:bg-amber-100"
+              aria-label="Undo delete"
+            >
+              <span
+                aria-hidden="true"
+                className="inline-block h-4 w-4 rounded-full border border-amber-300"
+                style={{
+                  background: `conic-gradient(rgb(217 119 6) ${deleteToastProgress * 360}deg, rgb(253 230 138) 0deg)`,
+                }}
+              />
+              <Undo2 className="h-4 w-4" />
+              Undo
+            </button>
+          </div>
+        )}
+
+        {isShortcutPeekVisible && shortcutPeekMappings.length > 0 && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Correction Help</p>
+                <p className="mt-1 text-xs text-amber-800">
+                  Backspace opened a compact shortcut peek for <span className="font-mono font-semibold">{shortcutPeekQuery}</span>.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsShortcutPeekVisible(false)}
+                className="text-xs font-bold uppercase text-amber-700 hover:text-amber-900"
+              >
+                Dismiss
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {shortcutPeekMappings.map((mapping) => (
+                <button
+                  key={`${mapping.itrans}-${mapping.unicode}`}
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => handlePeekInsert(mapping.itrans)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-left hover:border-amber-300 hover:bg-amber-100"
+                >
+                  <span className="text-lg font-serif text-slate-900">{mapping.unicode}</span>
+                  <kbd className="text-[10px] font-mono font-bold text-amber-700">{mapping.itrans}</kbd>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Shortcut HUD */}
         <ShortcutHUD />

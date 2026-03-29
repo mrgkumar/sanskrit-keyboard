@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "prefix": "iT",
+  "entries": [
+    {"itrans":"iTaaliyaa","devanagari":"इटालिया","count":1},
+    {"itrans":"iTaanagara","devanagari":"इटानगर","count":1},
+    {"itrans":"iTaarsiinisthaanata:","devanagari":"इटार्सीनिस्थानतः","count":1},
+    {"itrans":"iTailika","devanagari":"इटैलिक","count":1},
+    {"itrans":"iTaliipradeshasya","devanagari":"इटलीप्रदेशस्य","count":1},
+    {"itrans":"iTaliipradeshiiya:","devanagari":"इटलीप्रदेशीयः","count":1},
+    {"itrans":"iTaliisiimaayaaM","devanagari":"इटलीसीमायां","count":1},
+    {"itrans":"iTaliivashe","devanagari":"इटलीवशे","count":1},
+    {"itrans":"iTaliiyaatrika:","devanagari":"इटलीयात्रिकः","count":1},
+    {"itrans":"iTaliiyadeshiiyau","devanagari":"इटलीयदेशीयौ","count":1}
+  ]
+}

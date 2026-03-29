@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "prefix": "UM",
+  "entries": [
+    {"itrans":"UMsa","devanagari":"ऊंस","count":1},
+    {"itrans":"UMsaa","devanagari":"ऊंसा","count":1},
+    {"itrans":"UMsaacheM","devanagari":"ऊंसाचें","count":1},
+    {"itrans":"UMseM","devanagari":"ऊंसें","count":1},
+    {"itrans":"UMsu","devanagari":"ऊंसु","count":1},
+    {"itrans":"UMvR^ittyainama:","devanagari":"ऊंवृत्त्यैनमः","count":1}
+  ]
+}

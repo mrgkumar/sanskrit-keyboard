@@ -33,6 +33,22 @@ test('Accent scheme maps backward with canonical outputs', () => {
   expect(detransliterate('गः')).toBe("ga:''");
 });
 
+test('Canonical slash separators preserve forward hiatus distinctions', () => {
+  expect(transliterate('a/i').unicode).toBe('अइ');
+  expect(transliterate('A/o').unicode).toBe('आओ');
+  expect(transliterate('goviMdabhaa/I').unicode).toBe('गोविंदभाई');
+  expect(transliterate('o/ilara').unicode).toBe('ओइलर');
+  expect(transliterate('raa/uta').unicode).toBe('राउत');
+});
+
+test('Canonical slash separators survive reverse transliteration', () => {
+  expect(detransliterate('अइ')).toBe('a/i');
+  expect(detransliterate('आओ')).toBe('A/o');
+  expect(detransliterate('गोविंदभाई')).toBe('goviMdabhaa/I');
+  expect(detransliterate('ओइलर')).toBe('o/ilara');
+  expect(detransliterate('राउत')).toBe('raa/uta');
+});
+
 test('Forward mapping preserves every direct mapping entry', () => {
   const failures: string[] = [];
   const seen = new Set<string>();

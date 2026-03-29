@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "prefix": "km",
+  "entries": [
+    {"itrans":"kmabalo","devanagari":"क्मबलो","count":1},
+    {"itrans":"kmakartari","devanagari":"क्मकर्तरि","count":1},
+    {"itrans":"kmara:","devanagari":"क्मरः","count":1},
+    {"itrans":"kmarachi","devanagari":"क्मरचि","count":1},
+    {"itrans":"kmarachiiti","devanagari":"क्मरचीति","count":1},
+    {"itrans":"kmarajvidhaanaat","devanagari":"क्मरज्विधानात्","count":1},
+    {"itrans":"kmasaadhanena","devanagari":"क्मसाधनेन","count":1},
+    {"itrans":"kmatvaM","devanagari":"क्मत्वं","count":1},
+    {"itrans":"kmeNodaaharaNaani","devanagari":"क्मेणोदाहरणानि","count":1}
+  ]
+}

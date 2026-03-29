@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "prefix": "lt",
+  "entries": [
+    {"itrans":"ltha","devanagari":"ल्थ","count":1},
+    {"itrans":"lthaane","devanagari":"ल्थाने","count":1},
+    {"itrans":"ltu","devanagari":"ल्तु","count":1},
+    {"itrans":"ltupitaadiihi","devanagari":"ल्तुपितादीहि","count":1},
+    {"itrans":"ltupitaadiinaM","devanagari":"ल्तुपितादीनं","count":1},
+    {"itrans":"ltupitaadiinamaasimhi","devanagari":"ल्तुपितादीनमासिम्हि","count":1},
+    {"itrans":"ltupitaadiinantveva","devanagari":"ल्तुपितादीनन्त्वेव","count":1},
+    {"itrans":"ltupitaadinamaasimhi","devanagari":"ल्तुपितादिनमासिम्हि","count":1},
+    {"itrans":"ltupitaadinamase","devanagari":"ल्तुपितादिनमसे","count":1},
+    {"itrans":"ltupitaadisu","devanagari":"ल्तुपितादिसु","count":1},
+    {"itrans":"ltutvaa","devanagari":"ल्तुत्वा","count":1}
+  ]
+}

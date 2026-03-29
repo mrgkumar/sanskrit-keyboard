@@ -10,6 +10,11 @@ import {
 } from './types';
 import { transliterate } from '@/lib/vedic/utils';
 import { MAPPING_TRIE } from '@/lib/vedic/mapping';
+import {
+  getLexicalSuggestions,
+  shouldLookupLexicalSuggestions,
+  type LexicalSuggestion,
+} from '@/lib/vedic/runtimeLexicon';
 
 // --- UTILITY FUNCTIONS ---
 // These functions might live here or in a separate file.
@@ -70,6 +75,30 @@ const splitIntoBlockSources = (source: string): string[] =>
     .map((part) => part.trim())
     .filter((part) => part.length > 0);
 
+const splitIntoBlockEntries = (source: string) => {
+  const normalized = source.replace(/\r/g, '');
+  const entries: { source: string; start: number; end: number }[] = [];
+  const paragraphPattern = /[^\n]+(?:\n(?!\s*\n)[^\n]+)*/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = paragraphPattern.exec(normalized)) !== null) {
+    const trimmedSource = match[0].trim();
+    if (!trimmedSource) {
+      continue;
+    }
+
+    const trimmedStartOffset = match.index + match[0].search(/\S/);
+    const trimmedEndOffset = match.index + match[0].length - match[0].match(/\s*$/)![0].length;
+    entries.push({
+      source: trimmedSource,
+      start: trimmedStartOffset,
+      end: trimmedEndOffset,
+    });
+  }
+
+  return entries;
+};
+
 const createBlockFromSource = (source: string, title: string): CanonicalBlock => {
   const type = isLongBlockSource(source) ? 'long' : 'short';
   const block: CanonicalBlock = {
@@ -128,6 +157,11 @@ const createDefaultSessionName = () => {
   return `Session ${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 };
 
+interface DeletedBlockSnapshot {
+  block: CanonicalBlock;
+  index: number;
+}
+
 
 // --- STORE DEFINITION ---
 
@@ -140,6 +174,10 @@ export interface SanskritKeyboardState {
   activeBuffer: string;
   suggestions: { itrans: string; unicode: string }[];
   alternateSuggestions: { itrans: string; unicode: string }[];
+  lexicalSuggestions: LexicalSuggestion[];
+  lexicalQuery: string;
+  isLexicalSuggestionsLoading: boolean;
+  lexicalRequestSerial: number;
   selectedSuggestionIndex: number;
   ghostText: string | null;
   composerSelectionStart: number;
@@ -152,6 +190,7 @@ export interface SanskritKeyboardState {
   sessionId: string;
   sessionName: string;
   lastSavedAt: string | null;
+  recentlyDeletedBlock: DeletedBlockSnapshot | null;
 
   // Actions
   setActiveBlockId: (id: string | null) => void;
@@ -166,6 +205,11 @@ export interface SanskritKeyboardState {
   updateChunkSource: (newSource: string, selectionStart?: number, selectionEnd?: number) => void;
   toggleReferencePanel: () => void;
   addBlocks: (itransStrings: string[]) => void;
+  deleteBlock: (blockId?: string) => void;
+  restoreDeletedBlock: () => void;
+  dismissDeletedBlock: () => void;
+  updateLexicalSuggestions: (prefix: string) => Promise<void>;
+  clearLexicalSuggestions: () => void;
   setDeletedBuffer: (char: string | null) => void;
   setComposerSelection: (start: number, end: number) => void;
   setTypography: (patch: Partial<TypographySettings>) => void;
@@ -194,6 +238,10 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   activeBuffer: '',
   suggestions: [],
   alternateSuggestions: [],
+  lexicalSuggestions: [],
+  lexicalQuery: '',
+  isLexicalSuggestionsLoading: false,
+  lexicalRequestSerial: 0,
   selectedSuggestionIndex: 0,
   ghostText: null,
   composerSelectionStart: 0,
@@ -204,6 +252,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   sessionId: createSessionId(),
   sessionName: createDefaultSessionName(),
   lastSavedAt: null,
+  recentlyDeletedBlock: null,
 
   // --- ACTIONS ---
   setActiveBlockId: (id) => {
@@ -363,12 +412,43 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     const nextSelectionStart = selectionStart ?? get().composerSelectionStart;
     const nextSelectionEnd = selectionEnd ?? nextSelectionStart;
 
-    const blockSources = splitIntoBlockSources(newSource);
+    let candidateFullSource = newSource;
+    let selectionOffsetInCandidate = nextSelectionEnd;
 
-    if (activeBlock.type === 'short' && blockSources.length > 1) {
-      const replacementBlocks = blockSources.map((source, index) =>
-        createBlockFromSource(source, `Pasted Block ${index + 1}`)
+    if (activeBlock.type === 'long' && activeBlock.segments) {
+      const activeChunk = getActiveChunkGroup();
+      if (!activeChunk) {
+        return;
+      }
+
+      const beforeSource = activeBlock.segments
+        .slice(0, activeChunk.startSegmentIndex)
+        .map((segment) => segment.source)
+        .join('');
+      const afterSource = activeBlock.segments
+        .slice(activeChunk.endSegmentIndex + 1)
+        .map((segment) => segment.source)
+        .join('');
+
+      candidateFullSource = `${beforeSource}${newSource}${afterSource}`;
+      selectionOffsetInCandidate = beforeSource.length + nextSelectionEnd;
+    }
+
+    const blockEntries = splitIntoBlockEntries(candidateFullSource);
+
+    if (blockEntries.length > 1) {
+      const replacementBlocks = blockEntries.map((entry, index) =>
+        createBlockFromSource(entry.source, `Pasted Block ${index + 1}`)
       );
+      const activeReplacement =
+        replacementBlocks[
+          Math.max(
+            0,
+            blockEntries.findIndex(
+              (entry) => selectionOffsetInCandidate >= entry.start && selectionOffsetInCandidate <= entry.end
+            )
+          )
+        ] || replacementBlocks[0];
 
       set((state) => {
         const blockIndex = state.blocks.findIndex((block) => block.id === activeBlock!.id);
@@ -385,7 +465,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
           blocks: preservedBlocks,
           editorState: {
             ...state.editorState,
-            activeBlockId: replacementBlocks[0].id,
+            activeBlockId: activeReplacement.id,
             activeAnchorSegmentIndex: 0,
           },
           composerSelectionStart: 0,
@@ -557,6 +637,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       composerSelectionStart: nextSelectionStart,
       composerSelectionEnd: nextSelectionEnd,
     });
+    void get().updateLexicalSuggestions(activeBuffer);
   },
   addBlocks: (itransStrings: string[]) => {
     const newBlocks: CanonicalBlock[] = itransStrings
@@ -581,6 +662,158 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         },
       }));
     }
+  },
+  deleteBlock: (blockId) => {
+    const { blocks, editorState } = get();
+    const targetId = blockId ?? editorState.activeBlockId;
+    if (!targetId) {
+      return;
+    }
+
+    const blockIndex = blocks.findIndex((block) => block.id === targetId);
+    if (blockIndex === -1) {
+      return;
+    }
+
+    const deletedBlock = blocks[blockIndex];
+
+    if (blocks.length === 1) {
+      const blankBlock = createBlankBlock();
+      set((state) => ({
+        blocks: [blankBlock],
+        editorState: {
+          ...state.editorState,
+          activeBlockId: blankBlock.id,
+          activeAnchorSegmentIndex: 0,
+        },
+        activeBuffer: '',
+        suggestions: [],
+        alternateSuggestions: [],
+        lexicalSuggestions: [],
+        lexicalQuery: '',
+        isLexicalSuggestionsLoading: false,
+        ghostText: null,
+        composerSelectionStart: 0,
+        composerSelectionEnd: 0,
+        recentlyDeletedBlock: {
+          block: deletedBlock,
+          index: blockIndex,
+        },
+      }));
+      return;
+    }
+
+    const nextBlocks = blocks.filter((block) => block.id !== targetId);
+    const fallbackIndex = Math.min(blockIndex, nextBlocks.length - 1);
+    const nextActiveBlock = nextBlocks[fallbackIndex];
+    const shouldMoveFocus = editorState.activeBlockId === targetId;
+
+    set((state) => ({
+      blocks: nextBlocks,
+      editorState: {
+        ...state.editorState,
+        activeBlockId: shouldMoveFocus ? nextActiveBlock.id : state.editorState.activeBlockId,
+        activeAnchorSegmentIndex: 0,
+      },
+      activeBuffer: shouldMoveFocus ? '' : state.activeBuffer,
+      suggestions: shouldMoveFocus ? [] : state.suggestions,
+      alternateSuggestions: shouldMoveFocus ? [] : state.alternateSuggestions,
+      lexicalSuggestions: shouldMoveFocus ? [] : state.lexicalSuggestions,
+      lexicalQuery: shouldMoveFocus ? '' : state.lexicalQuery,
+      isLexicalSuggestionsLoading: false,
+      ghostText: shouldMoveFocus ? null : state.ghostText,
+      composerSelectionStart: 0,
+      composerSelectionEnd: 0,
+      recentlyDeletedBlock: {
+        block: deletedBlock,
+        index: blockIndex,
+      },
+    }));
+  },
+  restoreDeletedBlock: () => {
+    const snapshot = get().recentlyDeletedBlock;
+    if (!snapshot) {
+      return;
+    }
+
+    set((state) => {
+      const hasOnlyBlankBlock =
+        state.blocks.length === 1 &&
+        state.blocks[0].source.trim().length === 0 &&
+        state.blocks[0].rendered.trim().length === 0;
+
+      const baseBlocks = hasOnlyBlankBlock ? [] : state.blocks;
+      const insertIndex = Math.max(0, Math.min(snapshot.index, baseBlocks.length));
+      const restoredBlocks = [
+        ...baseBlocks.slice(0, insertIndex),
+        snapshot.block,
+        ...baseBlocks.slice(insertIndex),
+      ];
+
+      return {
+        blocks: restoredBlocks,
+        editorState: {
+          ...state.editorState,
+          activeBlockId: snapshot.block.id,
+          activeAnchorSegmentIndex: 0,
+        },
+        recentlyDeletedBlock: null,
+      };
+    });
+  },
+  dismissDeletedBlock: () => {
+    set({ recentlyDeletedBlock: null });
+  },
+  updateLexicalSuggestions: async (prefix) => {
+    const normalizedPrefix = prefix.trim();
+    const nextSerial = get().lexicalRequestSerial + 1;
+
+    if (!shouldLookupLexicalSuggestions(normalizedPrefix)) {
+      set({
+        lexicalSuggestions: [],
+        lexicalQuery: normalizedPrefix,
+        isLexicalSuggestionsLoading: false,
+        lexicalRequestSerial: nextSerial,
+      });
+      return;
+    }
+
+    set({
+      lexicalQuery: normalizedPrefix,
+      isLexicalSuggestionsLoading: true,
+      lexicalRequestSerial: nextSerial,
+    });
+
+    try {
+      const lexicalSuggestions = await getLexicalSuggestions(normalizedPrefix, 5);
+      if (get().lexicalRequestSerial !== nextSerial) {
+        return;
+      }
+
+      set({
+        lexicalSuggestions,
+        lexicalQuery: normalizedPrefix,
+        isLexicalSuggestionsLoading: false,
+      });
+    } catch {
+      if (get().lexicalRequestSerial !== nextSerial) {
+        return;
+      }
+
+      set({
+        lexicalSuggestions: [],
+        lexicalQuery: normalizedPrefix,
+        isLexicalSuggestionsLoading: false,
+      });
+    }
+  },
+  clearLexicalSuggestions: () => {
+    set((state) => ({
+      lexicalSuggestions: [],
+      lexicalQuery: '',
+      isLexicalSuggestionsLoading: false,
+      lexicalRequestSerial: state.lexicalRequestSerial + 1,
+    }));
   },
   setDeletedBuffer: (char: string | null) => {
     set({ deletedBuffer: char });
@@ -630,6 +863,11 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       composerSelectionEnd: 0,
       deletedBuffer: null,
       isReferencePanelOpen: false,
+      lexicalSuggestions: [],
+      lexicalQuery: '',
+      isLexicalSuggestionsLoading: false,
+      lexicalRequestSerial: 0,
+      recentlyDeletedBlock: null,
     });
   },
   resetSession: () => {
@@ -646,6 +884,10 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       activeBuffer: '',
       suggestions: [],
       alternateSuggestions: [],
+      lexicalSuggestions: [],
+      lexicalQuery: '',
+      isLexicalSuggestionsLoading: false,
+      lexicalRequestSerial: 0,
       selectedSuggestionIndex: 0,
       ghostText: null,
       composerSelectionStart: 0,
@@ -656,6 +898,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       sessionId: createSessionId(),
       sessionName: createDefaultSessionName(),
       lastSavedAt: null,
+      recentlyDeletedBlock: null,
     });
   },
   getRenderedDocumentText: () => {

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "prefix": "ds",
+  "entries": [
+    {"itrans":"dshaante","devanagari":"द्शान्ते","count":1},
+    {"itrans":"dshabhujo","devanagari":"द्शभुजो","count":1},
+    {"itrans":"dshame","devanagari":"द्शमे","count":1},
+    {"itrans":"dshamii","devanagari":"द्शमी","count":1},
+    {"itrans":"dshaparvaviSayaan","devanagari":"द्शपर्वविषयान्","count":1},
+    {"itrans":"dshaprakaraNaani","devanagari":"द्शप्रकरणानि","count":1},
+    {"itrans":"dshyante","devanagari":"द्श्यन्ते","count":1}
+  ]
+}
