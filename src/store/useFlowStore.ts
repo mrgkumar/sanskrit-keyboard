@@ -65,11 +65,11 @@ const MOCK_SHORT_BLOCK: CanonicalBlock = {
   id: 'block-1',
   type: 'short',
   title: 'Gaṇeśa Mantra',
-  source: 'oM gaM gaNapataye namaH',
-  rendered: transliterate('oM gaM gaNapataye namaH').unicode,
+  source: 'oM gaM gaNapataye nama:',
+  rendered: transliterate('oM gaM gaNapataye nama:').unicode,
 };
 
-const LONG_SOURCE = "oM saha nAvavatu | saha nau bhunaktu | saha vIryaM karavAvahai | tejasvi nAvadhItamastu mA vidviShAvahai || oM shAntiH shAntiH shAntiH ||";
+const LONG_SOURCE = "oM saha nAvavatu | saha nau bhunaktu | saha vIryaM karavAvahai | tejasvi nAvadhItamastu mA vidviShAvahai || oM shAnti: shAnti: shAnti: ||";
 const MOCK_LONG_BLOCK: CanonicalBlock = {
   id: 'block-2',
   type: 'long',
@@ -95,6 +95,8 @@ export interface SanskritKeyboardState {
   alternateSuggestions: { itrans: string; unicode: string }[];
   selectedSuggestionIndex: number;
   ghostText: string | null;
+  composerSelectionStart: number;
+  composerSelectionEnd: number;
 
   // UI State
   isReferencePanelOpen: boolean;
@@ -106,10 +108,11 @@ export interface SanskritKeyboardState {
   setPrevChunk: () => void;
   setFocusSpan: (span: 'tight' | 'balanced' | 'wide') => void;
   setViewMode: (mode: 'focus' | 'read' | 'review') => void;
-  updateChunkSource: (newSource: string) => void;
+  updateChunkSource: (newSource: string, selectionStart?: number, selectionEnd?: number) => void;
   toggleReferencePanel: () => void;
   addBlocks: (itransStrings: string[]) => void;
   setDeletedBuffer: (char: string | null) => void;
+  setComposerSelection: (start: number, end: number) => void;
 
   // Selectors (for convenience)
   getActiveBlock: () => CanonicalBlock | undefined;
@@ -131,6 +134,8 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   alternateSuggestions: [],
   selectedSuggestionIndex: 0,
   ghostText: null,
+  composerSelectionStart: 0,
+  composerSelectionEnd: 0,
   isReferencePanelOpen: false, // Initialize here
   deletedBuffer: null, // Initialize here
 
@@ -223,11 +228,13 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       editorState: { ...state.editorState, viewMode: mode },
     }));
   },
-  updateChunkSource: (newSource) => {
+  updateChunkSource: (newSource, selectionStart, selectionEnd) => {
     const { getActiveBlock, getActiveChunkGroup } = get();
     let activeBlock = getActiveBlock(); // Use 'let' because we might reassign it
 
     if (!activeBlock) return;
+    const nextSelectionStart = selectionStart ?? get().composerSelectionStart;
+    const nextSelectionEnd = selectionEnd ?? nextSelectionStart;
 
     // Heuristic for determining if a block should be 'long'
     const isNowLong = newSource.length > 100 || newSource.split(/[\s|]+/).length > 10;
@@ -277,6 +284,8 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
             ? { ...block, source: newSource, rendered: transliterate(newSource).unicode }
             : block
         ),
+        composerSelectionStart: nextSelectionStart,
+        composerSelectionEnd: nextSelectionEnd,
       }));
     } else { // It's a long block (either was long, or just converted to long)
       const activeChunk = getActiveChunkGroup();
@@ -285,25 +294,49 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       const newBlocks = get().blocks.map((block) => {
         if (block.id === activeBlock!.id) { // activeBlock is guaranteed here
           const currentActiveBlock = activeBlock as CanonicalBlock & { segments: Segment[] };
+          const beforeSegments = currentActiveBlock.segments.slice(0, activeChunk.startSegmentIndex);
+          const afterSegments = currentActiveBlock.segments.slice(activeChunk.endSegmentIndex + 1);
+          const mergedSegments: Segment[] = [
+            ...beforeSegments,
+            {
+              id: `seg-${Date.now()}-active`,
+              source: newSource,
+              rendered: transliterate(newSource).unicode,
+              startOffset: 0,
+              endOffset: 0,
+            },
+            ...afterSegments,
+          ];
 
-          const updatedSegments = currentActiveBlock.segments.map((segment, index) => {
-            if (index >= activeChunk.startSegmentIndex && index <= activeChunk.endSegmentIndex) {
-              const relativeStartOffset = segment.startOffset - currentActiveBlock.segments[activeChunk.startSegmentIndex].startOffset;
-              const relativeEndOffset = segment.endOffset - currentActiveBlock.segments[activeChunk.startSegmentIndex].startOffset;
-              const newSegmentSource = newSource.substring(relativeStartOffset, relativeEndOffset);
-              return { ...segment, source: newSegmentSource, rendered: transliterate(newSegmentSource).unicode };
-            }
-            return segment;
+          let offset = 0;
+          const updatedSegments = mergedSegments.map((segment) => {
+            const updatedSegment = {
+              ...segment,
+              startOffset: offset,
+              endOffset: offset + segment.source.length,
+            };
+            offset = updatedSegment.endOffset;
+            return updatedSegment;
           });
 
-          const newFullSource = updatedSegments.map((s) => s.source).join('');
+          const newFullSource = updatedSegments.map((segment) => segment.source).join('');
           const newFullRendered = transliterate(newFullSource).unicode;
 
           return { ...block, source: newFullSource, rendered: newFullRendered, segments: updatedSegments };
         }
         return block;
       });
-      set({ blocks: newBlocks });
+      const newAnchorSegmentIndex = activeChunk.startSegmentIndex;
+
+      set((state) => ({
+        blocks: newBlocks,
+        editorState: {
+          ...state.editorState,
+          activeAnchorSegmentIndex: newAnchorSegmentIndex,
+        },
+        composerSelectionStart: nextSelectionStart,
+        composerSelectionEnd: nextSelectionEnd,
+      }));
     }
 
     // After updating the block (or after initial short block update), process suggestions for the new source
@@ -362,7 +395,9 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       suggestions, 
       alternateSuggestions, 
       ghostText: ghostUnicode,
-      selectedSuggestionIndex: 0 // Reset selected suggestion index
+      selectedSuggestionIndex: 0, // Reset selected suggestion index
+      composerSelectionStart: nextSelectionStart,
+      composerSelectionEnd: nextSelectionEnd,
     });
   },
   addBlocks: (itransStrings: string[]) => {
@@ -400,6 +435,9 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   },
   setDeletedBuffer: (char: string | null) => {
     set({ deletedBuffer: char });
+  },
+  setComposerSelection: (start: number, end: number) => {
+    set({ composerSelectionStart: start, composerSelectionEnd: end });
   },
 
 
