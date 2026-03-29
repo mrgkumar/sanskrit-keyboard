@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:transliteration": "playwright test transliteration.spec.ts",
+    "test:transliteration:forward": "playwright test transliteration.spec.ts --grep \"Forward\"",
+    "test:transliteration:reverse": "playwright test transliteration.spec.ts --grep \"Reverse\"",
+    "test-detransliterate": "npm run test:transliteration:reverse",
+    "test-detransliterate-sampled": "npm run test:transliteration"
   },
   "dependencies": {
     "next": "16.2.1",
