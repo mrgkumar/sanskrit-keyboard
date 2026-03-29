@@ -4,6 +4,11 @@ import path from 'node:path';
 import readline from 'node:readline';
 import { Worker } from 'node:worker_threads';
 import { fileURLToPath } from 'node:url';
+import {
+  parseDatasetIds,
+  resolveCorpusDatasets,
+  type CanonicalRecordConfig,
+} from '../test-support/corpusRegistry.ts';
 
 interface CanonicalMappingRecord {
   id: string;
@@ -26,6 +31,8 @@ interface WorkerInput {
   type: 'process_batch';
   batchId: number;
   lines: string[];
+  datasetId: string;
+  config: CanonicalRecordConfig;
 }
 
 interface WorkerOutput {
@@ -40,7 +47,8 @@ interface WorkerOutput {
 }
 
 interface SummaryReport {
-  inputPath: string;
+  inputPaths: string[];
+  datasetIds: string[];
   outputDir: string;
   processedRows: number;
   exactPasses: number;
@@ -82,6 +90,7 @@ const parseArgs = () => {
   const args = process.argv.slice(2);
   const options = {
     input: DEFAULT_INPUT_PATH,
+    datasets: [] as string[],
     outputDir: DEFAULT_OUTPUT_DIR,
     limit: null as number | null,
     progressEvery: DEFAULT_PROGRESS_EVERY,
@@ -95,6 +104,12 @@ const parseArgs = () => {
 
     if (arg === '--input' && next) {
       options.input = path.resolve(process.cwd(), next);
+      index++;
+      continue;
+    }
+
+    if (arg === '--datasets' && next) {
+      options.datasets = parseDatasetIds(next);
       index++;
       continue;
     }
@@ -140,10 +155,6 @@ const ensureDir = (dirPath: string) => {
   fs.mkdirSync(dirPath, { recursive: true });
 };
 
-const writeNdjsonLine = (stream: fs.WriteStream, value: unknown) => {
-  stream.write(`${JSON.stringify(value)}\n`);
-};
-
 const waitForDrain = (stream: fs.WriteStream) =>
   new Promise<void>((resolve) => {
     stream.once('drain', resolve);
@@ -152,6 +163,33 @@ const waitForDrain = (stream: fs.WriteStream) =>
 const main = async () => {
   const startedAt = new Date();
   const options = parseArgs();
+  const datasetConfigs: Array<{ id: string; path: string; config: CanonicalRecordConfig }> =
+    options.datasets.length > 0
+      ? resolveCorpusDatasets(options.datasets).map((dataset) => {
+          if (dataset.format !== 'ndjson-records' || !dataset.canonical) {
+            throw new Error(`Dataset "${dataset.id}" is not configured for canonical lexicon builds`);
+          }
+
+          return {
+            id: dataset.id,
+            path: dataset.path,
+            config: dataset.canonical,
+          };
+        })
+      : [
+          {
+            id: 'legacy-input',
+            path: options.input,
+            config: {
+              mode: 'from_devanagari',
+              idField: 'unique_identifier',
+              devanagariField: 'native word',
+              romanField: 'english word',
+              sourceField: 'source',
+              scoreField: 'score',
+            } satisfies CanonicalRecordConfig,
+          },
+        ];
 
   ensureDir(options.outputDir);
 
@@ -245,62 +283,74 @@ const main = async () => {
     });
   }
 
-  const input = fs.createReadStream(options.input, { encoding: 'utf8' });
-  const rl = readline.createInterface({
-    input,
-    crlfDelay: Infinity,
-  });
+  let currentBatch: string[] = [];
+  let seenLines = 0;
 
-  try {
-    let currentBatch: string[] = [];
-    let seenLines = 0;
+  for (const dataset of datasetConfigs) {
+    const input = fs.createReadStream(dataset.path, { encoding: 'utf8' });
+    const rl = readline.createInterface({
+      input,
+      crlfDelay: Infinity,
+    });
 
-    for await (const line of rl) {
-      if (mainLoopError) {
-        throw mainLoopError;
+    try {
+      for await (const line of rl) {
+        if (mainLoopError) {
+          throw mainLoopError;
+        }
+
+        if (options.limit !== null && seenLines >= options.limit) {
+          break;
+        }
+
+        seenLines++;
+        currentBatch.push(line);
+
+        if (currentBatch.length < options.batchSize) {
+          continue;
+        }
+
+        await waitForQueueSpace();
+        queue.push({
+          type: 'process_batch',
+          batchId: nextBatchId++,
+          lines: currentBatch,
+          datasetId: dataset.id,
+          config: dataset.config,
+        });
+        currentBatch = [];
+        maybeDispatch();
       }
+    } finally {
+      rl.close();
+    }
 
-      if (options.limit !== null && seenLines >= options.limit) {
-        break;
-      }
-
-      seenLines++;
-      currentBatch.push(line);
-
-      if (currentBatch.length < options.batchSize) {
-        continue;
-      }
-
+    if (currentBatch.length > 0) {
       await waitForQueueSpace();
       queue.push({
         type: 'process_batch',
         batchId: nextBatchId++,
         lines: currentBatch,
+        datasetId: dataset.id,
+        config: dataset.config,
       });
       currentBatch = [];
       maybeDispatch();
     }
 
-    if (currentBatch.length > 0) {
-      queue.push({
-        type: 'process_batch',
-        batchId: nextBatchId++,
-        lines: currentBatch,
-      });
-      maybeDispatch();
+    if (options.limit !== null && seenLines >= options.limit) {
+      break;
     }
+  }
 
-    allInputDispatched = true;
+  allInputDispatched = true;
 
-    while ((queue.length > 0 || inflight.size > 0) && !mainLoopError) {
-      await new Promise<void>((resolve) => setTimeout(resolve, 10));
-    }
+  while ((queue.length > 0 || inflight.size > 0) && !mainLoopError) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
+  }
 
-    if (mainLoopError) {
-      throw mainLoopError;
-    }
-  } finally {
-    rl.close();
+  if (mainLoopError) {
+    throw mainLoopError;
   }
 
   await Promise.all(workerStates.map(async ({ worker }) => worker.terminate().catch(() => undefined)));
@@ -319,7 +369,8 @@ const main = async () => {
 
   const finishedAt = new Date();
   const summary: SummaryReport = {
-    inputPath: options.input,
+    inputPaths: datasetConfigs.map((dataset) => dataset.path),
+    datasetIds: datasetConfigs.map((dataset) => dataset.id),
     outputDir: options.outputDir,
     processedRows,
     exactPasses,
@@ -335,7 +386,7 @@ const main = async () => {
 
   fs.writeFileSync(summaryPath, `${JSON.stringify(summary, null, 2)}\n`, 'utf8');
   console.log(
-    `[buildCanonicalLexicon] done processed=${processedRows} exactPasses=${exactPasses} failures=${failures} skipped=${skippedRows} workers=${options.workers} batchSize=${options.batchSize} outputDir=${options.outputDir}`
+    `[buildCanonicalLexicon] done processed=${processedRows} exactPasses=${exactPasses} failures=${failures} skipped=${skippedRows} workers=${options.workers} batchSize=${options.batchSize} datasets=${datasetConfigs.map((dataset) => dataset.id).join(',')} outputDir=${options.outputDir}`
   );
 };
 

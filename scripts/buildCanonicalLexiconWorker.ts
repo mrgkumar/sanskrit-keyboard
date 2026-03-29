@@ -1,18 +1,13 @@
 import { parentPort } from 'node:worker_threads';
+import { extractCanonicalRow, type CanonicalRecordConfig } from '../test-support/corpusRegistry.ts';
 import { detransliterate, transliterate } from '../src/lib/vedic/utils.ts';
-
-interface CorpusRow {
-  unique_identifier?: string;
-  'native word'?: string;
-  'english word'?: string;
-  source?: string | null;
-  score?: number | null;
-}
 
 interface WorkerInput {
   type: 'process_batch';
   batchId: number;
   lines: string[];
+  datasetId: string;
+  config: CanonicalRecordConfig;
 }
 
 interface CanonicalMappingRecord {
@@ -58,9 +53,9 @@ parentPort.on('message', (message: WorkerInput) => {
       continue;
     }
 
-    let row: CorpusRow;
+    let row: Record<string, unknown>;
     try {
-      row = JSON.parse(line) as CorpusRow;
+      row = JSON.parse(line) as Record<string, unknown>;
     } catch (error) {
       skippedRows++;
       failedRecords.push({
@@ -71,24 +66,36 @@ parentPort.on('message', (message: WorkerInput) => {
       continue;
     }
 
-    const devanagari = row['native word']?.trim() ?? '';
-    if (!devanagari) {
+    const extracted = extractCanonicalRow(
+      message.config,
+      row,
+      `batch-${message.batchId}-row-${processedRows + skippedRows + 1}`,
+      message.datasetId
+    );
+    if (!extracted) {
       skippedRows++;
       continue;
     }
 
-    const itrans = detransliterate(devanagari);
+    const itrans =
+      message.config.mode === 'from_itrans' && extracted.itrans
+        ? extracted.itrans
+        : detransliterate(extracted.devanagari);
     const forwardUnicode = transliterate(itrans).unicode;
+    const expectedUnicode =
+      message.config.mode === 'from_itrans' && extracted.devanagari
+        ? extracted.devanagari
+        : extracted.devanagari || forwardUnicode;
     const forwardStatus: CanonicalMappingRecord['forwardStatus'] =
-      forwardUnicode === devanagari ? 'exact_pass' : 'fail';
+      forwardUnicode === expectedUnicode ? 'exact_pass' : 'fail';
 
     const record: CanonicalMappingRecord = {
-      id: row.unique_identifier ?? `batch-${message.batchId}-row-${processedRows + skippedRows + 1}`,
-      devanagari,
+      id: extracted.id,
+      devanagari: expectedUnicode,
       itrans,
-      originalRoman: row['english word']?.trim() ?? '',
-      source: row.source ?? null,
-      score: row.score ?? null,
+      originalRoman: extracted.originalRoman,
+      source: extracted.source,
+      score: extracted.score,
       forwardUnicode,
       forwardStatus,
     };

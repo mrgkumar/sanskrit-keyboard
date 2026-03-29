@@ -1,6 +1,11 @@
 {
   "version": 1,
-  "inputPath": "/home/ganesh/Documents/Research/sanskrit_keyboard/archive/example.txt",
+  "inputPaths": [
+    "/home/ganesh/Documents/Research/sanskrit_keyboard/archive/example.txt"
+  ],
+  "datasetIds": [
+    "example-vedic"
+  ],
   "entryCount": 8839,
   "entries": [
     {

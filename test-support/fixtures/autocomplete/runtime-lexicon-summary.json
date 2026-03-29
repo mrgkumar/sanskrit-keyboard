@@ -5,9 +5,9 @@
   "processedRows": 1813369,
   "entryCount": 1809748,
   "shardPrefixLength": 2,
-  "startedAt": "2026-03-29T13:27:08.625Z",
-  "finishedAt": "2026-03-29T13:27:28.278Z",
-  "durationMs": 19653,
+  "startedAt": "2026-03-29T15:35:52.001Z",
+  "finishedAt": "2026-03-29T15:36:13.318Z",
+  "durationMs": 21317,
   "singleFile": {
     "file": "runtime-lexicon.json",
     "bytes": 170494322
