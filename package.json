@@ -13,6 +13,7 @@
     "build:runtime-lexicon": "node --experimental-strip-types scripts/buildRuntimeLexicon.ts",
     "build:runtime-lexicon:sample": "node --experimental-strip-types scripts/buildRuntimeLexicon.ts --limit 20000",
     "build:swara-lexicon": "node --experimental-strip-types scripts/buildSwaraLexicon.ts",
+    "build:completion-training-data": "node --experimental-strip-types scripts/buildCompletionTrainingData.ts",
     "build:prediction-corpus": "node --experimental-strip-types scripts/rebuildPredictionCorpus.ts",
     "build:prediction-corpus:sample": "node --experimental-strip-types scripts/rebuildPredictionCorpus.ts --canonical-limit 2000 --runtime-limit 20000 --swara-limit 4000",
     "evaluate:prediction-corpus": "node --experimental-strip-types scripts/evaluatePredictionCorpus.ts --output ../generated/autocomplete/prediction-eval.json",

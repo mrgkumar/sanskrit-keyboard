@@ -31,6 +31,7 @@ const parseArgs = () => {
     skipCanonical: false,
     skipRuntime: false,
     skipSwara: false,
+    skipCompletionTraining: false,
   };
 
   for (let index = 0; index < args.length; index += 1) {
@@ -97,6 +98,11 @@ const parseArgs = () => {
 
     if (arg === '--skip-swara') {
       options.skipSwara = true;
+      continue;
+    }
+
+    if (arg === '--skip-completion-training') {
+      options.skipCompletionTraining = true;
     }
   }
 
@@ -153,6 +159,10 @@ const main = () => {
       args.push('--limit', String(options.swaraLimit));
     }
     runScript('buildSwaraLexicon.ts', args);
+  }
+
+  if (!options.skipCompletionTraining) {
+    runScript('buildCompletionTrainingData.ts', ['--input', canonicalOutput, '--output-dir', options.outputDir]);
   }
 };
 

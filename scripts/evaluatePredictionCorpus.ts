@@ -4,6 +4,7 @@ import path from 'node:path';
 import { getAutocompleteDataRoot } from '../src/lib/server/autocompleteDataRoot.ts';
 import {
   evaluateLexicalPredictionsForDataset,
+  summarizeFailureBreakdown,
   summarizePrefixMetrics,
 } from '../test-support/predictionEvaluation.ts';
 import { parseDatasetIds } from '../test-support/corpusRegistry.ts';
@@ -56,6 +57,10 @@ const main = async () => {
       prefixMetrics: {
         finalPrefix: summarizePrefixMetrics(result.prefixMetrics.finalPrefix),
         allPrefixes: summarizePrefixMetrics(result.prefixMetrics.allPrefixes),
+      },
+      failureBreakdown: {
+        finalPrefix: summarizeFailureBreakdown(result.failureBreakdown.finalPrefix),
+        allPrefixes: summarizeFailureBreakdown(result.failureBreakdown.allPrefixes),
       },
     });
   }

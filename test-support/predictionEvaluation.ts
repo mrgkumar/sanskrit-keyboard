@@ -67,6 +67,12 @@ interface PrefixMetrics {
   top5Hits: number;
 }
 
+interface PrefixFailureBreakdown {
+  queries: number;
+  retrievalFailures: number;
+  rankingFailures: number;
+}
+
 interface MissSample {
   datasetId: string;
   rowId: string;
@@ -74,6 +80,7 @@ interface MissSample {
   target: string;
   devanagari: string;
   suggestions: string[];
+  failureType: 'retrieval' | 'ranking';
 }
 
 type EvaluatableDataset = NdjsonRecordDataset & {
@@ -92,6 +99,10 @@ export interface DatasetEvaluationResult {
   prefixMetrics: {
     finalPrefix: PrefixMetrics;
     allPrefixes: PrefixMetrics;
+  };
+  failureBreakdown: {
+    finalPrefix: PrefixFailureBreakdown;
+    allPrefixes: PrefixFailureBreakdown;
   };
   sampleMisses: MissSample[];
 }
@@ -400,6 +411,15 @@ export const summarizePrefixMetrics = (metric: PrefixMetrics) => ({
   top5Rate: toRate(metric.top5Hits, metric.queries),
 });
 
+export const summarizeFailureBreakdown = (breakdown: PrefixFailureBreakdown) => ({
+  queries: breakdown.queries,
+  retrievalFailures: breakdown.retrievalFailures,
+  rankingFailures: breakdown.rankingFailures,
+  failureRate: toRate(breakdown.retrievalFailures + breakdown.rankingFailures, breakdown.queries),
+  retrievalFailureRate: toRate(breakdown.retrievalFailures, breakdown.queries),
+  rankingFailureRate: toRate(breakdown.rankingFailures, breakdown.queries),
+});
+
 export const samplePreparedDatasetEvaluation = (
   prepared: PreparedDatasetEvaluation,
   options: PreparedDatasetSampleOptions
@@ -598,6 +618,12 @@ const createEmptyMetrics = (): PrefixMetrics => ({
   top5Hits: 0,
 });
 
+const createEmptyFailureBreakdown = (): PrefixFailureBreakdown => ({
+  queries: 0,
+  retrievalFailures: 0,
+  rankingFailures: 0,
+});
+
 const resolveEvaluationDataset = (datasetId: string): EvaluatableDataset => {
   const dataset = resolveCorpusDataset(datasetId);
   if (dataset.format !== 'ndjson-records' || !dataset.canonical) {
@@ -731,6 +757,8 @@ export const evaluatePreparedLexicalPredictions = ({
   const profile = resolvePredictionExperimentProfile(profileId);
   const finalPrefixMetrics = createEmptyMetrics();
   const allPrefixesMetrics = createEmptyMetrics();
+  const finalPrefixFailures = createEmptyFailureBreakdown();
+  const allPrefixesFailures = createEmptyFailureBreakdown();
   const sampleMisses: MissSample[] = [];
   let inLexiconWords = 0;
   let missingWords = 0;
@@ -738,7 +766,8 @@ export const evaluatePreparedLexicalPredictions = ({
   for (const query of prepared.queries) {
     const { rowId, target, devanagari, weight } = query;
 
-    if (lexicon.hasEntry(target)) {
+    const inLexicon = lexicon.hasEntry(target);
+    if (inLexicon) {
       inLexiconWords += weight;
     } else {
       missingWords += weight;
@@ -749,12 +778,31 @@ export const evaluatePreparedLexicalPredictions = ({
       const prefix = target.slice(0, prefixLength);
       const suggestions = lexicon.getSuggestions(prefix, profile, DEFAULT_SUGGESTION_LIMIT);
       incrementMetric(allPrefixesMetrics, suggestions, target, weight);
+      allPrefixesFailures.queries += weight;
 
       if (prefixLength === finalPrefixLength) {
         incrementMetric(finalPrefixMetrics, suggestions, target, weight);
+        finalPrefixFailures.queries += weight;
       }
 
       const hit = suggestions.slice(0, DEFAULT_SUGGESTION_LIMIT).some((entry) => entry.itrans === target);
+      const failureType = inLexicon ? 'ranking' : 'retrieval';
+      if (!hit) {
+        if (inLexicon) {
+          allPrefixesFailures.rankingFailures += weight;
+        } else {
+          allPrefixesFailures.retrievalFailures += weight;
+        }
+      }
+
+      if (!hit && prefixLength === finalPrefixLength) {
+        if (inLexicon) {
+          finalPrefixFailures.rankingFailures += weight;
+        } else {
+          finalPrefixFailures.retrievalFailures += weight;
+        }
+      }
+
       if (!hit && sampleMisses.length < MAX_SAMPLED_MISSES) {
         sampleMisses.push({
           datasetId: prepared.datasetId,
@@ -763,6 +811,7 @@ export const evaluatePreparedLexicalPredictions = ({
           target,
           devanagari,
           suggestions: suggestions.map((entry) => entry.itrans),
+          failureType,
         });
       }
     }
@@ -780,6 +829,10 @@ export const evaluatePreparedLexicalPredictions = ({
     prefixMetrics: {
       finalPrefix: finalPrefixMetrics,
       allPrefixes: allPrefixesMetrics,
+    },
+    failureBreakdown: {
+      finalPrefix: finalPrefixFailures,
+      allPrefixes: allPrefixesFailures,
     },
     sampleMisses,
   };
