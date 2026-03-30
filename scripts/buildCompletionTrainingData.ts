@@ -2,14 +2,11 @@ import path from 'node:path';
 
 import { getAutocompleteDataRoot } from '../src/lib/server/autocompleteDataRoot.ts';
 import {
-  buildCompletionPrefixExamples,
-  buildCompletionTable,
-  loadCanonicalTrainingRecords,
-  loadSwaraExactForms,
-  writeCompletionTrainingArtifacts,
+  buildCompletionTrainingArtifactsFromCanonicalFile,
 } from '../test-support/completionTrainingData.ts';
 
 const DEFAULT_OUTPUT_DIR = getAutocompleteDataRoot();
+const DEFAULT_TEMP_BUCKET_DIR = path.resolve(DEFAULT_OUTPUT_DIR, '.completion-training-buckets');
 
 const parseIntegerArg = (value: string | undefined) => {
   if (!value) {
@@ -26,6 +23,7 @@ const parseArgs = () => {
     input: path.resolve(DEFAULT_OUTPUT_DIR, 'canonical-mapping.ndjson'),
     swara: path.resolve(DEFAULT_OUTPUT_DIR, 'swara-lexicon.json'),
     outputDir: DEFAULT_OUTPUT_DIR,
+    tempBucketDir: DEFAULT_TEMP_BUCKET_DIR,
     limit: null as number | null,
   };
 
@@ -51,6 +49,12 @@ const parseArgs = () => {
       continue;
     }
 
+    if (arg === '--temp-dir' && next) {
+      options.tempBucketDir = path.resolve(process.cwd(), next);
+      index += 1;
+      continue;
+    }
+
     if (arg === '--limit' && next) {
       options.limit = parseIntegerArg(next);
       index += 1;
@@ -62,41 +66,15 @@ const parseArgs = () => {
 
 const main = async () => {
   const options = parseArgs();
-  const { processedRows, records } = await loadCanonicalTrainingRecords(options.input, options.limit);
-  const completionTable = buildCompletionTable({
-    canonicalRecords: records,
-    swaraExactForms: loadSwaraExactForms(options.swara),
-  });
-  const prefixExamples = buildCompletionPrefixExamples(completionTable);
-
-  await writeCompletionTrainingArtifacts({
+  const summary = await buildCompletionTrainingArtifactsFromCanonicalFile({
+    canonicalPath: options.input,
+    swaraPath: options.swara,
     outputDir: options.outputDir,
-    completionTable,
-    prefixExamples,
-    summary: {
-      inputPath: options.input,
-      swaraPath: options.swara,
-      outputDir: options.outputDir,
-      processedRows,
-      entryCount: completionTable.length,
-      prefixExampleCount: prefixExamples.length,
-    },
+    tempBucketDir: options.tempBucketDir,
+    limit: options.limit,
   });
 
-  console.log(
-    JSON.stringify(
-      {
-        inputPath: options.input,
-        swaraPath: options.swara,
-        outputDir: options.outputDir,
-        processedRows,
-        entryCount: completionTable.length,
-        prefixExampleCount: prefixExamples.length,
-      },
-      null,
-      2
-    )
-  );
+  console.log(JSON.stringify(summary, null, 2));
 };
 
 void main();
