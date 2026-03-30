@@ -2,6 +2,7 @@ import React from 'react';
 import { useFlowStore } from '@/store/useFlowStore';
 import { VEDIC_MAPPINGS, MAPPING_TRIE } from '@/lib/vedic/mapping';
 import { clsx } from 'clsx';
+import type { ChunkEditTarget } from '@/store/types';
 
 const DEFAULT_SHORTCUTS = [
   // Vowels
@@ -97,6 +98,14 @@ export const ShortcutHUD: React.FC = () => {
 
   const activeChunkGroup = getActiveChunkGroup();
   const currentChunkSource = activeChunkGroup?.source || '';
+  const currentEditTarget: ChunkEditTarget | undefined = activeChunkGroup?.blockId
+    ? {
+        blockId: activeChunkGroup.blockId,
+        startSegmentIndex: activeChunkGroup.startSegmentIndex,
+        endSegmentIndex: activeChunkGroup.endSegmentIndex,
+        source: activeChunkGroup.source,
+      }
+    : undefined;
 
   const handleInsert = (itrans: string, tail: string) => {
     const replacementLength = tail.length;
@@ -107,7 +116,7 @@ export const ShortcutHUD: React.FC = () => {
       itrans +
       currentChunkSource.slice(replaceEnd);
     const nextCaret = replaceStart + itrans.length;
-    updateChunkSource(newSource, nextCaret, nextCaret);
+    updateChunkSource(newSource, nextCaret, nextCaret, currentEditTarget);
   };
 
   const handleQuickInsert = (itrans: string) => {
@@ -118,7 +127,7 @@ export const ShortcutHUD: React.FC = () => {
       itrans +
       currentChunkSource.slice(end);
     const nextCaret = start + itrans.length;
-    updateChunkSource(newSource, nextCaret, nextCaret);
+    updateChunkSource(newSource, nextCaret, nextCaret, currentEditTarget);
   };
 
   const handleLexicalInsert = (itrans: string, index: number) => {

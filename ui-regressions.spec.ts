@@ -54,16 +54,16 @@ test('clicking a correction keeps the caret at the replacement point', async ({ 
   expect(selectionEnd).toBe(3);
 });
 
-test('focus read and review modes visibly change the document view', async ({ page }) => {
+test('read and review modes visibly change the document view', async ({ page }) => {
   await loadDefaultSession(page);
+
+  await expect(page.getByRole('button', { name: 'Focus' })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Review' }).click();
   await expect(page.getByText('ITRANS Source').first()).toBeVisible();
 
   await page.getByRole('button', { name: 'Read' }).click();
+  await expect(page.getByTestId('document-read-mode')).toBeVisible();
   await expect(page.getByText('ITRANS Source')).toHaveCount(0);
   await expect(page.getByText('Focused Source')).toHaveCount(0);
-
-  await page.getByRole('button', { name: 'Focus' }).click();
-  await expect(page.getByText('Focused Source').first()).toBeVisible();
 });

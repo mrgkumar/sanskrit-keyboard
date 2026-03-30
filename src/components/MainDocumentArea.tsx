@@ -42,6 +42,28 @@ export const MainDocumentArea: React.FC = () => {
     activateBlockChunk(blockId, segmentIndex);
   };
 
+  if (viewMode === 'read') {
+    return (
+      <div className="flex-1 overflow-y-auto px-4 py-8">
+        <div className="mx-auto max-w-4xl rounded-[2rem] border border-slate-200 bg-white px-6 py-8 shadow-sm sm:px-10">
+          <div
+            className="font-serif text-slate-900 whitespace-pre-wrap"
+            data-testid="document-read-mode"
+            style={{
+              fontSize: `${typography.renderedFontSize}px`,
+              lineHeight: typography.renderedLineHeight,
+            }}
+          >
+            {blocks
+              .map((block) => block.rendered.trim())
+              .filter((rendered) => rendered.length > 0)
+              .join('\n\n')}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const renderBlock = (block: CanonicalBlock) => {
     const isActive = block.id === activeBlockId;
     const isLongBlock = block.type === 'long';
@@ -120,15 +142,6 @@ export const MainDocumentArea: React.FC = () => {
         )}
       </>
     );
-
-    // --- Read Mode ---
-    if (viewMode === 'read') {
-      return (
-        <div key={block.id} className={blockClassName} onClick={() => setActiveBlockId(block.id)} data-testid="document-read-mode">
-          {commonBlockContent}
-        </div>
-      );
-    }
 
     // --- Focus Mode (and default if not Read/Review) ---
     // --- Focus Mode ---

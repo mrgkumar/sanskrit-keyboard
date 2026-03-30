@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { VEDIC_MAPPINGS, MAPPING_TRIE } from '@/lib/vedic/mapping';
 import { Search } from 'lucide-react';
 import { useFlowStore } from '@/store/useFlowStore';
+import type { ChunkEditTarget } from '@/store/types';
 
 interface ReferenceLibraryProps {
   deletedBuffer: string | null;
@@ -18,6 +19,14 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
   const handleInsert = (itrans: string) => {
     const activeChunkGroup = getActiveChunkGroup();
     if (activeChunkGroup) {
+      const editTarget: ChunkEditTarget | undefined = activeChunkGroup.blockId
+        ? {
+            blockId: activeChunkGroup.blockId,
+            startSegmentIndex: activeChunkGroup.startSegmentIndex,
+            endSegmentIndex: activeChunkGroup.endSegmentIndex,
+            source: activeChunkGroup.source,
+          }
+        : undefined;
       const start = Math.max(0, Math.min(composerSelectionStart, activeChunkGroup.source.length));
       const end = Math.max(start, Math.min(composerSelectionEnd, activeChunkGroup.source.length));
       const newSource =
@@ -25,7 +34,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
         itrans +
         activeChunkGroup.source.slice(end);
       const nextCaret = start + itrans.length;
-      updateChunkSource(newSource, nextCaret, nextCaret);
+      updateChunkSource(newSource, nextCaret, nextCaret, editTarget);
       toggleReferencePanel();
     }
   };

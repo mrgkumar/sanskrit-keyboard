@@ -9,6 +9,7 @@ export interface CanonicalBlock {
   id: string;
   type: 'short' | 'long';
   title?: string;
+  disableAutoSegmentation?: boolean;
   // The full, canonical ITRANS source for the entire block
   source: string; 
   // The full, rendered Devanagari for the entire block
@@ -49,6 +50,13 @@ export interface ChunkGroup {
   // The combined rendered Devanagari of all segments in this group
   rendered: string;
   blockId?: string;
+}
+
+export interface ChunkEditTarget {
+  blockId: string;
+  startSegmentIndex: number;
+  endSegmentIndex: number;
+  source: string;
 }
 
 /**

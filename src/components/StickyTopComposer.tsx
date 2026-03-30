@@ -10,6 +10,7 @@ import { ShortcutHUD } from '@/components/engine/ShortcutHUD';
 import { detransliterate } from '@/lib/vedic/utils';
 import { VEDIC_MAPPINGS } from '@/lib/vedic/mapping';
 import { applyShortcutPeekCorrection } from '@/lib/vedic/correction';
+import type { ChunkEditTarget } from '@/store/types';
 
 export const StickyTopComposer: React.FC = () => {
   const { 
@@ -34,6 +35,17 @@ export const StickyTopComposer: React.FC = () => {
 
   const isLongBlock = activeBlock?.type === 'long';
   const currentChunkSource = activeChunkGroup?.source || ''; // Get current chunk source
+  const currentEditTarget: ChunkEditTarget | undefined = activeChunkGroup?.blockId
+    ? {
+        blockId: activeChunkGroup.blockId,
+        startSegmentIndex: activeChunkGroup.startSegmentIndex,
+        endSegmentIndex: activeChunkGroup.endSegmentIndex,
+        source: activeChunkGroup.source,
+      }
+    : undefined;
+  const textareaKey = activeChunkGroup
+    ? `${activeChunkGroup.blockId ?? 'none'}:${activeChunkGroup.startSegmentIndex}:${activeChunkGroup.endSegmentIndex}`
+    : 'no-active-chunk';
   const totalChunkGroups =
     activeBlock && activeBlock.type === 'long' && activeBlock.segments
       ? Math.ceil(activeBlock.segments.length / { tight: 1, balanced: 2, wide: 3 }[focusSpan])
@@ -94,7 +106,7 @@ export const StickyTopComposer: React.FC = () => {
       suggestion.itrans +
       currentChunkSource.slice(replaceEnd);
     const nextCaret = replaceStart + suggestion.itrans.length;
-    updateChunkSource(newSource, nextCaret, nextCaret);
+    updateChunkSource(newSource, nextCaret, nextCaret, currentEditTarget);
     setLexicalSelectedSuggestionIndex(0);
     recordSessionLexicalUse(suggestion.itrans);
     setDeletedBuffer(null);
@@ -128,7 +140,7 @@ export const StickyTopComposer: React.FC = () => {
         currentSource.slice(selectionEnd);
       const nextCaret = selectionStart + itransText.length;
 
-      updateChunkSource(newSource, nextCaret, nextCaret);
+      updateChunkSource(newSource, nextCaret, nextCaret, currentEditTarget);
       recordSessionLexicalText(itransText);
     }
   };
@@ -294,7 +306,7 @@ export const StickyTopComposer: React.FC = () => {
       deletedBuffer,
       shortcutPeekQuery,
     });
-    updateChunkSource(nextSource, nextCaret, nextCaret);
+    updateChunkSource(nextSource, nextCaret, nextCaret, currentEditTarget);
     setIsShortcutPeekVisible(false);
     setDeletedBuffer(null);
     requestAnimationFrame(() => {
@@ -331,15 +343,6 @@ export const StickyTopComposer: React.FC = () => {
           
           <div className="flex gap-1">
             <button
-              onClick={() => setViewMode('focus')}
-              className={clsx(
-                "px-3 py-1 rounded-md text-xs font-bold uppercase",
-                viewMode === 'focus' ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              )}
-            >
-              Focus
-            </button>
-            <button
               onClick={() => setViewMode('read')}
               className={clsx(
                 "px-3 py-1 rounded-md text-xs font-bold uppercase",
@@ -373,14 +376,16 @@ export const StickyTopComposer: React.FC = () => {
 
         {/* Source Input Area */}
         <textarea
+          key={textareaKey}
           ref={composerRef}
+          autoFocus
           className="w-full text-lg font-mono p-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           style={{
             fontSize: `${typography.itransFontSize}px`,
             lineHeight: typography.itransLineHeight,
           }}
           value={activeChunkGroup?.source || ''}
-          onChange={(e) => updateChunkSource(e.target.value, e.target.selectionStart, e.target.selectionEnd)}
+          onChange={(e) => updateChunkSource(e.target.value, e.target.selectionStart, e.target.selectionEnd, currentEditTarget)}
           onPaste={handlePaste} // Add onPaste listener
           onKeyDown={handleKeyDown} // Add onKeyDown listener
           onSelect={(e) => syncSelection(e.currentTarget)}

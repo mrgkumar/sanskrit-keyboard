@@ -4,6 +4,7 @@ import {
   CanonicalBlock,
   Segment,
   ChunkGroup,
+  ChunkEditTarget,
   EditorState,
   TypographySettings,
   SessionSnapshot,
@@ -83,36 +84,18 @@ const splitIntoBlockSources = (source: string): string[] =>
     .map((part) => part.trim())
     .filter((part) => part.length > 0);
 
-const splitIntoBlockEntries = (source: string) => {
-  const normalized = source.replace(/\r/g, '');
-  const entries: { source: string; start: number; end: number }[] = [];
-  const paragraphPattern = /[^\n]+(?:\n(?!\s*\n)[^\n]+)*/g;
-  let match: RegExpExecArray | null;
-
-  while ((match = paragraphPattern.exec(normalized)) !== null) {
-    const trimmedSource = match[0].trim();
-    if (!trimmedSource) {
-      continue;
-    }
-
-    const trimmedStartOffset = match.index + match[0].search(/\S/);
-    const trimmedEndOffset = match.index + match[0].length - match[0].match(/\s*$/)![0].length;
-    entries.push({
-      source: trimmedSource,
-      start: trimmedStartOffset,
-      end: trimmedEndOffset,
-    });
-  }
-
-  return entries;
-};
-
-const createBlockFromSource = (source: string, title: string): CanonicalBlock => {
-  const type = isLongBlockSource(source) ? 'long' : 'short';
+const createBlockFromSource = (
+  source: string,
+  title: string,
+  options?: { disableAutoSegmentation?: boolean }
+): CanonicalBlock => {
+  const disableAutoSegmentation = options?.disableAutoSegmentation ?? false;
+  const type = !disableAutoSegmentation && isLongBlockSource(source) ? 'long' : 'short';
   const block: CanonicalBlock = {
     id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     type,
     title,
+    disableAutoSegmentation,
     source,
     rendered: transliterate(source).unicode,
   };
@@ -150,6 +133,7 @@ const createBlankBlock = (): CanonicalBlock => ({
   id: `block-${Date.now()}`,
   type: 'short',
   title: 'Untitled Block',
+  disableAutoSegmentation: true,
   source: '',
   rendered: '',
 });
@@ -284,7 +268,12 @@ export interface SanskritKeyboardState {
   setActiveChunkIndex: (segmentIndex: number) => void;
   setNextBlock: () => void;
   setPrevBlock: () => void;
-  updateChunkSource: (newSource: string, selectionStart?: number, selectionEnd?: number) => void;
+  updateChunkSource: (
+    newSource: string,
+    selectionStart?: number,
+    selectionEnd?: number,
+    editTarget?: ChunkEditTarget
+  ) => void;
   toggleReferencePanel: () => void;
   addBlocks: (itransStrings: string[]) => void;
   deleteBlock: (blockId?: string) => void;
@@ -326,7 +315,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     activeBlockId: INITIAL_BLOCKS[0].id, // Default to first block
     activeAnchorSegmentIndex: 0,
     focusSpan: 'balanced',
-    viewMode: 'focus',
+    viewMode: 'read',
     ghostAssistEnabled: true,
   },
   activeBuffer: '',
@@ -504,82 +493,36 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       },
     }));
   },
-  updateChunkSource: (newSource, selectionStart, selectionEnd) => {
+  updateChunkSource: (newSource, selectionStart, selectionEnd, editTarget) => {
     const { getActiveBlock, getActiveChunkGroup } = get();
     let activeBlock = getActiveBlock(); // Use 'let' because we might reassign it
 
     if (!activeBlock) return;
+    const activeChunkGroup = getActiveChunkGroup();
+    if (!activeChunkGroup) {
+      return;
+    }
+
+    if (editTarget) {
+      const isSameTarget =
+        activeChunkGroup.blockId === editTarget.blockId &&
+        activeChunkGroup.startSegmentIndex === editTarget.startSegmentIndex &&
+        activeChunkGroup.endSegmentIndex === editTarget.endSegmentIndex &&
+        activeChunkGroup.source === editTarget.source;
+
+      if (!isSameTarget) {
+        return;
+      }
+    }
+
     const previousActiveBuffer = get().activeBuffer;
     const nextSelectionStart = selectionStart ?? get().composerSelectionStart;
     const nextSelectionEnd = selectionEnd ?? nextSelectionStart;
 
-    let candidateFullSource = newSource;
-    let selectionOffsetInCandidate = nextSelectionEnd;
-
-    if (activeBlock.type === 'long' && activeBlock.segments) {
-      const activeChunk = getActiveChunkGroup();
-      if (!activeChunk) {
-        return;
-      }
-
-      const beforeSource = activeBlock.segments
-        .slice(0, activeChunk.startSegmentIndex)
-        .map((segment) => segment.source)
-        .join('');
-      const afterSource = activeBlock.segments
-        .slice(activeChunk.endSegmentIndex + 1)
-        .map((segment) => segment.source)
-        .join('');
-
-      candidateFullSource = `${beforeSource}${newSource}${afterSource}`;
-      selectionOffsetInCandidate = beforeSource.length + nextSelectionEnd;
-    }
-
-    const blockEntries = splitIntoBlockEntries(candidateFullSource);
-
-    if (blockEntries.length > 1) {
-      const replacementBlocks = blockEntries.map((entry, index) =>
-        createBlockFromSource(entry.source, `Pasted Block ${index + 1}`)
-      );
-      const activeReplacement =
-        replacementBlocks[
-          Math.max(
-            0,
-            blockEntries.findIndex(
-              (entry) => selectionOffsetInCandidate >= entry.start && selectionOffsetInCandidate <= entry.end
-            )
-          )
-        ] || replacementBlocks[0];
-
-      set((state) => {
-        const blockIndex = state.blocks.findIndex((block) => block.id === activeBlock!.id);
-        const preservedBlocks =
-          blockIndex === -1
-            ? state.blocks
-            : [
-                ...state.blocks.slice(0, blockIndex),
-                ...replacementBlocks,
-                ...state.blocks.slice(blockIndex + 1),
-              ];
-
-        return {
-          blocks: preservedBlocks,
-          editorState: {
-            ...state.editorState,
-            activeBlockId: activeReplacement.id,
-            activeAnchorSegmentIndex: 0,
-          },
-          composerSelectionStart: 0,
-          composerSelectionEnd: 0,
-        };
-      });
-      return;
-    }
-
     const isNowLong = isLongBlockSource(newSource);
     
     // --- Dynamic Short to Long Block Conversion ---
-    if (activeBlock.type === 'short' && isNowLong) {
+    if (activeBlock.type === 'short' && isNowLong && !activeBlock.disableAutoSegmentation) {
       const newSegments = createSegments(newSource);
       const newlyConvertedBlock: CanonicalBlock = { // Explicitly type the new block
         ...activeBlock,
@@ -627,14 +570,13 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         composerSelectionEnd: nextSelectionEnd,
       }));
     } else { // It's a long block (either was long, or just converted to long)
-      const activeChunk = getActiveChunkGroup();
-      if (!activeChunk || !activeBlock.segments) return; // segments are guaranteed for long blocks
+      if (!activeBlock.segments) return; // segments are guaranteed for long blocks
 
       const newBlocks = get().blocks.map((block) => {
         if (block.id === activeBlock!.id) { // activeBlock is guaranteed here
           const currentActiveBlock = activeBlock as CanonicalBlock & { segments: Segment[] };
-          const beforeSegments = currentActiveBlock.segments.slice(0, activeChunk.startSegmentIndex);
-          const afterSegments = currentActiveBlock.segments.slice(activeChunk.endSegmentIndex + 1);
+          const beforeSegments = currentActiveBlock.segments.slice(0, activeChunkGroup.startSegmentIndex);
+          const afterSegments = currentActiveBlock.segments.slice(activeChunkGroup.endSegmentIndex + 1);
           const mergedSegments: Segment[] = [
             ...beforeSegments,
             {
@@ -665,7 +607,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         }
         return block;
       });
-      const newAnchorSegmentIndex = activeChunk.startSegmentIndex;
+      const newAnchorSegmentIndex = activeChunkGroup.startSegmentIndex;
 
       set((state) => ({
         blocks: newBlocks,
@@ -749,7 +691,9 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       .filter(str => str.trim().length > 0)
       .flatMap((itransSource) => splitIntoBlockSources(itransSource))
       .map((itransSource, index) =>
-        createBlockFromSource(itransSource, `Pasted Block ${index + 1}`)
+        createBlockFromSource(itransSource, `Pasted Block ${index + 1}`, {
+          disableAutoSegmentation: true,
+        })
       );
 
     if (newBlocks.length > 0) {
@@ -1073,7 +1017,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         activeBlockId: blankBlock.id,
         activeAnchorSegmentIndex: 0,
         focusSpan: 'balanced',
-        viewMode: 'focus',
+        viewMode: 'read',
         ghostAssistEnabled: true,
       },
       activeBuffer: '',
