@@ -26,6 +26,11 @@ from runProbabilisticPredictionGame import (
   normalize_for_lexical_lookup,
   sample_prepared_dataset,
 )
+from runSanskritPredictionGame import (
+  SANSKRIT_PROFILES,
+  average_surface_score,
+  load_or_train_model as load_or_train_sanskrit_model,
+)
 
 
 @dataclass(frozen=True)
@@ -35,6 +40,7 @@ class SupervisedProfile:
   description: str
   retrieval_limit: int
   ngram_profile_id: str
+  sanskrit_profile_id: str | None
   c: float
   class_weight: str
 
@@ -46,6 +52,7 @@ SUPERVISED_PROFILES: dict[str, SupervisedProfile] = {
     description='Logistic regression over lexical count, prefix depth, remaining length, lexical noise, and n-gram continuation score.',
     retrieval_limit=24,
     ngram_profile_id='m001-char-ngram-v1',
+    sanskrit_profile_id=None,
     c=1.0,
     class_weight='balanced',
   ),
@@ -55,6 +62,27 @@ SUPERVISED_PROFILES: dict[str, SupervisedProfile] = {
     description='A slightly less regularized logistic reranker with a deeper candidate pool and the same n-gram feature set.',
     retrieval_limit=32,
     ngram_profile_id='m001-char-ngram-v1',
+    sanskrit_profile_id=None,
+    c=2.0,
+    class_weight='balanced',
+  ),
+  's002-logreg-hybrid-v1': SupervisedProfile(
+    id='s002-logreg-hybrid-v1',
+    label='S-002 Logistic Hybrid v1',
+    description='Logistic reranker over the original feature set plus a Devanagari surface-language score.',
+    retrieval_limit=24,
+    ngram_profile_id='m001-char-ngram-v1',
+    sanskrit_profile_id='d001-devanagari-ngram-v1',
+    c=1.0,
+    class_weight='balanced',
+  ),
+  's002-logreg-hybrid-v2': SupervisedProfile(
+    id='s002-logreg-hybrid-v2',
+    label='S-002 Logistic Hybrid v2',
+    description='A deeper hybrid logistic reranker with both ITRANS continuation and Devanagari surface priors.',
+    retrieval_limit=32,
+    ngram_profile_id='m001-char-ngram-v1',
+    sanskrit_profile_id='d001-devanagari-ngram-v1',
     c=2.0,
     class_weight='balanced',
   ),
@@ -91,6 +119,7 @@ def build_feature_vector(
   entry: RuntimeLexiconEntry,
   prefix: str,
   model: CharNGramModel,
+  sanskrit_model: CharNGramModel | None = None,
 ) -> list[float]:
   normalized_prefix = normalize_for_lexical_lookup(prefix)
   remaining_length = max(len(entry.itrans) - len(normalized_prefix), 0)
@@ -104,6 +133,7 @@ def build_feature_vector(
     prefix_ratio,
     compute_noise_penalty(entry.itrans),
     continuation_score,
+    average_surface_score(sanskrit_model, entry.devanagari) if sanskrit_model else 0.0,
   ]
 
 
@@ -112,6 +142,7 @@ def train_logistic_regression(
   lexicon: DiskRuntimeLexicon,
   profile: SupervisedProfile,
   ngram_model: CharNGramModel,
+  sanskrit_model: CharNGramModel | None,
 ) -> LogisticRegression:
   feature_rows: list[list[float]] = []
   labels: list[int] = []
@@ -125,7 +156,7 @@ def train_logistic_regression(
       continue
 
     for entry in candidates:
-      feature_rows.append(build_feature_vector(entry, prefix, ngram_model))
+      feature_rows.append(build_feature_vector(entry, prefix, ngram_model, sanskrit_model))
       labels.append(1 if entry.itrans == target else 0)
 
   if not feature_rows or len(set(labels)) < 2:
@@ -147,13 +178,14 @@ def rank_candidates(
   candidates: list[RuntimeLexiconEntry],
   prefix: str,
   ngram_model: CharNGramModel,
+  sanskrit_model: CharNGramModel | None,
   classifier: LogisticRegression,
   suggestion_limit: int,
 ) -> list[RuntimeLexiconEntry]:
   if not candidates:
     return []
 
-  features = np.asarray([build_feature_vector(entry, prefix, ngram_model) for entry in candidates], dtype=np.float64)
+  features = np.asarray([build_feature_vector(entry, prefix, ngram_model, sanskrit_model) for entry in candidates], dtype=np.float64)
   probabilities = classifier.predict_proba(features)[:, 1]
   ranked = sorted(
     zip(candidates, probabilities),
@@ -203,6 +235,7 @@ def evaluate_dataset(
   lexicon: DiskRuntimeLexicon,
   profile: SupervisedProfile,
   ngram_model: CharNGramModel,
+  sanskrit_model: CharNGramModel | None,
   classifier: LogisticRegression,
 ) -> dict[str, Any]:
   final_prefix_metrics = create_empty_metrics()
@@ -226,7 +259,7 @@ def evaluate_dataset(
     for prefix_length in range(MIN_LOOKUP_PREFIX_LENGTH, final_prefix_length + 1):
       prefix = target[:prefix_length]
       candidates = lexicon.get_candidates(prefix, profile.retrieval_limit)
-      suggestions = rank_candidates(candidates, prefix, ngram_model, classifier, DEFAULT_SUGGESTION_LIMIT)
+      suggestions = rank_candidates(candidates, prefix, ngram_model, sanskrit_model, classifier, DEFAULT_SUGGESTION_LIMIT)
       increment_metric(all_prefix_metrics, suggestions, target, weight)
       if prefix_length == final_prefix_length:
         increment_metric(final_prefix_metrics, suggestions, target, weight)
@@ -305,13 +338,20 @@ def main() -> int:
   tuning_results: list[dict[str, Any]] = []
   trained_classifiers: dict[str, LogisticRegression] = {}
   trained_ngram_models: dict[str, CharNGramModel] = {}
+  trained_sanskrit_models: dict[str, CharNGramModel | None] = {}
 
   for profile in profiles:
     ngram_model = load_or_train_model(MODEL_PROFILES[profile.ngram_profile_id], data_root, cache_dir, args.skip_cache)
-    classifier = train_logistic_regression(train_prepared, lexicon, profile, ngram_model)
+    sanskrit_model = (
+      load_or_train_sanskrit_model(SANSKRIT_PROFILES[profile.sanskrit_profile_id], data_root, cache_dir, args.skip_cache)
+      if profile.sanskrit_profile_id
+      else None
+    )
+    classifier = train_logistic_regression(train_prepared, lexicon, profile, ngram_model, sanskrit_model)
     trained_classifiers[profile.id] = classifier
     trained_ngram_models[profile.id] = ngram_model
-    tuning_results.append(evaluate_dataset(tuning_prepared, lexicon, profile, ngram_model, classifier))
+    trained_sanskrit_models[profile.id] = sanskrit_model
+    tuning_results.append(evaluate_dataset(tuning_prepared, lexicon, profile, ngram_model, sanskrit_model, classifier))
 
   tuning_results = sort_results(tuning_results)
   winner = tuning_results[0]
@@ -321,6 +361,7 @@ def main() -> int:
     lexicon,
     winner_profile,
     trained_ngram_models[winner_profile.id],
+    trained_sanskrit_models[winner_profile.id],
     trained_classifiers[winner_profile.id],
   )
 
