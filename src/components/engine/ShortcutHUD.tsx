@@ -182,21 +182,21 @@ export const ShortcutHUD: React.FC = () => {
 
   return (
     <div
-      className="w-full min-h-0 max-w-5xl overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 md:max-h-[16vh]"
+      className="w-full min-h-0 max-w-5xl overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/55 px-3 py-2 md:max-h-[14vh]"
       data-testid="sticky-shortcut-hud"
     >
       {!showAnyDynamicHUD && (
-        <div className="flex h-16 items-center gap-3 overflow-x-auto scrollbar-hide">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mr-2 shrink-0">Quick Ref:</span>
-          <div className="flex items-center gap-2 overflow-x-auto py-2">
+        <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-hide">
+          <span className="mr-1 shrink-0 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Quick</span>
+          <div className="flex items-center gap-1.5 overflow-x-auto py-1">
             {DEFAULT_SHORTCUTS.map((m, i) => (
               <button
                 key={`def-${i}`}
                 onClick={() => handleQuickInsert(m.itrans)} // Now functional
-                className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all shrink-0 active:scale-95 group"
+                className="group flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 transition-all active:scale-95 hover:border-blue-300 hover:bg-blue-50"
               >
-                <span className="text-xl font-serif text-slate-900 group-hover:scale-110 transition-transform">{m.unicode}</span>
-                <kbd className="text-[10px] font-mono font-bold text-blue-600 opacity-60 tracking-tighter">{m.itrans}</kbd>
+                <span className="text-lg font-serif text-slate-900 transition-transform group-hover:scale-110">{m.unicode}</span>
+                <kbd className="text-[10px] font-mono font-bold tracking-tight text-blue-600 opacity-70">{m.itrans}</kbd>
               </button>
             ))}
           </div>
@@ -205,11 +205,11 @@ export const ShortcutHUD: React.FC = () => {
 
       {showAnyDynamicHUD && (
         <>
-          <div className="flex flex-col gap-3 py-1">
+          <div className="flex flex-col gap-2 py-1">
             {showLexicalSuggestions && (
               <section
                 data-testid="lexical-suggestions"
-                className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-emerald-50/60 px-3 py-3 shadow-sm"
+                className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-emerald-50/60 px-3 py-2.5 shadow-sm"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
@@ -282,7 +282,7 @@ export const ShortcutHUD: React.FC = () => {
                       key={`alt-${i}`}
                       onClick={() => handleInsert(m.itrans, activeBuffer)}
                       className={clsx(
-                        'flex items-center gap-2 pl-2 pr-3 py-1.5 border rounded-lg transition-all shrink-0 active:scale-95 group',
+                        'group flex shrink-0 items-center gap-2 rounded-lg border py-1.5 pl-2 pr-3 transition-all active:scale-95',
                         i === selectedSuggestionIndex
                           ? 'bg-blue-600 text-white border-blue-500 shadow-lg'
                           : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-blue-50'
@@ -299,7 +299,7 @@ export const ShortcutHUD: React.FC = () => {
                       key={`sug-${i}`}
                       onClick={() => handleInsert(m.itrans, activeBuffer)}
                       className={clsx(
-                        'flex items-center gap-2 pl-2 pr-3 py-1.5 border rounded-lg transition-all shrink-0 active:scale-95 group',
+                        'group flex shrink-0 items-center gap-2 rounded-lg border py-1.5 pl-2 pr-3 transition-all active:scale-95',
                         i === selectedSuggestionIndex
                           ? 'bg-blue-600 text-white border-blue-500 shadow-lg'
                           : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-blue-50'
@@ -315,7 +315,7 @@ export const ShortcutHUD: React.FC = () => {
                     <button
                       key={`comp-${i}`}
                       onClick={() => handleInsert(m.itrans, m.tail)}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all shrink-0 active:scale-95 group"
+                      className="group flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 transition-all active:scale-95 hover:border-blue-300 hover:bg-blue-50"
                     >
                       <span className="text-xl font-serif text-slate-900 group-hover:scale-110 transition-transform">{m.unicode}</span>
                       <kbd className="text-[10px] font-mono font-bold text-blue-600 opacity-60 tracking-tighter">{m.itrans}</kbd>

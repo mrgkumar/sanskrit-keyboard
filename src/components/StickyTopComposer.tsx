@@ -451,16 +451,16 @@ export const StickyTopComposer: React.FC = () => {
   };
 
   return (
-    <div className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-lg">
-      <div className="mx-auto flex max-w-5xl flex-col gap-3 p-4">
+    <div className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 pb-3 pt-3">
         <div className="flex items-center justify-end gap-3 text-sm text-slate-500">
           {isLongBlock && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs uppercase font-bold">Focus Span:</span>
+            <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Focus</span>
               <select
                 value={focusSpan}
                 onChange={(e) => setFocusSpan(e.target.value as 'tight' | 'balanced' | 'wide')}
-                className="text-xs bg-slate-100 border border-slate-200 rounded px-2 py-1"
+                className="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-700"
               >
                 <option value="tight">Tight</option>
                 <option value="balanced">Balanced</option>
@@ -475,34 +475,40 @@ export const StickyTopComposer: React.FC = () => {
           data-testid="sticky-composer-shell"
           data-layout={composerLayout}
         >
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/85 px-3 py-2">
+            <div className="flex min-w-0 items-center gap-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+              <span>ITRANS</span>
+              <span className="text-slate-300">/</span>
+              <span className="text-blue-700">Preview</span>
+            </div>
+            <button
+              onClick={toggleReferencePanel}
+              className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 hover:bg-slate-100"
+              type="button"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Reference
+            </button>
+          </div>
+
           <div
             className={clsx(
-              'grid min-h-0 gap-3',
+              'grid min-h-0 gap-0 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70',
               composerLayout === 'stacked'
                 ? 'grid-cols-1'
-                : 'grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]'
+                : 'grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_1px_minmax(0,0.85fr)]'
             )}
           >
-            <div className="flex min-h-0 flex-col gap-2">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">ITRANS Input</p>
-                  <button
-                    onClick={toggleReferencePanel}
-                    className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase text-slate-700 hover:bg-slate-200"
-                    type="button"
-                  >
-                    <BookOpen className="h-3.5 w-3.5" /> Reference
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-400">Long passages stay in a fixed typing lane.</p>
+            <div className="flex min-h-0 flex-col gap-2 p-2.5">
+              <div className="flex items-center justify-between gap-3 px-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">ITRANS Input</p>
               </div>
               <textarea
                 key={textareaKey}
                 ref={composerRef}
                 autoFocus
                 data-testid="sticky-itrans-input"
-                className="min-h-[7rem] max-h-[22vh] w-full overflow-y-auto rounded-md border border-slate-300 p-2 font-mono text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 md:max-h-[24vh]"
+                className="min-h-[7rem] max-h-[22vh] w-full overflow-y-auto rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-mono text-lg text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 md:max-h-[24vh]"
                 style={{
                   fontSize: `${composerTypography.itransFontSize}px`,
                   lineHeight: composerTypography.itransLineHeight,
@@ -521,8 +527,10 @@ export const StickyTopComposer: React.FC = () => {
               />
             </div>
 
-            <div className="group flex min-h-0 flex-col gap-2 rounded-xl bg-blue-50 p-2 text-blue-800">
-              <div className="min-w-0">
+            {composerLayout !== 'stacked' && <div className="hidden bg-slate-200 lg:block" aria-hidden="true" />}
+
+            <div className="group flex min-h-0 flex-col gap-2 border-t border-slate-200 p-2.5 text-blue-800 lg:border-t-0">
+              <div className="min-w-0 px-1">
                 <p className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">
                   Devanagari Preview
                 </p>
@@ -559,7 +567,7 @@ export const StickyTopComposer: React.FC = () => {
                 </div>
                 <div
                   ref={previewRef}
-                  className="min-h-[7rem] max-h-[18vh] overflow-y-auto rounded-lg bg-white/70 px-3 py-2 pr-14 font-serif text-slate-900 md:max-h-[20vh]"
+                  className="min-h-[7rem] max-h-[18vh] overflow-y-auto rounded-xl border border-blue-100 bg-white px-3 py-2 pr-14 font-serif text-slate-900 shadow-sm md:max-h-[20vh]"
                   data-testid="sticky-devanagari-preview"
                   onScroll={handlePreviewScroll}
                   onMouseDown={(event) => event.preventDefault()}
@@ -596,9 +604,10 @@ export const StickyTopComposer: React.FC = () => {
                             )}
                             <span
                               className={clsx(
-                                'cursor-text rounded-[0.18em]',
+                                'cursor-text rounded-[0.18em] transition-colors',
                                 isSelectionVisible && 'bg-blue-200/80 text-blue-950',
-                                isCurrentWordVisible && 'bg-amber-200/80 text-slate-950'
+                                isCurrentWordVisible &&
+                                  'text-[1.25em] text-[#6b1f1f]'
                               )}
                               data-current-word={isCurrentWordVisible ? 'true' : undefined}
                               data-target-index={index}
@@ -694,10 +703,10 @@ export const StickyTopComposer: React.FC = () => {
         <div className="flex items-center justify-between text-sm text-slate-500">
           {isLongBlock && (
             <div className="flex gap-2">
-              <button onClick={setPrevChunk} className="px-3 py-1 bg-slate-100 rounded-md hover:bg-slate-200 flex items-center gap-1">
+              <button onClick={setPrevChunk} className="flex items-center gap-1 rounded-md bg-slate-100 px-3 py-1 hover:bg-slate-200">
                 <ChevronLeft className="w-4 h-4" /> Prev Chunk
               </button>
-              <button onClick={setNextChunk} className="px-3 py-1 bg-slate-100 rounded-md hover:bg-slate-200 flex items-center gap-1">
+              <button onClick={setNextChunk} className="flex items-center gap-1 rounded-md bg-slate-100 px-3 py-1 hover:bg-slate-200">
                 Next Chunk <ChevronRight className="w-4 h-4" />
               </button>
             </div>
