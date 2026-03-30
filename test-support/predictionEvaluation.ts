@@ -45,6 +45,10 @@ interface LoadedShardData {
   prefixCache: Map<string, RuntimeLexiconEntry[]>;
 }
 
+interface PreparedDatasetSampleOptions {
+  maxQueries: number;
+}
+
 interface SourceCountIndexEntry {
   totalCount: number;
   bySource: Record<string, number>;
@@ -214,12 +218,48 @@ const anyChar = (value: string, predicate: (char: string) => boolean) => {
   return false;
 };
 
+const getContinuationBranchKey = (
+  entry: RuntimeLexiconEntry,
+  prefix: string,
+  profile: PredictionExperimentProfile
+) => {
+  if (profile.continuationBranchPenalty <= 0) {
+    return '';
+  }
+
+  const remaining = entry.itrans.slice(prefix.length);
+  if (!remaining) {
+    return '';
+  }
+
+  return remaining.slice(0, profile.continuationBranchDepth);
+};
+
+const getContinuationBranchPenalty = (
+  entry: RuntimeLexiconEntry,
+  prefix: string,
+  profile: PredictionExperimentProfile,
+  continuationBranchCounts?: Map<string, number>
+) => {
+  if (profile.continuationBranchPenalty <= 0 || !continuationBranchCounts) {
+    return 0;
+  }
+
+  const branchKey = getContinuationBranchKey(entry, prefix, profile);
+  if (!branchKey) {
+    return 0;
+  }
+
+  return (continuationBranchCounts.get(branchKey) ?? 1) * profile.continuationBranchPenalty;
+};
+
 const compareSuggestions = (
   left: RuntimeLexiconEntry,
   right: RuntimeLexiconEntry,
   prefix: string,
   profile: PredictionExperimentProfile,
-  sourceIndex?: Map<string, SourceCountIndexEntry>
+  sourceIndex?: Map<string, SourceCountIndexEntry>,
+  continuationBranchCounts?: Map<string, number>
 ) => {
   const leftWeightedCount = getWeightedCount(left, profile, sourceIndex?.get(left.itrans));
   const rightWeightedCount = getWeightedCount(right, profile, sourceIndex?.get(right.itrans));
@@ -231,9 +271,18 @@ const compareSuggestions = (
   const rightPenaltyWeight = shouldApplyCompletionDistancePenalty(right, prefix, profile)
     ? profile.remainingLengthPenalty
     : 0;
-  const leftScore = leftWeightedCount - leftNoisePenalty - (left.itrans.length - prefix.length) * leftPenaltyWeight;
+  const leftContinuationPenalty = getContinuationBranchPenalty(left, prefix, profile, continuationBranchCounts);
+  const rightContinuationPenalty = getContinuationBranchPenalty(right, prefix, profile, continuationBranchCounts);
+  const leftScore =
+    leftWeightedCount -
+    leftNoisePenalty -
+    leftContinuationPenalty -
+    (left.itrans.length - prefix.length) * leftPenaltyWeight;
   const rightScore =
-    rightWeightedCount - rightNoisePenalty - (right.itrans.length - prefix.length) * rightPenaltyWeight;
+    rightWeightedCount -
+    rightNoisePenalty -
+    rightContinuationPenalty -
+    (right.itrans.length - prefix.length) * rightPenaltyWeight;
 
   if (rightScore !== leftScore) {
     return rightScore - leftScore;
@@ -262,14 +311,15 @@ const insertSuggestion = (
   entry: RuntimeLexiconEntry,
   prefix: string,
   profile: PredictionExperimentProfile,
-  sourceIndex?: Map<string, SourceCountIndexEntry>
+  sourceIndex?: Map<string, SourceCountIndexEntry>,
+  continuationBranchCounts?: Map<string, number>
 ) => {
   if (bucket.some((existing) => existing.itrans === entry.itrans)) {
     return;
   }
 
   bucket.push(entry);
-  bucket.sort((left, right) => compareSuggestions(left, right, prefix, profile, sourceIndex));
+  bucket.sort((left, right) => compareSuggestions(left, right, prefix, profile, sourceIndex, continuationBranchCounts));
   if (bucket.length > profile.candidatePoolLimit) {
     bucket.length = profile.candidatePoolLimit;
   }
@@ -301,6 +351,31 @@ export const summarizePrefixMetrics = (metric: PrefixMetrics) => ({
   top3Rate: toRate(metric.top3Hits, metric.queries),
   top5Rate: toRate(metric.top5Hits, metric.queries),
 });
+
+export const samplePreparedDatasetEvaluation = (
+  prepared: PreparedDatasetEvaluation,
+  options: PreparedDatasetSampleOptions
+): PreparedDatasetEvaluation => {
+  if (options.maxQueries >= prepared.queries.length) {
+    return prepared;
+  }
+
+  const sampledQueries = [...prepared.queries]
+    .sort((left, right) => {
+      if (right.weight !== left.weight) {
+        return right.weight - left.weight;
+      }
+
+      return left.target.localeCompare(right.target);
+    })
+    .slice(0, options.maxQueries);
+
+  return {
+    ...prepared,
+    eligibleWords: sampledQueries.reduce((sum, query) => sum + query.weight, 0),
+    queries: sampledQueries,
+  };
+};
 
 export const buildRuntimeLexiconSourceIndex = async (dataRoot: string) => {
   const canonicalPath = path.join(dataRoot, CANONICAL_MAPPING_FILE);
@@ -423,13 +498,21 @@ export class DiskRuntimeLexicon {
     const shardData = this.loadShardData(toShardPrefix(prefix));
     const cacheKey = `${profile.id}:${prefix}`;
     if (!shardData.prefixCache.has(cacheKey)) {
-      const bucket: RuntimeLexiconEntry[] = [];
-      for (const entry of shardData.entries) {
-        if (!entry.itrans.startsWith(prefix)) {
-          continue;
-        }
+      const matches = shardData.entries.filter((entry) => entry.itrans.startsWith(prefix));
+      const continuationBranchCounts =
+        profile.continuationBranchPenalty > 0
+          ? matches.reduce((counts, entry) => {
+              const branchKey = getContinuationBranchKey(entry, prefix, profile);
+              if (branchKey) {
+                counts.set(branchKey, (counts.get(branchKey) ?? 0) + 1);
+              }
 
-        insertSuggestion(bucket, entry, prefix, profile, this.sourceIndex);
+              return counts;
+            }, new Map<string, number>())
+          : undefined;
+      const bucket: RuntimeLexiconEntry[] = [];
+      for (const entry of matches) {
+        insertSuggestion(bucket, entry, prefix, profile, this.sourceIndex, continuationBranchCounts);
       }
       shardData.prefixCache.set(cacheKey, bucket);
     }

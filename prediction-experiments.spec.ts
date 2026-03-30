@@ -11,6 +11,7 @@ import {
   computeLexicalNoisePenalty,
   evaluateLexicalPredictionsForDataset,
   prepareDatasetEvaluationInputCached,
+  samplePreparedDatasetEvaluation,
   shouldApplyCompletionDistancePenalty,
   summarizePrefixMetrics,
 } from './test-support/predictionEvaluation';
@@ -335,6 +336,55 @@ test.describe('prediction experiment game', () => {
     }
   });
 
+  test('r004 continuation branch bias prefers distinct next-step branches', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prediction-game-r004-'));
+
+    try {
+      const datasetPath = writeFixture({
+        tempDir,
+        nativeWord: 'अग्नेयव',
+        entries: [
+          { itrans: 'agneyika', devanagari: 'अग्नेयिक', count: 180 },
+          { itrans: 'agneyikaa', devanagari: 'अग्नेयिका', count: 170 },
+          { itrans: 'agneyita', devanagari: 'अग्नेयित', count: 160 },
+          { itrans: 'agneyava', devanagari: 'अग्नेयव', count: 150 },
+        ],
+      });
+
+      await withDatasetOverride(datasetPath, async () => {
+        const baseline = await evaluateLexicalPredictionsForDataset({
+          dataRoot: tempDir,
+          datasetId: 'san-valid',
+          profileId: 'baseline',
+        });
+        const experimentV1 = await evaluateLexicalPredictionsForDataset({
+          dataRoot: tempDir,
+          datasetId: 'san-valid',
+          profileId: 'r004-continuation-branch-v1',
+        });
+        const experimentV2 = await evaluateLexicalPredictionsForDataset({
+          dataRoot: tempDir,
+          datasetId: 'san-valid',
+          profileId: 'r004-continuation-branch-v2',
+        });
+
+        const baselineFinal = summarizePrefixMetrics(baseline.prefixMetrics.finalPrefix);
+        const experimentV1Final = summarizePrefixMetrics(experimentV1.prefixMetrics.finalPrefix);
+        const baselineAll = summarizePrefixMetrics(baseline.prefixMetrics.allPrefixes);
+        const experimentV1All = summarizePrefixMetrics(experimentV1.prefixMetrics.allPrefixes);
+        const experimentV2All = summarizePrefixMetrics(experimentV2.prefixMetrics.allPrefixes);
+
+        expect(resolvePredictionExperimentProfile('r004-continuation-branch-v1').label).toContain('R-004');
+        expect(resolvePredictionExperimentProfile('r004-continuation-branch-v2').label).toContain('R-004');
+        expect(baselineFinal.top1Hits).toBe(experimentV1Final.top1Hits);
+        expect(baselineAll.top1Hits).toBeLessThan(experimentV1All.top1Hits);
+        expect(baselineAll.top1Hits).toBeLessThanOrEqual(experimentV2All.top1Hits);
+      });
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
   test('r005 hybrid profiles combine late-prefix and noise heuristics', async () => {
     const noisyCandidate = { itrans: 'agneya़', devanagari: 'अग्नेय़', count: 220 };
     const longCandidate = { itrans: 'agneyastvasya', devanagari: 'अग्नेयस्त्वस्य', count: 10 };
@@ -403,5 +453,26 @@ test.describe('prediction experiment game', () => {
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
+  });
+
+  test('sample mode keeps the heaviest prepared queries deterministically', async () => {
+    const prepared = {
+      datasetId: 'san-valid',
+      datasetLabel: 'Test',
+      rowCount: 4,
+      skippedRows: 0,
+      eligibleWords: 10,
+      queries: [
+        { rowId: 'q1', target: 'agni', devanagari: 'अग्नि', weight: 1 },
+        { rowId: 'q2', target: 'agnim', devanagari: 'अग्निम्', weight: 4 },
+        { rowId: 'q3', target: 'agninaa', devanagari: 'अग्निना', weight: 3 },
+        { rowId: 'q4', target: 'agnaye', devanagari: 'अग्नये', weight: 2 },
+      ],
+    };
+
+    const sampled = samplePreparedDatasetEvaluation(prepared, { maxQueries: 2 });
+
+    expect(sampled.queries.map((query) => query.target)).toEqual(['agnim', 'agninaa']);
+    expect(sampled.eligibleWords).toBe(7);
   });
 });

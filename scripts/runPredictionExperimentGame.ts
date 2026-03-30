@@ -14,6 +14,7 @@ import {
   evaluatePreparedLexicalPredictions,
   prepareDatasetEvaluationInput,
   prepareDatasetEvaluationInputCached,
+  samplePreparedDatasetEvaluation,
   summarizePrefixMetrics,
   type DatasetEvaluationResult,
 } from '../test-support/predictionEvaluation.ts';
@@ -28,6 +29,7 @@ const parseArgs = () => {
     output: path.resolve(process.cwd(), '..', 'generated', 'autocomplete', 'experiments', 'leaderboard.json'),
     cacheDir: path.resolve(process.cwd(), '..', 'generated', 'autocomplete', 'experiments', 'cache'),
     skipCache: false,
+    sampleLimit: null as number | null,
   };
 
   for (let index = 0; index < args.length; index += 1) {
@@ -72,6 +74,11 @@ const parseArgs = () => {
 
     if (arg === '--skip-cache') {
       options.skipCache = true;
+    }
+
+    if (arg === '--sample-limit' && next) {
+      options.sampleLimit = Number.parseInt(next, 10);
+      index += 1;
     }
   }
 
@@ -127,12 +134,20 @@ const main = async () => {
         datasetId: options.holdoutDataset,
         cacheDir: options.cacheDir,
       });
+  const sampledTuningPrepared =
+    options.sampleLimit && options.sampleLimit > 0
+      ? samplePreparedDatasetEvaluation(tuningPrepared, { maxQueries: options.sampleLimit })
+      : tuningPrepared;
+  const sampledHoldoutPrepared =
+    options.sampleLimit && options.sampleLimit > 0
+      ? samplePreparedDatasetEvaluation(holdoutPrepared, { maxQueries: options.sampleLimit })
+      : holdoutPrepared;
   const tuningResults: DatasetEvaluationResult[] = [];
 
   for (const profileId of options.profiles) {
     tuningResults.push(
       evaluatePreparedLexicalPredictions({
-        prepared: tuningPrepared,
+        prepared: sampledTuningPrepared,
         lexicon,
         profileId,
       })
@@ -142,7 +157,7 @@ const main = async () => {
   tuningResults.sort(compareResults);
   const winner = tuningResults[0];
   const holdoutResult = evaluatePreparedLexicalPredictions({
-    prepared: holdoutPrepared,
+    prepared: sampledHoldoutPrepared,
     lexicon,
     profileId: winner.profileId,
   });
@@ -155,6 +170,7 @@ const main = async () => {
     holdoutDataset: options.holdoutDataset,
     cacheDir: options.cacheDir,
     skipCache: options.skipCache,
+    sampleLimit: options.sampleLimit,
     winner: {
       profileId: winner.profileId,
       label: resolvePredictionExperimentProfile(winner.profileId).label,

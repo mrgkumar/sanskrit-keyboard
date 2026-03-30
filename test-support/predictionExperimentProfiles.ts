@@ -10,6 +10,8 @@ export interface PredictionExperimentProfile {
   activationMaxRemainingLength: number | null;
   sourceWeights: Record<string, number> | null;
   noisePenaltyMultiplier: number;
+  continuationBranchPenalty: number;
+  continuationBranchDepth: number;
 }
 
 export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperimentProfile> = {
@@ -25,6 +27,8 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMaxRemainingLength: null,
     sourceWeights: null,
     noisePenaltyMultiplier: 0,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
   },
   'r001-completion-distance-v1': {
     id: 'r001-completion-distance-v1',
@@ -39,6 +43,8 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMaxRemainingLength: null,
     sourceWeights: null,
     noisePenaltyMultiplier: 0,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
   },
   'r001-completion-distance-v2': {
     id: 'r001-completion-distance-v2',
@@ -53,6 +59,8 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMaxRemainingLength: null,
     sourceWeights: null,
     noisePenaltyMultiplier: 0,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
   },
   'r001-completion-distance-v3': {
     id: 'r001-completion-distance-v3',
@@ -67,6 +75,8 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMaxRemainingLength: null,
     sourceWeights: null,
     noisePenaltyMultiplier: 0,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
   },
   'r001-completion-distance-v4': {
     id: 'r001-completion-distance-v4',
@@ -81,6 +91,8 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMaxRemainingLength: 4,
     sourceWeights: null,
     noisePenaltyMultiplier: 0,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
   },
   'r001-completion-distance-v5': {
     id: 'r001-completion-distance-v5',
@@ -95,6 +107,8 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMaxRemainingLength: 4,
     sourceWeights: null,
     noisePenaltyMultiplier: 0,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
   },
   'r001-completion-distance-v6': {
     id: 'r001-completion-distance-v6',
@@ -109,6 +123,8 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMaxRemainingLength: null,
     sourceWeights: null,
     noisePenaltyMultiplier: 0,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
   },
   'r001-completion-distance-v7': {
     id: 'r001-completion-distance-v7',
@@ -123,6 +139,8 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMaxRemainingLength: null,
     sourceWeights: null,
     noisePenaltyMultiplier: 0,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
   },
   'r002-source-weight-v1': {
     id: 'r002-source-weight-v1',
@@ -139,6 +157,8 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
       'example-vedic': 0.35,
     },
     noisePenaltyMultiplier: 0,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
   },
   'r002-source-weight-v2': {
     id: 'r002-source-weight-v2',
@@ -155,6 +175,8 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
       'example-vedic': 0.55,
     },
     noisePenaltyMultiplier: 0,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
   },
   'r003-noise-penalty-v1': {
     id: 'r003-noise-penalty-v1',
@@ -169,6 +191,8 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMaxRemainingLength: null,
     sourceWeights: null,
     noisePenaltyMultiplier: 1,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
   },
   'r003-noise-penalty-v2': {
     id: 'r003-noise-penalty-v2',
@@ -183,6 +207,40 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMaxRemainingLength: null,
     sourceWeights: null,
     noisePenaltyMultiplier: 0.5,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
+  },
+  'r004-continuation-branch-v1': {
+    id: 'r004-continuation-branch-v1',
+    label: 'R-004 Continuation Branch v1',
+    track: 'ranking',
+    description:
+      'Prefer candidates whose next one-character continuation branch is less crowded, helping longer specific continuations surface once the prefix is informative.',
+    candidatePoolLimit: 16,
+    remainingLengthPenalty: 0,
+    activationMinPrefixLength: 99,
+    activationMinPrefixRatio: 1,
+    activationMaxRemainingLength: null,
+    sourceWeights: null,
+    noisePenaltyMultiplier: 0,
+    continuationBranchPenalty: 20,
+    continuationBranchDepth: 1,
+  },
+  'r004-continuation-branch-v2': {
+    id: 'r004-continuation-branch-v2',
+    label: 'R-004 Continuation Branch v2',
+    track: 'ranking',
+    description:
+      'Use a milder continuation-branch penalty over the next two characters, testing whether branch distinctness can help without overcorrecting.',
+    candidatePoolLimit: 16,
+    remainingLengthPenalty: 0,
+    activationMinPrefixLength: 99,
+    activationMinPrefixRatio: 1,
+    activationMaxRemainingLength: null,
+    sourceWeights: null,
+    noisePenaltyMultiplier: 0,
+    continuationBranchPenalty: 10,
+    continuationBranchDepth: 2,
   },
   'r005-hybrid-v1': {
     id: 'r005-hybrid-v1',
@@ -197,6 +255,8 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMaxRemainingLength: null,
     sourceWeights: null,
     noisePenaltyMultiplier: 1,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
   },
   'r005-hybrid-v2': {
     id: 'r005-hybrid-v2',
@@ -211,6 +271,8 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMaxRemainingLength: null,
     sourceWeights: null,
     noisePenaltyMultiplier: 1,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
   },
 };
 
