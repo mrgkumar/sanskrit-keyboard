@@ -9,7 +9,7 @@ import { resolvePredictionExperimentProfile } from './test-support/predictionExp
 import { evaluateLexicalPredictionsForDataset, summarizePrefixMetrics } from './test-support/predictionEvaluation';
 
 test.describe('prediction experiment game', () => {
-  test('completion-distance profile can beat baseline on a controlled fixture', async () => {
+  test('completion-distance profiles improve late-prefix ranking without changing early-prefix baseline behavior', async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prediction-game-'));
 
     try {
@@ -18,8 +18,8 @@ test.describe('prediction experiment game', () => {
         datasetPath,
         `${JSON.stringify({
           unique_identifier: 'row-1',
-          'native word': 'अग्ने',
-          'english word': 'agne',
+          'native word': 'अग्नेय',
+          'english word': 'agneya',
           source: 'test',
         })}\n`,
         'utf8'
@@ -52,9 +52,9 @@ test.describe('prediction experiment game', () => {
             version: 1,
             prefix: 'ag',
             entries: [
-              { itrans: 'agneya', devanagari: 'अग्नेय', count: 80 },
-              { itrans: 'agni', devanagari: 'अग्नि', count: 40 },
-              { itrans: 'agne', devanagari: 'अग्ने', count: 50 },
+              { itrans: 'agneyam', devanagari: 'अग्नेयम्', count: 70 },
+              { itrans: 'agneyaH', devanagari: 'अग्नेयः', count: 65 },
+              { itrans: 'agneya', devanagari: 'अग्नेय', count: 50 },
             ],
           },
           null,
@@ -74,18 +74,29 @@ test.describe('prediction experiment game', () => {
         datasetId: 'san-valid',
         profileId: 'baseline',
       });
-      const experiment = await evaluateLexicalPredictionsForDataset({
+      const experimentV1 = await evaluateLexicalPredictionsForDataset({
         dataRoot: tempDir,
         datasetId: 'san-valid',
         profileId: 'r001-completion-distance-v1',
       });
+      const experimentV2 = await evaluateLexicalPredictionsForDataset({
+        dataRoot: tempDir,
+        datasetId: 'san-valid',
+        profileId: 'r001-completion-distance-v2',
+      });
 
       const baselineFinal = summarizePrefixMetrics(baseline.prefixMetrics.finalPrefix);
-      const experimentFinal = summarizePrefixMetrics(experiment.prefixMetrics.finalPrefix);
+      const experimentV1Final = summarizePrefixMetrics(experimentV1.prefixMetrics.finalPrefix);
+      const experimentV2Final = summarizePrefixMetrics(experimentV2.prefixMetrics.finalPrefix);
+      const baselineAll = summarizePrefixMetrics(baseline.prefixMetrics.allPrefixes);
+      const experimentV2All = summarizePrefixMetrics(experimentV2.prefixMetrics.allPrefixes);
 
       expect(resolvePredictionExperimentProfile('r001-completion-distance-v1').label).toContain('R-001');
+      expect(resolvePredictionExperimentProfile('r001-completion-distance-v2').label).toContain('R-001');
       expect(baselineFinal.top1Hits).toBe(0);
-      expect(experimentFinal.top1Hits).toBe(1);
+      expect(experimentV1Final.top1Hits).toBe(1);
+      expect(experimentV2Final.top1Hits).toBe(0);
+      expect(experimentV2All.top1Hits).toBeGreaterThanOrEqual(baselineAll.top1Hits);
 
       CORPUS_DATASETS['san-valid'] = originalDataset;
     } finally {

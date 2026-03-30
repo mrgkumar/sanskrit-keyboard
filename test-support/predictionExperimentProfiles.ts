@@ -5,6 +5,7 @@ export interface PredictionExperimentProfile {
   description: string;
   candidatePoolLimit: number;
   remainingLengthPenalty: number;
+  activationMinPrefixLength: number;
 }
 
 export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperimentProfile> = {
@@ -15,6 +16,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     description: 'Current lexical ranking by corpus frequency, then shorter ITRANS, then alphabetical order.',
     candidatePoolLimit: 8,
     remainingLengthPenalty: 0,
+    activationMinPrefixLength: 99,
   },
   'r001-completion-distance-v1': {
     id: 'r001-completion-distance-v1',
@@ -24,6 +26,17 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
       'Penalize candidates that still require many characters after the typed prefix, while keeping corpus frequency as the main signal.',
     candidatePoolLimit: 16,
     remainingLengthPenalty: 25,
+    activationMinPrefixLength: 5,
+  },
+  'r001-completion-distance-v2': {
+    id: 'r001-completion-distance-v2',
+    label: 'R-001 Completion Distance v2',
+    track: 'ranking',
+    description:
+      'Apply the completion-distance penalty only after a longer typed prefix, preserving broad early-prefix ranking while sharpening late completions.',
+    candidatePoolLimit: 16,
+    remainingLengthPenalty: 25,
+    activationMinPrefixLength: 6,
   },
 };
 

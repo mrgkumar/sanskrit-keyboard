@@ -92,8 +92,10 @@ const compareSuggestions = (
   prefix: string,
   profile: PredictionExperimentProfile
 ) => {
-  const leftScore = left.count - (left.itrans.length - prefix.length) * profile.remainingLengthPenalty;
-  const rightScore = right.count - (right.itrans.length - prefix.length) * profile.remainingLengthPenalty;
+  const penaltyWeight =
+    prefix.length >= profile.activationMinPrefixLength ? profile.remainingLengthPenalty : 0;
+  const leftScore = left.count - (left.itrans.length - prefix.length) * penaltyWeight;
+  const rightScore = right.count - (right.itrans.length - prefix.length) * penaltyWeight;
 
   if (rightScore !== leftScore) {
     return rightScore - leftScore;
