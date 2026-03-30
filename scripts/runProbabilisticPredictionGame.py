@@ -29,6 +29,32 @@ class RuntimeLexiconEntry:
 
 
 @dataclass(frozen=True)
+class CompletionTableEntry:
+  canonical_itrans_word: str
+  sanskrit_word: str
+  normalized_lookup_key: str
+  frequency: int
+  source: str
+  source_weight_class: str
+  length_chars: int
+  length_aksharas: int
+  has_swara: bool
+
+
+@dataclass(frozen=True)
+class CompletionPrefixExample:
+  prefix: str
+  target_word: str
+  target_sanskrit: str
+  frequency: int
+  source: str
+  source_weight_class: str
+  target_length_chars: int
+  target_length_aksharas: int
+  has_swara: bool
+
+
+@dataclass(frozen=True)
 class ModelProfile:
   id: str
   label: str
@@ -237,6 +263,56 @@ def load_json(path: Path) -> Any:
     return json.load(handle)
 
 
+def load_completion_table(data_root: Path) -> list[CompletionTableEntry]:
+  payload = load_json(data_root / 'completion-table.json')
+  return [
+    CompletionTableEntry(
+      canonical_itrans_word=str(entry['canonicalItransWord']),
+      sanskrit_word=str(entry['sanskritWord']),
+      normalized_lookup_key=str(entry['normalizedLookupKey']),
+      frequency=int(entry['frequency']),
+      source=str(entry['source']),
+      source_weight_class=str(entry['sourceWeightClass']),
+      length_chars=int(entry['lengthChars']),
+      length_aksharas=int(entry['lengthAksharas']),
+      has_swara=bool(entry['hasSwara']),
+    )
+    for entry in payload['entries']
+  ]
+
+
+def load_completion_prefix_examples(
+  data_root: Path,
+  limit: int | None = None,
+  allowed_source_weight_classes: set[str] | None = None,
+) -> list[CompletionPrefixExample]:
+  examples: list[CompletionPrefixExample] = []
+  with (data_root / 'completion-prefixes.ndjson').open('r', encoding='utf8') as handle:
+    for line in handle:
+      if not line.strip():
+        continue
+      payload = json.loads(line)
+      source_weight_class = str(payload['sourceWeightClass'])
+      if allowed_source_weight_classes and source_weight_class not in allowed_source_weight_classes:
+        continue
+      examples.append(
+        CompletionPrefixExample(
+          prefix=str(payload['prefix']),
+          target_word=str(payload['targetWord']),
+          target_sanskrit=str(payload['targetSanskrit']),
+          frequency=int(payload['frequency']),
+          source=str(payload['source']),
+          source_weight_class=source_weight_class,
+          target_length_chars=int(payload['targetLengthChars']),
+          target_length_aksharas=int(payload['targetLengthAksharas']),
+          has_swara=bool(payload['hasSwara']),
+        )
+      )
+      if limit and len(examples) >= limit:
+        break
+  return examples
+
+
 def load_prepared_dataset(cache_dir: Path, dataset_id: str) -> dict[str, Any]:
   payload = load_json(cache_dir / f'{dataset_id}.prepared.json')
   return payload['prepared']
@@ -304,7 +380,7 @@ def load_or_train_model(profile: ModelProfile, data_root: Path, cache_dir: Path,
   if profile.continuation_weight <= 0:
     return CharNGramModel(order=profile.order, alpha=profile.alpha)
 
-  manifest_path = data_root / 'runtime-lexicon-shards-manifest.json'
+  manifest_path = data_root / 'completion-table.json'
   source_fingerprint = fingerprint(manifest_path)
   cache_path = cache_dir / f'{profile.id}.model.json'
 
@@ -322,9 +398,8 @@ def load_or_train_model(profile: ModelProfile, data_root: Path, cache_dir: Path,
       pass
 
   model = CharNGramModel(order=profile.order, alpha=profile.alpha)
-  lexicon = DiskRuntimeLexicon(data_root)
-  for entry in lexicon.iter_all_entries():
-    model.train(entry.itrans, max(entry.count, 1))
+  for entry in load_completion_table(data_root):
+    model.train(entry.canonical_itrans_word, max(entry.frequency, 1))
 
   cache_dir.mkdir(parents=True, exist_ok=True)
   cache_payload = {

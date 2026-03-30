@@ -14,6 +14,7 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 
 from runProbabilisticPredictionGame import (
+  CompletionPrefixExample,
   DEFAULT_SUGGESTION_LIMIT,
   MAX_SAMPLED_MISSES,
   MIN_LOOKUP_PREFIX_LENGTH,
@@ -22,6 +23,7 @@ from runProbabilisticPredictionGame import (
   MODEL_PROFILES,
   RuntimeLexiconEntry,
   load_json,
+  load_completion_prefix_examples,
   load_or_train_model,
   normalize_for_lexical_lookup,
   sample_prepared_dataset,
@@ -109,12 +111,6 @@ def load_prepared_dataset(cache_dir: Path, dataset_id: str) -> dict[str, Any]:
   return payload['prepared']
 
 
-def load_prepared_dataset_variant(cache_dir: Path, dataset_id: str, limit: int | None = None) -> dict[str, Any]:
-  suffix = f'.limit-{limit}' if limit and limit > 0 else ''
-  payload = load_json(cache_dir / f'{dataset_id}{suffix}.prepared.json')
-  return payload['prepared']
-
-
 def build_feature_vector(
   entry: RuntimeLexiconEntry,
   prefix: str,
@@ -138,7 +134,7 @@ def build_feature_vector(
 
 
 def train_logistic_regression(
-  prepared: dict[str, Any],
+  training_examples: list[CompletionPrefixExample],
   lexicon: DiskRuntimeLexicon,
   profile: SupervisedProfile,
   ngram_model: CharNGramModel,
@@ -146,11 +142,11 @@ def train_logistic_regression(
 ) -> LogisticRegression:
   feature_rows: list[list[float]] = []
   labels: list[int] = []
+  sample_weights: list[float] = []
 
-  for query in prepared['queries']:
-    target = str(query['target'])
-    final_prefix_length = max(MIN_LOOKUP_PREFIX_LENGTH, len(target) - 1)
-    prefix = target[:final_prefix_length]
+  for example in training_examples:
+    target = example.target_word
+    prefix = example.prefix
     candidates = lexicon.get_candidates(prefix, profile.retrieval_limit)
     if not candidates:
       continue
@@ -158,19 +154,21 @@ def train_logistic_regression(
     for entry in candidates:
       feature_rows.append(build_feature_vector(entry, prefix, ngram_model, sanskrit_model))
       labels.append(1 if entry.itrans == target else 0)
+      sample_weights.append(float(example.frequency))
 
   if not feature_rows or len(set(labels)) < 2:
     raise RuntimeError('Unable to build a valid supervised training set.')
 
   x_train = np.asarray(feature_rows, dtype=np.float64)
   y_train = np.asarray(labels, dtype=np.int32)
+  weights = np.asarray(sample_weights, dtype=np.float64)
   model = LogisticRegression(
     max_iter=1000,
     solver='liblinear',
     C=profile.c,
     class_weight=profile.class_weight,
   )
-  model.fit(x_train, y_train)
+  model.fit(x_train, y_train, sample_weight=weights)
   return model
 
 
@@ -316,6 +314,7 @@ def parse_args() -> argparse.Namespace:
   parser.add_argument('--output', default=str(root / 'generated' / 'autocomplete' / 'experiments' / 'supervised-leaderboard.json'))
   parser.add_argument('--sample-limit', type=int, default=None)
   parser.add_argument('--train-limit', type=int, default=None)
+  parser.add_argument('--train-source-weight-classes', default='core,secondary,unknown')
   parser.add_argument('--skip-cache', action='store_true')
   return parser.parse_args()
 
@@ -331,9 +330,18 @@ def main() -> int:
   output_path = Path(args.output).resolve()
   lexicon = DiskRuntimeLexicon(data_root)
 
-  train_prepared = load_prepared_dataset_variant(cache_dir, args.train_dataset, args.train_limit)
   tuning_prepared = sample_prepared_dataset(load_prepared_dataset(cache_dir, args.tuning_dataset), args.sample_limit)
   holdout_prepared = sample_prepared_dataset(load_prepared_dataset(cache_dir, args.holdout_dataset), args.sample_limit)
+  allowed_source_weight_classes = {
+    value.strip()
+    for value in str(args.train_source_weight_classes).split(',')
+    if value.strip()
+  }
+  training_examples = load_completion_prefix_examples(
+    data_root,
+    limit=args.train_limit,
+    allowed_source_weight_classes=allowed_source_weight_classes,
+  )
 
   tuning_results: list[dict[str, Any]] = []
   trained_classifiers: dict[str, LogisticRegression] = {}
@@ -347,7 +355,7 @@ def main() -> int:
       if profile.sanskrit_profile_id
       else None
     )
-    classifier = train_logistic_regression(train_prepared, lexicon, profile, ngram_model, sanskrit_model)
+    classifier = train_logistic_regression(training_examples, lexicon, profile, ngram_model, sanskrit_model)
     trained_classifiers[profile.id] = classifier
     trained_ngram_models[profile.id] = ngram_model
     trained_sanskrit_models[profile.id] = sanskrit_model
@@ -374,6 +382,8 @@ def main() -> int:
     'holdoutDataset': args.holdout_dataset,
     'sampleLimit': args.sample_limit,
     'trainLimit': args.train_limit,
+    'trainExampleCount': len(training_examples),
+    'trainSourceWeightClasses': sorted(allowed_source_weight_classes),
     'cacheDir': str(cache_dir),
     'winner': {
       'profileId': winner_profile.id,

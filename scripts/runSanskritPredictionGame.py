@@ -21,6 +21,7 @@ from runProbabilisticPredictionGame import (
   fingerprint,
   fingerprints_match,
   increment_metric,
+  load_completion_table,
   load_json,
   sample_prepared_dataset,
   sort_results,
@@ -75,7 +76,7 @@ def average_surface_score(model: CharNGramModel, devanagari: str) -> float:
 
 
 def load_or_train_model(profile: SanskritProfile, data_root: Path, cache_dir: Path, skip_cache: bool) -> CharNGramModel:
-  manifest_path = data_root / 'runtime-lexicon-shards-manifest.json'
+  manifest_path = data_root / 'completion-table.json'
   source_fingerprint = fingerprint(manifest_path)
   cache_path = cache_dir / f'{profile.id}.model.json'
 
@@ -93,9 +94,8 @@ def load_or_train_model(profile: SanskritProfile, data_root: Path, cache_dir: Pa
       pass
 
   model = CharNGramModel(order=profile.order, alpha=profile.alpha)
-  lexicon = DiskRuntimeLexicon(data_root)
-  for entry in lexicon.iter_all_entries():
-    model.train(entry.devanagari, max(entry.count, 1))
+  for entry in load_completion_table(data_root):
+    model.train(entry.sanskrit_word, max(entry.frequency, 1))
 
   cache_dir.mkdir(parents=True, exist_ok=True)
   cache_payload = {
