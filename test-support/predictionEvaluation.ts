@@ -536,12 +536,13 @@ export const evaluateLexicalPredictionsForDataset = async ({
   datasetId: string;
   profileId?: string;
 }): Promise<DatasetEvaluationResult> => {
-  const sourceIndex = await buildRuntimeLexiconSourceIndex(dataRoot);
+  const profile = resolvePredictionExperimentProfile(profileId);
+  const sourceIndex = profile.sourceWeights ? await buildRuntimeLexiconSourceIndex(dataRoot) : undefined;
   const lexicon = new DiskRuntimeLexicon(dataRoot, sourceIndex);
   const prepared = await prepareDatasetEvaluationInput({ datasetId });
   return evaluatePreparedLexicalPredictions({
     prepared,
     lexicon,
-    profileId,
+    profileId: profile.id,
   });
 };

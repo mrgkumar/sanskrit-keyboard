@@ -86,7 +86,9 @@ const compareResults = (left: DatasetEvaluationResult, right: DatasetEvaluationR
 const main = async () => {
   const options = parseArgs();
   const startedAt = Date.now();
-  const sourceIndex = await buildRuntimeLexiconSourceIndex(options.dataRoot);
+  const profiles = options.profiles.map((profileId) => resolvePredictionExperimentProfile(profileId));
+  const needsSourceIndex = profiles.some((profile) => profile.sourceWeights);
+  const sourceIndex = needsSourceIndex ? await buildRuntimeLexiconSourceIndex(options.dataRoot) : undefined;
   const lexicon = new DiskRuntimeLexicon(options.dataRoot, sourceIndex);
   const tuningPrepared = await prepareDatasetEvaluationInput({
     datasetId: options.tuningDataset,
@@ -97,7 +99,6 @@ const main = async () => {
   const tuningResults: DatasetEvaluationResult[] = [];
 
   for (const profileId of options.profiles) {
-    resolvePredictionExperimentProfile(profileId);
     tuningResults.push(
       evaluatePreparedLexicalPredictions({
         prepared: tuningPrepared,

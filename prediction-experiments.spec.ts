@@ -332,4 +332,27 @@ test.describe('prediction experiment game', () => {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
   });
+
+  test('r005 hybrid profiles combine late-prefix and noise heuristics', async () => {
+    const noisyCandidate = { itrans: 'agneya़', devanagari: 'अग्नेय़', count: 220 };
+    const longCandidate = { itrans: 'agneyastvasya', devanagari: 'अग्नेयस्त्वस्य', count: 10 };
+
+    expect(resolvePredictionExperimentProfile('r005-hybrid-v1').label).toContain('R-005');
+    expect(resolvePredictionExperimentProfile('r005-hybrid-v2').label).toContain('R-005');
+    expect(computeLexicalNoisePenalty(noisyCandidate.itrans)).toBeGreaterThan(0);
+    expect(
+      shouldApplyCompletionDistancePenalty(
+        longCandidate,
+        'agneya',
+        resolvePredictionExperimentProfile('r005-hybrid-v1')
+      )
+    ).toBe(true);
+    expect(
+      shouldApplyCompletionDistancePenalty(
+        longCandidate,
+        'agneya',
+        resolvePredictionExperimentProfile('r005-hybrid-v2')
+      )
+    ).toBe(false);
+  });
 });

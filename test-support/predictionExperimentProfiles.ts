@@ -184,6 +184,34 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     sourceWeights: null,
     noisePenaltyMultiplier: 0.5,
   },
+  'r005-hybrid-v1': {
+    id: 'r005-hybrid-v1',
+    label: 'R-005 Hybrid v1',
+    track: 'ranking',
+    description:
+      'Combine the safer late-prefix completion-distance bias from v6 with the strong lexical-noise penalty from R-003.',
+    candidatePoolLimit: 16,
+    remainingLengthPenalty: 10,
+    activationMinPrefixLength: 6,
+    activationMinPrefixRatio: 0,
+    activationMaxRemainingLength: null,
+    sourceWeights: null,
+    noisePenaltyMultiplier: 1,
+  },
+  'r005-hybrid-v2': {
+    id: 'r005-hybrid-v2',
+    label: 'R-005 Hybrid v2',
+    track: 'ranking',
+    description:
+      'Combine the very mild late-prefix bias from v7 with the strong lexical-noise penalty, aiming for a safer overall tradeoff.',
+    candidatePoolLimit: 16,
+    remainingLengthPenalty: 6,
+    activationMinPrefixLength: 7,
+    activationMinPrefixRatio: 0,
+    activationMaxRemainingLength: null,
+    sourceWeights: null,
+    noisePenaltyMultiplier: 1,
+  },
 };
 
 export const resolvePredictionExperimentProfile = (id: string) => {
