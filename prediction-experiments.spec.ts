@@ -9,6 +9,7 @@ import { resolvePredictionExperimentProfile } from './test-support/predictionExp
 import {
   buildRuntimeLexiconSourceIndexCached,
   computeLexicalNoisePenalty,
+  DiskRuntimeLexicon,
   evaluateLexicalPredictionsForDataset,
   prepareDatasetEvaluationInputCached,
   samplePreparedDatasetEvaluation,
@@ -406,6 +407,49 @@ test.describe('prediction experiment game', () => {
         resolvePredictionExperimentProfile('r005-hybrid-v2')
       )
     ).toBe(false);
+  });
+
+  test('r006 ending-family bias helps typed suffix families surface specific candidates', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prediction-game-r006-'));
+
+    try {
+      const datasetPath = writeFixture({
+        tempDir,
+        nativeWord: 'अग्नेयस्व',
+        entries: [
+          { itrans: 'agneyasi', devanagari: 'अग्नेयसि', count: 192 },
+          { itrans: 'agneyase', devanagari: 'अग्नेयसे', count: 191 },
+          { itrans: 'agneyasva', devanagari: 'अग्नेयस्व', count: 190 },
+        ],
+      });
+
+      await withDatasetOverride(datasetPath, async () => {
+        const lexicon = new DiskRuntimeLexicon(tempDir);
+        const baselineSuggestions = lexicon.getSuggestions(
+          'agneyas',
+          resolvePredictionExperimentProfile('baseline'),
+          5
+        );
+        const experimentV1Suggestions = lexicon.getSuggestions(
+          'agneyas',
+          resolvePredictionExperimentProfile('r006-ending-family-v1'),
+          5
+        );
+        const experimentV2Suggestions = lexicon.getSuggestions(
+          'agneyas',
+          resolvePredictionExperimentProfile('r006-ending-family-v2'),
+          5
+        );
+
+        expect(resolvePredictionExperimentProfile('r006-ending-family-v1').label).toContain('R-006');
+        expect(resolvePredictionExperimentProfile('r006-ending-family-v2').label).toContain('R-006');
+        expect(baselineSuggestions[0]?.itrans).toBe('agneyasi');
+        expect(experimentV1Suggestions[0]?.itrans).toBe('agneyasva');
+        expect(experimentV2Suggestions[0]?.itrans).toBe('agneyasi');
+      });
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 
   test('cache-backed prepared datasets and source index reuse stable inputs', async () => {

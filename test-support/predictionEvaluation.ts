@@ -132,6 +132,28 @@ const CANONICAL_MAPPING_FILE = 'canonical-mapping.ndjson';
 const PREPARED_DATASET_CACHE_VERSION = 2;
 const SOURCE_INDEX_CACHE_VERSION = 1;
 const ALLOWED_ITRANS_SIGNS = new Set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz~:/.^_|'\\");
+const ENDING_FAMILIES = [
+  'dhvam',
+  'bhyam',
+  'bhyaH',
+  'bhiH',
+  'tvam',
+  'sva',
+  'stu',
+  'nti',
+  'sii',
+  'sya',
+  'ena',
+  'asya',
+  'bhyo',
+  'si',
+  'se',
+  'ti',
+  'mi',
+  'ma',
+  'va',
+  'ta',
+];
 
 const toFileFingerprint = (filePath: string): FileFingerprint => {
   const stats = fs.statSync(filePath);
@@ -253,6 +275,28 @@ const getContinuationBranchPenalty = (
   return (continuationBranchCounts.get(branchKey) ?? 1) * profile.continuationBranchPenalty;
 };
 
+const getEndingFamilyBonus = (entry: RuntimeLexiconEntry, prefix: string, profile: PredictionExperimentProfile) => {
+  const bonusWeight = profile.endingFamilyBonus ?? 0;
+  if (bonusWeight <= 0) {
+    return 0;
+  }
+
+  for (const ending of ENDING_FAMILIES) {
+    if (!entry.itrans.endsWith(ending)) {
+      continue;
+    }
+
+    const endingStart = entry.itrans.length - ending.length;
+    if (prefix.length < endingStart + 1) {
+      continue;
+    }
+
+    return ending.length * bonusWeight;
+  }
+
+  return 0;
+};
+
 const compareSuggestions = (
   left: RuntimeLexiconEntry,
   right: RuntimeLexiconEntry,
@@ -273,16 +317,20 @@ const compareSuggestions = (
     : 0;
   const leftContinuationPenalty = getContinuationBranchPenalty(left, prefix, profile, continuationBranchCounts);
   const rightContinuationPenalty = getContinuationBranchPenalty(right, prefix, profile, continuationBranchCounts);
+  const leftEndingBonus = getEndingFamilyBonus(left, prefix, profile);
+  const rightEndingBonus = getEndingFamilyBonus(right, prefix, profile);
   const leftScore =
     leftWeightedCount -
     leftNoisePenalty -
     leftContinuationPenalty -
-    (left.itrans.length - prefix.length) * leftPenaltyWeight;
+    (left.itrans.length - prefix.length) * leftPenaltyWeight +
+    leftEndingBonus;
   const rightScore =
     rightWeightedCount -
     rightNoisePenalty -
     rightContinuationPenalty -
-    (right.itrans.length - prefix.length) * rightPenaltyWeight;
+    (right.itrans.length - prefix.length) * rightPenaltyWeight +
+    rightEndingBonus;
 
   if (rightScore !== leftScore) {
     return rightScore - leftScore;

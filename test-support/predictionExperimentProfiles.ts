@@ -12,6 +12,7 @@ export interface PredictionExperimentProfile {
   noisePenaltyMultiplier: number;
   continuationBranchPenalty: number;
   continuationBranchDepth: number;
+  endingFamilyBonus?: number;
 }
 
 export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperimentProfile> = {
@@ -257,6 +258,40 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     noisePenaltyMultiplier: 1,
     continuationBranchPenalty: 0,
     continuationBranchDepth: 1,
+  },
+  'r006-ending-family-v1': {
+    id: 'r006-ending-family-v1',
+    label: 'R-006 Ending Family v1',
+    track: 'ranking',
+    description:
+      'Combine the safer late-prefix completion bias from v6 with a mild bonus for candidates whose ending family is already being typed.',
+    candidatePoolLimit: 16,
+    remainingLengthPenalty: 10,
+    activationMinPrefixLength: 6,
+    activationMinPrefixRatio: 0,
+    activationMaxRemainingLength: null,
+    sourceWeights: null,
+    noisePenaltyMultiplier: 0,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
+    endingFamilyBonus: 14,
+  },
+  'r006-ending-family-v2': {
+    id: 'r006-ending-family-v2',
+    label: 'R-006 Ending Family v2',
+    track: 'ranking',
+    description:
+      'Use a milder ending-family bonus on top of v6, testing whether suffix-family awareness improves close completions without broad disruption.',
+    candidatePoolLimit: 16,
+    remainingLengthPenalty: 10,
+    activationMinPrefixLength: 6,
+    activationMinPrefixRatio: 0,
+    activationMaxRemainingLength: null,
+    sourceWeights: null,
+    noisePenaltyMultiplier: 0,
+    continuationBranchPenalty: 0,
+    continuationBranchDepth: 1,
+    endingFamilyBonus: 8,
   },
   'r005-hybrid-v2': {
     id: 'r005-hybrid-v2',
