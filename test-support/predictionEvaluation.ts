@@ -8,6 +8,10 @@ import {
   type NdjsonRecordDataset,
   resolveCorpusDataset,
 } from './corpusRegistry.ts';
+import {
+  resolvePredictionExperimentProfile,
+  type PredictionExperimentProfile,
+} from './predictionExperimentProfiles.ts';
 import { processCanonicalRow } from '../scripts/buildCanonicalLexiconShared.ts';
 import { normalizeForLexicalLookup } from '../src/lib/vedic/lexicalNormalization.ts';
 
@@ -57,7 +61,12 @@ interface MissSample {
   suggestions: string[];
 }
 
+type EvaluatableDataset = NdjsonRecordDataset & {
+  canonical: CanonicalRecordConfig;
+};
+
 export interface DatasetEvaluationResult {
+  profileId: string;
   datasetId: string;
   datasetLabel: string;
   rowCount: number;
@@ -75,9 +84,21 @@ export interface DatasetEvaluationResult {
 const SHARD_PREFIX_LENGTH = 2;
 const MIN_LOOKUP_PREFIX_LENGTH = 2;
 const MAX_SAMPLED_MISSES = 10;
-const MAX_INDEXED_SUGGESTIONS = 8;
+const DEFAULT_SUGGESTION_LIMIT = 5;
 
-const compareSuggestions = (left: RuntimeLexiconEntry, right: RuntimeLexiconEntry) => {
+const compareSuggestions = (
+  left: RuntimeLexiconEntry,
+  right: RuntimeLexiconEntry,
+  prefix: string,
+  profile: PredictionExperimentProfile
+) => {
+  const leftScore = left.count - (left.itrans.length - prefix.length) * profile.remainingLengthPenalty;
+  const rightScore = right.count - (right.itrans.length - prefix.length) * profile.remainingLengthPenalty;
+
+  if (rightScore !== leftScore) {
+    return rightScore - leftScore;
+  }
+
   if (right.count !== left.count) {
     return right.count - left.count;
   }
@@ -92,15 +113,20 @@ const compareSuggestions = (left: RuntimeLexiconEntry, right: RuntimeLexiconEntr
 const toShardPrefix = (value: string) =>
   Array.from(value).slice(0, SHARD_PREFIX_LENGTH).join('') || '_';
 
-const insertSuggestion = (bucket: RuntimeLexiconEntry[], entry: RuntimeLexiconEntry) => {
+const insertSuggestion = (
+  bucket: RuntimeLexiconEntry[],
+  entry: RuntimeLexiconEntry,
+  prefix: string,
+  profile: PredictionExperimentProfile
+) => {
   if (bucket.some((existing) => existing.itrans === entry.itrans)) {
     return;
   }
 
   bucket.push(entry);
-  bucket.sort(compareSuggestions);
-  if (bucket.length > MAX_INDEXED_SUGGESTIONS) {
-    bucket.length = MAX_INDEXED_SUGGESTIONS;
+  bucket.sort((left, right) => compareSuggestions(left, right, prefix, profile));
+  if (bucket.length > profile.candidatePoolLimit) {
+    bucket.length = profile.candidatePoolLimit;
   }
 };
 
@@ -165,30 +191,39 @@ class DiskRuntimeLexicon {
     return this.shardCache.get(prefix)!;
   }
 
-  private getSuggestionsForNormalizedPrefix(prefix: string, limit = 5) {
+  private getSuggestionsForNormalizedPrefix(
+    prefix: string,
+    profile: PredictionExperimentProfile,
+    limit = DEFAULT_SUGGESTION_LIMIT
+  ) {
     const shardData = this.loadShardData(toShardPrefix(prefix));
-    if (!shardData.prefixCache.has(prefix)) {
+    const cacheKey = `${profile.id}:${prefix}`;
+    if (!shardData.prefixCache.has(cacheKey)) {
       const bucket: RuntimeLexiconEntry[] = [];
       for (const entry of shardData.entries) {
         if (!entry.itrans.startsWith(prefix)) {
           continue;
         }
 
-        insertSuggestion(bucket, entry);
+        insertSuggestion(bucket, entry, prefix, profile);
       }
-      shardData.prefixCache.set(prefix, bucket);
+      shardData.prefixCache.set(cacheKey, bucket);
     }
 
-    return (shardData.prefixCache.get(prefix) ?? []).slice(0, limit);
+    return (shardData.prefixCache.get(cacheKey) ?? []).slice(0, limit);
   }
 
-  getSuggestions(prefix: string, limit = 5) {
+  getSuggestions(
+    prefix: string,
+    profile: PredictionExperimentProfile,
+    limit = DEFAULT_SUGGESTION_LIMIT
+  ) {
     const normalizedPrefix = normalizeForLexicalLookup(prefix);
     if (normalizedPrefix.length < MIN_LOOKUP_PREFIX_LENGTH) {
       return [] as RuntimeLexiconEntry[];
     }
 
-    return this.getSuggestionsForNormalizedPrefix(normalizedPrefix, limit);
+    return this.getSuggestionsForNormalizedPrefix(normalizedPrefix, profile, limit);
   }
 
   hasEntry(itrans: string) {
@@ -220,13 +255,16 @@ const resolveEvaluationDataset = (datasetId: string): EvaluatableDataset => {
 export const evaluateLexicalPredictionsForDataset = async ({
   dataRoot,
   datasetId,
+  profileId = 'baseline',
 }: {
   dataRoot: string;
   datasetId: string;
+  profileId?: string;
 }): Promise<DatasetEvaluationResult> => {
   const dataset = resolveEvaluationDataset(datasetId);
   const canonicalConfig = dataset.canonical;
   const lexicon = new DiskRuntimeLexicon(dataRoot);
+  const profile = resolvePredictionExperimentProfile(profileId);
   const finalPrefixMetrics = createEmptyMetrics();
   const allPrefixesMetrics = createEmptyMetrics();
   const sampleMisses: MissSample[] = [];
@@ -279,15 +317,14 @@ export const evaluateLexicalPredictionsForDataset = async ({
     const finalPrefixLength = Math.max(MIN_LOOKUP_PREFIX_LENGTH, target.length - 1);
     for (let prefixLength = MIN_LOOKUP_PREFIX_LENGTH; prefixLength <= finalPrefixLength; prefixLength += 1) {
       const prefix = target.slice(0, prefixLength);
-      const suggestions = lexicon.getSuggestions(prefix, 5);
+      const suggestions = lexicon.getSuggestions(prefix, profile, DEFAULT_SUGGESTION_LIMIT);
       incrementMetric(allPrefixesMetrics, suggestions, target);
 
-      const isFinalPrefix = prefixLength === finalPrefixLength;
-      if (isFinalPrefix) {
+      if (prefixLength === finalPrefixLength) {
         incrementMetric(finalPrefixMetrics, suggestions, target);
       }
 
-      const hit = suggestions.slice(0, 5).some((entry) => entry.itrans === target);
+      const hit = suggestions.slice(0, DEFAULT_SUGGESTION_LIMIT).some((entry) => entry.itrans === target);
       if (!hit && sampleMisses.length < MAX_SAMPLED_MISSES) {
         sampleMisses.push({
           datasetId: dataset.id,
@@ -302,6 +339,7 @@ export const evaluateLexicalPredictionsForDataset = async ({
   }
 
   return {
+    profileId: profile.id,
     datasetId: dataset.id,
     datasetLabel: CORPUS_DATASETS[dataset.id].label,
     rowCount,
@@ -315,7 +353,4 @@ export const evaluateLexicalPredictionsForDataset = async ({
     },
     sampleMisses,
   };
-};
-type EvaluatableDataset = NdjsonRecordDataset & {
-  canonical: CanonicalRecordConfig;
 };
