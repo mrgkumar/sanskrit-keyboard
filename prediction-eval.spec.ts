@@ -6,7 +6,10 @@ import { expect, test } from '@playwright/test';
 
 import { CORPUS_DATASETS } from './test-support/corpusRegistry';
 import {
+  analyzePreparedRetrievalGaps,
+  DiskRuntimeLexicon,
   evaluateLexicalPredictionsForDataset,
+  prepareDatasetEvaluationInput,
   summarizeRetrieval,
   summarizePrefixMetrics,
 } from './test-support/predictionEvaluation';
@@ -263,5 +266,128 @@ test.describe('prediction evaluation helpers', () => {
       allPrefixRetrievalFailures: 2,
       allPrefixRetrievalFailureRate: 2 / 6,
     });
+  });
+
+  test('classifies missing words by deepest prefix with surviving suggestions', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prediction-gap-'));
+
+    try {
+      const datasetPath = path.join(tempDir, 'dataset.ndjson');
+      fs.writeFileSync(
+        datasetPath,
+        [
+          JSON.stringify({
+            unique_identifier: 'row-1',
+            'native word': 'अग्नी',
+            'english word': 'agnii',
+            source: 'test',
+          }),
+          JSON.stringify({
+            unique_identifier: 'row-2',
+            'native word': 'अक्ष',
+            'english word': 'akSa',
+            source: 'test',
+          }),
+          '',
+        ].join('\n'),
+        'utf8'
+      );
+
+      fs.mkdirSync(path.join(tempDir, 'runtime-lexicon-shards'), { recursive: true });
+      fs.writeFileSync(
+        path.join(tempDir, 'runtime-lexicon-shards-manifest.json'),
+        `${JSON.stringify(
+          {
+            version: 1,
+            shards: [
+              {
+                prefix: 'ag',
+                file: 'runtime-lexicon-shards/0061-0067.json',
+                entryCount: 2,
+                bytes: 1,
+              },
+              {
+                prefix: 'ak',
+                file: 'runtime-lexicon-shards/0061-006b.json',
+                entryCount: 0,
+                bytes: 1,
+              },
+            ],
+          },
+          null,
+          2
+        )}\n`,
+        'utf8'
+      );
+      fs.writeFileSync(
+        path.join(tempDir, 'runtime-lexicon-shards/0061-0067.json'),
+        `${JSON.stringify(
+          {
+            version: 1,
+            prefix: 'ag',
+            entries: [
+              { itrans: 'agni', devanagari: 'अग्नि', count: 10 },
+              { itrans: 'agne', devanagari: 'अग्ने', count: 9 },
+            ],
+          },
+          null,
+          2
+        )}\n`,
+        'utf8'
+      );
+      fs.writeFileSync(
+        path.join(tempDir, 'runtime-lexicon-shards/0061-006b.json'),
+        `${JSON.stringify(
+          {
+            version: 1,
+            prefix: 'ak',
+            entries: [],
+          },
+          null,
+          2
+        )}\n`,
+        'utf8'
+      );
+
+      const originalDataset = CORPUS_DATASETS['san-valid'];
+      try {
+        CORPUS_DATASETS['san-valid'] = {
+          ...originalDataset,
+          path: datasetPath,
+        };
+
+        const prepared = await prepareDatasetEvaluationInput({ datasetId: 'san-valid' });
+        const analysis = analyzePreparedRetrievalGaps({
+          prepared,
+          lexicon: new DiskRuntimeLexicon(tempDir),
+        });
+
+        expect(analysis.missingWords).toBe(2);
+        expect(analysis.missingWithAnyPrefixSuggestions).toBe(1);
+        expect(analysis.missingWithFinalPrefixSuggestions).toBe(1);
+        expect(analysis.deepestSuggestedPrefixHistogram).toEqual({
+          '4': 1,
+          none: 1,
+        });
+        expect(analysis.sampleMissingFamilies).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              target: 'agnii',
+              deepestSuggestedPrefix: 'agni',
+              finalPrefix: 'agni',
+              finalPrefixSuggestions: ['agni'],
+            }),
+            expect.objectContaining({
+              target: 'akSha',
+              deepestSuggestedPrefix: null,
+            }),
+          ])
+        );
+      } finally {
+        CORPUS_DATASETS['san-valid'] = originalDataset;
+      }
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });

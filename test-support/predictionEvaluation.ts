@@ -120,6 +120,27 @@ export interface RetrievalSummary {
   allPrefixRetrievalFailureRate: number;
 }
 
+export interface RetrievalGapSample {
+  datasetId: string;
+  rowId: string;
+  target: string;
+  devanagari: string;
+  deepestSuggestedPrefix: string | null;
+  finalPrefix: string;
+  finalPrefixSuggestions: string[];
+}
+
+export interface RetrievalGapAnalysis {
+  profileId: string;
+  datasetId: string;
+  datasetLabel: string;
+  missingWords: number;
+  missingWithAnyPrefixSuggestions: number;
+  missingWithFinalPrefixSuggestions: number;
+  deepestSuggestedPrefixHistogram: Record<string, number>;
+  sampleMissingFamilies: RetrievalGapSample[];
+}
+
 export interface PreparedEvaluationQuery {
   rowId: string;
   target: string;
@@ -451,6 +472,96 @@ export const summarizeRetrieval = (result: DatasetEvaluationResult): RetrievalSu
     result.failureBreakdown.allPrefixes.queries
   ),
 });
+
+export const analyzePreparedRetrievalGaps = ({
+  prepared,
+  lexicon,
+  profileId = 'baseline',
+}: {
+  prepared: PreparedDatasetEvaluation;
+  lexicon: DiskRuntimeLexicon;
+  profileId?: string;
+}): RetrievalGapAnalysis => {
+  const profile = resolvePredictionExperimentProfile(profileId);
+  const deepestSuggestedPrefixHistogram = new Map<string, number>();
+  const sampleMissingFamilies: RetrievalGapSample[] = [];
+  let missingWords = 0;
+  let missingWithAnyPrefixSuggestions = 0;
+  let missingWithFinalPrefixSuggestions = 0;
+
+  for (const query of prepared.queries) {
+    const inLexicon = lexicon.hasEntry(query.target);
+    if (inLexicon) {
+      continue;
+    }
+    missingWords += query.weight;
+
+    const finalPrefixLength = Math.max(MIN_LOOKUP_PREFIX_LENGTH, query.target.length - 1);
+    let deepestSuggestedPrefixLength = 0;
+    let finalPrefixSuggestions: string[] = [];
+
+    for (let prefixLength = MIN_LOOKUP_PREFIX_LENGTH; prefixLength <= finalPrefixLength; prefixLength += 1) {
+      const prefix = query.target.slice(0, prefixLength);
+      const suggestions = lexicon.getSuggestions(prefix, profile, DEFAULT_SUGGESTION_LIMIT);
+      if (suggestions.length > 0) {
+        deepestSuggestedPrefixLength = prefixLength;
+      }
+
+      if (prefixLength === finalPrefixLength) {
+        finalPrefixSuggestions = suggestions.map((entry) => entry.itrans);
+      }
+    }
+
+    if (deepestSuggestedPrefixLength > 0) {
+      missingWithAnyPrefixSuggestions += query.weight;
+    }
+
+    if (finalPrefixSuggestions.length > 0) {
+      missingWithFinalPrefixSuggestions += query.weight;
+    }
+
+    const histogramKey =
+      deepestSuggestedPrefixLength > 0 ? String(deepestSuggestedPrefixLength) : 'none';
+    deepestSuggestedPrefixHistogram.set(
+      histogramKey,
+      (deepestSuggestedPrefixHistogram.get(histogramKey) ?? 0) + query.weight
+    );
+
+    if (sampleMissingFamilies.length < MAX_SAMPLED_MISSES) {
+      sampleMissingFamilies.push({
+        datasetId: prepared.datasetId,
+        rowId: query.rowId,
+        target: query.target,
+        devanagari: query.devanagari,
+        deepestSuggestedPrefix:
+          deepestSuggestedPrefixLength > 0 ? query.target.slice(0, deepestSuggestedPrefixLength) : null,
+        finalPrefix: query.target.slice(0, finalPrefixLength),
+        finalPrefixSuggestions,
+      });
+    }
+  }
+
+  return {
+    profileId: profile.id,
+    datasetId: prepared.datasetId,
+    datasetLabel: prepared.datasetLabel,
+    missingWords,
+    missingWithAnyPrefixSuggestions,
+    missingWithFinalPrefixSuggestions,
+    deepestSuggestedPrefixHistogram: Object.fromEntries(
+      [...deepestSuggestedPrefixHistogram.entries()].sort(([left], [right]) => {
+        if (left === 'none') {
+          return 1;
+        }
+        if (right === 'none') {
+          return -1;
+        }
+        return Number(left) - Number(right);
+      })
+    ),
+    sampleMissingFamilies,
+  };
+};
 
 export const samplePreparedDatasetEvaluation = (
   prepared: PreparedDatasetEvaluation,
