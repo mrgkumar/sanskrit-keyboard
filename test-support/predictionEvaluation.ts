@@ -45,6 +45,11 @@ interface LoadedShardData {
   prefixCache: Map<string, RuntimeLexiconEntry[]>;
 }
 
+interface SourceCountIndexEntry {
+  totalCount: number;
+  bySource: Record<string, number>;
+}
+
 interface PrefixMetrics {
   queries: number;
   top1Hits: number;
@@ -100,6 +105,7 @@ const SHARD_PREFIX_LENGTH = 2;
 const MIN_LOOKUP_PREFIX_LENGTH = 2;
 const MAX_SAMPLED_MISSES = 10;
 const DEFAULT_SUGGESTION_LIMIT = 5;
+const CANONICAL_MAPPING_FILE = 'canonical-mapping.ndjson';
 
 export const shouldApplyCompletionDistancePenalty = (
   entry: RuntimeLexiconEntry,
@@ -117,23 +123,47 @@ export const shouldApplyCompletionDistancePenalty = (
   );
 };
 
+const getWeightedCount = (
+  entry: RuntimeLexiconEntry,
+  profile: PredictionExperimentProfile,
+  sourceInfo?: SourceCountIndexEntry
+) => {
+  if (!profile.sourceWeights || !sourceInfo) {
+    return entry.count;
+  }
+
+  let weightedCount = 0;
+  for (const [source, count] of Object.entries(sourceInfo.bySource)) {
+    weightedCount += count * (profile.sourceWeights[source] ?? 1);
+  }
+
+  return weightedCount;
+};
+
 const compareSuggestions = (
   left: RuntimeLexiconEntry,
   right: RuntimeLexiconEntry,
   prefix: string,
-  profile: PredictionExperimentProfile
+  profile: PredictionExperimentProfile,
+  sourceIndex?: Map<string, SourceCountIndexEntry>
 ) => {
+  const leftWeightedCount = getWeightedCount(left, profile, sourceIndex?.get(left.itrans));
+  const rightWeightedCount = getWeightedCount(right, profile, sourceIndex?.get(right.itrans));
   const leftPenaltyWeight = shouldApplyCompletionDistancePenalty(left, prefix, profile)
     ? profile.remainingLengthPenalty
     : 0;
   const rightPenaltyWeight = shouldApplyCompletionDistancePenalty(right, prefix, profile)
     ? profile.remainingLengthPenalty
     : 0;
-  const leftScore = left.count - (left.itrans.length - prefix.length) * leftPenaltyWeight;
-  const rightScore = right.count - (right.itrans.length - prefix.length) * rightPenaltyWeight;
+  const leftScore = leftWeightedCount - (left.itrans.length - prefix.length) * leftPenaltyWeight;
+  const rightScore = rightWeightedCount - (right.itrans.length - prefix.length) * rightPenaltyWeight;
 
   if (rightScore !== leftScore) {
     return rightScore - leftScore;
+  }
+
+  if (rightWeightedCount !== leftWeightedCount) {
+    return rightWeightedCount - leftWeightedCount;
   }
 
   if (right.count !== left.count) {
@@ -154,14 +184,15 @@ const insertSuggestion = (
   bucket: RuntimeLexiconEntry[],
   entry: RuntimeLexiconEntry,
   prefix: string,
-  profile: PredictionExperimentProfile
+  profile: PredictionExperimentProfile,
+  sourceIndex?: Map<string, SourceCountIndexEntry>
 ) => {
   if (bucket.some((existing) => existing.itrans === entry.itrans)) {
     return;
   }
 
   bucket.push(entry);
-  bucket.sort((left, right) => compareSuggestions(left, right, prefix, profile));
+  bucket.sort((left, right) => compareSuggestions(left, right, prefix, profile, sourceIndex));
   if (bucket.length > profile.candidatePoolLimit) {
     bucket.length = profile.candidatePoolLimit;
   }
@@ -194,13 +225,48 @@ export const summarizePrefixMetrics = (metric: PrefixMetrics) => ({
   top5Rate: toRate(metric.top5Hits, metric.queries),
 });
 
+export const buildRuntimeLexiconSourceIndex = async (dataRoot: string) => {
+  const canonicalPath = path.join(dataRoot, CANONICAL_MAPPING_FILE);
+  const sourceIndex = new Map<string, SourceCountIndexEntry>();
+
+  const rl = readline.createInterface({
+    input: fs.createReadStream(canonicalPath, { encoding: 'utf8' }),
+    crlfDelay: Infinity,
+  });
+
+  for await (const line of rl) {
+    if (!line.trim()) {
+      continue;
+    }
+
+    const record = JSON.parse(line) as { itrans: string; source?: string | null };
+    const itrans = normalizeForLexicalLookup(record.itrans);
+    if (itrans.length < MIN_LOOKUP_PREFIX_LENGTH) {
+      continue;
+    }
+
+    const source = record.source ?? 'unknown';
+    const current = sourceIndex.get(itrans) ?? {
+      totalCount: 0,
+      bySource: {},
+    };
+    current.totalCount += 1;
+    current.bySource[source] = (current.bySource[source] ?? 0) + 1;
+    sourceIndex.set(itrans, current);
+  }
+
+  return sourceIndex;
+};
+
 export class DiskRuntimeLexicon {
   private readonly manifest: RuntimeLexiconShardManifest;
   private readonly dataRoot: string;
   private readonly shardCache = new Map<string, LoadedShardData>();
+  private readonly sourceIndex?: Map<string, SourceCountIndexEntry>;
 
-  constructor(dataRoot: string) {
+  constructor(dataRoot: string, sourceIndex?: Map<string, SourceCountIndexEntry>) {
     this.dataRoot = dataRoot;
+    this.sourceIndex = sourceIndex;
     const manifestPath = path.join(dataRoot, 'runtime-lexicon-shards-manifest.json');
     this.manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as RuntimeLexiconShardManifest;
   }
@@ -242,7 +308,7 @@ export class DiskRuntimeLexicon {
           continue;
         }
 
-        insertSuggestion(bucket, entry, prefix, profile);
+        insertSuggestion(bucket, entry, prefix, profile, this.sourceIndex);
       }
       shardData.prefixCache.set(cacheKey, bucket);
     }
@@ -426,7 +492,8 @@ export const evaluateLexicalPredictionsForDataset = async ({
   datasetId: string;
   profileId?: string;
 }): Promise<DatasetEvaluationResult> => {
-  const lexicon = new DiskRuntimeLexicon(dataRoot);
+  const sourceIndex = await buildRuntimeLexiconSourceIndex(dataRoot);
+  const lexicon = new DiskRuntimeLexicon(dataRoot, sourceIndex);
   const prepared = await prepareDatasetEvaluationInput({ datasetId });
   return evaluatePreparedLexicalPredictions({
     prepared,

@@ -1,13 +1,14 @@
 export interface PredictionExperimentProfile {
   id: string;
   label: string;
-  track: 'ranking';
+  track: 'ranking' | 'source-weighting';
   description: string;
   candidatePoolLimit: number;
   remainingLengthPenalty: number;
   activationMinPrefixLength: number;
   activationMinPrefixRatio: number;
   activationMaxRemainingLength: number | null;
+  sourceWeights: Record<string, number> | null;
 }
 
 export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperimentProfile> = {
@@ -21,6 +22,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixLength: 99,
     activationMinPrefixRatio: 1,
     activationMaxRemainingLength: null,
+    sourceWeights: null,
   },
   'r001-completion-distance-v1': {
     id: 'r001-completion-distance-v1',
@@ -33,6 +35,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixLength: 5,
     activationMinPrefixRatio: 0,
     activationMaxRemainingLength: null,
+    sourceWeights: null,
   },
   'r001-completion-distance-v2': {
     id: 'r001-completion-distance-v2',
@@ -45,6 +48,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixLength: 6,
     activationMinPrefixRatio: 0,
     activationMaxRemainingLength: null,
+    sourceWeights: null,
   },
   'r001-completion-distance-v3': {
     id: 'r001-completion-distance-v3',
@@ -57,6 +61,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixLength: 5,
     activationMinPrefixRatio: 0.75,
     activationMaxRemainingLength: null,
+    sourceWeights: null,
   },
   'r001-completion-distance-v4': {
     id: 'r001-completion-distance-v4',
@@ -69,6 +74,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixLength: 5,
     activationMinPrefixRatio: 0,
     activationMaxRemainingLength: 4,
+    sourceWeights: null,
   },
   'r001-completion-distance-v5': {
     id: 'r001-completion-distance-v5',
@@ -81,6 +87,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixLength: 5,
     activationMinPrefixRatio: 0,
     activationMaxRemainingLength: 4,
+    sourceWeights: null,
   },
   'r001-completion-distance-v6': {
     id: 'r001-completion-distance-v6',
@@ -93,6 +100,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixLength: 6,
     activationMinPrefixRatio: 0,
     activationMaxRemainingLength: null,
+    sourceWeights: null,
   },
   'r001-completion-distance-v7': {
     id: 'r001-completion-distance-v7',
@@ -105,6 +113,37 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixLength: 7,
     activationMinPrefixRatio: 0,
     activationMaxRemainingLength: null,
+    sourceWeights: null,
+  },
+  'r002-source-weight-v1': {
+    id: 'r002-source-weight-v1',
+    label: 'R-002 Source Weight v1',
+    track: 'source-weighting',
+    description:
+      'Down-weight example-vedic lexical counts while leaving cleaner corpus sources unchanged, reducing noisy Vedic dominance in ranking.',
+    candidatePoolLimit: 8,
+    remainingLengthPenalty: 0,
+    activationMinPrefixLength: 99,
+    activationMinPrefixRatio: 1,
+    activationMaxRemainingLength: null,
+    sourceWeights: {
+      'example-vedic': 0.35,
+    },
+  },
+  'r002-source-weight-v2': {
+    id: 'r002-source-weight-v2',
+    label: 'R-002 Source Weight v2',
+    track: 'source-weighting',
+    description:
+      'Apply a milder example-vedic down-weight, testing whether a softer source penalty improves ranking without overcorrecting.',
+    candidatePoolLimit: 8,
+    remainingLengthPenalty: 0,
+    activationMinPrefixLength: 99,
+    activationMinPrefixRatio: 1,
+    activationMaxRemainingLength: null,
+    sourceWeights: {
+      'example-vedic': 0.55,
+    },
   },
 };
 

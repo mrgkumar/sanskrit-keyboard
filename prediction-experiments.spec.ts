@@ -16,10 +16,12 @@ const writeFixture = ({
   tempDir,
   nativeWord,
   entries,
+  canonicalEntries,
 }: {
   tempDir: string;
   nativeWord: string;
   entries: Array<{ itrans: string; devanagari: string; count: number }>;
+  canonicalEntries?: Array<{ itrans: string; devanagari: string; source?: string | null }>;
 }) => {
   const datasetPath = path.join(tempDir, 'dataset.ndjson');
   fs.writeFileSync(
@@ -64,6 +66,21 @@ const writeFixture = ({
       null,
       2
     )}\n`,
+    'utf8'
+  );
+
+  fs.writeFileSync(
+    path.join(tempDir, 'canonical-mapping.ndjson'),
+    `${(canonicalEntries ?? entries.map((entry) => ({ ...entry, source: 'AK-Freq' })))
+      .map(({ itrans, devanagari, source }, index) =>
+        JSON.stringify({
+          id: `canonical-${index + 1}`,
+          itrans,
+          devanagari,
+          source: source ?? 'AK-Freq',
+        })
+      )
+      .join('\n')}\n`,
     'utf8'
   );
 
@@ -209,5 +226,62 @@ test.describe('prediction experiment game', () => {
         resolvePredictionExperimentProfile('r001-completion-distance-v5')
       )
     ).toBe(false);
+  });
+
+  test('r002 source weighting can demote example-vedic heavy candidates', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prediction-game-r002-'));
+
+    try {
+      const datasetPath = writeFixture({
+        tempDir,
+        nativeWord: 'अग्नेय',
+        entries: [
+          { itrans: 'agneyam', devanagari: 'अग्नेयम्', count: 80 },
+          { itrans: 'agneya', devanagari: 'अग्नेय', count: 60 },
+        ],
+        canonicalEntries: [
+          ...Array.from({ length: 80 }, () => ({
+            itrans: 'agneyam',
+            devanagari: 'अग्नेयम्',
+            source: 'example-vedic',
+          })),
+          ...Array.from({ length: 60 }, () => ({
+            itrans: 'agneya',
+            devanagari: 'अग्नेय',
+            source: 'AK-Freq',
+          })),
+        ],
+      });
+
+      await withDatasetOverride(datasetPath, async () => {
+        const baseline = await evaluateLexicalPredictionsForDataset({
+          dataRoot: tempDir,
+          datasetId: 'san-valid',
+          profileId: 'baseline',
+        });
+        const experimentV1 = await evaluateLexicalPredictionsForDataset({
+          dataRoot: tempDir,
+          datasetId: 'san-valid',
+          profileId: 'r002-source-weight-v1',
+        });
+        const experimentV2 = await evaluateLexicalPredictionsForDataset({
+          dataRoot: tempDir,
+          datasetId: 'san-valid',
+          profileId: 'r002-source-weight-v2',
+        });
+
+        const baselineFinal = summarizePrefixMetrics(baseline.prefixMetrics.finalPrefix);
+        const experimentV1Final = summarizePrefixMetrics(experimentV1.prefixMetrics.finalPrefix);
+        const experimentV2Final = summarizePrefixMetrics(experimentV2.prefixMetrics.finalPrefix);
+
+        expect(resolvePredictionExperimentProfile('r002-source-weight-v1').label).toContain('R-002');
+        expect(resolvePredictionExperimentProfile('r002-source-weight-v2').label).toContain('R-002');
+        expect(baselineFinal.top1Hits).toBe(0);
+        expect(experimentV1Final.top1Hits).toBe(1);
+        expect(experimentV2Final.top1Hits).toBe(1);
+      });
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });

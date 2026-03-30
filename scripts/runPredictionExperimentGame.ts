@@ -8,6 +8,7 @@ import {
   resolvePredictionExperimentProfile,
 } from '../test-support/predictionExperimentProfiles.ts';
 import {
+  buildRuntimeLexiconSourceIndex,
   DiskRuntimeLexicon,
   evaluatePreparedLexicalPredictions,
   prepareDatasetEvaluationInput,
@@ -85,7 +86,8 @@ const compareResults = (left: DatasetEvaluationResult, right: DatasetEvaluationR
 const main = async () => {
   const options = parseArgs();
   const startedAt = Date.now();
-  const lexicon = new DiskRuntimeLexicon(options.dataRoot);
+  const sourceIndex = await buildRuntimeLexiconSourceIndex(options.dataRoot);
+  const lexicon = new DiskRuntimeLexicon(options.dataRoot, sourceIndex);
   const tuningPrepared = await prepareDatasetEvaluationInput({
     datasetId: options.tuningDataset,
   });
