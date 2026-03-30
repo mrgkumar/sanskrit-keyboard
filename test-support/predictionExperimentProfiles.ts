@@ -7,6 +7,7 @@ export interface PredictionExperimentProfile {
   remainingLengthPenalty: number;
   activationMinPrefixLength: number;
   activationMinPrefixRatio: number;
+  activationMaxRemainingLength: number | null;
 }
 
 export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperimentProfile> = {
@@ -19,6 +20,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     remainingLengthPenalty: 0,
     activationMinPrefixLength: 99,
     activationMinPrefixRatio: 1,
+    activationMaxRemainingLength: null,
   },
   'r001-completion-distance-v1': {
     id: 'r001-completion-distance-v1',
@@ -30,6 +32,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     remainingLengthPenalty: 25,
     activationMinPrefixLength: 5,
     activationMinPrefixRatio: 0,
+    activationMaxRemainingLength: null,
   },
   'r001-completion-distance-v2': {
     id: 'r001-completion-distance-v2',
@@ -41,6 +44,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     remainingLengthPenalty: 25,
     activationMinPrefixLength: 6,
     activationMinPrefixRatio: 0,
+    activationMaxRemainingLength: null,
   },
   'r001-completion-distance-v3': {
     id: 'r001-completion-distance-v3',
@@ -52,6 +56,55 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     remainingLengthPenalty: 25,
     activationMinPrefixLength: 5,
     activationMinPrefixRatio: 0.75,
+    activationMaxRemainingLength: null,
+  },
+  'r001-completion-distance-v4': {
+    id: 'r001-completion-distance-v4',
+    label: 'R-001 Completion Distance v4',
+    track: 'ranking',
+    description:
+      'Apply a milder completion-distance penalty only when the user is close to finishing the candidate, preserving broad early-prefix ranking.',
+    candidatePoolLimit: 16,
+    remainingLengthPenalty: 14,
+    activationMinPrefixLength: 5,
+    activationMinPrefixRatio: 0,
+    activationMaxRemainingLength: 4,
+  },
+  'r001-completion-distance-v5': {
+    id: 'r001-completion-distance-v5',
+    label: 'R-001 Completion Distance v5',
+    track: 'ranking',
+    description:
+      'Use a slightly deeper pool and a light late-stage completion-distance penalty only for near-finish candidates.',
+    candidatePoolLimit: 24,
+    remainingLengthPenalty: 10,
+    activationMinPrefixLength: 5,
+    activationMinPrefixRatio: 0,
+    activationMaxRemainingLength: 4,
+  },
+  'r001-completion-distance-v6': {
+    id: 'r001-completion-distance-v6',
+    label: 'R-001 Completion Distance v6',
+    track: 'ranking',
+    description:
+      'Apply a mild completion-distance penalty only after a longer prefix, testing whether v1 was directionally right but too aggressive.',
+    candidatePoolLimit: 16,
+    remainingLengthPenalty: 10,
+    activationMinPrefixLength: 6,
+    activationMinPrefixRatio: 0,
+    activationMaxRemainingLength: null,
+  },
+  'r001-completion-distance-v7': {
+    id: 'r001-completion-distance-v7',
+    label: 'R-001 Completion Distance v7',
+    track: 'ranking',
+    description:
+      'Apply a very mild completion-distance penalty only after a long prefix, minimizing early-prefix disturbance while testing late completion gains.',
+    candidatePoolLimit: 16,
+    remainingLengthPenalty: 6,
+    activationMinPrefixLength: 7,
+    activationMinPrefixRatio: 0,
+    activationMaxRemainingLength: null,
   },
 };
 

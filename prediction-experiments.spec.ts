@@ -6,7 +6,11 @@ import { expect, test } from '@playwright/test';
 
 import { CORPUS_DATASETS } from './test-support/corpusRegistry';
 import { resolvePredictionExperimentProfile } from './test-support/predictionExperimentProfiles';
-import { evaluateLexicalPredictionsForDataset, summarizePrefixMetrics } from './test-support/predictionEvaluation';
+import {
+  evaluateLexicalPredictionsForDataset,
+  shouldApplyCompletionDistancePenalty,
+  summarizePrefixMetrics,
+} from './test-support/predictionEvaluation';
 
 const writeFixture = ({
   tempDir,
@@ -176,5 +180,34 @@ test.describe('prediction experiment game', () => {
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
+  });
+
+  test('v4 and v5 wait until the candidate is near completion before applying the penalty', async () => {
+    const candidate = { itrans: 'agneyastvasya', devanagari: 'अग्नेयस्त्वस्य', count: 10 };
+    const prefix = 'agneya';
+
+    expect(resolvePredictionExperimentProfile('r001-completion-distance-v4').label).toContain('R-001');
+    expect(resolvePredictionExperimentProfile('r001-completion-distance-v5').label).toContain('R-001');
+    expect(
+      shouldApplyCompletionDistancePenalty(
+        candidate,
+        prefix,
+        resolvePredictionExperimentProfile('r001-completion-distance-v1')
+      )
+    ).toBe(true);
+    expect(
+      shouldApplyCompletionDistancePenalty(
+        candidate,
+        prefix,
+        resolvePredictionExperimentProfile('r001-completion-distance-v4')
+      )
+    ).toBe(false);
+    expect(
+      shouldApplyCompletionDistancePenalty(
+        candidate,
+        prefix,
+        resolvePredictionExperimentProfile('r001-completion-distance-v5')
+      )
+    ).toBe(false);
   });
 });

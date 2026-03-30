@@ -101,17 +101,34 @@ const MIN_LOOKUP_PREFIX_LENGTH = 2;
 const MAX_SAMPLED_MISSES = 10;
 const DEFAULT_SUGGESTION_LIMIT = 5;
 
+export const shouldApplyCompletionDistancePenalty = (
+  entry: RuntimeLexiconEntry,
+  prefix: string,
+  profile: PredictionExperimentProfile
+) => {
+  const remainingLength = Math.max(entry.itrans.length - prefix.length, 0);
+  const withinRemainingLength =
+    profile.activationMaxRemainingLength === null || remainingLength <= profile.activationMaxRemainingLength;
+
+  return (
+    prefix.length >= profile.activationMinPrefixLength &&
+    prefix.length / Math.max(entry.itrans.length, 1) >= profile.activationMinPrefixRatio &&
+    withinRemainingLength
+  );
+};
+
 const compareSuggestions = (
   left: RuntimeLexiconEntry,
   right: RuntimeLexiconEntry,
   prefix: string,
   profile: PredictionExperimentProfile
 ) => {
-  const shouldApplyPenalty = (entry: RuntimeLexiconEntry) =>
-    prefix.length >= profile.activationMinPrefixLength &&
-    prefix.length / Math.max(entry.itrans.length, 1) >= profile.activationMinPrefixRatio;
-  const leftPenaltyWeight = shouldApplyPenalty(left) ? profile.remainingLengthPenalty : 0;
-  const rightPenaltyWeight = shouldApplyPenalty(right) ? profile.remainingLengthPenalty : 0;
+  const leftPenaltyWeight = shouldApplyCompletionDistancePenalty(left, prefix, profile)
+    ? profile.remainingLengthPenalty
+    : 0;
+  const rightPenaltyWeight = shouldApplyCompletionDistancePenalty(right, prefix, profile)
+    ? profile.remainingLengthPenalty
+    : 0;
   const leftScore = left.count - (left.itrans.length - prefix.length) * leftPenaltyWeight;
   const rightScore = right.count - (right.itrans.length - prefix.length) * rightPenaltyWeight;
 
