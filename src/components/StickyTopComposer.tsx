@@ -2,11 +2,13 @@
 'use client';
 
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { useFlowStore } from '@/store/useFlowStore';
 import { Check, ChevronLeft, ChevronRight, Copy, Trash2, Undo2 } from 'lucide-react';
 import { BookOpen } from 'lucide-react';
 import { clsx } from 'clsx';
 import { ShortcutHUD } from '@/components/engine/ShortcutHUD';
+import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
 import { detransliterate, transliterate } from '@/lib/vedic/utils';
 import { VEDIC_MAPPINGS } from '@/lib/vedic/mapping';
 import { applyShortcutPeekCorrection } from '@/lib/vedic/correction';
@@ -26,16 +28,22 @@ export const StickyTopComposer: React.FC = () => {
     displaySettings,
   } = useFlowStore();
   const composerRef = React.useRef<HTMLTextAreaElement>(null);
+  const composerHighlightRef = React.useRef<HTMLDivElement>(null);
+  const sourcePaneRef = React.useRef<HTMLDivElement>(null);
   const previewRef = React.useRef<HTMLDivElement>(null);
   const scrollSyncSourceRef = React.useRef<'source' | 'preview' | null>(null);
   const [copyState, setCopyState] = React.useState<'idle' | 'copied' | 'error'>('idle');
   const [isShortcutPeekVisible, setIsShortcutPeekVisible] = React.useState(false);
   const [deleteToastProgress, setDeleteToastProgress] = React.useState(1);
+  const [isPredictionPopupVisible, setIsPredictionPopupVisible] = React.useState(false);
+  const [isPredictionPopupSuppressed, setIsPredictionPopupSuppressed] = React.useState(false);
+  const [predictionPopupPortalStyle, setPredictionPopupPortalStyle] = React.useState<React.CSSProperties>({});
   const activeBlock = getActiveBlock();
   const activeChunkGroup = getActiveChunkGroup();
   const { focusSpan, viewMode } = editorState;
-  const { composerLayout, syncComposerScroll, typography } = displaySettings;
+  const { composerLayout, predictionLayout, predictionPopupTimeoutMs, syncComposerScroll, typography } = displaySettings;
   const composerTypography = typography.composer;
+  const isPredictionListbox = predictionLayout === 'listbox';
   const isLongBlock = activeBlock?.type === 'long';
   const currentChunkSource = activeChunkGroup?.source || '';
   const renderedPreview = transliterate(currentChunkSource);
@@ -108,7 +116,7 @@ export const StickyTopComposer: React.FC = () => {
     return { start, end };
   })();
 
-  const currentWordTargetRange = (() => {
+  const currentSourceWordRange = (() => {
     if (!currentChunkSource || composerSelectionStart !== composerSelectionEnd) {
       return null;
     }
@@ -136,13 +144,84 @@ export const StickyTopComposer: React.FC = () => {
       wordEnd += 1;
     }
 
-    const targetStart = renderedPreview.sourceToTargetMap[wordStart] ?? 0;
+    return wordEnd > wordStart ? { start: wordStart, end: wordEnd } : null;
+  })();
+
+  const currentWordTargetRange = (() => {
+    if (currentSourceWordRange === null) {
+      return null;
+    }
+
+    const targetStart = renderedPreview.sourceToTargetMap[currentSourceWordRange.start] ?? 0;
     const targetEnd =
-      wordEnd >= currentChunkSource.length
+      currentSourceWordRange.end >= currentChunkSource.length
         ? renderedPreviewChars.length
-        : renderedPreview.sourceToTargetMap[wordEnd] ?? renderedPreviewChars.length;
+        : renderedPreview.sourceToTargetMap[currentSourceWordRange.end] ?? renderedPreviewChars.length;
 
     return targetEnd > targetStart ? { start: targetStart, end: targetEnd } : null;
+  })();
+
+  const sourceMirrorFragments = (() => {
+    const sourceLength = currentChunkSource.length;
+    const clampedCaret = Math.max(0, Math.min(composerSelectionStart, sourceLength));
+    const isCollapsedSelection = composerSelectionStart === composerSelectionEnd;
+    const boundaries = new Set<number>([0, sourceLength, clampedCaret]);
+
+    if (currentSourceWordRange) {
+      boundaries.add(currentSourceWordRange.start);
+      boundaries.add(currentSourceWordRange.end);
+    }
+
+    const orderedBoundaries = Array.from(boundaries).sort((a, b) => a - b);
+    const fragments: React.ReactNode[] = [];
+
+    for (let index = 0; index < orderedBoundaries.length - 1; index += 1) {
+      const start = orderedBoundaries[index];
+      const end = orderedBoundaries[index + 1];
+
+      if (isCollapsedSelection && start === clampedCaret) {
+        fragments.push(
+          <span
+            key={`itrans-caret-${start}`}
+            aria-hidden="true"
+            className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-slate-900 align-middle motion-safe:animate-caret"
+            data-testid="itrans-mirror-caret"
+          />
+        );
+      }
+
+      if (end <= start) {
+        continue;
+      }
+
+      const text = currentChunkSource.slice(start, end);
+      const isCurrentWordVisible =
+        currentSourceWordRange !== null &&
+        start >= currentSourceWordRange.start &&
+        end <= currentSourceWordRange.end;
+
+      fragments.push(
+        <span
+          key={`itrans-fragment-${start}-${end}`}
+          className={clsx(isCurrentWordVisible && 'font-bold text-[#6b1f1f]')}
+        >
+          {text}
+        </span>
+      );
+    }
+
+    if (isCollapsedSelection && clampedCaret === sourceLength) {
+      fragments.push(
+        <span
+          key="itrans-caret-end"
+          aria-hidden="true"
+          className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-slate-900 align-middle motion-safe:animate-caret"
+          data-testid="itrans-mirror-caret"
+        />
+      );
+    }
+
+    return fragments;
   })();
 
   const syncPaneScroll = React.useCallback(
@@ -178,11 +257,16 @@ export const StickyTopComposer: React.FC = () => {
     recordSessionLexicalUse(suggestion.itrans);
     setDeletedBuffer(null);
     setIsShortcutPeekVisible(false);
+    if (isPredictionListbox) {
+      setIsPredictionPopupVisible(false);
+      setIsPredictionPopupSuppressed(true);
+    }
     return true;
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const pastedText = e.clipboardData.getData('text');
+    setIsPredictionPopupSuppressed(false);
     
     const isDevanagari = /[\u0900-\u097F]/.test(pastedText);
     const isMultiLine = pastedText.includes('\n') || pastedText.includes('\r');
@@ -214,6 +298,24 @@ export const StickyTopComposer: React.FC = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     setComposerSelection(e.currentTarget.selectionStart, e.currentTarget.selectionEnd);
+
+    if (!e.altKey && !e.ctrlKey && !e.metaKey) {
+      const isInputKey = e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete';
+      if (isInputKey) {
+        setIsPredictionPopupSuppressed(false);
+      }
+    }
+
+    if (!e.altKey && !e.ctrlKey && !e.metaKey && hasLexicalSuggestions && isPredictionListbox) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const direction = e.key === 'ArrowDown' ? 1 : -1;
+        const nextIndex =
+          (lexicalSelectedSuggestionIndex + direction + lexicalSuggestions.length) % lexicalSuggestions.length;
+        setLexicalSelectedSuggestionIndex(nextIndex);
+        return;
+      }
+    }
 
     if (!e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'Tab' && hasLexicalSuggestions) {
       e.preventDefault();
@@ -266,6 +368,13 @@ export const StickyTopComposer: React.FC = () => {
       if (isReferencePanelOpen) {
         e.preventDefault();
         toggleReferencePanel();
+        return;
+      }
+
+      if (isPredictionListbox && isPredictionPopupVisible) {
+        e.preventDefault();
+        setIsPredictionPopupVisible(false);
+        setIsPredictionPopupSuppressed(true);
         return;
       }
     }
@@ -340,6 +449,12 @@ export const StickyTopComposer: React.FC = () => {
 
   const handleComposerScroll = (event: React.UIEvent<HTMLTextAreaElement>) => {
     scrollSyncSourceRef.current = 'source';
+    if (composerHighlightRef.current) {
+      composerHighlightRef.current.style.transform = `translateY(-${event.currentTarget.scrollTop}px)`;
+    }
+    if (composerMeasureRef.current) {
+      composerMeasureRef.current.style.transform = `translateY(-${event.currentTarget.scrollTop}px)`;
+    }
     syncPaneScroll(event.currentTarget, previewRef.current);
   };
 
@@ -368,6 +483,80 @@ export const StickyTopComposer: React.FC = () => {
       syncPaneScroll(previewRef.current, composerRef.current);
     }
   }, [currentChunkSource, activeChunkGroup?.rendered, syncComposerScroll, syncPaneScroll]);
+
+  React.useEffect(() => {
+    if (!composerRef.current || !composerHighlightRef.current) {
+      return;
+    }
+
+    composerHighlightRef.current.style.transform = `translateY(-${composerRef.current.scrollTop}px)`;
+  }, [currentChunkSource, composerSelectionStart, composerSelectionEnd]);
+
+  React.useEffect(() => {
+    if (!isPredictionListbox || !hasLexicalSuggestions || isPredictionPopupSuppressed) {
+      setIsPredictionPopupVisible(false);
+      return;
+    }
+
+    setIsPredictionPopupVisible(true);
+  }, [
+    activeBuffer,
+    composerSelectionStart,
+    currentChunkSource,
+    hasLexicalSuggestions,
+    isPredictionListbox,
+    isPredictionPopupSuppressed,
+  ]);
+
+  React.useEffect(() => {
+    if (!isPredictionListbox || !hasLexicalSuggestions || !isPredictionPopupVisible) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setIsPredictionPopupVisible(false);
+    }, Math.max(1000, predictionPopupTimeoutMs));
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    activeBuffer,
+    composerSelectionStart,
+    currentChunkSource,
+    hasLexicalSuggestions,
+    isPredictionListbox,
+    isPredictionPopupVisible,
+    lexicalSelectedSuggestionIndex,
+    predictionPopupTimeoutMs,
+  ]);
+
+  React.useLayoutEffect(() => {
+    if (!isPredictionListbox || !isPredictionPopupVisible || !sourcePaneRef.current) {
+      setPredictionPopupPortalStyle({});
+      return;
+    }
+
+    const updatePopupPosition = () => {
+      if (!sourcePaneRef.current) {
+        return;
+      }
+
+      const paneRect = sourcePaneRef.current.getBoundingClientRect();
+      setPredictionPopupPortalStyle({
+        left: paneRect.left + 10,
+        top: paneRect.bottom + 6,
+        width: Math.min(512, Math.max(300, paneRect.width - 20)),
+      });
+    };
+
+    updatePopupPosition();
+    window.addEventListener('resize', updatePopupPosition);
+    window.addEventListener('scroll', updatePopupPosition, true);
+
+    return () => {
+      window.removeEventListener('resize', updatePopupPosition);
+      window.removeEventListener('scroll', updatePopupPosition, true);
+    };
+  }, [isPredictionListbox, isPredictionPopupVisible]);
 
   React.useEffect(() => {
     if (copyState === 'idle') {
@@ -451,6 +640,7 @@ export const StickyTopComposer: React.FC = () => {
   };
 
   return (
+    <>
     <div className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 pb-3 pt-3">
         <div className="flex items-center justify-end gap-3 text-sm text-slate-500">
@@ -493,38 +683,57 @@ export const StickyTopComposer: React.FC = () => {
 
           <div
             className={clsx(
-              'grid min-h-0 gap-0 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70',
+              'grid min-h-0 gap-0 overflow-visible rounded-2xl border border-slate-200 bg-slate-50/70',
               composerLayout === 'stacked'
                 ? 'grid-cols-1'
                 : 'grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_1px_minmax(0,0.85fr)]'
             )}
           >
-            <div className="flex min-h-0 flex-col gap-2 p-2.5">
+            <div ref={sourcePaneRef} className="relative flex min-h-0 flex-col gap-2 p-2.5">
               <div className="flex items-center justify-between gap-3 px-1">
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">ITRANS Input</p>
               </div>
-              <textarea
-                key={textareaKey}
-                ref={composerRef}
-                autoFocus
-                data-testid="sticky-itrans-input"
-                className="min-h-[7rem] max-h-[22vh] w-full overflow-y-auto rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-mono text-lg text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 md:max-h-[24vh]"
-                style={{
-                  fontSize: `${composerTypography.itransFontSize}px`,
-                  lineHeight: composerTypography.itransLineHeight,
-                }}
-                value={activeChunkGroup?.source || ''}
-                onChange={(e) => updateChunkSource(e.target.value, e.target.selectionStart, e.target.selectionEnd, currentEditTarget)}
-                onPaste={handlePaste}
-                onKeyDown={handleKeyDown}
-                onScroll={handleComposerScroll}
-                onSelect={(e) => syncSelection(e.currentTarget)}
-                onClick={(e) => syncSelection(e.currentTarget)}
-                onKeyUp={(e) => syncSelection(e.currentTarget)}
-                onFocus={(e) => syncSelection(e.currentTarget)}
-                rows={Math.min(6, Math.max(1, currentChunkSource.split('\n').length))}
-                placeholder="Type ITRANS here..."
-              />
+              <div className="relative min-h-[7rem] max-h-[22vh] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm md:max-h-[24vh]">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl py-2.5 pl-3 pr-7 font-mono text-lg text-slate-900 md:pr-8"
+                  style={{
+                    fontSize: `${composerTypography.itransFontSize}px`,
+                    lineHeight: composerTypography.itransLineHeight,
+                  }}
+                >
+                  <div
+                    ref={composerHighlightRef}
+                    className="whitespace-pre-wrap break-words"
+                  >
+                    {currentChunkSource.length === 0 ? null : sourceMirrorFragments}
+                  </div>
+                </div>
+                <textarea
+                  key={textareaKey}
+                  ref={composerRef}
+                  autoFocus
+                  data-testid="sticky-itrans-input"
+                  className="relative z-10 min-h-[7rem] max-h-[22vh] w-full overflow-y-auto rounded-xl bg-transparent px-3 py-2.5 font-mono text-lg text-transparent caret-transparent shadow-sm outline-none selection:bg-blue-200/80 selection:text-transparent placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 md:max-h-[24vh]"
+                  style={{
+                    fontSize: `${composerTypography.itransFontSize}px`,
+                    lineHeight: composerTypography.itransLineHeight,
+                  }}
+                  value={activeChunkGroup?.source || ''}
+                  onChange={(e) => updateChunkSource(e.target.value, e.target.selectionStart, e.target.selectionEnd, currentEditTarget)}
+                  onPaste={handlePaste}
+                  onKeyDown={handleKeyDown}
+                  onScroll={handleComposerScroll}
+                  onSelect={(e) => syncSelection(e.currentTarget)}
+                  onClick={(e) => syncSelection(e.currentTarget)}
+                  onKeyUp={(e) => syncSelection(e.currentTarget)}
+                  onFocus={(e) => syncSelection(e.currentTarget)}
+                  rows={Math.min(6, Math.max(1, currentChunkSource.split('\n').length))}
+                  placeholder="Type ITRANS here..."
+                />
+              </div>
+              {predictionLayout === 'inline' && <WordPredictionTray variant="inline" />}
+              {predictionLayout === 'split' && <WordPredictionTray variant="split" />}
             </div>
 
             {composerLayout !== 'stacked' && <div className="hidden bg-slate-200 lg:block" aria-hidden="true" />}
@@ -567,7 +776,7 @@ export const StickyTopComposer: React.FC = () => {
                 </div>
                 <div
                   ref={previewRef}
-                  className="min-h-[7rem] max-h-[18vh] overflow-y-auto rounded-xl border border-blue-100 bg-white px-3 py-2 pr-14 font-serif text-slate-900 shadow-sm md:max-h-[20vh]"
+                  className="min-h-[7rem] max-h-[22vh] overflow-y-auto rounded-xl border border-blue-100 bg-white px-3 py-2 pr-14 font-serif text-slate-900 shadow-sm md:max-h-[24vh]"
                   data-testid="sticky-devanagari-preview"
                   onScroll={handlePreviewScroll}
                   onMouseDown={(event) => event.preventDefault()}
@@ -717,5 +926,22 @@ export const StickyTopComposer: React.FC = () => {
         </div>
       </div>
     </div>
+    {isPredictionListbox &&
+      isPredictionPopupVisible &&
+      typeof document !== 'undefined' &&
+      createPortal(
+        <div className="pointer-events-none fixed z-[120]" style={predictionPopupPortalStyle}>
+          <WordPredictionTray
+            variant="listbox"
+            className="pointer-events-auto max-h-[12rem] bg-white/98 backdrop-blur-sm"
+            onSuggestionAccepted={() => {
+              setIsPredictionPopupVisible(false);
+              setIsPredictionPopupSuppressed(true);
+            }}
+          />
+        </div>,
+        document.body
+      )}
+    </>
   );
 };

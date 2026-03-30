@@ -27,7 +27,7 @@ const loadDefaultSession = async (page: Page) => {
 };
 
 const setRangeValue = async (page: Page, label: string, value: string) => {
-  const slider = page.getByRole('slider', { name: label, exact: true });
+  const slider = page.locator('label', { hasText: label }).locator('input[type="range"]').first();
   await slider.focus();
   const currentValue = Number(await slider.inputValue());
   const targetValue = Number(value);
@@ -218,4 +218,85 @@ test('display settings switch composer layout and keep composer and document typ
   expect(fontSizes[0]).toBe('26px');
   expect(fontSizes[1]).toBe('42px');
   expect(fontSizes[2]).toBe('22px');
+});
+
+test('prediction layout options render the suggestion tray in different positions', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  await page.getByRole('button', { name: 'Workspace' }).click();
+  await page.getByRole('button', { name: 'Display' }).click();
+
+  const textarea = page.getByTestId('sticky-itrans-input');
+  await textarea.fill('ga');
+
+  await page.getByRole('button', { name: 'Inline' }).click();
+  await expect(page.getByTestId('word-predictions-inline')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByTestId('word-predictions-footer')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Split' }).click();
+  await expect(page.getByTestId('word-predictions-split')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByTestId('word-predictions-inline')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Footer' }).click();
+  await expect(page.getByTestId('word-predictions-footer')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByTestId('word-predictions-split')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Listbox' }).click();
+  await expect(page.getByTestId('word-predictions-listbox')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByTestId('word-predictions-footer')).toHaveCount(0);
+});
+
+test('listbox prediction mode supports arrow navigation and enter accept', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  await page.getByRole('button', { name: 'Workspace' }).click();
+  await page.getByRole('button', { name: 'Display' }).click();
+  await page.getByRole('button', { name: 'Listbox' }).click();
+
+  const textarea = page.getByTestId('sticky-itrans-input');
+  await textarea.fill('ga');
+  await expect(page.getByTestId('word-predictions-listbox')).toBeVisible({ timeout: 10000 });
+
+  await textarea.press('ArrowDown');
+  await textarea.press('Enter');
+
+  const value = await textarea.inputValue();
+  expect(value.length).toBeGreaterThan(2);
+  expect(value.startsWith('ga')).toBeTruthy();
+  await expect(page.getByTestId('word-predictions-listbox')).toHaveCount(0);
+});
+
+test('floating listbox auto-hides after the configured timeout', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  await page.getByRole('button', { name: 'Workspace' }).click();
+  await page.getByRole('button', { name: 'Display' }).click();
+  await page.getByRole('button', { name: 'Listbox' }).click();
+  await setRangeValue(page, 'Prediction Popup Timeout', '3');
+
+  const textarea = page.getByTestId('sticky-itrans-input');
+  await textarea.fill('ga');
+  await expect(page.getByTestId('word-predictions-listbox')).toBeVisible({ timeout: 10000 });
+
+  await page.waitForTimeout(3300);
+  await expect(page.getByTestId('word-predictions-listbox')).toHaveCount(0);
+});
+
+test('predictions update from the word at the active caret, not only the end of the block', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  await page.getByRole('button', { name: 'Workspace' }).click();
+  await page.getByRole('button', { name: 'Display' }).click();
+  await page.getByRole('button', { name: 'Listbox' }).click();
+
+  const textarea = page.getByTestId('sticky-itrans-input');
+  await textarea.fill('agniM ile soma');
+  await textarea.evaluate((node: HTMLTextAreaElement) => {
+    node.focus();
+    node.setSelectionRange(10, 10);
+    node.dispatchEvent(new Event('select', { bubbles: true }));
+  });
+
+  await page.keyboard.type('ga');
+  await expect(page.getByTestId('word-predictions-listbox')).toBeVisible({ timeout: 10000 });
 });

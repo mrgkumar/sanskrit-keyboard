@@ -112,6 +112,8 @@ export const TransliterationEngine: React.FC = () => {
     getRenderedDocumentText,
     preloadLexicalAssets,
     setComposerLayout,
+    setPredictionLayout,
+    setPredictionPopupTimeoutMs,
     setSyncComposerScroll,
     setTypography,
     setViewMode,
@@ -131,7 +133,7 @@ export const TransliterationEngine: React.FC = () => {
   const [isWorkspacePanelOpen, setIsWorkspacePanelOpen] = React.useState(false);
   const hasLoadedSessions = React.useRef(false);
   const hasLoadedLexicalLearning = React.useRef(false);
-  const { composerLayout, syncComposerScroll, typography } = displaySettings;
+  const { composerLayout, predictionLayout, predictionPopupTimeoutMs, syncComposerScroll, typography } = displaySettings;
   const { viewMode } = editorState;
   const hasMeaningfulContent = React.useMemo(
     () => blocks.some((block) => block.source.trim().length > 0 || block.rendered.trim().length > 0),
@@ -547,6 +549,78 @@ export const TransliterationEngine: React.FC = () => {
                       <span>
                         <span className="block text-xs font-bold uppercase text-slate-700">Sync Source And Preview Scroll</span>
                         <span className="mt-1 block text-xs text-slate-500">Keep the ITRANS and Devanagari panes aligned proportionally during long edits.</span>
+                      </span>
+                    </label>
+                  </section>
+
+                  <section className="space-y-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Prediction Placement</p>
+                      <p className="mt-1 text-xs text-slate-500">Compare different positions for lexical word predictions while keeping the same underlying suggestions.</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPredictionLayout('inline')}
+                        className={clsx(
+                          'rounded-md border px-3 py-2 text-xs font-bold uppercase',
+                          predictionLayout === 'inline'
+                            ? 'border-emerald-300 bg-emerald-600 text-white'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                        )}
+                      >
+                        Inline
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPredictionLayout('split')}
+                        className={clsx(
+                          'rounded-md border px-3 py-2 text-xs font-bold uppercase',
+                          predictionLayout === 'split'
+                            ? 'border-emerald-300 bg-emerald-600 text-white'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                        )}
+                      >
+                        Split
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPredictionLayout('footer')}
+                        className={clsx(
+                          'rounded-md border px-3 py-2 text-xs font-bold uppercase',
+                          predictionLayout === 'footer'
+                            ? 'border-emerald-300 bg-emerald-600 text-white'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                        )}
+                      >
+                        Footer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPredictionLayout('listbox')}
+                        className={clsx(
+                          'rounded-md border px-3 py-2 text-xs font-bold uppercase',
+                          predictionLayout === 'listbox'
+                            ? 'border-emerald-300 bg-emerald-600 text-white'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                        )}
+                      >
+                        Listbox
+                      </button>
+                    </div>
+                    <label className="block text-xs font-semibold uppercase text-slate-600">
+                      Prediction Popup Timeout
+                      <input
+                        className="mt-2 w-full"
+                        type="range"
+                        min="3"
+                        max="20"
+                        step="1"
+                        value={Math.round(predictionPopupTimeoutMs / 1000)}
+                        onChange={(e) => setPredictionPopupTimeoutMs(Number(e.target.value) * 1000)}
+                      />
+                      <span className="mt-1 block text-[11px] normal-case tracking-normal text-slate-500">
+                        Floating listbox auto-hides after {Math.round(predictionPopupTimeoutMs / 1000)} seconds of inactivity.
                       </span>
                     </label>
                   </section>

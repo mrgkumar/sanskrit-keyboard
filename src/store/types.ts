@@ -95,6 +95,8 @@ export interface LegacyTypographySettings {
 export interface DisplaySettings {
   composerLayout: 'side-by-side' | 'stacked';
   syncComposerScroll: boolean;
+  predictionLayout: 'footer' | 'inline' | 'split' | 'listbox';
+  predictionPopupTimeoutMs: number;
   typography: TypographySettings;
 }
 

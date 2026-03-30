@@ -3,6 +3,7 @@ import { useFlowStore } from '@/store/useFlowStore';
 import { VEDIC_MAPPINGS, MAPPING_TRIE } from '@/lib/vedic/mapping';
 import { clsx } from 'clsx';
 import type { ChunkEditTarget } from '@/store/types';
+import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
 
 const DEFAULT_SHORTCUTS = [
   // Vowels
@@ -84,16 +85,12 @@ export const ShortcutHUD: React.FC = () => {
     suggestions, 
     alternateSuggestions, 
     lexicalSuggestions,
-    isLexicalSuggestionsLoading,
-    lexicalSelectedSuggestionIndex,
     selectedSuggestionIndex,
-    swaraPredictionEnabled,
     getActiveChunkGroup,
-    recordSessionLexicalUse,
-    setLexicalSelectedSuggestionIndex,
     updateChunkSource,
     composerSelectionStart,
     composerSelectionEnd,
+    displaySettings,
   } = useFlowStore();
 
   const activeChunkGroup = getActiveChunkGroup();
@@ -128,12 +125,6 @@ export const ShortcutHUD: React.FC = () => {
       currentChunkSource.slice(end);
     const nextCaret = start + itrans.length;
     updateChunkSource(newSource, nextCaret, nextCaret, currentEditTarget);
-  };
-
-  const handleLexicalInsert = (itrans: string, index: number) => {
-    setLexicalSelectedSuggestionIndex(index);
-    handleInsert(itrans, activeBuffer);
-    recordSessionLexicalUse(itrans);
   };
 
   // --- Phonetic Completions Logic ---
@@ -175,9 +166,12 @@ export const ShortcutHUD: React.FC = () => {
   const showCompletions = completions.length > 0 && activeBuffer.length > 0; // Only show completions if active buffer exists
   const showSuggestions = suggestions.length > 0 && activeBuffer.length > 0;
   const showLexicalSuggestions = lexicalSuggestions.length > 0 && activeBuffer.length > 1;
+  const showLexicalInHud = displaySettings.predictionLayout === 'footer';
 
-  const showAnyDynamicHUD = showAlternatives || showCompletions || showSuggestions || showLexicalSuggestions;
+  const showAnyDynamicHUD =
+    showAlternatives || showCompletions || showSuggestions || (showLexicalSuggestions && showLexicalInHud);
   const showCharacterAssist = showAlternatives || showSuggestions || showCompletions;
+  const showQuickReference = !showAnyDynamicHUD && !showLexicalSuggestions;
 
 
   return (
@@ -185,7 +179,7 @@ export const ShortcutHUD: React.FC = () => {
       className="w-full min-h-0 max-w-5xl overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/55 px-3 py-2 md:max-h-[14vh]"
       data-testid="sticky-shortcut-hud"
     >
-      {!showAnyDynamicHUD && (
+      {showQuickReference && (
         <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-hide">
           <span className="mr-1 shrink-0 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Quick</span>
           <div className="flex items-center gap-1.5 overflow-x-auto py-1">
@@ -206,67 +200,7 @@ export const ShortcutHUD: React.FC = () => {
       {showAnyDynamicHUD && (
         <>
           <div className="flex flex-col gap-2 py-1">
-            {showLexicalSuggestions && (
-              <section
-                data-testid="lexical-suggestions"
-                className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-emerald-50/60 px-3 py-2.5 shadow-sm"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
-                      Word Predictions{isLexicalSuggestionsLoading ? '…' : ''}
-                    </p>
-                    <p className="mt-1 text-xs text-emerald-900/80">
-                      Complete <span className="font-mono font-semibold">{activeBuffer}</span> with a full lexical form{swaraPredictionEnabled ? ' or a learned swara-marked variant' : ''}.
-                    </p>
-                  </div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">
-                    <kbd className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px]">Tab</kbd>
-                    Cycle
-                    <kbd className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-mono text-[10px]">Enter</kbd>
-                    Accept
-                  </div>
-                </div>
-                {isLexicalSuggestionsLoading && (
-                  <p className="mt-2 text-xs font-medium text-emerald-700/80">Loading word predictions for this prefix…</p>
-                )}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {lexicalSuggestions.map((entry, index) => (
-                    <button
-                      key={`lex-${index}`}
-                      data-testid={`lexical-suggestion-${index}`}
-                      onClick={() => handleLexicalInsert(entry.itrans, index)}
-                      className={clsx(
-                        'min-w-[10rem] rounded-xl border px-3 py-2 text-left transition-all active:scale-[0.99]',
-                        index === lexicalSelectedSuggestionIndex
-                          ? 'border-emerald-400 bg-emerald-100 shadow-sm hover:bg-emerald-200'
-                          : 'border-emerald-200 bg-white hover:border-emerald-300 hover:bg-emerald-50'
-                      )}
-                      aria-label={`Use word prediction ${entry.itrans}`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="text-lg font-serif text-slate-900">{entry.devanagari}</div>
-                          <kbd className="mt-1 inline-block text-[11px] font-mono font-bold tracking-tight text-emerald-800">
-                            {entry.itrans}
-                          </kbd>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          {index === lexicalSelectedSuggestionIndex && (
-                            <span className="rounded-full bg-emerald-700 px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-white">
-                              Selected
-                            </span>
-                          )}
-                          <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">
-                            {entry.count}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </section>
-            )}
+            {showLexicalSuggestions && showLexicalInHud && <WordPredictionTray variant="footer" />}
 
             {showCharacterAssist && (
               <section className="rounded-xl border border-slate-200 bg-white px-3 py-2">

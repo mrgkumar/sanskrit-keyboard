@@ -159,6 +159,8 @@ const DEFAULT_TYPOGRAPHY: TypographySettings = {
 const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   composerLayout: 'side-by-side',
   syncComposerScroll: true,
+  predictionLayout: 'footer',
+  predictionPopupTimeoutMs: 10000,
   typography: DEFAULT_TYPOGRAPHY,
 };
 const INITIAL_SESSION_ID = 'session-initial';
@@ -239,6 +241,9 @@ const normalizeDisplaySettings = (
     return {
       composerLayout: displaySettings.composerLayout ?? DEFAULT_DISPLAY_SETTINGS.composerLayout,
       syncComposerScroll: displaySettings.syncComposerScroll ?? DEFAULT_DISPLAY_SETTINGS.syncComposerScroll,
+      predictionLayout: displaySettings.predictionLayout ?? DEFAULT_DISPLAY_SETTINGS.predictionLayout,
+      predictionPopupTimeoutMs:
+        displaySettings.predictionPopupTimeoutMs ?? DEFAULT_DISPLAY_SETTINGS.predictionPopupTimeoutMs,
       typography: {
         composer: {
           ...DEFAULT_DISPLAY_SETTINGS.typography.composer,
@@ -363,6 +368,8 @@ export interface SanskritKeyboardState {
   setComposerSelection: (start: number, end: number) => void;
   setComposerLayout: (layout: DisplaySettings['composerLayout']) => void;
   setSyncComposerScroll: (enabled: boolean) => void;
+  setPredictionLayout: (layout: DisplaySettings['predictionLayout']) => void;
+  setPredictionPopupTimeoutMs: (timeoutMs: number) => void;
   setTypography: (
     scope: keyof TypographySettings,
     patch: Partial<TypographySettings[keyof TypographySettings]>
@@ -695,7 +702,8 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     }
 
     // After updating the block (or after initial short block update), process suggestions for the new source
-    const wordsWithSpaces = newSource.split(/(\s+)/);
+    const sourceBeforeCaret = newSource.slice(0, nextSelectionEnd);
+    const wordsWithSpaces = sourceBeforeCaret.split(/(\s+)/);
     const lastWord = wordsWithSpaces[wordsWithSpaces.length - 1] || '';
     const activeBuffer = lastWord.match(/[a-zA-Z\^'_\.~=]+$/)?.[0] || '';
 
@@ -1044,6 +1052,22 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       displaySettings: {
         ...state.displaySettings,
         syncComposerScroll,
+      },
+    }));
+  },
+  setPredictionLayout: (predictionLayout) => {
+    set((state) => ({
+      displaySettings: {
+        ...state.displaySettings,
+        predictionLayout,
+      },
+    }));
+  },
+  setPredictionPopupTimeoutMs: (predictionPopupTimeoutMs) => {
+    set((state) => ({
+      displaySettings: {
+        ...state.displaySettings,
+        predictionPopupTimeoutMs,
       },
     }));
   },
