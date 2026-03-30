@@ -8,7 +8,9 @@ import {
   resolvePredictionExperimentProfile,
 } from '../test-support/predictionExperimentProfiles.ts';
 import {
-  evaluateLexicalPredictionsForDataset,
+  DiskRuntimeLexicon,
+  evaluatePreparedLexicalPredictions,
+  prepareDatasetEvaluationInput,
   summarizePrefixMetrics,
   type DatasetEvaluationResult,
 } from '../test-support/predictionEvaluation.ts';
@@ -54,6 +56,7 @@ const parseArgs = () => {
     if (arg === '--output' && next) {
       options.output = path.resolve(process.cwd(), next);
       index += 1;
+      continue;
     }
   }
 
@@ -82,14 +85,21 @@ const compareResults = (left: DatasetEvaluationResult, right: DatasetEvaluationR
 const main = async () => {
   const options = parseArgs();
   const startedAt = Date.now();
+  const lexicon = new DiskRuntimeLexicon(options.dataRoot);
+  const tuningPrepared = await prepareDatasetEvaluationInput({
+    datasetId: options.tuningDataset,
+  });
+  const holdoutPrepared = await prepareDatasetEvaluationInput({
+    datasetId: options.holdoutDataset,
+  });
   const tuningResults: DatasetEvaluationResult[] = [];
 
   for (const profileId of options.profiles) {
     resolvePredictionExperimentProfile(profileId);
     tuningResults.push(
-      await evaluateLexicalPredictionsForDataset({
-        dataRoot: options.dataRoot,
-        datasetId: options.tuningDataset,
+      evaluatePreparedLexicalPredictions({
+        prepared: tuningPrepared,
+        lexicon,
         profileId,
       })
     );
@@ -97,9 +107,9 @@ const main = async () => {
 
   tuningResults.sort(compareResults);
   const winner = tuningResults[0];
-  const holdoutResult = await evaluateLexicalPredictionsForDataset({
-    dataRoot: options.dataRoot,
-    datasetId: options.holdoutDataset,
+  const holdoutResult = evaluatePreparedLexicalPredictions({
+    prepared: holdoutPrepared,
+    lexicon,
     profileId: winner.profileId,
   });
 

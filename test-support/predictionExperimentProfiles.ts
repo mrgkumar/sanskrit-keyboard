@@ -6,6 +6,7 @@ export interface PredictionExperimentProfile {
   candidatePoolLimit: number;
   remainingLengthPenalty: number;
   activationMinPrefixLength: number;
+  activationMinPrefixRatio: number;
 }
 
 export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperimentProfile> = {
@@ -17,6 +18,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     candidatePoolLimit: 8,
     remainingLengthPenalty: 0,
     activationMinPrefixLength: 99,
+    activationMinPrefixRatio: 1,
   },
   'r001-completion-distance-v1': {
     id: 'r001-completion-distance-v1',
@@ -27,6 +29,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     candidatePoolLimit: 16,
     remainingLengthPenalty: 25,
     activationMinPrefixLength: 5,
+    activationMinPrefixRatio: 0,
   },
   'r001-completion-distance-v2': {
     id: 'r001-completion-distance-v2',
@@ -37,6 +40,18 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     candidatePoolLimit: 16,
     remainingLengthPenalty: 25,
     activationMinPrefixLength: 6,
+    activationMinPrefixRatio: 0,
+  },
+  'r001-completion-distance-v3': {
+    id: 'r001-completion-distance-v3',
+    label: 'R-001 Completion Distance v3',
+    track: 'ranking',
+    description:
+      'Apply the completion-distance penalty only when the typed prefix is both long enough and covers most of the candidate, preserving early-prefix breadth.',
+    candidatePoolLimit: 16,
+    remainingLengthPenalty: 25,
+    activationMinPrefixLength: 5,
+    activationMinPrefixRatio: 0.75,
   },
 };
 

@@ -81,6 +81,21 @@ export interface DatasetEvaluationResult {
   sampleMisses: MissSample[];
 }
 
+export interface PreparedEvaluationQuery {
+  rowId: string;
+  target: string;
+  devanagari: string;
+}
+
+export interface PreparedDatasetEvaluation {
+  datasetId: string;
+  datasetLabel: string;
+  rowCount: number;
+  skippedRows: number;
+  eligibleWords: number;
+  queries: PreparedEvaluationQuery[];
+}
+
 const SHARD_PREFIX_LENGTH = 2;
 const MIN_LOOKUP_PREFIX_LENGTH = 2;
 const MAX_SAMPLED_MISSES = 10;
@@ -92,10 +107,13 @@ const compareSuggestions = (
   prefix: string,
   profile: PredictionExperimentProfile
 ) => {
-  const penaltyWeight =
-    prefix.length >= profile.activationMinPrefixLength ? profile.remainingLengthPenalty : 0;
-  const leftScore = left.count - (left.itrans.length - prefix.length) * penaltyWeight;
-  const rightScore = right.count - (right.itrans.length - prefix.length) * penaltyWeight;
+  const shouldApplyPenalty = (entry: RuntimeLexiconEntry) =>
+    prefix.length >= profile.activationMinPrefixLength &&
+    prefix.length / Math.max(entry.itrans.length, 1) >= profile.activationMinPrefixRatio;
+  const leftPenaltyWeight = shouldApplyPenalty(left) ? profile.remainingLengthPenalty : 0;
+  const rightPenaltyWeight = shouldApplyPenalty(right) ? profile.remainingLengthPenalty : 0;
+  const leftScore = left.count - (left.itrans.length - prefix.length) * leftPenaltyWeight;
+  const rightScore = right.count - (right.itrans.length - prefix.length) * rightPenaltyWeight;
 
   if (rightScore !== leftScore) {
     return rightScore - leftScore;
@@ -159,7 +177,7 @@ export const summarizePrefixMetrics = (metric: PrefixMetrics) => ({
   top5Rate: toRate(metric.top5Hits, metric.queries),
 });
 
-class DiskRuntimeLexicon {
+export class DiskRuntimeLexicon {
   private readonly manifest: RuntimeLexiconShardManifest;
   private readonly dataRoot: string;
   private readonly shardCache = new Map<string, LoadedShardData>();
@@ -254,28 +272,18 @@ const resolveEvaluationDataset = (datasetId: string): EvaluatableDataset => {
   return dataset as EvaluatableDataset;
 };
 
-export const evaluateLexicalPredictionsForDataset = async ({
-  dataRoot,
+export const prepareDatasetEvaluationInput = async ({
   datasetId,
-  profileId = 'baseline',
 }: {
-  dataRoot: string;
   datasetId: string;
-  profileId?: string;
-}): Promise<DatasetEvaluationResult> => {
+}): Promise<PreparedDatasetEvaluation> => {
   const dataset = resolveEvaluationDataset(datasetId);
   const canonicalConfig = dataset.canonical;
-  const lexicon = new DiskRuntimeLexicon(dataRoot);
-  const profile = resolvePredictionExperimentProfile(profileId);
-  const finalPrefixMetrics = createEmptyMetrics();
-  const allPrefixesMetrics = createEmptyMetrics();
-  const sampleMisses: MissSample[] = [];
+  const queries: PreparedEvaluationQuery[] = [];
 
   let rowCount = 0;
   let skippedRows = 0;
   let eligibleWords = 0;
-  let inLexiconWords = 0;
-  let missingWords = 0;
 
   const rl = readline.createInterface({
     input: fs.createReadStream(dataset.path, { encoding: 'utf8' }),
@@ -309,6 +317,41 @@ export const evaluateLexicalPredictionsForDataset = async ({
     }
 
     eligibleWords += 1;
+    queries.push({
+      rowId,
+      target,
+      devanagari: record.devanagari,
+    });
+  }
+
+  return {
+    datasetId: dataset.id,
+    datasetLabel: CORPUS_DATASETS[dataset.id].label,
+    rowCount,
+    skippedRows,
+    eligibleWords,
+    queries,
+  };
+};
+
+export const evaluatePreparedLexicalPredictions = ({
+  prepared,
+  lexicon,
+  profileId = 'baseline',
+}: {
+  prepared: PreparedDatasetEvaluation;
+  lexicon: DiskRuntimeLexicon;
+  profileId?: string;
+}): DatasetEvaluationResult => {
+  const profile = resolvePredictionExperimentProfile(profileId);
+  const finalPrefixMetrics = createEmptyMetrics();
+  const allPrefixesMetrics = createEmptyMetrics();
+  const sampleMisses: MissSample[] = [];
+  let inLexiconWords = 0;
+  let missingWords = 0;
+
+  for (const query of prepared.queries) {
+    const { rowId, target, devanagari } = query;
 
     if (lexicon.hasEntry(target)) {
       inLexiconWords += 1;
@@ -329,11 +372,11 @@ export const evaluateLexicalPredictionsForDataset = async ({
       const hit = suggestions.slice(0, DEFAULT_SUGGESTION_LIMIT).some((entry) => entry.itrans === target);
       if (!hit && sampleMisses.length < MAX_SAMPLED_MISSES) {
         sampleMisses.push({
-          datasetId: dataset.id,
+          datasetId: prepared.datasetId,
           rowId,
           prefix,
           target,
-          devanagari: record.devanagari,
+          devanagari,
           suggestions: suggestions.map((entry) => entry.itrans),
         });
       }
@@ -342,11 +385,11 @@ export const evaluateLexicalPredictionsForDataset = async ({
 
   return {
     profileId: profile.id,
-    datasetId: dataset.id,
-    datasetLabel: CORPUS_DATASETS[dataset.id].label,
-    rowCount,
-    skippedRows,
-    eligibleWords,
+    datasetId: prepared.datasetId,
+    datasetLabel: prepared.datasetLabel,
+    rowCount: prepared.rowCount,
+    skippedRows: prepared.skippedRows,
+    eligibleWords: prepared.eligibleWords,
     inLexiconWords,
     missingWords,
     prefixMetrics: {
@@ -355,4 +398,22 @@ export const evaluateLexicalPredictionsForDataset = async ({
     },
     sampleMisses,
   };
+};
+
+export const evaluateLexicalPredictionsForDataset = async ({
+  dataRoot,
+  datasetId,
+  profileId = 'baseline',
+}: {
+  dataRoot: string;
+  datasetId: string;
+  profileId?: string;
+}): Promise<DatasetEvaluationResult> => {
+  const lexicon = new DiskRuntimeLexicon(dataRoot);
+  const prepared = await prepareDatasetEvaluationInput({ datasetId });
+  return evaluatePreparedLexicalPredictions({
+    prepared,
+    lexicon,
+    profileId,
+  });
 };
