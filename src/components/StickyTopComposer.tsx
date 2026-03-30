@@ -458,16 +458,19 @@ export const StickyTopComposer: React.FC = () => {
               />
             </div>
 
-            <div className="flex min-h-0 flex-col gap-2 rounded-xl bg-blue-50 p-2 text-blue-800">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">Devanagari Preview</p>
-                  <p className="mt-1 text-[11px] text-blue-700/80">Rendered output stays visible without stretching the header.</p>
-                </div>
-                <div className="mt-1 flex items-center gap-2">
+            <div className="group flex min-h-0 flex-col gap-2 rounded-xl bg-blue-50 p-2 text-blue-800">
+              <div className="min-w-0">
+                <p className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">
+                  Devanagari Preview
+                </p>
+              </div>
+              <div
+                className="relative"
+              >
+                <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                   <button
                     onClick={handleDeleteBlock}
-                    className="rounded-md border border-rose-200 bg-white p-2 text-rose-700 hover:bg-rose-100"
+                    className="pointer-events-auto rounded-md border border-rose-200 bg-white/95 p-1.5 text-rose-700 shadow-sm hover:bg-rose-100"
                     type="button"
                     aria-label="Delete active block"
                     title="Delete block"
@@ -477,12 +480,12 @@ export const StickyTopComposer: React.FC = () => {
                   <button
                     onClick={handleCopyRendered}
                     className={clsx(
-                      'rounded-md border p-2',
+                      'pointer-events-auto rounded-md border bg-white/95 p-1.5 shadow-sm',
                       copyState === 'copied'
                         ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                         : copyState === 'error'
                           ? 'border-rose-200 bg-rose-50 text-rose-700'
-                          : 'border-blue-200 bg-white text-slate-700 hover:bg-blue-100'
+                          : 'border-blue-200 text-slate-700 hover:bg-blue-100'
                     )}
                     type="button"
                     aria-label="Copy rendered Sanskrit"
@@ -491,18 +494,18 @@ export const StickyTopComposer: React.FC = () => {
                     {copyState === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
-              </div>
-              <div
-                ref={previewRef}
-                className="min-h-[7rem] max-h-[18vh] overflow-y-auto rounded-lg bg-white/70 px-3 py-2 font-serif text-slate-900 md:max-h-[20vh]"
+                <div
+                  ref={previewRef}
+                  className="min-h-[7rem] max-h-[18vh] overflow-y-auto rounded-lg bg-white/70 px-3 py-2 pr-14 font-serif text-slate-900 md:max-h-[20vh]"
                 data-testid="sticky-devanagari-preview"
-                onScroll={handlePreviewScroll}
-                style={{
-                  fontSize: `${composerTypography.renderedFontSize}px`,
-                  lineHeight: composerTypography.renderedLineHeight,
-                }}
-              >
-                {activeChunkGroup?.rendered || 'Devanagari preview'}
+                  onScroll={handlePreviewScroll}
+                  style={{
+                    fontSize: `${composerTypography.renderedFontSize}px`,
+                    lineHeight: composerTypography.renderedLineHeight,
+                  }}
+                >
+                  {activeChunkGroup?.rendered || 'Devanagari preview'}
+                </div>
               </div>
             </div>
           </div>
