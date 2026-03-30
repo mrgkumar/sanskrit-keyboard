@@ -5,7 +5,7 @@ import { StickyTopComposer } from '@/components/StickyTopComposer';
 import { MainDocumentArea } from '@/components/MainDocumentArea';
 import { ReferenceSidePanel } from '@/components/ReferenceSidePanel'; // Import the side panel
 import { useFlowStore } from '@/store/useFlowStore';
-import { Check, Copy, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide-react';
+import { Check, Copy, Eye, FileCode2, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { SessionSnapshot } from '@/store/types';
 
@@ -114,6 +114,7 @@ export const TransliterationEngine: React.FC = () => {
     setComposerLayout,
     setSyncComposerScroll,
     setTypography,
+    setViewMode,
     setSessionName,
     setSwaraPredictionEnabled,
     markSessionSaved,
@@ -131,6 +132,7 @@ export const TransliterationEngine: React.FC = () => {
   const hasLoadedSessions = React.useRef(false);
   const hasLoadedLexicalLearning = React.useRef(false);
   const { composerLayout, syncComposerScroll, typography } = displaySettings;
+  const { viewMode } = editorState;
   const hasMeaningfulContent = React.useMemo(
     () => blocks.some((block) => block.source.trim().length > 0 || block.rendered.trim().length > 0),
     [blocks]
@@ -323,14 +325,42 @@ export const TransliterationEngine: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 font-sans relative">
-      <button
-        type="button"
-        onClick={() => setIsWorkspacePanelOpen((open) => !open)}
-        className="fixed left-4 top-4 z-[80] inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-xs font-bold uppercase text-slate-700 shadow-sm backdrop-blur hover:bg-white"
-      >
-        {isWorkspacePanelOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-        Workspace
-      </button>
+      <div className="fixed left-4 top-4 z-[80] flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setIsWorkspacePanelOpen((open) => !open)}
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-xs font-bold uppercase text-slate-700 shadow-sm backdrop-blur hover:bg-white"
+        >
+          {isWorkspacePanelOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          Workspace
+        </button>
+        <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white/95 p-1 shadow-sm backdrop-blur">
+          <button
+            type="button"
+            onClick={() => setViewMode('read')}
+            className={clsx(
+              'inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
+              viewMode === 'read' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
+            )}
+            aria-label="Read mode"
+            title="Read mode"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('review')}
+            className={clsx(
+              'inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
+              viewMode === 'review' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
+            )}
+            aria-label="Review mode"
+            title="Review mode"
+          >
+            <FileCode2 className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
 
       <div
         className={clsx(

@@ -88,10 +88,10 @@ test('read and review modes visibly change the document view', async ({ page }) 
 
   await expect(page.getByRole('button', { name: 'Focus' })).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Review' }).click();
+  await page.getByRole('button', { name: 'Review mode' }).click();
   await expect(page.getByText('ITRANS Source').first()).toBeVisible();
 
-  await page.getByRole('button', { name: 'Read' }).click();
+  await page.getByRole('button', { name: 'Read mode' }).click();
   await expect(page.getByTestId('document-read-mode')).toBeVisible();
   await expect(page.getByText('ITRANS Source')).toHaveCount(0);
   await expect(page.getByText('Focused Source')).toHaveCount(0);
@@ -164,7 +164,7 @@ test('display settings switch composer layout and keep composer and document typ
   await setRangeValue(page, 'Document Sanskrit Size', '22');
 
   await composerInput.fill('agniM ile purohitaM\naayaahi viitaye');
-  await page.getByRole('button', { name: 'Read' }).click();
+  await page.getByRole('button', { name: 'Read mode' }).click();
 
   const fontSizes = await Promise.all([
     composerInput.evaluate((node) => window.getComputedStyle(node).fontSize),

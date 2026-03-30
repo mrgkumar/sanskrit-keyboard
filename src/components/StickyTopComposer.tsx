@@ -14,7 +14,7 @@ import type { ChunkEditTarget } from '@/store/types';
 
 export const StickyTopComposer: React.FC = () => {
   const { 
-    getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setNextBlock, setPrevBlock, setFocusSpan, setViewMode, toggleReferencePanel, addBlocks, deleteBlock, restoreDeletedBlock, dismissDeletedBlock, setDeletedBuffer, setComposerSelection, setLexicalSelectedSuggestionIndex, recordSessionLexicalText, recordSessionLexicalUse, editorState,
+    getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setNextBlock, setPrevBlock, setFocusSpan, toggleReferencePanel, addBlocks, deleteBlock, restoreDeletedBlock, dismissDeletedBlock, setDeletedBuffer, setComposerSelection, setLexicalSelectedSuggestionIndex, recordSessionLexicalText, recordSessionLexicalUse, editorState,
     activeBuffer, // Get activeBuffer for Backspace logic
     lexicalSuggestions,
     lexicalSelectedSuggestionIndex,
@@ -50,17 +50,6 @@ export const StickyTopComposer: React.FC = () => {
   const textareaKey = activeChunkGroup
     ? `${activeChunkGroup.blockId ?? 'none'}:${activeChunkGroup.startSegmentIndex}:${activeChunkGroup.endSegmentIndex}`
     : 'no-active-chunk';
-  const totalChunkGroups =
-    activeBlock && activeBlock.type === 'long' && activeBlock.segments
-      ? Math.ceil(activeBlock.segments.length / { tight: 1, balanced: 2, wide: 3 }[focusSpan])
-      : 1;
-  const activeChunkNumber =
-    activeBlock &&
-    activeBlock.type === 'long' &&
-    activeBlock.segments &&
-    activeChunkGroup
-      ? Math.floor(activeChunkGroup.startSegmentIndex / { tight: 1, balanced: 2, wide: 3 }[focusSpan]) + 1
-      : 1;
   const resolvePeekMappings = (query: string) =>
     VEDIC_MAPPINGS
       .filter((mapping) =>
@@ -361,59 +350,21 @@ export const StickyTopComposer: React.FC = () => {
   return (
     <div className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-lg">
       <div className="mx-auto flex max-w-5xl flex-col gap-3 p-4">
-        {/* Top bar: Block Info, Focus Span, and View Modes */}
-        <div className="flex items-center justify-between text-sm text-slate-500">
-          <div className="flex items-center gap-4">
-            <span>
-              {activeBlock?.title || `Block ${activeBlock?.id}`}:{' '}
-              {isLongBlock && activeChunkGroup ? `Chunk ${activeChunkNumber} of ${totalChunkGroups}` : 'Full Block'}
-            </span>
-            {isLongBlock && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs uppercase font-bold">Focus Span:</span>
-                <select
-                  value={focusSpan}
-                  onChange={(e) => setFocusSpan(e.target.value as 'tight' | 'balanced' | 'wide')}
-                  className="text-xs bg-slate-100 border border-slate-200 rounded px-2 py-1"
-                >
-                  <option value="tight">Tight</option>
-                  <option value="balanced">Balanced</option>
-                  <option value="wide">Wide</option>
-                </select>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex gap-1">
-            <button
-              onClick={() => setViewMode('read')}
-              className={clsx(
-                "px-3 py-1 rounded-md text-xs font-bold uppercase",
-                viewMode === 'read' ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              )}
-            >
-              Read
-            </button>
-            <button
-              onClick={() => setViewMode('review')}
-              className={clsx(
-                "px-3 py-1 rounded-md text-xs font-bold uppercase",
-                viewMode === 'review' ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-              )}
-            >
-              Review
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-end">
-          <button
-            onClick={toggleReferencePanel}
-            className="px-3 py-1 bg-slate-100 rounded-md hover:bg-slate-200 text-xs font-bold uppercase text-slate-700 flex items-center gap-1"
-            type="button"
-          >
-            <BookOpen className="w-4 h-4" /> Reference
-          </button>
+        <div className="flex items-center justify-end gap-3 text-sm text-slate-500">
+          {isLongBlock && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs uppercase font-bold">Focus Span:</span>
+              <select
+                value={focusSpan}
+                onChange={(e) => setFocusSpan(e.target.value as 'tight' | 'balanced' | 'wide')}
+                className="text-xs bg-slate-100 border border-slate-200 rounded px-2 py-1"
+              >
+                <option value="tight">Tight</option>
+                <option value="balanced">Balanced</option>
+                <option value="wide">Wide</option>
+              </select>
+            </div>
+          )}
         </div>
 
         <div
@@ -431,7 +382,16 @@ export const StickyTopComposer: React.FC = () => {
           >
             <div className="flex min-h-0 flex-col gap-2">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">ITRANS Input</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">ITRANS Input</p>
+                  <button
+                    onClick={toggleReferencePanel}
+                    className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase text-slate-700 hover:bg-slate-200"
+                    type="button"
+                  >
+                    <BookOpen className="h-3.5 w-3.5" /> Reference
+                  </button>
+                </div>
                 <p className="text-[11px] text-slate-400">Long passages stay in a fixed typing lane.</p>
               </div>
               <textarea
