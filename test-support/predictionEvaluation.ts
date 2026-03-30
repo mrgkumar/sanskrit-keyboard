@@ -106,6 +106,7 @@ const MIN_LOOKUP_PREFIX_LENGTH = 2;
 const MAX_SAMPLED_MISSES = 10;
 const DEFAULT_SUGGESTION_LIMIT = 5;
 const CANONICAL_MAPPING_FILE = 'canonical-mapping.ndjson';
+const ALLOWED_ITRANS_SIGNS = new Set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz~:/.^_|'\\");
 
 export const shouldApplyCompletionDistancePenalty = (
   entry: RuntimeLexiconEntry,
@@ -140,6 +141,46 @@ const getWeightedCount = (
   return weightedCount;
 };
 
+export const computeLexicalNoisePenalty = (itrans: string) => {
+  let penalty = 0;
+
+  if (anyChar(itrans, (char) => char.codePointAt(0)! > 127)) {
+    penalty += 200;
+  }
+
+  if (anyChar(itrans, (char) => /[0-9]/.test(char))) {
+    penalty += 120;
+  }
+
+  if (anyChar(itrans, (char) => !/[A-Za-z0-9]/.test(char) && !ALLOWED_ITRANS_SIGNS.has(char))) {
+    penalty += 200;
+  }
+
+  if (itrans.includes('//') || itrans.includes('__')) {
+    penalty += 80;
+  }
+
+  if ((itrans.match(/:/g) ?? []).length > 1) {
+    penalty += 40;
+  }
+
+  if (itrans.length >= 24) {
+    penalty += 25;
+  }
+
+  return penalty;
+};
+
+const anyChar = (value: string, predicate: (char: string) => boolean) => {
+  for (const char of value) {
+    if (predicate(char)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 const compareSuggestions = (
   left: RuntimeLexiconEntry,
   right: RuntimeLexiconEntry,
@@ -149,14 +190,17 @@ const compareSuggestions = (
 ) => {
   const leftWeightedCount = getWeightedCount(left, profile, sourceIndex?.get(left.itrans));
   const rightWeightedCount = getWeightedCount(right, profile, sourceIndex?.get(right.itrans));
+  const leftNoisePenalty = computeLexicalNoisePenalty(left.itrans) * profile.noisePenaltyMultiplier;
+  const rightNoisePenalty = computeLexicalNoisePenalty(right.itrans) * profile.noisePenaltyMultiplier;
   const leftPenaltyWeight = shouldApplyCompletionDistancePenalty(left, prefix, profile)
     ? profile.remainingLengthPenalty
     : 0;
   const rightPenaltyWeight = shouldApplyCompletionDistancePenalty(right, prefix, profile)
     ? profile.remainingLengthPenalty
     : 0;
-  const leftScore = leftWeightedCount - (left.itrans.length - prefix.length) * leftPenaltyWeight;
-  const rightScore = rightWeightedCount - (right.itrans.length - prefix.length) * rightPenaltyWeight;
+  const leftScore = leftWeightedCount - leftNoisePenalty - (left.itrans.length - prefix.length) * leftPenaltyWeight;
+  const rightScore =
+    rightWeightedCount - rightNoisePenalty - (right.itrans.length - prefix.length) * rightPenaltyWeight;
 
   if (rightScore !== leftScore) {
     return rightScore - leftScore;

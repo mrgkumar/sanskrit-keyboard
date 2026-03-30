@@ -9,6 +9,7 @@ export interface PredictionExperimentProfile {
   activationMinPrefixRatio: number;
   activationMaxRemainingLength: number | null;
   sourceWeights: Record<string, number> | null;
+  noisePenaltyMultiplier: number;
 }
 
 export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperimentProfile> = {
@@ -23,6 +24,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixRatio: 1,
     activationMaxRemainingLength: null,
     sourceWeights: null,
+    noisePenaltyMultiplier: 0,
   },
   'r001-completion-distance-v1': {
     id: 'r001-completion-distance-v1',
@@ -36,6 +38,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixRatio: 0,
     activationMaxRemainingLength: null,
     sourceWeights: null,
+    noisePenaltyMultiplier: 0,
   },
   'r001-completion-distance-v2': {
     id: 'r001-completion-distance-v2',
@@ -49,6 +52,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixRatio: 0,
     activationMaxRemainingLength: null,
     sourceWeights: null,
+    noisePenaltyMultiplier: 0,
   },
   'r001-completion-distance-v3': {
     id: 'r001-completion-distance-v3',
@@ -62,6 +66,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixRatio: 0.75,
     activationMaxRemainingLength: null,
     sourceWeights: null,
+    noisePenaltyMultiplier: 0,
   },
   'r001-completion-distance-v4': {
     id: 'r001-completion-distance-v4',
@@ -75,6 +80,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixRatio: 0,
     activationMaxRemainingLength: 4,
     sourceWeights: null,
+    noisePenaltyMultiplier: 0,
   },
   'r001-completion-distance-v5': {
     id: 'r001-completion-distance-v5',
@@ -88,6 +94,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixRatio: 0,
     activationMaxRemainingLength: 4,
     sourceWeights: null,
+    noisePenaltyMultiplier: 0,
   },
   'r001-completion-distance-v6': {
     id: 'r001-completion-distance-v6',
@@ -101,6 +108,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixRatio: 0,
     activationMaxRemainingLength: null,
     sourceWeights: null,
+    noisePenaltyMultiplier: 0,
   },
   'r001-completion-distance-v7': {
     id: 'r001-completion-distance-v7',
@@ -114,6 +122,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     activationMinPrefixRatio: 0,
     activationMaxRemainingLength: null,
     sourceWeights: null,
+    noisePenaltyMultiplier: 0,
   },
   'r002-source-weight-v1': {
     id: 'r002-source-weight-v1',
@@ -129,6 +138,7 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     sourceWeights: {
       'example-vedic': 0.35,
     },
+    noisePenaltyMultiplier: 0,
   },
   'r002-source-weight-v2': {
     id: 'r002-source-weight-v2',
@@ -144,6 +154,35 @@ export const PREDICTION_EXPERIMENT_PROFILES: Record<string, PredictionExperiment
     sourceWeights: {
       'example-vedic': 0.55,
     },
+    noisePenaltyMultiplier: 0,
+  },
+  'r003-noise-penalty-v1': {
+    id: 'r003-noise-penalty-v1',
+    label: 'R-003 Noise Penalty v1',
+    track: 'ranking',
+    description:
+      'Penalize mixed-script, digit-bearing, punctuation-heavy, and extremely long lexical entries while leaving clean forms unchanged.',
+    candidatePoolLimit: 8,
+    remainingLengthPenalty: 0,
+    activationMinPrefixLength: 99,
+    activationMinPrefixRatio: 1,
+    activationMaxRemainingLength: null,
+    sourceWeights: null,
+    noisePenaltyMultiplier: 1,
+  },
+  'r003-noise-penalty-v2': {
+    id: 'r003-noise-penalty-v2',
+    label: 'R-003 Noise Penalty v2',
+    track: 'ranking',
+    description:
+      'Apply a milder lexical-noise penalty to suspicious ITRANS forms, testing whether a softer filter improves ranking without dropping coverage.',
+    candidatePoolLimit: 8,
+    remainingLengthPenalty: 0,
+    activationMinPrefixLength: 99,
+    activationMinPrefixRatio: 1,
+    activationMaxRemainingLength: null,
+    sourceWeights: null,
+    noisePenaltyMultiplier: 0.5,
   },
 };
 

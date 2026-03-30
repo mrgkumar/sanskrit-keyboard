@@ -7,6 +7,7 @@ import { expect, test } from '@playwright/test';
 import { CORPUS_DATASETS } from './test-support/corpusRegistry';
 import { resolvePredictionExperimentProfile } from './test-support/predictionExperimentProfiles';
 import {
+  computeLexicalNoisePenalty,
   evaluateLexicalPredictionsForDataset,
   shouldApplyCompletionDistancePenalty,
   summarizePrefixMetrics,
@@ -276,6 +277,53 @@ test.describe('prediction experiment game', () => {
 
         expect(resolvePredictionExperimentProfile('r002-source-weight-v1').label).toContain('R-002');
         expect(resolvePredictionExperimentProfile('r002-source-weight-v2').label).toContain('R-002');
+        expect(baselineFinal.top1Hits).toBe(0);
+        expect(experimentV1Final.top1Hits).toBe(1);
+        expect(experimentV2Final.top1Hits).toBe(1);
+      });
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  test('r003 noise penalties demote mixed-script lexical noise', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prediction-game-r003-'));
+
+    try {
+      const datasetPath = writeFixture({
+        tempDir,
+        nativeWord: 'अग्नेय',
+        entries: [
+          { itrans: 'agneya़', devanagari: 'अग्नेय़', count: 220 },
+          { itrans: 'agneya', devanagari: 'अग्नेय', count: 80 },
+        ],
+      });
+
+      await withDatasetOverride(datasetPath, async () => {
+        const baseline = await evaluateLexicalPredictionsForDataset({
+          dataRoot: tempDir,
+          datasetId: 'san-valid',
+          profileId: 'baseline',
+        });
+        const experimentV1 = await evaluateLexicalPredictionsForDataset({
+          dataRoot: tempDir,
+          datasetId: 'san-valid',
+          profileId: 'r003-noise-penalty-v1',
+        });
+        const experimentV2 = await evaluateLexicalPredictionsForDataset({
+          dataRoot: tempDir,
+          datasetId: 'san-valid',
+          profileId: 'r003-noise-penalty-v2',
+        });
+
+        const baselineFinal = summarizePrefixMetrics(baseline.prefixMetrics.finalPrefix);
+        const experimentV1Final = summarizePrefixMetrics(experimentV1.prefixMetrics.finalPrefix);
+        const experimentV2Final = summarizePrefixMetrics(experimentV2.prefixMetrics.finalPrefix);
+
+        expect(resolvePredictionExperimentProfile('r003-noise-penalty-v1').label).toContain('R-003');
+        expect(resolvePredictionExperimentProfile('r003-noise-penalty-v2').label).toContain('R-003');
+        expect(computeLexicalNoisePenalty('agneya')).toBe(0);
+        expect(computeLexicalNoisePenalty('agneya़')).toBeGreaterThan(0);
         expect(baselineFinal.top1Hits).toBe(0);
         expect(experimentV1Final.top1Hits).toBe(1);
         expect(experimentV2Final.top1Hits).toBe(1);
