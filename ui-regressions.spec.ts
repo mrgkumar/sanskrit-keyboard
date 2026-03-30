@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { transliterate } from './src/lib/vedic/utils.ts';
 
 const APP_URL = 'http://localhost:3000';
 const STORAGE_KEYS_TO_CLEAR = [
@@ -142,6 +143,48 @@ test('sticky composer stays bounded for long input', async ({ page }) => {
   expect(metrics[1].scrollHeight).toBeGreaterThan(metrics[1].clientHeight);
   expect(metrics[2].scrollHeight).toBeGreaterThan(metrics[2].clientHeight);
   expect(metrics[3].clientHeight).toBeGreaterThan(0);
+});
+
+test('clicking devanagari preview moves the itrans caret to the mapped source position', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  const sample = 'agniM ile';
+  const clickedTargetIndex = 3;
+  const previewMapping = transliterate(sample).targetToSourceMap;
+  const expectedCaretStart = previewMapping[clickedTargetIndex];
+  let expectedCaretEnd = sample.length;
+  for (let index = clickedTargetIndex + 1; index < previewMapping.length; index += 1) {
+    if (previewMapping[index] > expectedCaretStart) {
+      expectedCaretEnd = previewMapping[index];
+      break;
+    }
+  }
+  const textarea = page.getByTestId('sticky-itrans-input');
+  await textarea.fill(sample);
+  await textarea.press('End');
+
+  const preview = page.getByTestId('sticky-devanagari-preview');
+  await expect(preview.getByTestId('preview-caret')).toBeVisible();
+  await expect(preview.locator('[data-current-word="true"]').first()).toBeVisible();
+
+  await preview.locator(`[data-target-index="${clickedTargetIndex}"]`).evaluate((node) => {
+    const target = node as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    target.dispatchEvent(new MouseEvent('click', {
+      bubbles: true,
+      clientX: rect.left + 1,
+      clientY: rect.top + rect.height / 2,
+    }));
+  });
+
+  const selection = await textarea.evaluate((node: HTMLTextAreaElement) => ({
+    start: node.selectionStart,
+    end: node.selectionEnd,
+  }));
+
+  expect(selection.start).toBe(selection.end);
+  expect([expectedCaretStart, expectedCaretEnd]).toContain(selection.start);
+  expect(selection.start).not.toBe(sample.length);
 });
 
 test('display settings switch composer layout and keep composer and document typography independent', async ({ page }) => {

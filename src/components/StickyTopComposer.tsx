@@ -7,7 +7,7 @@ import { Check, ChevronLeft, ChevronRight, Copy, Trash2, Undo2 } from 'lucide-re
 import { BookOpen } from 'lucide-react';
 import { clsx } from 'clsx';
 import { ShortcutHUD } from '@/components/engine/ShortcutHUD';
-import { detransliterate } from '@/lib/vedic/utils';
+import { detransliterate, transliterate } from '@/lib/vedic/utils';
 import { VEDIC_MAPPINGS } from '@/lib/vedic/mapping';
 import { applyShortcutPeekCorrection } from '@/lib/vedic/correction';
 import type { ChunkEditTarget } from '@/store/types';
@@ -36,9 +36,10 @@ export const StickyTopComposer: React.FC = () => {
   const { focusSpan, viewMode } = editorState;
   const { composerLayout, syncComposerScroll, typography } = displaySettings;
   const composerTypography = typography.composer;
-
   const isLongBlock = activeBlock?.type === 'long';
-  const currentChunkSource = activeChunkGroup?.source || ''; // Get current chunk source
+  const currentChunkSource = activeChunkGroup?.source || '';
+  const renderedPreview = transliterate(currentChunkSource);
+  const renderedPreviewChars = Array.from(renderedPreview.unicode);
   const currentEditTarget: ChunkEditTarget | undefined = activeChunkGroup?.blockId
     ? {
         blockId: activeChunkGroup.blockId,
@@ -84,6 +85,65 @@ export const StickyTopComposer: React.FC = () => {
   const shortcutPeekQuery = shortcutPeekState.query;
   const shortcutPeekMappings = shortcutPeekState.mappings;
   const hasLexicalSuggestions = lexicalSuggestions.length > 0 && activeBuffer.length > 1;
+
+  const targetCaretIndex = (() => {
+    if (composerSelectionStart >= currentChunkSource.length) {
+      return renderedPreviewChars.length;
+    }
+
+    return renderedPreview.sourceToTargetMap[Math.max(0, composerSelectionStart)] ?? renderedPreviewChars.length;
+  })();
+
+  const targetSelectionEndIndex = (() => {
+    if (composerSelectionEnd >= currentChunkSource.length) {
+      return renderedPreviewChars.length;
+    }
+
+    return renderedPreview.sourceToTargetMap[Math.max(0, composerSelectionEnd)] ?? renderedPreviewChars.length;
+  })();
+
+  const selectedTargetRange = (() => {
+    const start = Math.min(targetCaretIndex, targetSelectionEndIndex);
+    const end = Math.max(targetCaretIndex, targetSelectionEndIndex);
+    return { start, end };
+  })();
+
+  const currentWordTargetRange = (() => {
+    if (!currentChunkSource || composerSelectionStart !== composerSelectionEnd) {
+      return null;
+    }
+
+    let anchor = Math.min(composerSelectionStart, currentChunkSource.length - 1);
+    if (anchor < 0) {
+      return null;
+    }
+
+    if (!/\S/.test(currentChunkSource[anchor] ?? '')) {
+      anchor -= 1;
+    }
+
+    if (anchor < 0 || !/\S/.test(currentChunkSource[anchor] ?? '')) {
+      return null;
+    }
+
+    let wordStart = anchor;
+    while (wordStart > 0 && /\S/.test(currentChunkSource[wordStart - 1])) {
+      wordStart -= 1;
+    }
+
+    let wordEnd = anchor + 1;
+    while (wordEnd < currentChunkSource.length && /\S/.test(currentChunkSource[wordEnd])) {
+      wordEnd += 1;
+    }
+
+    const targetStart = renderedPreview.sourceToTargetMap[wordStart] ?? 0;
+    const targetEnd =
+      wordEnd >= currentChunkSource.length
+        ? renderedPreviewChars.length
+        : renderedPreview.sourceToTargetMap[wordEnd] ?? renderedPreviewChars.length;
+
+    return targetEnd > targetStart ? { start: targetStart, end: targetEnd } : null;
+  })();
 
   const syncPaneScroll = React.useCallback(
     (source: HTMLElement, target: HTMLElement | null) => {
@@ -233,6 +293,49 @@ export const StickyTopComposer: React.FC = () => {
 
   const syncSelection = (target: HTMLTextAreaElement) => {
     setComposerSelection(target.selectionStart, target.selectionEnd);
+  };
+
+  const getTargetCaretForClick = (targetIndex: number, clientX: number, currentTarget: HTMLElement) => {
+    const sourceStart = renderedPreview.targetToSourceMap[targetIndex] ?? currentChunkSource.length;
+    let sourceEnd = currentChunkSource.length;
+
+    for (let index = targetIndex + 1; index < renderedPreview.targetToSourceMap.length; index += 1) {
+      const nextSourceIndex = renderedPreview.targetToSourceMap[index] ?? currentChunkSource.length;
+      if (nextSourceIndex > sourceStart) {
+        sourceEnd = nextSourceIndex;
+        break;
+      }
+    }
+
+    const rect = currentTarget.getBoundingClientRect();
+    const midpoint = rect.left + rect.width / 2;
+    return clientX >= midpoint ? sourceEnd : sourceStart;
+  };
+
+  const focusComposerAt = (nextCaret: number) => {
+    setComposerSelection(nextCaret, nextCaret);
+    requestAnimationFrame(() => {
+      composerRef.current?.focus();
+      composerRef.current?.setSelectionRange(nextCaret, nextCaret);
+    });
+  };
+
+  const handlePreviewCharacterClick = (
+    event: React.MouseEvent<HTMLSpanElement>,
+    targetIndex: number
+  ) => {
+    event.preventDefault();
+    const nextCaret = getTargetCaretForClick(targetIndex, event.clientX, event.currentTarget);
+    focusComposerAt(nextCaret);
+  };
+
+  const handlePreviewContainerClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    event.preventDefault();
+    focusComposerAt(currentChunkSource.length);
   };
 
   const handleComposerScroll = (event: React.UIEvent<HTMLTextAreaElement>) => {
@@ -457,14 +560,64 @@ export const StickyTopComposer: React.FC = () => {
                 <div
                   ref={previewRef}
                   className="min-h-[7rem] max-h-[18vh] overflow-y-auto rounded-lg bg-white/70 px-3 py-2 pr-14 font-serif text-slate-900 md:max-h-[20vh]"
-                data-testid="sticky-devanagari-preview"
+                  data-testid="sticky-devanagari-preview"
                   onScroll={handlePreviewScroll}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={handlePreviewContainerClick}
                   style={{
                     fontSize: `${composerTypography.renderedFontSize}px`,
                     lineHeight: composerTypography.renderedLineHeight,
                   }}
                 >
-                  {activeChunkGroup?.rendered || 'Devanagari preview'}
+                  {renderedPreviewChars.length === 0 ? (
+                    'Devanagari preview'
+                  ) : (
+                    <span className="whitespace-pre-wrap break-words">
+                      {renderedPreviewChars.map((char, index) => {
+                        const isSelectionVisible =
+                          selectedTargetRange.end > selectedTargetRange.start &&
+                          index >= selectedTargetRange.start &&
+                          index < selectedTargetRange.end;
+                        const isCurrentWordVisible =
+                          !isSelectionVisible &&
+                          currentWordTargetRange !== null &&
+                          index >= currentWordTargetRange.start &&
+                          index < currentWordTargetRange.end;
+                        const showCaretBefore = index === targetCaretIndex;
+
+                        return (
+                          <React.Fragment key={`${index}-${char}`}>
+                            {showCaretBefore && (
+                              <span
+                                aria-hidden="true"
+                                className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-blue-600 align-middle motion-safe:animate-caret"
+                                data-testid="preview-caret"
+                              />
+                            )}
+                            <span
+                              className={clsx(
+                                'cursor-text rounded-[0.18em]',
+                                isSelectionVisible && 'bg-blue-200/80 text-blue-950',
+                                isCurrentWordVisible && 'bg-amber-200/80 text-slate-950'
+                              )}
+                              data-current-word={isCurrentWordVisible ? 'true' : undefined}
+                              data-target-index={index}
+                              onClick={(event) => handlePreviewCharacterClick(event, index)}
+                            >
+                              {char === ' ' ? '\u00A0' : char}
+                            </span>
+                          </React.Fragment>
+                        );
+                      })}
+                      {targetCaretIndex === renderedPreviewChars.length && (
+                        <span
+                          aria-hidden="true"
+                          className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-blue-600 align-middle motion-safe:animate-caret"
+                          data-testid="preview-caret"
+                        />
+                      )}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
