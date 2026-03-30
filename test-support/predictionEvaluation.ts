@@ -107,6 +107,19 @@ export interface DatasetEvaluationResult {
   sampleMisses: MissSample[];
 }
 
+export interface RetrievalSummary {
+  eligibleWords: number;
+  inLexiconWords: number;
+  missingWords: number;
+  coverageRate: number;
+  finalPrefixQueries: number;
+  finalPrefixRetrievalFailures: number;
+  finalPrefixRetrievalFailureRate: number;
+  allPrefixQueries: number;
+  allPrefixRetrievalFailures: number;
+  allPrefixRetrievalFailureRate: number;
+}
+
 export interface PreparedEvaluationQuery {
   rowId: string;
   target: string;
@@ -418,6 +431,25 @@ export const summarizeFailureBreakdown = (breakdown: PrefixFailureBreakdown) => 
   failureRate: toRate(breakdown.retrievalFailures + breakdown.rankingFailures, breakdown.queries),
   retrievalFailureRate: toRate(breakdown.retrievalFailures, breakdown.queries),
   rankingFailureRate: toRate(breakdown.rankingFailures, breakdown.queries),
+});
+
+export const summarizeRetrieval = (result: DatasetEvaluationResult): RetrievalSummary => ({
+  eligibleWords: result.eligibleWords,
+  inLexiconWords: result.inLexiconWords,
+  missingWords: result.missingWords,
+  coverageRate: toRate(result.inLexiconWords, result.eligibleWords),
+  finalPrefixQueries: result.failureBreakdown.finalPrefix.queries,
+  finalPrefixRetrievalFailures: result.failureBreakdown.finalPrefix.retrievalFailures,
+  finalPrefixRetrievalFailureRate: toRate(
+    result.failureBreakdown.finalPrefix.retrievalFailures,
+    result.failureBreakdown.finalPrefix.queries
+  ),
+  allPrefixQueries: result.failureBreakdown.allPrefixes.queries,
+  allPrefixRetrievalFailures: result.failureBreakdown.allPrefixes.retrievalFailures,
+  allPrefixRetrievalFailureRate: toRate(
+    result.failureBreakdown.allPrefixes.retrievalFailures,
+    result.failureBreakdown.allPrefixes.queries
+  ),
 });
 
 export const samplePreparedDatasetEvaluation = (

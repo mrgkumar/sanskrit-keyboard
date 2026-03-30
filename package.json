@@ -17,6 +17,7 @@
     "build:prediction-corpus": "node --experimental-strip-types scripts/rebuildPredictionCorpus.ts",
     "build:prediction-corpus:sample": "node --experimental-strip-types scripts/rebuildPredictionCorpus.ts --canonical-limit 2000 --runtime-limit 20000 --swara-limit 4000",
     "evaluate:prediction-corpus": "node --experimental-strip-types scripts/evaluatePredictionCorpus.ts --output ../generated/autocomplete/prediction-eval.json",
+    "evaluate:prediction-retrieval": "node --experimental-strip-types scripts/evaluatePredictionRetrieval.ts",
     "evaluate:prediction-experiments": "node --experimental-strip-types scripts/runPredictionExperimentGame.ts",
     "prepare:prediction-datasets": "node --experimental-strip-types scripts/preparePredictionDataset.ts",
     "evaluate:prediction-models": "python3 scripts/runProbabilisticPredictionGame.py",

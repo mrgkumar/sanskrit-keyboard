@@ -7,6 +7,7 @@ import { expect, test } from '@playwright/test';
 import { CORPUS_DATASETS } from './test-support/corpusRegistry';
 import {
   evaluateLexicalPredictionsForDataset,
+  summarizeRetrieval,
   summarizePrefixMetrics,
 } from './test-support/predictionEvaluation';
 
@@ -209,5 +210,58 @@ test.describe('prediction evaluation helpers', () => {
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
+  });
+
+  test('summarizes retrieval coverage independently from ranking failures', () => {
+    const retrieval = summarizeRetrieval({
+      profileId: 'baseline',
+      datasetId: 'san-valid',
+      datasetLabel: 'Validation',
+      rowCount: 3,
+      skippedRows: 0,
+      eligibleWords: 3,
+      inLexiconWords: 2,
+      missingWords: 1,
+      prefixMetrics: {
+        finalPrefix: {
+          queries: 3,
+          top1Hits: 1,
+          top3Hits: 2,
+          top5Hits: 2,
+        },
+        allPrefixes: {
+          queries: 6,
+          top1Hits: 2,
+          top3Hits: 3,
+          top5Hits: 4,
+        },
+      },
+      failureBreakdown: {
+        finalPrefix: {
+          queries: 3,
+          retrievalFailures: 1,
+          rankingFailures: 1,
+        },
+        allPrefixes: {
+          queries: 6,
+          retrievalFailures: 2,
+          rankingFailures: 1,
+        },
+      },
+      sampleMisses: [],
+    });
+
+    expect(retrieval).toEqual({
+      eligibleWords: 3,
+      inLexiconWords: 2,
+      missingWords: 1,
+      coverageRate: 2 / 3,
+      finalPrefixQueries: 3,
+      finalPrefixRetrievalFailures: 1,
+      finalPrefixRetrievalFailureRate: 1 / 3,
+      allPrefixQueries: 6,
+      allPrefixRetrievalFailures: 2,
+      allPrefixRetrievalFailureRate: 2 / 6,
+    });
   });
 });
