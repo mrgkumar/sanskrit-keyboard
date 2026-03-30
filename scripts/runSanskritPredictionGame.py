@@ -17,6 +17,7 @@ from runProbabilisticPredictionGame import (
   CharNGramModel,
   DiskRuntimeLexicon,
   RuntimeLexiconEntry,
+  create_empty_failure_breakdown,
   create_empty_metrics,
   fingerprint,
   fingerprints_match,
@@ -25,6 +26,7 @@ from runProbabilisticPredictionGame import (
   load_json,
   sample_prepared_dataset,
   sort_results,
+  summarize_failure_breakdown,
   summarize_metrics,
 )
 
@@ -133,6 +135,8 @@ def evaluate_prepared_dataset(
 ) -> dict[str, Any]:
   final_prefix_metrics = create_empty_metrics()
   all_prefix_metrics = create_empty_metrics()
+  final_prefix_failures = create_empty_failure_breakdown()
+  all_prefix_failures = create_empty_failure_breakdown()
   sample_misses: list[dict[str, Any]] = []
   in_lexicon_words = 0
   missing_words = 0
@@ -143,7 +147,8 @@ def evaluate_prepared_dataset(
     devanagari = str(query['devanagari'])
     weight = int(query['weight'])
 
-    if lexicon.has_entry(target):
+    in_lexicon = lexicon.has_entry(target)
+    if in_lexicon:
       in_lexicon_words += weight
     else:
       missing_words += weight
@@ -154,10 +159,25 @@ def evaluate_prepared_dataset(
       candidates = lexicon.get_candidates(prefix, profile.retrieval_limit)
       suggestions = rank_candidates(candidates, model, profile, DEFAULT_SUGGESTION_LIMIT)
       increment_metric(all_prefix_metrics, suggestions, target, weight)
+      all_prefix_failures['queries'] += weight
       if prefix_length == final_prefix_length:
         increment_metric(final_prefix_metrics, suggestions, target, weight)
+        final_prefix_failures['queries'] += weight
 
       hit = any(entry.itrans == target for entry in suggestions[:DEFAULT_SUGGESTION_LIMIT])
+      failure_type = 'ranking' if in_lexicon else 'retrieval'
+      if not hit:
+        if in_lexicon:
+          all_prefix_failures['rankingFailures'] += weight
+        else:
+          all_prefix_failures['retrievalFailures'] += weight
+
+      if not hit and prefix_length == final_prefix_length:
+        if in_lexicon:
+          final_prefix_failures['rankingFailures'] += weight
+        else:
+          final_prefix_failures['retrievalFailures'] += weight
+
       if not hit and len(sample_misses) < MAX_SAMPLED_MISSES:
         sample_misses.append({
           'datasetId': prepared['datasetId'],
@@ -166,6 +186,7 @@ def evaluate_prepared_dataset(
           'target': target,
           'devanagari': devanagari,
           'suggestions': [entry.itrans for entry in suggestions],
+          'failureType': failure_type,
         })
 
   return {
@@ -180,6 +201,10 @@ def evaluate_prepared_dataset(
     'prefixMetrics': {
       'finalPrefix': summarize_metrics(final_prefix_metrics),
       'allPrefixes': summarize_metrics(all_prefix_metrics),
+    },
+    'failureBreakdown': {
+      'finalPrefix': summarize_failure_breakdown(final_prefix_failures),
+      'allPrefixes': summarize_failure_breakdown(all_prefix_failures),
     },
     'sampleMisses': sample_misses,
   }
