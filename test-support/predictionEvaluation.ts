@@ -50,6 +50,12 @@ interface SourceCountIndexEntry {
   bySource: Record<string, number>;
 }
 
+interface FileFingerprint {
+  path: string;
+  size: number;
+  mtimeMs: number;
+}
+
 interface PrefixMetrics {
   queries: number;
   top1Hits: number;
@@ -90,6 +96,7 @@ export interface PreparedEvaluationQuery {
   rowId: string;
   target: string;
   devanagari: string;
+  weight: number;
 }
 
 export interface PreparedDatasetEvaluation {
@@ -101,12 +108,38 @@ export interface PreparedDatasetEvaluation {
   queries: PreparedEvaluationQuery[];
 }
 
+interface CachedPreparedDatasetEvaluation {
+  version: number;
+  source: FileFingerprint;
+  prepared: PreparedDatasetEvaluation;
+}
+
+interface CachedSourceIndexPayload {
+  version: number;
+  source: FileFingerprint;
+  sourceIndex: Array<[string, SourceCountIndexEntry]>;
+}
+
 const SHARD_PREFIX_LENGTH = 2;
 const MIN_LOOKUP_PREFIX_LENGTH = 2;
 const MAX_SAMPLED_MISSES = 10;
 const DEFAULT_SUGGESTION_LIMIT = 5;
 const CANONICAL_MAPPING_FILE = 'canonical-mapping.ndjson';
+const PREPARED_DATASET_CACHE_VERSION = 2;
+const SOURCE_INDEX_CACHE_VERSION = 1;
 const ALLOWED_ITRANS_SIGNS = new Set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz~:/.^_|'\\");
+
+const toFileFingerprint = (filePath: string): FileFingerprint => {
+  const stats = fs.statSync(filePath);
+  return {
+    path: path.resolve(filePath),
+    size: stats.size,
+    mtimeMs: stats.mtimeMs,
+  };
+};
+
+const fingerprintsMatch = (left: FileFingerprint, right: FileFingerprint) =>
+  left.path === right.path && left.size === right.size && left.mtimeMs === right.mtimeMs;
 
 export const shouldApplyCompletionDistancePenalty = (
   entry: RuntimeLexiconEntry,
@@ -242,18 +275,18 @@ const insertSuggestion = (
   }
 };
 
-const incrementMetric = (metric: PrefixMetrics, suggestions: RuntimeLexiconEntry[], target: string) => {
-  metric.queries += 1;
+const incrementMetric = (metric: PrefixMetrics, suggestions: RuntimeLexiconEntry[], target: string, weight: number) => {
+  metric.queries += weight;
   if (suggestions[0]?.itrans === target) {
-    metric.top1Hits += 1;
+    metric.top1Hits += weight;
   }
 
   if (suggestions.slice(0, 3).some((entry) => entry.itrans === target)) {
-    metric.top3Hits += 1;
+    metric.top3Hits += weight;
   }
 
   if (suggestions.slice(0, 5).some((entry) => entry.itrans === target)) {
-    metric.top5Hits += 1;
+    metric.top5Hits += weight;
   }
 };
 
@@ -298,6 +331,50 @@ export const buildRuntimeLexiconSourceIndex = async (dataRoot: string) => {
     current.bySource[source] = (current.bySource[source] ?? 0) + 1;
     sourceIndex.set(itrans, current);
   }
+
+  return sourceIndex;
+};
+
+export const buildRuntimeLexiconSourceIndexCached = async ({
+  dataRoot,
+  cacheDir,
+}: {
+  dataRoot: string;
+  cacheDir: string;
+}) => {
+  const canonicalPath = path.join(dataRoot, CANONICAL_MAPPING_FILE);
+  const sourceFingerprint = toFileFingerprint(canonicalPath);
+  const cachePath = path.join(cacheDir, 'runtime-lexicon-source-index.json');
+
+  if (fs.existsSync(cachePath)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8')) as CachedSourceIndexPayload;
+      if (
+        cached.version === SOURCE_INDEX_CACHE_VERSION &&
+        fingerprintsMatch(cached.source, sourceFingerprint)
+      ) {
+        return new Map<string, SourceCountIndexEntry>(cached.sourceIndex);
+      }
+    } catch {
+      // Ignore stale or malformed cache and rebuild below.
+    }
+  }
+
+  const sourceIndex = await buildRuntimeLexiconSourceIndex(dataRoot);
+  fs.mkdirSync(cacheDir, { recursive: true });
+  fs.writeFileSync(
+    cachePath,
+    `${JSON.stringify(
+      {
+        version: SOURCE_INDEX_CACHE_VERSION,
+        source: sourceFingerprint,
+        sourceIndex: Array.from(sourceIndex.entries()),
+      } satisfies CachedSourceIndexPayload,
+      null,
+      2
+    )}\n`,
+    'utf8'
+  );
 
   return sourceIndex;
 };
@@ -406,7 +483,7 @@ export const prepareDatasetEvaluationInput = async ({
 }): Promise<PreparedDatasetEvaluation> => {
   const dataset = resolveEvaluationDataset(datasetId);
   const canonicalConfig = dataset.canonical;
-  const queries: PreparedEvaluationQuery[] = [];
+  const queryMap = new Map<string, PreparedEvaluationQuery>();
 
   let rowCount = 0;
   let skippedRows = 0;
@@ -444,11 +521,17 @@ export const prepareDatasetEvaluationInput = async ({
     }
 
     eligibleWords += 1;
-    queries.push({
-      rowId,
-      target,
-      devanagari: record.devanagari,
-    });
+    const existing = queryMap.get(target);
+    if (existing) {
+      existing.weight += 1;
+    } else {
+      queryMap.set(target, {
+        rowId,
+        target,
+        devanagari: record.devanagari,
+        weight: 1,
+      });
+    }
   }
 
   return {
@@ -457,8 +540,52 @@ export const prepareDatasetEvaluationInput = async ({
     rowCount,
     skippedRows,
     eligibleWords,
-    queries,
+    queries: Array.from(queryMap.values()),
   };
+};
+
+export const prepareDatasetEvaluationInputCached = async ({
+  datasetId,
+  cacheDir,
+}: {
+  datasetId: string;
+  cacheDir: string;
+}) => {
+  const dataset = resolveEvaluationDataset(datasetId);
+  const sourceFingerprint = toFileFingerprint(dataset.path);
+  const cachePath = path.join(cacheDir, `${datasetId}.prepared.json`);
+
+  if (fs.existsSync(cachePath)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(cachePath, 'utf8')) as CachedPreparedDatasetEvaluation;
+      if (
+        cached.version === PREPARED_DATASET_CACHE_VERSION &&
+        fingerprintsMatch(cached.source, sourceFingerprint)
+      ) {
+        return cached.prepared;
+      }
+    } catch {
+      // Ignore stale or malformed cache and rebuild below.
+    }
+  }
+
+  const prepared = await prepareDatasetEvaluationInput({ datasetId });
+  fs.mkdirSync(cacheDir, { recursive: true });
+  fs.writeFileSync(
+    cachePath,
+    `${JSON.stringify(
+      {
+        version: PREPARED_DATASET_CACHE_VERSION,
+        source: sourceFingerprint,
+        prepared,
+      } satisfies CachedPreparedDatasetEvaluation,
+      null,
+      2
+    )}\n`,
+    'utf8'
+  );
+
+  return prepared;
 };
 
 export const evaluatePreparedLexicalPredictions = ({
@@ -478,22 +605,22 @@ export const evaluatePreparedLexicalPredictions = ({
   let missingWords = 0;
 
   for (const query of prepared.queries) {
-    const { rowId, target, devanagari } = query;
+    const { rowId, target, devanagari, weight } = query;
 
     if (lexicon.hasEntry(target)) {
-      inLexiconWords += 1;
+      inLexiconWords += weight;
     } else {
-      missingWords += 1;
+      missingWords += weight;
     }
 
     const finalPrefixLength = Math.max(MIN_LOOKUP_PREFIX_LENGTH, target.length - 1);
     for (let prefixLength = MIN_LOOKUP_PREFIX_LENGTH; prefixLength <= finalPrefixLength; prefixLength += 1) {
       const prefix = target.slice(0, prefixLength);
       const suggestions = lexicon.getSuggestions(prefix, profile, DEFAULT_SUGGESTION_LIMIT);
-      incrementMetric(allPrefixesMetrics, suggestions, target);
+      incrementMetric(allPrefixesMetrics, suggestions, target, weight);
 
       if (prefixLength === finalPrefixLength) {
-        incrementMetric(finalPrefixMetrics, suggestions, target);
+        incrementMetric(finalPrefixMetrics, suggestions, target, weight);
       }
 
       const hit = suggestions.slice(0, DEFAULT_SUGGESTION_LIMIT).some((entry) => entry.itrans === target);
@@ -531,15 +658,23 @@ export const evaluateLexicalPredictionsForDataset = async ({
   dataRoot,
   datasetId,
   profileId = 'baseline',
+  cacheDir,
 }: {
   dataRoot: string;
   datasetId: string;
   profileId?: string;
+  cacheDir?: string;
 }): Promise<DatasetEvaluationResult> => {
   const profile = resolvePredictionExperimentProfile(profileId);
-  const sourceIndex = profile.sourceWeights ? await buildRuntimeLexiconSourceIndex(dataRoot) : undefined;
+  const sourceIndex = profile.sourceWeights
+    ? cacheDir
+      ? await buildRuntimeLexiconSourceIndexCached({ dataRoot, cacheDir })
+      : await buildRuntimeLexiconSourceIndex(dataRoot)
+    : undefined;
   const lexicon = new DiskRuntimeLexicon(dataRoot, sourceIndex);
-  const prepared = await prepareDatasetEvaluationInput({ datasetId });
+  const prepared = cacheDir
+    ? await prepareDatasetEvaluationInputCached({ datasetId, cacheDir })
+    : await prepareDatasetEvaluationInput({ datasetId });
   return evaluatePreparedLexicalPredictions({
     prepared,
     lexicon,

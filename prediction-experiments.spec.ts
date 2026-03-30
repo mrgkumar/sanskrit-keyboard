@@ -7,8 +7,10 @@ import { expect, test } from '@playwright/test';
 import { CORPUS_DATASETS } from './test-support/corpusRegistry';
 import { resolvePredictionExperimentProfile } from './test-support/predictionExperimentProfiles';
 import {
+  buildRuntimeLexiconSourceIndexCached,
   computeLexicalNoisePenalty,
   evaluateLexicalPredictionsForDataset,
+  prepareDatasetEvaluationInputCached,
   shouldApplyCompletionDistancePenalty,
   summarizePrefixMetrics,
 } from './test-support/predictionEvaluation';
@@ -354,5 +356,52 @@ test.describe('prediction experiment game', () => {
         resolvePredictionExperimentProfile('r005-hybrid-v2')
       )
     ).toBe(false);
+  });
+
+  test('cache-backed prepared datasets and source index reuse stable inputs', async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prediction-game-cache-'));
+    const cacheDir = path.join(tempDir, 'cache');
+
+    try {
+      const datasetPath = writeFixture({
+        tempDir,
+        nativeWord: 'अग्नेयम्',
+        entries: [
+          { itrans: 'agneyam', devanagari: 'अग्नेयम्', count: 50 },
+          { itrans: 'agneyasya', devanagari: 'अग्नेयस्य', count: 40 },
+        ],
+        canonicalEntries: [
+          { itrans: 'agneyam', devanagari: 'अग्नेयम्', source: 'AK-Freq' },
+          { itrans: 'agneyasya', devanagari: 'अग्नेयस्य', source: 'example-vedic' },
+        ],
+      });
+
+      await withDatasetOverride(datasetPath, async () => {
+        const firstPrepared = await prepareDatasetEvaluationInputCached({
+          datasetId: 'san-valid',
+          cacheDir,
+        });
+        const secondPrepared = await prepareDatasetEvaluationInputCached({
+          datasetId: 'san-valid',
+          cacheDir,
+        });
+        const firstSourceIndex = await buildRuntimeLexiconSourceIndexCached({
+          dataRoot: tempDir,
+          cacheDir,
+        });
+        const secondSourceIndex = await buildRuntimeLexiconSourceIndexCached({
+          dataRoot: tempDir,
+          cacheDir,
+        });
+
+        expect(firstPrepared).toEqual(secondPrepared);
+        expect(firstSourceIndex.get('agneyam')).toEqual(secondSourceIndex.get('agneyam'));
+        expect(firstSourceIndex.get('agneyasya')).toEqual(secondSourceIndex.get('agneyasya'));
+        expect(fs.existsSync(path.join(cacheDir, 'san-valid.prepared.json'))).toBe(true);
+        expect(fs.existsSync(path.join(cacheDir, 'runtime-lexicon-source-index.json'))).toBe(true);
+      });
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });

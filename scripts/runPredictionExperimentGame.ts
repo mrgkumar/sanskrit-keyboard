@@ -9,9 +9,11 @@ import {
 } from '../test-support/predictionExperimentProfiles.ts';
 import {
   buildRuntimeLexiconSourceIndex,
+  buildRuntimeLexiconSourceIndexCached,
   DiskRuntimeLexicon,
   evaluatePreparedLexicalPredictions,
   prepareDatasetEvaluationInput,
+  prepareDatasetEvaluationInputCached,
   summarizePrefixMetrics,
   type DatasetEvaluationResult,
 } from '../test-support/predictionEvaluation.ts';
@@ -24,6 +26,8 @@ const parseArgs = () => {
     holdoutDataset: 'san-test',
     dataRoot: getAutocompleteDataRoot(),
     output: path.resolve(process.cwd(), '..', 'generated', 'autocomplete', 'experiments', 'leaderboard.json'),
+    cacheDir: path.resolve(process.cwd(), '..', 'generated', 'autocomplete', 'experiments', 'cache'),
+    skipCache: false,
   };
 
   for (let index = 0; index < args.length; index += 1) {
@@ -59,6 +63,16 @@ const parseArgs = () => {
       index += 1;
       continue;
     }
+
+    if (arg === '--cache-dir' && next) {
+      options.cacheDir = path.resolve(process.cwd(), next);
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--skip-cache') {
+      options.skipCache = true;
+    }
   }
 
   return options;
@@ -88,14 +102,31 @@ const main = async () => {
   const startedAt = Date.now();
   const profiles = options.profiles.map((profileId) => resolvePredictionExperimentProfile(profileId));
   const needsSourceIndex = profiles.some((profile) => profile.sourceWeights);
-  const sourceIndex = needsSourceIndex ? await buildRuntimeLexiconSourceIndex(options.dataRoot) : undefined;
+  const sourceIndex = needsSourceIndex
+    ? options.skipCache
+      ? await buildRuntimeLexiconSourceIndex(options.dataRoot)
+      : await buildRuntimeLexiconSourceIndexCached({
+          dataRoot: options.dataRoot,
+          cacheDir: options.cacheDir,
+        })
+    : undefined;
   const lexicon = new DiskRuntimeLexicon(options.dataRoot, sourceIndex);
-  const tuningPrepared = await prepareDatasetEvaluationInput({
-    datasetId: options.tuningDataset,
-  });
-  const holdoutPrepared = await prepareDatasetEvaluationInput({
-    datasetId: options.holdoutDataset,
-  });
+  const tuningPrepared = options.skipCache
+    ? await prepareDatasetEvaluationInput({
+        datasetId: options.tuningDataset,
+      })
+    : await prepareDatasetEvaluationInputCached({
+        datasetId: options.tuningDataset,
+        cacheDir: options.cacheDir,
+      });
+  const holdoutPrepared = options.skipCache
+    ? await prepareDatasetEvaluationInput({
+        datasetId: options.holdoutDataset,
+      })
+    : await prepareDatasetEvaluationInputCached({
+        datasetId: options.holdoutDataset,
+        cacheDir: options.cacheDir,
+      });
   const tuningResults: DatasetEvaluationResult[] = [];
 
   for (const profileId of options.profiles) {
@@ -122,6 +153,8 @@ const main = async () => {
     durationMs: Date.now() - startedAt,
     tuningDataset: options.tuningDataset,
     holdoutDataset: options.holdoutDataset,
+    cacheDir: options.cacheDir,
+    skipCache: options.skipCache,
     winner: {
       profileId: winner.profileId,
       label: resolvePredictionExperimentProfile(winner.profileId).label,
