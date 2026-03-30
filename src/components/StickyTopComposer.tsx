@@ -23,15 +23,19 @@ export const StickyTopComposer: React.FC = () => {
     composerSelectionStart,
     composerSelectionEnd,
     recentlyDeletedBlock,
-    typography,
+    displaySettings,
   } = useFlowStore();
   const composerRef = React.useRef<HTMLTextAreaElement>(null);
+  const previewRef = React.useRef<HTMLDivElement>(null);
+  const scrollSyncSourceRef = React.useRef<'source' | 'preview' | null>(null);
   const [copyState, setCopyState] = React.useState<'idle' | 'copied' | 'error'>('idle');
   const [isShortcutPeekVisible, setIsShortcutPeekVisible] = React.useState(false);
   const [deleteToastProgress, setDeleteToastProgress] = React.useState(1);
   const activeBlock = getActiveBlock();
   const activeChunkGroup = getActiveChunkGroup();
   const { focusSpan, viewMode } = editorState;
+  const { composerLayout, syncComposerScroll, typography } = displaySettings;
+  const composerTypography = typography.composer;
 
   const isLongBlock = activeBlock?.type === 'long';
   const currentChunkSource = activeChunkGroup?.source || ''; // Get current chunk source
@@ -91,6 +95,20 @@ export const StickyTopComposer: React.FC = () => {
   const shortcutPeekQuery = shortcutPeekState.query;
   const shortcutPeekMappings = shortcutPeekState.mappings;
   const hasLexicalSuggestions = lexicalSuggestions.length > 0 && activeBuffer.length > 1;
+
+  const syncPaneScroll = React.useCallback(
+    (source: HTMLElement, target: HTMLElement | null) => {
+      if (!syncComposerScroll || !target) {
+        return;
+      }
+
+      const sourceRange = Math.max(0, source.scrollHeight - source.clientHeight);
+      const targetRange = Math.max(0, target.scrollHeight - target.clientHeight);
+      const progress = sourceRange <= 0 ? 0 : source.scrollTop / sourceRange;
+      target.scrollTop = targetRange * progress;
+    },
+    [syncComposerScroll]
+  );
 
   const acceptLexicalSuggestion = (index: number) => {
     const suggestion = lexicalSuggestions[index];
@@ -228,11 +246,36 @@ export const StickyTopComposer: React.FC = () => {
     setComposerSelection(target.selectionStart, target.selectionEnd);
   };
 
+  const handleComposerScroll = (event: React.UIEvent<HTMLTextAreaElement>) => {
+    scrollSyncSourceRef.current = 'source';
+    syncPaneScroll(event.currentTarget, previewRef.current);
+  };
+
+  const handlePreviewScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    scrollSyncSourceRef.current = 'preview';
+    syncPaneScroll(event.currentTarget, composerRef.current);
+  };
+
   React.useLayoutEffect(() => {
     if (composerRef.current && document.activeElement === composerRef.current) {
       composerRef.current.setSelectionRange(composerSelectionStart, composerSelectionEnd);
     }
   }, [currentChunkSource, composerSelectionStart, composerSelectionEnd]);
+
+  React.useEffect(() => {
+    if (!syncComposerScroll) {
+      return;
+    }
+
+    if (scrollSyncSourceRef.current === 'source' && composerRef.current) {
+      syncPaneScroll(composerRef.current, previewRef.current);
+      return;
+    }
+
+    if (scrollSyncSourceRef.current === 'preview' && previewRef.current) {
+      syncPaneScroll(previewRef.current, composerRef.current);
+    }
+  }, [currentChunkSource, activeChunkGroup?.rendered, syncComposerScroll, syncPaneScroll]);
 
   React.useEffect(() => {
     if (copyState === 'idle') {
@@ -316,8 +359,8 @@ export const StickyTopComposer: React.FC = () => {
   };
 
   return (
-    <div className="sticky top-0 z-50 bg-white shadow-lg p-4 border-b border-slate-200">
-      <div className="max-w-5xl mx-auto flex flex-col gap-2">
+    <div className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-lg">
+      <div className="mx-auto flex max-w-5xl flex-col gap-3 p-4">
         {/* Top bar: Block Info, Focus Span, and View Modes */}
         <div className="flex items-center justify-between text-sm text-slate-500">
           <div className="flex items-center gap-4">
@@ -363,7 +406,6 @@ export const StickyTopComposer: React.FC = () => {
           </div>
         </div>
 
-        {/* Action buttons (e.g., Reference, etc.) */}
         <div className="flex items-center justify-end">
           <button
             onClick={toggleReferencePanel}
@@ -374,134 +416,163 @@ export const StickyTopComposer: React.FC = () => {
           </button>
         </div>
 
-        {/* Source Input Area */}
-        <textarea
-          key={textareaKey}
-          ref={composerRef}
-          autoFocus
-          className="w-full text-lg font-mono p-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          style={{
-            fontSize: `${typography.itransFontSize}px`,
-            lineHeight: typography.itransLineHeight,
-          }}
-          value={activeChunkGroup?.source || ''}
-          onChange={(e) => updateChunkSource(e.target.value, e.target.selectionStart, e.target.selectionEnd, currentEditTarget)}
-          onPaste={handlePaste} // Add onPaste listener
-          onKeyDown={handleKeyDown} // Add onKeyDown listener
-          onSelect={(e) => syncSelection(e.currentTarget)}
-          onClick={(e) => syncSelection(e.currentTarget)}
-          onKeyUp={(e) => syncSelection(e.currentTarget)}
-          onFocus={(e) => syncSelection(e.currentTarget)}
-          rows={Math.min(6, Math.max(1, currentChunkSource.split('\n').length))}
-          placeholder="Type ITRANS here..."
-        />
-
-        {/* Immediate Live Devanagari Confirmation */}
-        <div className="min-h-[2.5rem] flex items-start justify-between gap-3 bg-blue-50 p-2 rounded-md text-blue-800">
+        <div
+          className="flex min-h-0 max-h-[52vh] flex-col gap-3 overflow-hidden md:max-h-[54vh]"
+          data-testid="sticky-composer-shell"
+          data-layout={composerLayout}
+        >
           <div
-            className="flex-1 font-serif"
-            style={{
-              fontSize: `${typography.renderedFontSize}px`,
-              lineHeight: typography.renderedLineHeight,
-            }}
+            className={clsx(
+              'grid min-h-0 gap-3',
+              composerLayout === 'stacked'
+                ? 'grid-cols-1'
+                : 'grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]'
+            )}
           >
-            {activeChunkGroup?.rendered || 'Devanagari preview'}
-          </div>
-          <div className="mt-1 flex items-center gap-2">
-            <button
-              onClick={handleDeleteBlock}
-              className="rounded-md border border-rose-200 bg-white p-2 text-rose-700 hover:bg-rose-100"
-              type="button"
-              aria-label="Delete active block"
-              title="Delete block"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={handleCopyRendered}
-              className={clsx(
-                'rounded-md border p-2',
-                copyState === 'copied'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : copyState === 'error'
-                    ? 'bg-rose-50 text-rose-700 border-rose-200'
-                    : 'bg-white text-slate-700 border-blue-200 hover:bg-blue-100'
-              )}
-              type="button"
-              aria-label="Copy rendered Sanskrit"
-              title={copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : 'Copy Sanskrit'}
-            >
-              {copyState === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-
-        {recentlyDeletedBlock && (
-          <div
-            data-testid="recently-deleted-block"
-            className="flex items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900"
-          >
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Block Deleted</p>
-              <p className="mt-1 text-xs">
-                {recentlyDeletedBlock.block.title || 'Untitled Block'} was removed from the document.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={restoreDeletedBlock}
-              className="inline-flex items-center gap-2 rounded-md border border-amber-300 bg-white px-3 py-2 text-xs font-bold uppercase text-amber-800 hover:bg-amber-100"
-              aria-label="Undo delete"
-            >
-              <span
-                aria-hidden="true"
-                className="inline-block h-4 w-4 rounded-full border border-amber-300"
+            <div className="flex min-h-0 flex-col gap-2">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">ITRANS Input</p>
+                <p className="text-[11px] text-slate-400">Long passages stay in a fixed typing lane.</p>
+              </div>
+              <textarea
+                key={textareaKey}
+                ref={composerRef}
+                autoFocus
+                data-testid="sticky-itrans-input"
+                className="min-h-[7rem] max-h-[22vh] w-full overflow-y-auto rounded-md border border-slate-300 p-2 font-mono text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 md:max-h-[24vh]"
                 style={{
-                  background: `conic-gradient(rgb(217 119 6) ${deleteToastProgress * 360}deg, rgb(253 230 138) 0deg)`,
+                  fontSize: `${composerTypography.itransFontSize}px`,
+                  lineHeight: composerTypography.itransLineHeight,
                 }}
+                value={activeChunkGroup?.source || ''}
+                onChange={(e) => updateChunkSource(e.target.value, e.target.selectionStart, e.target.selectionEnd, currentEditTarget)}
+                onPaste={handlePaste}
+                onKeyDown={handleKeyDown}
+                onScroll={handleComposerScroll}
+                onSelect={(e) => syncSelection(e.currentTarget)}
+                onClick={(e) => syncSelection(e.currentTarget)}
+                onKeyUp={(e) => syncSelection(e.currentTarget)}
+                onFocus={(e) => syncSelection(e.currentTarget)}
+                rows={Math.min(6, Math.max(1, currentChunkSource.split('\n').length))}
+                placeholder="Type ITRANS here..."
               />
-              <Undo2 className="h-4 w-4" />
-              Undo
-            </button>
-          </div>
-        )}
+            </div>
 
-        {isShortcutPeekVisible && shortcutPeekMappings.length > 0 && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex min-h-0 flex-col gap-2 rounded-xl bg-blue-50 p-2 text-blue-800">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">Devanagari Preview</p>
+                  <p className="mt-1 text-[11px] text-blue-700/80">Rendered output stays visible without stretching the header.</p>
+                </div>
+                <div className="mt-1 flex items-center gap-2">
+                  <button
+                    onClick={handleDeleteBlock}
+                    className="rounded-md border border-rose-200 bg-white p-2 text-rose-700 hover:bg-rose-100"
+                    type="button"
+                    aria-label="Delete active block"
+                    title="Delete block"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleCopyRendered}
+                    className={clsx(
+                      'rounded-md border p-2',
+                      copyState === 'copied'
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : copyState === 'error'
+                          ? 'border-rose-200 bg-rose-50 text-rose-700'
+                          : 'border-blue-200 bg-white text-slate-700 hover:bg-blue-100'
+                    )}
+                    type="button"
+                    aria-label="Copy rendered Sanskrit"
+                    title={copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : 'Copy Sanskrit'}
+                  >
+                    {copyState === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div
+                ref={previewRef}
+                className="min-h-[7rem] max-h-[18vh] overflow-y-auto rounded-lg bg-white/70 px-3 py-2 font-serif text-slate-900 md:max-h-[20vh]"
+                data-testid="sticky-devanagari-preview"
+                onScroll={handlePreviewScroll}
+                style={{
+                  fontSize: `${composerTypography.renderedFontSize}px`,
+                  lineHeight: composerTypography.renderedLineHeight,
+                }}
+              >
+                {activeChunkGroup?.rendered || 'Devanagari preview'}
+              </div>
+            </div>
+          </div>
+
+          {recentlyDeletedBlock && (
+            <div
+              data-testid="recently-deleted-block"
+              className="flex items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900"
+            >
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Correction Help</p>
-                <p className="mt-1 text-xs text-amber-800">
-                  Backspace opened a compact shortcut peek for <span className="font-mono font-semibold">{shortcutPeekQuery}</span>.
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Block Deleted</p>
+                <p className="mt-1 text-xs">
+                  {recentlyDeletedBlock.block.title || 'Untitled Block'} was removed from the document.
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => setIsShortcutPeekVisible(false)}
-                className="text-xs font-bold uppercase text-amber-700 hover:text-amber-900"
+                onClick={restoreDeletedBlock}
+                className="inline-flex items-center gap-2 rounded-md border border-amber-300 bg-white px-3 py-2 text-xs font-bold uppercase text-amber-800 hover:bg-amber-100"
+                aria-label="Undo delete"
               >
-                Dismiss
+                <span
+                  aria-hidden="true"
+                  className="inline-block h-4 w-4 rounded-full border border-amber-300"
+                  style={{
+                    background: `conic-gradient(rgb(217 119 6) ${deleteToastProgress * 360}deg, rgb(253 230 138) 0deg)`,
+                  }}
+                />
+                <Undo2 className="h-4 w-4" />
+                Undo
               </button>
             </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {shortcutPeekMappings.map((mapping) => (
-                <button
-                  key={`${mapping.itrans}-${mapping.unicode}`}
-                  type="button"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => handlePeekInsert(mapping.itrans)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-left hover:border-amber-300 hover:bg-amber-100"
-                >
-                  <span className="text-lg font-serif text-slate-900">{mapping.unicode}</span>
-                  <kbd className="text-[10px] font-mono font-bold text-amber-700">{mapping.itrans}</kbd>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+          )}
 
-        {/* Shortcut HUD */}
-        <ShortcutHUD />
+          {isShortcutPeekVisible && shortcutPeekMappings.length > 0 && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Correction Help</p>
+                  <p className="mt-1 text-xs text-amber-800">
+                    Backspace opened a compact shortcut peek for <span className="font-mono font-semibold">{shortcutPeekQuery}</span>.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsShortcutPeekVisible(false)}
+                  className="text-xs font-bold uppercase text-amber-700 hover:text-amber-900"
+                >
+                  Dismiss
+                </button>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {shortcutPeekMappings.map((mapping) => (
+                  <button
+                    key={`${mapping.itrans}-${mapping.unicode}`}
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => handlePeekInsert(mapping.itrans)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-left hover:border-amber-300 hover:bg-amber-100"
+                  >
+                    <span className="text-lg font-serif text-slate-900">{mapping.unicode}</span>
+                    <kbd className="text-[10px] font-mono font-bold text-amber-700">{mapping.itrans}</kbd>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <ShortcutHUD />
+        </div>
 
         {/* Chunk Navigation Controls */}
         <div className="flex items-center justify-between text-sm text-slate-500">

@@ -5,7 +5,9 @@ import {
   Segment,
   ChunkGroup,
   ChunkEditTarget,
+  DisplaySettings,
   EditorState,
+  LegacyTypographySettings,
   TypographySettings,
   SessionSnapshot,
 } from './types';
@@ -137,11 +139,27 @@ const createBlankBlock = (): CanonicalBlock => ({
   source: '',
   rendered: '',
 });
-const DEFAULT_TYPOGRAPHY: TypographySettings = {
+const LEGACY_DEFAULT_TYPOGRAPHY: LegacyTypographySettings = {
   itransFontSize: 18,
   itransLineHeight: 1.6,
   renderedFontSize: 32,
   renderedLineHeight: 1.7,
+};
+const DEFAULT_TYPOGRAPHY: TypographySettings = {
+  composer: {
+    ...LEGACY_DEFAULT_TYPOGRAPHY,
+  },
+  document: {
+    itransFontSize: 16,
+    itransLineHeight: 1.6,
+    renderedFontSize: 30,
+    renderedLineHeight: 1.75,
+  },
+};
+const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
+  composerLayout: 'side-by-side',
+  syncComposerScroll: true,
+  typography: DEFAULT_TYPOGRAPHY,
 };
 const INITIAL_SESSION_ID = 'session-initial';
 const INITIAL_SESSION_NAME = 'Current Session';
@@ -208,6 +226,54 @@ const deriveSessionExactFormUsageFromBlocks = (blocks: CanonicalBlock[]) => {
   return counts;
 };
 
+const cloneTypographySettings = (settings: TypographySettings): TypographySettings => ({
+  composer: { ...settings.composer },
+  document: { ...settings.document },
+});
+
+const normalizeDisplaySettings = (
+  displaySettings?: DisplaySettings,
+  legacyTypography?: LegacyTypographySettings
+): DisplaySettings => {
+  if (displaySettings) {
+    return {
+      composerLayout: displaySettings.composerLayout ?? DEFAULT_DISPLAY_SETTINGS.composerLayout,
+      syncComposerScroll: displaySettings.syncComposerScroll ?? DEFAULT_DISPLAY_SETTINGS.syncComposerScroll,
+      typography: {
+        composer: {
+          ...DEFAULT_DISPLAY_SETTINGS.typography.composer,
+          ...displaySettings.typography?.composer,
+        },
+        document: {
+          ...DEFAULT_DISPLAY_SETTINGS.typography.document,
+          ...displaySettings.typography?.document,
+        },
+      },
+    };
+  }
+
+  if (legacyTypography) {
+    return {
+      ...DEFAULT_DISPLAY_SETTINGS,
+      typography: {
+        composer: {
+          ...DEFAULT_DISPLAY_SETTINGS.typography.composer,
+          ...legacyTypography,
+        },
+        document: {
+          ...DEFAULT_DISPLAY_SETTINGS.typography.document,
+          ...legacyTypography,
+        },
+      },
+    };
+  }
+
+  return {
+    ...DEFAULT_DISPLAY_SETTINGS,
+    typography: cloneTypographySettings(DEFAULT_DISPLAY_SETTINGS.typography),
+  };
+};
+
 const shouldRecordCommittedBuffer = (activeBuffer: string, source: string, caret: number) => {
   if (!activeBuffer || caret <= 0) {
     return false;
@@ -252,7 +318,7 @@ export interface SanskritKeyboardState {
   // UI State
   isReferencePanelOpen: boolean;
   deletedBuffer: string | null;
-  typography: TypographySettings;
+  displaySettings: DisplaySettings;
   sessionId: string;
   sessionName: string;
   lastSavedAt: string | null;
@@ -295,7 +361,12 @@ export interface SanskritKeyboardState {
   preloadLexicalAssets: () => void;
   setDeletedBuffer: (char: string | null) => void;
   setComposerSelection: (start: number, end: number) => void;
-  setTypography: (patch: Partial<TypographySettings>) => void;
+  setComposerLayout: (layout: DisplaySettings['composerLayout']) => void;
+  setSyncComposerScroll: (enabled: boolean) => void;
+  setTypography: (
+    scope: keyof TypographySettings,
+    patch: Partial<TypographySettings[keyof TypographySettings]>
+  ) => void;
   setSessionName: (name: string) => void;
   markSessionSaved: (savedAt?: string) => void;
   exportSessionSnapshot: () => SessionSnapshot;
@@ -337,7 +408,10 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   composerSelectionEnd: 0,
   isReferencePanelOpen: false, // Initialize here
   deletedBuffer: null, // Initialize here
-  typography: DEFAULT_TYPOGRAPHY,
+  displaySettings: {
+    ...DEFAULT_DISPLAY_SETTINGS,
+    typography: cloneTypographySettings(DEFAULT_DISPLAY_SETTINGS.typography),
+  },
   sessionId: INITIAL_SESSION_ID,
   sessionName: INITIAL_SESSION_NAME,
   lastSavedAt: null,
@@ -957,9 +1031,34 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   setComposerSelection: (start: number, end: number) => {
     set({ composerSelectionStart: start, composerSelectionEnd: end });
   },
-  setTypography: (patch) => {
+  setComposerLayout: (composerLayout) => {
     set((state) => ({
-      typography: { ...state.typography, ...patch },
+      displaySettings: {
+        ...state.displaySettings,
+        composerLayout,
+      },
+    }));
+  },
+  setSyncComposerScroll: (syncComposerScroll) => {
+    set((state) => ({
+      displaySettings: {
+        ...state.displaySettings,
+        syncComposerScroll,
+      },
+    }));
+  },
+  setTypography: (scope, patch) => {
+    set((state) => ({
+      displaySettings: {
+        ...state.displaySettings,
+        typography: {
+          ...state.displaySettings.typography,
+          [scope]: {
+            ...state.displaySettings.typography[scope],
+            ...patch,
+          },
+        },
+      },
     }));
   },
   setSessionName: (name) => {
@@ -972,7 +1071,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     const {
       blocks,
       editorState,
-      typography,
+      displaySettings,
       sessionId,
       sessionName,
       lastSavedAt,
@@ -983,7 +1082,10 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       sessionName: sessionName.trim() || createDefaultSessionName(),
       blocks,
       editorState,
-      typography,
+      displaySettings: {
+        ...displaySettings,
+        typography: cloneTypographySettings(displaySettings.typography),
+      },
       updatedAt: lastSavedAt ?? new Date().toISOString(),
     };
   },
@@ -991,7 +1093,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     set({
       blocks: snapshot.blocks,
       editorState: snapshot.editorState,
-      typography: snapshot.typography,
+      displaySettings: normalizeDisplaySettings(snapshot.displaySettings, snapshot.typography),
       sessionId: snapshot.sessionId,
       sessionName: snapshot.sessionName,
       lastSavedAt: snapshot.updatedAt,
@@ -1036,7 +1138,10 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       composerSelectionEnd: 0,
       isReferencePanelOpen: false,
       deletedBuffer: null,
-      typography: DEFAULT_TYPOGRAPHY,
+      displaySettings: {
+        ...DEFAULT_DISPLAY_SETTINGS,
+        typography: cloneTypographySettings(DEFAULT_DISPLAY_SETTINGS.typography),
+      },
       sessionId: createSessionId(),
       sessionName: createDefaultSessionName(),
       lastSavedAt: null,

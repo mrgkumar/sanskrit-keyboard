@@ -71,10 +71,31 @@ export interface EditorState {
 }
 
 export interface TypographySettings {
+  composer: {
+    itransFontSize: number;
+    itransLineHeight: number;
+    renderedFontSize: number;
+    renderedLineHeight: number;
+  };
+  document: {
+    itransFontSize: number;
+    itransLineHeight: number;
+    renderedFontSize: number;
+    renderedLineHeight: number;
+  };
+}
+
+export interface LegacyTypographySettings {
   itransFontSize: number;
   itransLineHeight: number;
   renderedFontSize: number;
   renderedLineHeight: number;
+}
+
+export interface DisplaySettings {
+  composerLayout: 'side-by-side' | 'stacked';
+  syncComposerScroll: boolean;
+  typography: TypographySettings;
 }
 
 export interface SessionSnapshot {
@@ -82,6 +103,7 @@ export interface SessionSnapshot {
   sessionName: string;
   blocks: CanonicalBlock[];
   editorState: EditorState;
-  typography: TypographySettings;
+  displaySettings?: DisplaySettings;
+  typography?: LegacyTypographySettings;
   updatedAt: string;
 }

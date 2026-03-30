@@ -1,13 +1,41 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const APP_URL = 'http://localhost:3000';
-const STORAGE_KEY = 'sanskrit-keyboard.sessions.v1';
+const STORAGE_KEYS_TO_CLEAR = [
+  'sanskrit-keyboard.sessions.v1',
+  'sanskrit-keyboard.session-index.v2',
+  'sanskrit-keyboard.lexical-history.v1',
+];
 
 const loadDefaultSession = async (page: Page) => {
+  await page.addInitScript((keys) => {
+    window.localStorage.clear();
+    for (const key of keys) {
+      window.localStorage.removeItem(key);
+    }
+    Object.keys(window.localStorage)
+      .filter((key) => key.startsWith('sanskrit-keyboard.session.v2.'))
+      .forEach((key) => window.localStorage.removeItem(key));
+  }, STORAGE_KEYS_TO_CLEAR);
   await page.goto(APP_URL);
-  await page.evaluate((key) => window.localStorage.removeItem(key), STORAGE_KEY);
-  await page.reload();
   await expect(page.locator('textarea')).toBeVisible();
+  page.on('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Workspace' }).click();
+  await page.getByRole('button', { name: 'New' }).click();
+  await expect(page.locator('textarea')).toHaveValue('');
+};
+
+const setRangeValue = async (page: Page, label: string, value: string) => {
+  const slider = page.getByRole('slider', { name: label, exact: true });
+  await slider.focus();
+  const currentValue = Number(await slider.inputValue());
+  const targetValue = Number(value);
+  const stepCount = Math.abs(targetValue - currentValue);
+  const key = targetValue >= currentValue ? 'ArrowRight' : 'ArrowLeft';
+
+  for (let index = 0; index < stepCount; index += 1) {
+    await slider.press(key);
+  }
 };
 
 test('delete toast auto-dismisses after a short timeout', async ({ page }) => {
@@ -56,6 +84,7 @@ test('clicking a correction keeps the caret at the replacement point', async ({ 
 
 test('read and review modes visibly change the document view', async ({ page }) => {
   await loadDefaultSession(page);
+  await page.getByTestId('sticky-itrans-input').fill('agniM ile purohitaM');
 
   await expect(page.getByRole('button', { name: 'Focus' })).toHaveCount(0);
 
@@ -66,4 +95,84 @@ test('read and review modes visibly change the document view', async ({ page }) 
   await expect(page.getByTestId('document-read-mode')).toBeVisible();
   await expect(page.getByText('ITRANS Source')).toHaveCount(0);
   await expect(page.getByText('Focused Source')).toHaveCount(0);
+});
+
+test('sticky composer stays bounded for long input', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  const textarea = page.getByTestId('sticky-itrans-input');
+  const shell = page.getByTestId('sticky-composer-shell');
+  const preview = page.getByTestId('sticky-devanagari-preview');
+  const hud = page.getByTestId('sticky-shortcut-hud');
+
+  const longInput = Array.from({ length: 90 }, (_, index) => `agniM ile purohitaM line ${index + 1}`).join('\n');
+  await textarea.fill(longInput);
+
+  const metrics = await Promise.all([
+    shell.evaluate((node) => {
+      const el = node as HTMLDivElement;
+      return {
+        height: el.clientHeight,
+        viewportHeight: window.innerHeight,
+      };
+    }),
+    textarea.evaluate((node) => {
+      const el = node as HTMLTextAreaElement;
+      return {
+        clientHeight: el.clientHeight,
+        scrollHeight: el.scrollHeight,
+      };
+    }),
+    preview.evaluate((node) => {
+      const el = node as HTMLDivElement;
+      return {
+        clientHeight: el.clientHeight,
+        scrollHeight: el.scrollHeight,
+      };
+    }),
+    hud.evaluate((node) => {
+      const el = node as HTMLDivElement;
+      return {
+        clientHeight: el.clientHeight,
+      };
+    }),
+  ]);
+
+  expect(metrics[0].height).toBeLessThan(metrics[0].viewportHeight * 0.7);
+  expect(metrics[1].scrollHeight).toBeGreaterThan(metrics[1].clientHeight);
+  expect(metrics[2].scrollHeight).toBeGreaterThan(metrics[2].clientHeight);
+  expect(metrics[3].clientHeight).toBeGreaterThan(0);
+});
+
+test('display settings switch composer layout and keep composer and document typography independent', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  await page.getByRole('button', { name: 'Workspace' }).click();
+  await page.getByRole('button', { name: 'Display' }).click();
+
+  const shell = page.getByTestId('sticky-composer-shell');
+  await expect(shell).toHaveAttribute('data-layout', 'side-by-side');
+
+  await page.getByRole('button', { name: 'Stacked' }).click();
+  await expect(shell).toHaveAttribute('data-layout', 'stacked');
+
+  const composerInput = page.getByTestId('sticky-itrans-input');
+  const preview = page.getByTestId('sticky-devanagari-preview');
+
+  await setRangeValue(page, 'ITRANS Size', '26');
+  await setRangeValue(page, 'Preview Sanskrit Size', '42');
+  await setRangeValue(page, 'Document Sanskrit Size', '22');
+
+  await composerInput.fill('agniM ile purohitaM\naayaahi viitaye');
+  await page.getByRole('button', { name: 'Read' }).click();
+
+  const fontSizes = await Promise.all([
+    composerInput.evaluate((node) => window.getComputedStyle(node).fontSize),
+    preview.evaluate((node) => window.getComputedStyle(node).fontSize),
+    page.getByTestId('document-read-mode').evaluate((node) => window.getComputedStyle(node).fontSize),
+  ]);
+
+  expect(fontSizes[0]).toBe('26px');
+  expect(fontSizes[1]).toBe('42px');
+  expect(fontSizes[2]).toBe('22px');
 });

@@ -102,7 +102,7 @@ export const TransliterationEngine: React.FC = () => {
   const {
     blocks,
     editorState,
-    typography,
+    displaySettings,
     sessionId,
     sessionName,
     lastSavedAt,
@@ -111,6 +111,8 @@ export const TransliterationEngine: React.FC = () => {
     userExactFormUsage,
     getRenderedDocumentText,
     preloadLexicalAssets,
+    setComposerLayout,
+    setSyncComposerScroll,
     setTypography,
     setSessionName,
     setSwaraPredictionEnabled,
@@ -128,6 +130,7 @@ export const TransliterationEngine: React.FC = () => {
   const [isWorkspacePanelOpen, setIsWorkspacePanelOpen] = React.useState(false);
   const hasLoadedSessions = React.useRef(false);
   const hasLoadedLexicalLearning = React.useRef(false);
+  const { composerLayout, syncComposerScroll, typography } = displaySettings;
   const hasMeaningfulContent = React.useMemo(
     () => blocks.some((block) => block.source.trim().length > 0 || block.rendered.trim().length > 0),
     [blocks]
@@ -218,7 +221,7 @@ export const TransliterationEngine: React.FC = () => {
     }, 500);
 
     return () => window.clearTimeout(timeoutId);
-  }, [blocks, editorState, typography, sessionId, sessionName, exportSessionSnapshot, persistSnapshot]);
+  }, [blocks, displaySettings, editorState, sessionId, sessionName, exportSessionSnapshot, persistSnapshot]);
 
   React.useEffect(() => {
     if (!hasLoadedLexicalLearning.current) {
@@ -472,53 +475,157 @@ export const TransliterationEngine: React.FC = () => {
             </button>
             {isDisplayMenuOpen && (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <div className="space-y-3">
-                  <label className="block text-xs font-semibold uppercase text-slate-600">
-                    ITRANS Size
-                    <input
-                      className="mt-2 w-full"
-                      type="range"
-                      min="14"
-                      max="28"
-                      value={typography.itransFontSize}
-                      onChange={(e) => setTypography({ itransFontSize: Number(e.target.value) })}
-                    />
-                  </label>
-                  <label className="block text-xs font-semibold uppercase text-slate-600">
-                    ITRANS Height
-                    <input
-                      className="mt-2 w-full"
-                      type="range"
-                      min="1.2"
-                      max="2.4"
-                      step="0.1"
-                      value={typography.itransLineHeight}
-                      onChange={(e) => setTypography({ itransLineHeight: Number(e.target.value) })}
-                    />
-                  </label>
-                  <label className="block text-xs font-semibold uppercase text-slate-600">
-                    Sanskrit Size
-                    <input
-                      className="mt-2 w-full"
-                      type="range"
-                      min="24"
-                      max="56"
-                      value={typography.renderedFontSize}
-                      onChange={(e) => setTypography({ renderedFontSize: Number(e.target.value) })}
-                    />
-                  </label>
-                  <label className="block text-xs font-semibold uppercase text-slate-600">
-                    Sanskrit Height
-                    <input
-                      className="mt-2 w-full"
-                      type="range"
-                      min="1.2"
-                      max="2.4"
-                      step="0.1"
-                      value={typography.renderedLineHeight}
-                      onChange={(e) => setTypography({ renderedLineHeight: Number(e.target.value) })}
-                    />
-                  </label>
+                <div className="space-y-5">
+                  <section className="space-y-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Composer Layout</p>
+                      <p className="mt-1 text-xs text-slate-500">Choose how the source and live preview sit inside the sticky typing lane.</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setComposerLayout('side-by-side')}
+                        className={clsx(
+                          'rounded-md border px-3 py-2 text-xs font-bold uppercase',
+                          composerLayout === 'side-by-side'
+                            ? 'border-blue-300 bg-blue-600 text-white'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                        )}
+                      >
+                        Side by Side
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setComposerLayout('stacked')}
+                        className={clsx(
+                          'rounded-md border px-3 py-2 text-xs font-bold uppercase',
+                          composerLayout === 'stacked'
+                            ? 'border-blue-300 bg-blue-600 text-white'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                        )}
+                      >
+                        Stacked
+                      </button>
+                    </div>
+                    <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                      <input
+                        checked={syncComposerScroll}
+                        onChange={(e) => setSyncComposerScroll(e.target.checked)}
+                        type="checkbox"
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>
+                        <span className="block text-xs font-bold uppercase text-slate-700">Sync Source And Preview Scroll</span>
+                        <span className="mt-1 block text-xs text-slate-500">Keep the ITRANS and Devanagari panes aligned proportionally during long edits.</span>
+                      </span>
+                    </label>
+                  </section>
+
+                  <section className="space-y-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Composer Typography</p>
+                      <p className="mt-1 text-xs text-slate-500">These controls affect only the sticky typing lane.</p>
+                    </div>
+                    <label className="block text-xs font-semibold uppercase text-slate-600">
+                      ITRANS Size
+                      <input
+                        className="mt-2 w-full"
+                        type="range"
+                        min="14"
+                        max="28"
+                        value={typography.composer.itransFontSize}
+                        onChange={(e) => setTypography('composer', { itransFontSize: Number(e.target.value) })}
+                      />
+                    </label>
+                    <label className="block text-xs font-semibold uppercase text-slate-600">
+                      ITRANS Height
+                      <input
+                        className="mt-2 w-full"
+                        type="range"
+                        min="1.2"
+                        max="2.4"
+                        step="0.1"
+                        value={typography.composer.itransLineHeight}
+                        onChange={(e) => setTypography('composer', { itransLineHeight: Number(e.target.value) })}
+                      />
+                    </label>
+                    <label className="block text-xs font-semibold uppercase text-slate-600">
+                      Preview Sanskrit Size
+                      <input
+                        className="mt-2 w-full"
+                        type="range"
+                        min="24"
+                        max="56"
+                        value={typography.composer.renderedFontSize}
+                        onChange={(e) => setTypography('composer', { renderedFontSize: Number(e.target.value) })}
+                      />
+                    </label>
+                    <label className="block text-xs font-semibold uppercase text-slate-600">
+                      Preview Sanskrit Height
+                      <input
+                        className="mt-2 w-full"
+                        type="range"
+                        min="1.2"
+                        max="2.4"
+                        step="0.1"
+                        value={typography.composer.renderedLineHeight}
+                        onChange={(e) => setTypography('composer', { renderedLineHeight: Number(e.target.value) })}
+                      />
+                    </label>
+                  </section>
+
+                  <section className="space-y-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Document Typography</p>
+                      <p className="mt-1 text-xs text-slate-500">These controls affect Read mode and the source/rendered text inside Review.</p>
+                    </div>
+                    <label className="block text-xs font-semibold uppercase text-slate-600">
+                      Document ITRANS Size
+                      <input
+                        className="mt-2 w-full"
+                        type="range"
+                        min="12"
+                        max="28"
+                        value={typography.document.itransFontSize}
+                        onChange={(e) => setTypography('document', { itransFontSize: Number(e.target.value) })}
+                      />
+                    </label>
+                    <label className="block text-xs font-semibold uppercase text-slate-600">
+                      Document ITRANS Height
+                      <input
+                        className="mt-2 w-full"
+                        type="range"
+                        min="1.2"
+                        max="2.6"
+                        step="0.1"
+                        value={typography.document.itransLineHeight}
+                        onChange={(e) => setTypography('document', { itransLineHeight: Number(e.target.value) })}
+                      />
+                    </label>
+                    <label className="block text-xs font-semibold uppercase text-slate-600">
+                      Document Sanskrit Size
+                      <input
+                        className="mt-2 w-full"
+                        type="range"
+                        min="20"
+                        max="56"
+                        value={typography.document.renderedFontSize}
+                        onChange={(e) => setTypography('document', { renderedFontSize: Number(e.target.value) })}
+                      />
+                    </label>
+                    <label className="block text-xs font-semibold uppercase text-slate-600">
+                      Document Sanskrit Height
+                      <input
+                        className="mt-2 w-full"
+                        type="range"
+                        min="1.2"
+                        max="2.6"
+                        step="0.1"
+                        value={typography.document.renderedLineHeight}
+                        onChange={(e) => setTypography('document', { renderedLineHeight: Number(e.target.value) })}
+                      />
+                    </label>
+                  </section>
                 </div>
               </div>
             )}

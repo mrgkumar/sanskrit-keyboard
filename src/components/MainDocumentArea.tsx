@@ -8,9 +8,10 @@ import { clsx } from 'clsx';
 import { Check, Copy, Trash2 } from 'lucide-react';
 
 export const MainDocumentArea: React.FC = () => {
-  const { blocks, editorState, setActiveBlockId, activateBlockChunk, deleteBlock, getActiveChunkGroup, typography } = useFlowStore();
+  const { blocks, editorState, setActiveBlockId, activateBlockChunk, deleteBlock, getActiveChunkGroup, displaySettings } = useFlowStore();
   const { activeBlockId, viewMode } = editorState;
   const activeChunkGroup = getActiveChunkGroup(); // Get active chunk group
+  const documentTypography = displaySettings.typography.document;
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -50,8 +51,8 @@ export const MainDocumentArea: React.FC = () => {
             className="font-serif text-slate-900 whitespace-pre-wrap"
             data-testid="document-read-mode"
             style={{
-              fontSize: `${typography.renderedFontSize}px`,
-              lineHeight: typography.renderedLineHeight,
+              fontSize: `${documentTypography.renderedFontSize}px`,
+              lineHeight: documentTypography.renderedLineHeight,
             }}
           >
             {blocks
@@ -118,8 +119,8 @@ export const MainDocumentArea: React.FC = () => {
         <p
           className="font-serif text-slate-800 mt-2"
           style={{
-            fontSize: `${typography.renderedFontSize}px`,
-            lineHeight: typography.renderedLineHeight,
+            fontSize: `${documentTypography.renderedFontSize}px`,
+            lineHeight: documentTypography.renderedLineHeight,
           }}
         >
           {block.rendered}
@@ -132,8 +133,8 @@ export const MainDocumentArea: React.FC = () => {
             <p
               className="mt-2 font-mono text-slate-700"
               style={{
-                fontSize: `${Math.max(12, typography.itransFontSize - (viewMode === 'focus' ? 0 : 2))}px`,
-                lineHeight: typography.itransLineHeight,
+                fontSize: `${documentTypography.itransFontSize}px`,
+                lineHeight: documentTypography.itransLineHeight,
               }}
             >
               {block.source || 'No source text in this block yet.'}
@@ -184,8 +185,8 @@ export const MainDocumentArea: React.FC = () => {
                     role="button"
                     aria-label={`Edit chunk ${index + 1} in ${block.title || block.id}`}
                     style={{
-                      fontSize: `${Math.max(12, typography.itransFontSize - 4)}px`,
-                      lineHeight: typography.itransLineHeight,
+                      fontSize: `${documentTypography.itransFontSize}px`,
+                      lineHeight: documentTypography.itransLineHeight,
                     }}
                   >
                     {segment.source}
@@ -241,8 +242,8 @@ export const MainDocumentArea: React.FC = () => {
                     <p
                       className="font-mono text-slate-700 mb-1"
                       style={{
-                        fontSize: `${Math.max(12, typography.itransFontSize - 2)}px`,
-                        lineHeight: typography.itransLineHeight,
+                        fontSize: `${documentTypography.itransFontSize}px`,
+                        lineHeight: documentTypography.itransLineHeight,
                       }}
                     >
                       {segment.source}
@@ -250,8 +251,8 @@ export const MainDocumentArea: React.FC = () => {
                     <p
                       className="font-serif text-slate-800"
                       style={{
-                        fontSize: `${Math.max(20, typography.renderedFontSize - 8)}px`,
-                        lineHeight: typography.renderedLineHeight,
+                        fontSize: `${documentTypography.renderedFontSize}px`,
+                        lineHeight: documentTypography.renderedLineHeight,
                       }}
                     >
                       {segment.rendered}

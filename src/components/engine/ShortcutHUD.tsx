@@ -181,9 +181,12 @@ export const ShortcutHUD: React.FC = () => {
 
 
   return (
-    <div className="w-full max-w-5xl px-4">
+    <div
+      className="w-full min-h-0 max-w-5xl overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 md:max-h-[16vh]"
+      data-testid="sticky-shortcut-hud"
+    >
       {!showAnyDynamicHUD && (
-        <div className="flex items-center gap-3 overflow-x-auto h-16 scrollbar-hide">
+        <div className="flex h-16 items-center gap-3 overflow-x-auto scrollbar-hide">
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mr-2 shrink-0">Quick Ref:</span>
           <div className="flex items-center gap-2 overflow-x-auto py-2">
             {DEFAULT_SHORTCUTS.map((m, i) => (
@@ -202,7 +205,7 @@ export const ShortcutHUD: React.FC = () => {
 
       {showAnyDynamicHUD && (
         <>
-          <div className="flex flex-col gap-3 py-2">
+          <div className="flex flex-col gap-3 py-1">
             {showLexicalSuggestions && (
               <section
                 data-testid="lexical-suggestions"
