@@ -2,7 +2,7 @@
 
 @font-face {
   font-family: 'Chandas';
-  src: url('/fonts/chandas.ttf') format('truetype');
+  src: url('/sanskrit-keyboard/fonts/chandas.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -10,7 +10,7 @@
 
 @font-face {
   font-family: 'Siddhanta';
-  src: url('/fonts/siddhanta.ttf') format('truetype');
+  src: url('/sanskrit-keyboard/fonts/siddhanta.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -18,7 +18,7 @@
 
 @font-face {
   font-family: 'Sampradaya';
-  src: url('/fonts/sampradaya.ttf') format('truetype');
+  src: url('/sanskrit-keyboard/fonts/sampradaya.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
