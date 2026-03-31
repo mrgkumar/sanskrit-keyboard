@@ -18,6 +18,7 @@
 /.next/
 /out/
 /public/autocomplete/
+/test-support/fixtures/autocomplete/
 
 # production
 /build
