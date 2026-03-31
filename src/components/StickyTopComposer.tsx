@@ -31,6 +31,7 @@ export const StickyTopComposer: React.FC = () => {
   const composerHighlightRef = React.useRef<HTMLDivElement>(null);
   const sourcePaneRef = React.useRef<HTMLDivElement>(null);
   const previewRef = React.useRef<HTMLDivElement>(null);
+  const isPointerSelectingRef = React.useRef(false);
   const scrollSyncSourceRef = React.useRef<'source' | 'preview' | null>(null);
   const programmaticScrollTargetRef = React.useRef<HTMLElement | null>(null);
   const [copyState, setCopyState] = React.useState<'idle' | 'copied' | 'error'>('idle');
@@ -436,6 +437,13 @@ export const StickyTopComposer: React.FC = () => {
     setComposerSelection(target.selectionStart, target.selectionEnd);
   };
 
+  const finalizePointerSelection = (target: HTMLTextAreaElement) => {
+    window.requestAnimationFrame(() => {
+      isPointerSelectingRef.current = false;
+      syncSelection(target);
+    });
+  };
+
   const getTargetCaretForClick = (targetIndex: number, clientX: number, currentTarget: HTMLElement) => {
     const sourceStart = renderedPreview.targetToSourceMap[targetIndex] ?? currentChunkSource.length;
     let sourceEnd = currentChunkSource.length;
@@ -526,7 +534,11 @@ export const StickyTopComposer: React.FC = () => {
   };
 
   React.useLayoutEffect(() => {
-    if (composerRef.current && document.activeElement === composerRef.current) {
+    if (
+      composerRef.current &&
+      document.activeElement === composerRef.current &&
+      !isPointerSelectingRef.current
+    ) {
       if (
         composerRef.current.selectionStart !== composerSelectionStart ||
         composerRef.current.selectionEnd !== composerSelectionEnd
@@ -763,7 +775,7 @@ export const StickyTopComposer: React.FC = () => {
 
   return (
     <>
-    <div className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+    <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 pb-3 pt-3">
         <div className="flex items-center justify-end gap-3 text-sm text-slate-500">
           {isLongBlock && (
@@ -795,7 +807,7 @@ export const StickyTopComposer: React.FC = () => {
             </div>
             <button
               onClick={toggleReferencePanel}
-              className="inline-flex shrink-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 hover:bg-slate-100"
+              className="relative z-10 inline-flex shrink-0 touch-manipulation items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 hover:bg-slate-100"
               type="button"
             >
               <BookOpen className="h-3.5 w-3.5" />
@@ -865,9 +877,20 @@ export const StickyTopComposer: React.FC = () => {
                   onKeyDown={handleKeyDown}
                   onScroll={handleComposerScroll}
                   onSelect={(e) => syncSelection(e.currentTarget)}
-                  onClick={(e) => syncSelection(e.currentTarget)}
+                  onPointerDown={() => {
+                    isPointerSelectingRef.current = true;
+                  }}
+                  onPointerUp={(e) => finalizePointerSelection(e.currentTarget)}
+                  onPointerCancel={() => {
+                    isPointerSelectingRef.current = false;
+                  }}
+                  onClick={(e) => finalizePointerSelection(e.currentTarget)}
                   onKeyUp={(e) => syncSelection(e.currentTarget)}
-                  onFocus={(e) => syncSelection(e.currentTarget)}
+                  onFocus={(e) => {
+                    if (!isPointerSelectingRef.current) {
+                      syncSelection(e.currentTarget);
+                    }
+                  }}
                   rows={Math.min(6, Math.max(1, currentChunkSource.split('\n').length))}
                   placeholder="Type ITRANS here..."
                 />

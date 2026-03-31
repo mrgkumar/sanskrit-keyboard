@@ -327,21 +327,21 @@ export const TransliterationEngine: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 font-sans relative">
-      <div className="fixed left-4 top-4 z-[80] flex items-center gap-2">
+      <div className="fixed left-4 top-4 z-[140] flex items-center gap-2 pointer-events-none">
         <button
           type="button"
           onClick={() => setIsWorkspacePanelOpen((open) => !open)}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-xs font-bold uppercase text-slate-700 shadow-sm backdrop-blur hover:bg-white"
+          className="pointer-events-auto touch-manipulation inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-xs font-bold uppercase text-slate-700 shadow-sm backdrop-blur hover:bg-white"
         >
           {isWorkspacePanelOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           Workspace
         </button>
-        <div className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white/95 p-1 shadow-sm backdrop-blur">
+        <div className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white/95 p-1 shadow-sm backdrop-blur">
           <button
             type="button"
             onClick={() => setViewMode('read')}
             className={clsx(
-              'inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
+              'touch-manipulation inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
               viewMode === 'read' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
             )}
             aria-label="Read mode"
@@ -353,7 +353,7 @@ export const TransliterationEngine: React.FC = () => {
             type="button"
             onClick={() => setViewMode('review')}
             className={clsx(
-              'inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
+              'touch-manipulation inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
               viewMode === 'review' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
             )}
             aria-label="Review mode"
@@ -365,7 +365,7 @@ export const TransliterationEngine: React.FC = () => {
             type="button"
             onClick={() => setViewMode('immersive')}
             className={clsx(
-              'inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
+              'touch-manipulation inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
               viewMode === 'immersive' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
             )}
             aria-label="Immersive mode"
