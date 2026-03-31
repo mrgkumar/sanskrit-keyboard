@@ -117,6 +117,12 @@ export const StickyTopComposer: React.FC = () => {
     return { start, end };
   })();
 
+  const selectedSourceRange = (() => {
+    const start = Math.min(composerSelectionStart, composerSelectionEnd);
+    const end = Math.max(composerSelectionStart, composerSelectionEnd);
+    return { start, end };
+  })();
+
   const currentSourceWordRange = (() => {
     if (!currentChunkSource || composerSelectionStart !== composerSelectionEnd) {
       return null;
@@ -166,7 +172,13 @@ export const StickyTopComposer: React.FC = () => {
     const sourceLength = currentChunkSource.length;
     const clampedCaret = Math.max(0, Math.min(composerSelectionStart, sourceLength));
     const isCollapsedSelection = composerSelectionStart === composerSelectionEnd;
-    const boundaries = new Set<number>([0, sourceLength, clampedCaret]);
+    const boundaries = new Set<number>([
+      0,
+      sourceLength,
+      clampedCaret,
+      selectedSourceRange.start,
+      selectedSourceRange.end,
+    ]);
 
     if (currentSourceWordRange) {
       boundaries.add(currentSourceWordRange.start);
@@ -196,7 +208,12 @@ export const StickyTopComposer: React.FC = () => {
       }
 
       const text = currentChunkSource.slice(start, end);
+      const isSelectionVisible =
+        selectedSourceRange.end > selectedSourceRange.start &&
+        start >= selectedSourceRange.start &&
+        end <= selectedSourceRange.end;
       const isCurrentWordVisible =
+        !isSelectionVisible &&
         currentSourceWordRange !== null &&
         start >= currentSourceWordRange.start &&
         end <= currentSourceWordRange.end;
@@ -204,7 +221,11 @@ export const StickyTopComposer: React.FC = () => {
       fragments.push(
         <span
           key={`itrans-fragment-${start}-${end}`}
-          className={clsx(isCurrentWordVisible && 'font-bold text-[#6b1f1f]')}
+          className={clsx(
+            isSelectionVisible && 'rounded-[0.18em] bg-blue-200/80 text-blue-950',
+            isCurrentWordVisible && 'font-bold text-[#6b1f1f]'
+          )}
+          data-source-selection={isSelectionVisible ? 'true' : undefined}
         >
           {text}
         </span>
@@ -310,8 +331,6 @@ export const StickyTopComposer: React.FC = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    setComposerSelection(e.currentTarget.selectionStart, e.currentTarget.selectionEnd);
-
     if (!e.altKey && !e.ctrlKey && !e.metaKey) {
       const isInputKey = e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete';
       if (isInputKey) {
@@ -508,7 +527,12 @@ export const StickyTopComposer: React.FC = () => {
 
   React.useLayoutEffect(() => {
     if (composerRef.current && document.activeElement === composerRef.current) {
-      composerRef.current.setSelectionRange(composerSelectionStart, composerSelectionEnd);
+      if (
+        composerRef.current.selectionStart !== composerSelectionStart ||
+        composerRef.current.selectionEnd !== composerSelectionEnd
+      ) {
+        composerRef.current.setSelectionRange(composerSelectionStart, composerSelectionEnd);
+      }
     }
   }, [currentChunkSource, composerSelectionStart, composerSelectionEnd]);
 
@@ -695,6 +719,20 @@ export const StickyTopComposer: React.FC = () => {
     }
   };
 
+  const handleCopySource = async () => {
+    if (!currentChunkSource) {
+      setCopyState('error');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(currentChunkSource);
+      setCopyState('copied');
+    } catch {
+      setCopyState('error');
+    }
+  };
+
   const handleDeleteBlock = () => {
     if (!activeBlock) {
       return;
@@ -773,11 +811,29 @@ export const StickyTopComposer: React.FC = () => {
                 : 'grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_1px_minmax(0,0.85fr)]'
             )}
           >
-            <div ref={sourcePaneRef} className="relative flex min-h-0 flex-1 flex-col gap-2 p-2.5">
+            <div ref={sourcePaneRef} className="group relative flex min-h-0 flex-1 flex-col gap-2 p-2.5">
               <div className="flex items-center justify-between gap-3 px-1">
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">ITRANS Input</p>
               </div>
               <div className="relative min-h-[7rem] flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div className="pointer-events-none absolute right-2 top-2 z-20 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <button
+                    onClick={handleCopySource}
+                    className={clsx(
+                      'pointer-events-auto rounded-md border bg-white/95 p-1.5 shadow-sm',
+                      copyState === 'copied'
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : copyState === 'error'
+                          ? 'border-rose-200 bg-rose-50 text-rose-700'
+                          : 'border-blue-200 text-slate-700 hover:bg-blue-100'
+                    )}
+                    type="button"
+                    aria-label="Copy ITRANS source"
+                    title={copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : 'Copy ITRANS'}
+                  >
+                    {copyState === 'copied' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </button>
+                </div>
                 <div
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl py-2.5 pl-3 pr-7 font-mono text-lg text-slate-900 md:pr-8"

@@ -310,6 +310,33 @@ test('clicking devanagari preview moves the itrans caret to the mapped source po
   expect(selection.start).not.toBe(sample.length);
 });
 
+test('itrans keyboard selection expands visibly beyond one character', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  const sample = 'agniM ile purohitaM';
+  const textarea = page.getByTestId('sticky-itrans-input');
+  await textarea.fill(sample);
+  await textarea.click();
+  await textarea.press('End');
+  await textarea.press('Shift+ArrowLeft');
+  await textarea.press('Shift+ArrowLeft');
+  await textarea.press('Shift+ArrowLeft');
+
+  const selection = await textarea.evaluate((node: HTMLTextAreaElement) => ({
+    start: node.selectionStart,
+    end: node.selectionEnd,
+    selectedText: node.value.slice(node.selectionStart, node.selectionEnd),
+  }));
+
+  expect(selection.end - selection.start).toBe(3);
+  expect(selection.selectedText).toBe('taM');
+  await expect(page.locator('[data-source-selection="true"]').first()).toBeVisible();
+  const selectedFragmentsText = await page
+    .locator('[data-source-selection="true"]')
+    .evaluateAll((nodes) => nodes.map((node) => node.textContent ?? '').join(''));
+  expect(selectedFragmentsText).toBe('taM');
+});
+
 test('review composer keeps itrans and devanagari scroll positions synchronized for long text', async ({ page }) => {
   await loadDefaultSession(page);
 
