@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "prefix": "jm",
+  "entries": [
+    {"itrans":"jmaa","devanagari":"ज्मा","count":3},
+    {"itrans":"jmaayantamiiyatu:","devanagari":"ज्मायन्तमीयतुः","count":1},
+    {"itrans":"jmanna","devanagari":"ज्मन्न","count":2},
+    {"itrans":"jmannupa","devanagari":"ज्मन्नुप","count":2},
+    {"itrans":"jmayaa","devanagari":"ज्मया","count":1}
+  ]
+}

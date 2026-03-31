@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "prefix": "tb",
+  "entries": [
+    {"itrans":"tbasya","devanagari":"त्बस्य","count":1},
+    {"itrans":"tbha","devanagari":"त्भ","count":1},
+    {"itrans":"tbhaktyaa","devanagari":"त्भक्त्या","count":1},
+    {"itrans":"tbhavatii","devanagari":"त्भवती","count":1},
+    {"itrans":"tbhede","devanagari":"त्भेदे","count":1}
+  ]
+}

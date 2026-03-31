@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "prefix": "pn",
+  "entries": [
+    {"itrans":"pnaa","devanagari":"प्ना","count":1},
+    {"itrans":"pnaapya","devanagari":"प्नाप्य","count":1},
+    {"itrans":"pnaavatarpayan","devanagari":"प्नावतर्पयन्","count":1},
+    {"itrans":"pnagR^ihyasaMj~no","devanagari":"प्नगृह्यसंज्ञो","count":1},
+    {"itrans":"pnarvaasayogyaM","devanagari":"प्नर्वासयोग्यं","count":1},
+    {"itrans":"pno","devanagari":"प्नो","count":1},
+    {"itrans":"pnormal","devanagari":"प्नोर्मल्","count":1},
+    {"itrans":"pnot","devanagari":"प्नोत्","count":1},
+    {"itrans":"pnoti","devanagari":"प्नोति","count":3},
+    {"itrans":"pnuta:","devanagari":"प्नुतः","count":1},
+    {"itrans":"pnutaam","devanagari":"प्नुताम्","count":1},
+    {"itrans":"pnuvan","devanagari":"प्नुवन्","count":1}
+  ]
+}

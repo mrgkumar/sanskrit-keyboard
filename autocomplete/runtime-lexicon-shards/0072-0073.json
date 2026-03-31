@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "prefix": "rs",
+  "entries": [
+    {"itrans":"rsaj~naayaam","devanagari":"र्सज्ञायाम्","count":1},
+    {"itrans":"rsamasta","devanagari":"र्समस्त","count":1},
+    {"itrans":"rsha","devanagari":"र्श","count":1},
+    {"itrans":"rshapaurNamaasaadi","devanagari":"र्शपौर्णमासादि","count":1},
+    {"itrans":"rshapuurNamaasau","devanagari":"र्शपूर्णमासौ","count":5},
+    {"itrans":"rshapuurNamaasayo:","devanagari":"र्शपूर्णमासयोः","count":2},
+    {"itrans":"rshapuurNamaasayostaani","devanagari":"र्शपूर्णमासयोस्तानि","count":1},
+    {"itrans":"rshrotriyaaya","devanagari":"र्श्रोत्रियाय","count":1},
+    {"itrans":"rshyaamantraNotsuka","devanagari":"र्श्यामन्त्रणोत्सुक","count":1},
+    {"itrans":"rsyaadeva","devanagari":"र्स्यादेव","count":1}
+  ]
+}

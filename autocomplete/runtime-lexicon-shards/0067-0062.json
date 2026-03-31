@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "prefix": "gb",
+  "entries": [
+    {"itrans":"gbha","devanagari":"ग्भ","count":1},
+    {"itrans":"gbhya","devanagari":"ग्भ्य","count":2}
+  ]
+}

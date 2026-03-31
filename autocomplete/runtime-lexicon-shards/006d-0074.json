@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "prefix": "mt",
+  "entries": [
+    {"itrans":"mta:","devanagari":"म्तः","count":1},
+    {"itrans":"mtambakarNayo","devanagari":"म्तम्बकर्णयो","count":1},
+    {"itrans":"mtau","devanagari":"म्तौ","count":1},
+    {"itrans":"mtavarthiiyeneninaa","devanagari":"म्तवर्थीयेनेनिना","count":1},
+    {"itrans":"mtha","devanagari":"म्थ","count":1},
+    {"itrans":"mtraM","devanagari":"म्त्रं","count":1},
+    {"itrans":"mtyaanye","devanagari":"म्त्यान्ये","count":1}
+  ]
+}

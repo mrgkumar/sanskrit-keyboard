@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "prefix": "vh",
+  "entries": [
+    {"itrans":"vha","devanagari":"व्ह","count":1},
+    {"itrans":"vhaale","devanagari":"व्हाले","count":1},
+    {"itrans":"vhaara","devanagari":"व्हार","count":1},
+    {"itrans":"vhaaTsa/epa","devanagari":"व्हाट्सएप","count":1},
+    {"itrans":"vhaavayaa","devanagari":"व्हावया","count":1},
+    {"itrans":"vhaavayaachaacha","devanagari":"व्हावयाचाच","count":1},
+    {"itrans":"vhaavayaache","devanagari":"व्हावयाचे","count":1},
+    {"itrans":"vhaavayaacheM","devanagari":"व्हावयाचें","count":1},
+    {"itrans":"vhaavayaachii","devanagari":"व्हावयाची","count":1},
+    {"itrans":"vhaavayaasa","devanagari":"व्हावयास","count":1},
+    {"itrans":"vhaave","devanagari":"व्हावे","count":1},
+    {"itrans":"vhaaveM","devanagari":"व्हावें","count":1},
+    {"itrans":"vhaavii","devanagari":"व्हावी","count":1},
+    {"itrans":"vhahau","devanagari":"व्हहौ","count":1},
+    {"itrans":"vhaM","devanagari":"व्हं","count":1},
+    {"itrans":"vhayeshriyam","devanagari":"व्हयेश्रियम्","count":1},
+    {"itrans":"vhaॉTsa/epa","devanagari":"व्हॉट्सएप","count":1},
+    {"itrans":"vhe","devanagari":"व्हे","count":1},
+    {"itrans":"vhehai","devanagari":"व्हेहै","count":1},
+    {"itrans":"vhelaa","devanagari":"व्हेला","count":1},
+    {"itrans":"vhi/etanaamadeshasya","devanagari":"व्हिएतनामदेशस्य","count":1},
+    {"itrans":"vhiyetanaama","devanagari":"व्हियेतनाम","count":1},
+    {"itrans":"vho","devanagari":"व्हो","count":1},
+    {"itrans":"vhola","devanagari":"व्होल","count":1},
+    {"itrans":"vhoraa","devanagari":"व्होरा","count":1},
+    {"itrans":"vhyaadhibhayaM","devanagari":"व्ह्याधिभयं","count":1},
+    {"itrans":"vhyaahR^itaani","devanagari":"व्ह्याहृतानि","count":1}
+  ]
+}

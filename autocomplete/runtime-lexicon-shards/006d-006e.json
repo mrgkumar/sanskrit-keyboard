@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "prefix": "mn",
+  "entries": [
+    {"itrans":"mna","devanagari":"म्न","count":1},
+    {"itrans":"mnaa","devanagari":"म्ना","count":1},
+    {"itrans":"mnaala","devanagari":"म्नाल","count":1},
+    {"itrans":"mnaasyati","devanagari":"म्नास्यति","count":1},
+    {"itrans":"mnaata","devanagari":"म्नात","count":1},
+    {"itrans":"mnaata:","devanagari":"म्नातः","count":1},
+    {"itrans":"mnaayaataalukaayai","devanagari":"म्नायातालुकायै","count":1},
+    {"itrans":"mnaayate","devanagari":"म्नायते","count":1},
+    {"itrans":"mnahaa","devanagari":"म्नहा","count":1},
+    {"itrans":"mnau","devanagari":"म्नौ","count":1},
+    {"itrans":"mndanavaaMshake","devanagari":"म्न्दनवांशके","count":1},
+    {"itrans":"mneti","devanagari":"म्नेति","count":1},
+    {"itrans":"mneyaat","devanagari":"म्नेयात्","count":1},
+    {"itrans":"mnii","devanagari":"म्नी","count":1}
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "prefix": "lp",
+  "entries": [
+    {"itrans":"lpa","devanagari":"ल्प","count":1},
+    {"itrans":"lpaakalpitaa","devanagari":"ल्पाकल्पिता","count":1},
+    {"itrans":"lpabhaagyataaM","devanagari":"ल्पभाग्यतां","count":1},
+    {"itrans":"lpaj~no.a","devanagari":"ल्पज्ञोऽ","count":1},
+    {"itrans":"lpaksaan","devanagari":"ल्पक्सान्","count":1},
+    {"itrans":"lpaM","devanagari":"ल्पं","count":1},
+    {"itrans":"lpamevaaj~naa:","devanagari":"ल्पमेवाज्ञाः","count":1},
+    {"itrans":"lparshanagandho.asti","devanagari":"ल्पर्शनगन्धोऽस्ति","count":1},
+    {"itrans":"lpavanataraNayo:","devanagari":"ल्पवनतरणयोः","count":1},
+    {"itrans":"lpii","devanagari":"ल्पी","count":1},
+    {"itrans":"lpikena","devanagari":"ल्पिकेन","count":1},
+    {"itrans":"lpitakalpapaadapa:","devanagari":"ल्पितकल्पपादपः","count":1},
+    {"itrans":"lptasarvaa~Ngashobhaa","devanagari":"ल्प्तसर्वाङ्गशोभा","count":1},
+    {"itrans":"lpuulayati","devanagari":"ल्पूलयति","count":1},
+    {"itrans":"lpya","devanagari":"ल्प्य","count":1},
+    {"itrans":"lpyate","devanagari":"ल्प्यते","count":1}
+  ]
+}

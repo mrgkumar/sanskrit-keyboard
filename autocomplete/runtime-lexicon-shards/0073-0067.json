@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "prefix": "sg",
+  "entries": [
+    {"itrans":"sga","devanagari":"स्ग","count":1},
+    {"itrans":"sgau","devanagari":"स्गौ","count":1},
+    {"itrans":"sgha","devanagari":"स्घ","count":1},
+    {"itrans":"sghya:","devanagari":"स्घ्यः","count":1},
+    {"itrans":"sghyo","devanagari":"स्घ्यो","count":3},
+    {"itrans":"sghyovajraM","devanagari":"स्घ्योवज्रं","count":1}
+  ]
+}

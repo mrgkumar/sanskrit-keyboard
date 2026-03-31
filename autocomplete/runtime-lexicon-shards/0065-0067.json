@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "prefix": "eg",
+  "entries": [
+    {"itrans":"egaliMga","devanagari":"एगलिंग","count":1},
+    {"itrans":"egantasya","devanagari":"एगन्तस्य","count":1},
+    {"itrans":"egar","devanagari":"एगर्","count":1},
+    {"itrans":"egaraa","devanagari":"एगरा","count":1},
+    {"itrans":"egii/eme","devanagari":"एगीएमे","count":1},
+    {"itrans":"eglo","devanagari":"एग्लो","count":1},
+    {"itrans":"egmorapradeshasya","devanagari":"एग्मोरप्रदेशस्य","count":1},
+    {"itrans":"egne","devanagari":"एग्ने","count":1},
+    {"itrans":"egriigeTara","devanagari":"एग्रीगेटर","count":1},
+    {"itrans":"egriikalcharal","devanagari":"एग्रीकल्चरल्","count":1},
+    {"itrans":"egro","devanagari":"एग्रो","count":1},
+    {"itrans":"egyo","devanagari":"एग्यो","count":1}
+  ]
+}

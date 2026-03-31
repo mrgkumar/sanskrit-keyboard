@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "prefix": "mm",
+  "entries": [
+    {"itrans":"mma","devanagari":"म्म","count":1},
+    {"itrans":"mmaa","devanagari":"म्मा","count":1},
+    {"itrans":"mmaaM","devanagari":"म्मां","count":1},
+    {"itrans":"mmaanuSaM","devanagari":"म्मानुषं","count":1},
+    {"itrans":"mmadra","devanagari":"म्मद्र","count":1},
+    {"itrans":"mmahaan","devanagari":"म्महान्","count":1},
+    {"itrans":"mmahaavrataM","devanagari":"म्महाव्रतं","count":1},
+    {"itrans":"mmama","devanagari":"म्मम","count":1},
+    {"itrans":"mmanuSyaashcharaamasi","devanagari":"म्मनुष्याश्चरामसि","count":1},
+    {"itrans":"mmariichi","devanagari":"म्मरीचि","count":1},
+    {"itrans":"mminoti","devanagari":"म्मिनोति","count":1},
+    {"itrans":"mmR^ityudaayai","devanagari":"म्मृत्युदायै","count":1},
+    {"itrans":"mmuurdhni","devanagari":"म्मूर्ध्नि","count":1}
+  ]
+}

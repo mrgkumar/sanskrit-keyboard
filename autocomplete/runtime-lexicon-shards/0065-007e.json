@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "prefix": "e~",
+  "entries": [
+    {"itrans":"e~Ngan","devanagari":"एङ्गन्","count":1},
+    {"itrans":"e~NgrahaNaapattau","devanagari":"एङ्ग्रहणापत्तौ","count":1},
+    {"itrans":"e~NgrahaNam","devanagari":"एङ्ग्रहणम्","count":1},
+    {"itrans":"e~NgrahaNaM","devanagari":"एङ्ग्रहणं","count":1},
+    {"itrans":"e~NgrahaNamaavashyakamiti","devanagari":"एङ्ग्रहणमावश्यकमिति","count":1},
+    {"itrans":"e~NgrahaNamityartha:","devanagari":"एङ्ग्रहणमित्यर्थः","count":1},
+    {"itrans":"e~NgrahaNasya","devanagari":"एङ्ग्रहणस्य","count":1},
+    {"itrans":"e~njalanuTTu","devanagari":"एञ्जलनुट्टु","count":1},
+    {"itrans":"e~njaliis","devanagari":"एञ्जलीस्","count":1},
+    {"itrans":"e~njelasya","devanagari":"एञ्जेलस्य","count":1},
+    {"itrans":"e~njeljalapaata:","devanagari":"एञ्जेल्जलपातः","count":1},
+    {"itrans":"e~njyotsnaayainama:","devanagari":"एञ्ज्योत्स्नायैनमः","count":1},
+    {"itrans":"e~Nkaara","devanagari":"एङ्कार","count":1},
+    {"itrans":"e~Nkaarii","devanagari":"एङ्कारी","count":1}
+  ]
+}

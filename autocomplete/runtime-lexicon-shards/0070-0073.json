@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "prefix": "ps",
+  "entries": [
+    {"itrans":"psaa","devanagari":"प्सा","count":1},
+    {"itrans":"psaata","devanagari":"प्सात","count":1},
+    {"itrans":"psaatamityaadau","devanagari":"प्सातमित्यादौ","count":1},
+    {"itrans":"psaatamityatra","devanagari":"प्सातमित्यत्र","count":1},
+    {"itrans":"psaati","devanagari":"प्साति","count":1},
+    {"itrans":"psaatkaara","devanagari":"प्सात्कार","count":1},
+    {"itrans":"psara:","devanagari":"प्सरः","count":1},
+    {"itrans":"psaras","devanagari":"प्सरस्","count":1},
+    {"itrans":"psarasa","devanagari":"प्सरस","count":1},
+    {"itrans":"psarase","devanagari":"प्सरसे","count":1},
+    {"itrans":"psaro","devanagari":"प्सरो","count":1},
+    {"itrans":"psatamityatrobhayaM","devanagari":"प्सतमित्यत्रोभयं","count":1},
+    {"itrans":"psati","devanagari":"प्सति","count":1},
+    {"itrans":"psiddhakiirtanaani","devanagari":"प्सिद्धकीर्तनानि","count":1},
+    {"itrans":"psitaa","devanagari":"प्सिता","count":1},
+    {"itrans":"psite","devanagari":"प्सिते","count":1},
+    {"itrans":"psniyaa","devanagari":"प्स्निया","count":1},
+    {"itrans":"psnya","devanagari":"प्स्न्य","count":1},
+    {"itrans":"psR^itau","devanagari":"प्सृतौ","count":1},
+    {"itrans":"psthaana","devanagari":"प्स्थान","count":1},
+    {"itrans":"psthapuSpe","devanagari":"प्स्थपुष्पे","count":1},
+    {"itrans":"psu","devanagari":"प्सु","count":2},
+    {"itrans":"psura:","devanagari":"प्सुरः","count":1},
+    {"itrans":"psuras","devanagari":"प्सुरस्","count":1},
+    {"itrans":"psya","devanagari":"प्स्य","count":1}
+  ]
+}

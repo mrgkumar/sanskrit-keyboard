@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "prefix": "Ty",
+  "entries": [
+    {"itrans":"Tyunikaa","devanagari":"ट्युनिका","count":1},
+    {"itrans":"TyuToriyala","devanagari":"ट्युटोरियल","count":1},
+    {"itrans":"Tyuumar","devanagari":"ट्यूमर्","count":1},
+    {"itrans":"Tyuumara","devanagari":"ट्यूमर","count":1},
+    {"itrans":"TyuuTara","devanagari":"ट्यूटर","count":1},
+    {"itrans":"TyuuToriyala","devanagari":"ट्यूटोरियल","count":1},
+    {"itrans":"TyuuToriyalsa","devanagari":"ट्यूटोरियल्स","count":1}
+  ]
+}

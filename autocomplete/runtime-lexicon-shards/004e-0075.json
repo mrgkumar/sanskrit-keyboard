@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "prefix": "Nu",
+  "entries": [
+    {"itrans":"Nu","devanagari":"णु","count":1},
+    {"itrans":"Nudaa","devanagari":"णुदा","count":4},
+    {"itrans":"Nudata","devanagari":"णुदत","count":1},
+    {"itrans":"Nudate","devanagari":"णुदते","count":6},
+    {"itrans":"Nudate.apratiikhSamaa","devanagari":"णुदतेऽप्रतीख्षमा","count":1}
+  ]
+}
