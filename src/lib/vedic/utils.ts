@@ -317,6 +317,10 @@ const overrides: Record<string, string> = {
   '\u0951': "'",   // Svarita
   '\u0952': "_",   // Anudatta
   '\uF176': "''",  // Dirgha Svarita
+  '\uF186': "1=",  // Legacy Samaveda private-use accent form
+  '\uF187': "2=",  // Legacy Samaveda private-use accent form
+  '\uF188': "3=",  // Legacy Samaveda private-use accent form
+  '\uF196': "6=",  // Legacy Samaveda private-use accent form
   '\u0903': ":",   // Visarga
   '\u0905': "a",   // Independent a
   '\u0901': '.N',  // Canonical chandrabindu to avoid ~n/~N ambiguity in forward transliteration

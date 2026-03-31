@@ -141,7 +141,7 @@ const DEFAULT_BLOCK_SEEDS = [
   {
     id: 'block-6',
     title: 'Sāmaveda Accent Sample',
-    source: 'अग्न आ याहि वीतये गृणानो हव्यदातये। नि होता सत्सि बर्हिषि ।। 1 ।।',
+    source: "a2=gna3= A1= yaa2=hi vii3=ta1=ye2= gR^iNaa3=no2= ha3=vya1=daa2=taye| ni1= hotaa6= satsi ba3=rhi1=Si2= || 1 ||",
   },
 ] as const;
 
