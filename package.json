@@ -2,11 +2,16 @@
   "name": "app",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://mrgkumar.github.io/sanskrit-keyboard",
   "scripts": {
+    "predev": "node scripts/copyAutocompleteAssets.mjs",
     "dev": "next dev --webpack",
     "dev:turbo": "next dev",
+    "prebuild": "node scripts/copyAutocompleteAssets.mjs",
     "build": "next build",
     "start": "next start",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d out",
     "lint": "eslint",
     "build:canonical-lexicon": "node --experimental-strip-types scripts/buildCanonicalLexicon.ts",
     "build:canonical-lexicon:sample": "node --experimental-strip-types scripts/buildCanonicalLexicon.ts --limit 2000",
@@ -19,6 +24,7 @@
     "evaluate:prediction-corpus": "node --experimental-strip-types scripts/evaluatePredictionCorpus.ts --output ../generated/autocomplete/prediction-eval.json",
     "evaluate:prediction-retrieval": "node --experimental-strip-types scripts/evaluatePredictionRetrieval.ts",
     "analyze:prediction-retrieval-gaps": "node --experimental-strip-types scripts/analyzePredictionRetrievalGaps.ts",
+    "analyze:prediction-retrieval-taxonomy": "node --experimental-strip-types scripts/analyzePredictionRetrievalMissTaxonomy.ts",
     "evaluate:prediction-experiments": "node --experimental-strip-types scripts/runPredictionExperimentGame.ts",
     "prepare:prediction-datasets": "node --experimental-strip-types scripts/preparePredictionDataset.ts",
     "evaluate:prediction-models": "python3 scripts/runProbabilisticPredictionGame.py",
@@ -48,6 +54,7 @@
     "@types/react-dom": "^19.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.1.0",
+    "gh-pages": "^6.3.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

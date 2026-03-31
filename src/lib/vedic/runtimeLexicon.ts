@@ -55,9 +55,11 @@ interface SwaraLexiconFile {
   entries: SwaraLexiconEntry[];
 }
 
-const MANIFEST_URL = '/api/autocomplete/runtime-lexicon-shards-manifest.json';
-const SHARD_API_ROOT = '/api/autocomplete';
-const SWARA_LEXICON_URL = '/api/autocomplete/swara-lexicon.json';
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+const AUTOCOMPLETE_ROOT = `${BASE_PATH}/autocomplete`;
+const MANIFEST_URL = `${AUTOCOMPLETE_ROOT}/runtime-lexicon-shards-manifest.json`;
+const SHARD_API_ROOT = AUTOCOMPLETE_ROOT;
+const SWARA_LEXICON_URL = `${AUTOCOMPLETE_ROOT}/swara-lexicon.json`;
 const SHARD_PREFIX_LENGTH = 2;
 const MIN_LOOKUP_PREFIX_LENGTH = 2;
 const MAX_INDEXED_PREFIX_LENGTH = 12;

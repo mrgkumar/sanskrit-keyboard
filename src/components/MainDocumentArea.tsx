@@ -196,8 +196,7 @@ export const MainDocumentArea: React.FC = () => {
     const blockClassName = clsx(
       "p-4 rounded-lg cursor-pointer transition-all",
       isActive ? "bg-blue-50 border-2 border-blue-300 shadow-md" : "hover:bg-slate-50 border border-transparent",
-      viewMode === 'focus' && !isActive && 'opacity-80',
-      viewMode === 'read' && 'bg-white border border-slate-200 shadow-sm'
+      viewMode === 'focus' && !isActive && 'opacity-80'
     );
 
     const commonBlockContent = (
