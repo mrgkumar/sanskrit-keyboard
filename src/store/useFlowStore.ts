@@ -112,25 +112,55 @@ const createBlockFromSource = (
 
 // --- MOCK DATA ---
 
-const MOCK_SHORT_BLOCK: CanonicalBlock = {
-  id: 'block-1',
-  type: 'short',
-  title: 'Gaṇeśa Mantra',
-  source: 'oM gaM gaNapataye nama:',
-  rendered: transliterate('oM gaM gaNapataye nama:').unicode,
-};
+const DEFAULT_BLOCK_SEEDS = [
+  {
+    id: 'block-1',
+    title: 'Notation Sampler',
+    source: "OM gaM gaNapataye nama: | so.aMsha: | a' a_ a'' | a.NgaM AyuuMM~'Si ||",
+  },
+  {
+    id: 'block-2',
+    title: 'Taittirīya Āraṇyaka Opening',
+    source: 'taittiriiyaaraNyake prathamaprashnapraarambha: || hari: OM ||',
+  },
+  {
+    id: 'block-3',
+    title: 'Yajurveda Śānti',
+    source: "shaM no' mitra:_ shaM varu'Na:| shaM no' bhavatvarya_maa|",
+  },
+  {
+    id: 'block-4',
+    title: 'Ṛgveda Opening',
+    source: "a_gnimii'Le pu_rohi'taM ya_j~nasya' de_vamR^i_tvija'm| hotaaraM' ratna_dhaata'mam||",
+  },
+  {
+    id: 'block-5',
+    title: 'Sāmaveda Chant',
+    source: "agna_ AyuuMM~'Si pavasa_ A su_vorja_miSaM' cha na:| A_re baadha'sva du_chChunaa'm||",
+  },
+  {
+    id: 'block-6',
+    title: 'Sāmaveda Accent Sample',
+    source: 'अग्न आ याहि वीतये गृणानो हव्यदातये। नि होता सत्सि बर्हिषि ।। 1 ।।',
+  },
+] as const;
 
-const LONG_SOURCE = "oM saha nAvavatu | saha nau bhunaktu | saha vIryaM karavAvahai | tejasvi nAvadhItamastu mA vidviShAvahai || oM shAnti: shAnti: shAnti: ||";
-const MOCK_LONG_BLOCK: CanonicalBlock = {
-  id: 'block-2',
-  type: 'long',
-  title: 'Śānti Mantra',
-  source: LONG_SOURCE,
-  rendered: transliterate(LONG_SOURCE).unicode,
-  segments: createSegments(LONG_SOURCE), // Segmenting the long source
-};
+const INITIAL_BLOCKS: CanonicalBlock[] = DEFAULT_BLOCK_SEEDS.map(({ id, title, source }) => {
+  const type = isLongBlockSource(source) ? 'long' : 'short';
+  const block: CanonicalBlock = {
+    id,
+    type,
+    title,
+    source,
+    rendered: transliterate(source).unicode,
+  };
 
-const INITIAL_BLOCKS = [MOCK_SHORT_BLOCK, MOCK_LONG_BLOCK];
+  if (type === 'long') {
+    block.segments = createSegments(source);
+  }
+
+  return block;
+});
 const createBlankBlock = (): CanonicalBlock => ({
   id: `block-${Date.now()}`,
   type: 'short',

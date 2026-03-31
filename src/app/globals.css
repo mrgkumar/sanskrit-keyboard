@@ -1,32 +1,8 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: 'Chandas';
-  src: url('/sanskrit-keyboard/fonts/chandas.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Siddhanta';
-  src: url('/sanskrit-keyboard/fonts/siddhanta.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Sampradaya';
-  src: url('/sanskrit-keyboard/fonts/sampradaya.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
-
 @theme {
   --font-sans: "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
-  --font-serif: "Chandas", "Siddhanta", "Sampradaya", "Tiro Devanagari Sanskrit", "Georgia", serif;
+  --font-serif: var(--font-chandas), var(--font-siddhanta), var(--font-sampradaya), "Tiro Devanagari Sanskrit", "Georgia", serif;
   --font-display: "Playfair Display", "serif";
   --font-mono: "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", monospace;
 
