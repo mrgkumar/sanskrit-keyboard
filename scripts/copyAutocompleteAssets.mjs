@@ -3,27 +3,38 @@ import path from 'node:path';
 
 const sourceRoot = path.resolve(process.cwd(), '..', 'generated', 'autocomplete');
 const destinationRoot = path.resolve(process.cwd(), 'public', 'autocomplete');
+const runtimeFiles = [
+  'runtime-lexicon-shards-manifest.json',
+  'swara-lexicon.json',
+];
 
-const copyDirectory = async (sourceDir, destinationDir) => {
-  await fs.mkdir(destinationDir, { recursive: true });
-  const entries = await fs.readdir(sourceDir, { withFileTypes: true });
+const copyRuntimeAssets = async () => {
+  await fs.rm(destinationRoot, { recursive: true, force: true });
+  await fs.mkdir(path.join(destinationRoot, 'runtime-lexicon-shards'), { recursive: true });
 
-  for (const entry of entries) {
-    const sourcePath = path.join(sourceDir, entry.name);
-    const destinationPath = path.join(destinationDir, entry.name);
+  for (const file of runtimeFiles) {
+    await fs.copyFile(path.join(sourceRoot, file), path.join(destinationRoot, file));
+  }
 
-    if (entry.isDirectory()) {
-      await copyDirectory(sourcePath, destinationPath);
+  const shardSourceRoot = path.join(sourceRoot, 'runtime-lexicon-shards');
+  const shardDestinationRoot = path.join(destinationRoot, 'runtime-lexicon-shards');
+  const shardFiles = await fs.readdir(shardSourceRoot, { withFileTypes: true });
+
+  for (const shardFile of shardFiles) {
+    if (!shardFile.isFile() || !shardFile.name.endsWith('.json')) {
       continue;
     }
 
-    await fs.copyFile(sourcePath, destinationPath);
+    await fs.copyFile(
+      path.join(shardSourceRoot, shardFile.name),
+      path.join(shardDestinationRoot, shardFile.name)
+    );
   }
 };
 
 try {
-  await copyDirectory(sourceRoot, destinationRoot);
-  console.log(`Copied autocomplete assets to ${destinationRoot}`);
+  await copyRuntimeAssets();
+  console.log(`Copied runtime autocomplete assets to ${destinationRoot}`);
 } catch (error) {
   console.error('Failed to copy autocomplete assets for static export.');
   throw error;
