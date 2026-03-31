@@ -452,9 +452,6 @@ export const StickyTopComposer: React.FC = () => {
     if (composerHighlightRef.current) {
       composerHighlightRef.current.style.transform = `translateY(-${event.currentTarget.scrollTop}px)`;
     }
-    if (composerMeasureRef.current) {
-      composerMeasureRef.current.style.transform = `translateY(-${event.currentTarget.scrollTop}px)`;
-    }
     syncPaneScroll(event.currentTarget, previewRef.current);
   };
 
