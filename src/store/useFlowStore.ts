@@ -334,7 +334,7 @@ export interface SanskritKeyboardState {
   setNextChunk: () => void;
   setPrevChunk: () => void;
   setFocusSpan: (span: 'tight' | 'balanced' | 'wide') => void;
-  setViewMode: (mode: 'focus' | 'read' | 'review') => void;
+  setViewMode: (mode: 'focus' | 'read' | 'review' | 'immersive') => void;
   activateBlockChunk: (blockId: string, segmentIndex?: number) => void;
   setActiveChunkIndex: (segmentIndex: number) => void;
   setNextBlock: () => void;

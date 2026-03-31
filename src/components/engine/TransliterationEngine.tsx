@@ -5,7 +5,7 @@ import { StickyTopComposer } from '@/components/StickyTopComposer';
 import { MainDocumentArea } from '@/components/MainDocumentArea';
 import { ReferenceSidePanel } from '@/components/ReferenceSidePanel'; // Import the side panel
 import { useFlowStore } from '@/store/useFlowStore';
-import { Check, Copy, Eye, FileCode2, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide-react';
+import { BookText, Check, Copy, Eye, FileCode2, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { SessionSnapshot } from '@/store/types';
 
@@ -360,6 +360,18 @@ export const TransliterationEngine: React.FC = () => {
             title="Review mode"
           >
             <FileCode2 className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('immersive')}
+            className={clsx(
+              'inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
+              viewMode === 'immersive' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
+            )}
+            aria-label="Immersive mode"
+            title="Immersive mode"
+          >
+            <BookText className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -736,7 +748,7 @@ export const TransliterationEngine: React.FC = () => {
           </section>
         </div>
       </div>
-      <StickyTopComposer />
+      {viewMode !== 'immersive' && <StickyTopComposer />}
       <MainDocumentArea />
       <ReferenceSidePanel /> {/* Add the side panel here */}
     </div>

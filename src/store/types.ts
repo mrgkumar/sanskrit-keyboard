@@ -66,7 +66,7 @@ export interface EditorState {
   activeBlockId: string | null;
   activeAnchorSegmentIndex?: number;
   focusSpan: 'tight' | 'balanced' | 'wide';
-  viewMode: 'focus' | 'read' | 'review';
+  viewMode: 'focus' | 'read' | 'review' | 'immersive';
   ghostAssistEnabled: boolean;
 }
 

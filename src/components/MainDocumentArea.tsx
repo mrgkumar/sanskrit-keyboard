@@ -6,10 +6,11 @@ import { useFlowStore } from '@/store/useFlowStore';
 import { CanonicalBlock } from '@/store/types';
 import { clsx } from 'clsx';
 import { Check, Copy, Trash2 } from 'lucide-react';
+import { transliterate } from '@/lib/vedic/utils';
 
 export const MainDocumentArea: React.FC = () => {
-  const { blocks, editorState, setActiveBlockId, activateBlockChunk, deleteBlock, getActiveChunkGroup, displaySettings } = useFlowStore();
-  const { activeBlockId, viewMode } = editorState;
+  const { blocks, editorState, setActiveBlockId, activateBlockChunk, deleteBlock, getActiveChunkGroup, displaySettings, setViewMode, setComposerSelection } = useFlowStore();
+  const { activeBlockId, viewMode, focusSpan } = editorState;
   const activeChunkGroup = getActiveChunkGroup(); // Get active chunk group
   const documentTypography = displaySettings.typography.document;
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
@@ -43,22 +44,110 @@ export const MainDocumentArea: React.FC = () => {
     activateBlockChunk(blockId, segmentIndex);
   };
 
-  if (viewMode === 'read') {
+  const jumpToEditPosition = (block: CanonicalBlock, sourceOffset: number) => {
+    const clampedSourceOffset = Math.max(0, Math.min(sourceOffset, block.source.length));
+    let targetSegmentIndex = 0;
+    let chunkStartOffset = 0;
+
+    if (block.type === 'long' && block.segments?.length) {
+      const matchedSegmentIndex = block.segments.findIndex((segment, index) => {
+        const isLast = index === block.segments!.length - 1;
+        return clampedSourceOffset >= segment.startOffset && (clampedSourceOffset < segment.endOffset || isLast);
+      });
+      targetSegmentIndex = Math.max(0, matchedSegmentIndex);
+      const segmentsPerGroup = { tight: 1, balanced: 2, wide: 3 }[focusSpan];
+      const startSegmentIndex = Math.floor(targetSegmentIndex / segmentsPerGroup) * segmentsPerGroup;
+      chunkStartOffset = block.segments[startSegmentIndex]?.startOffset ?? 0;
+    }
+
+    activateChunk(block.id, targetSegmentIndex);
+    setViewMode('review');
+    const chunkLocalOffset = Math.max(0, clampedSourceOffset - chunkStartOffset);
+    const applyComposerSelection = (attempt: number) => {
+      setComposerSelection(chunkLocalOffset, chunkLocalOffset);
+      const composer = document.querySelector('[data-testid="sticky-itrans-input"]') as HTMLTextAreaElement | null;
+      if (composer) {
+        composer.focus();
+        composer.setSelectionRange(chunkLocalOffset, chunkLocalOffset);
+        return;
+      }
+
+      if (attempt < 8) {
+        window.setTimeout(() => applyComposerSelection(attempt + 1), 40);
+      }
+    };
+    window.setTimeout(() => applyComposerSelection(0), 0);
+  };
+
+  if (viewMode === 'read' || viewMode === 'immersive') {
     return (
-      <div className="flex-1 overflow-y-auto px-4 py-8">
-        <div className="mx-auto max-w-4xl rounded-[2rem] border border-slate-200 bg-white px-6 py-8 shadow-sm sm:px-10">
+      <div
+        className={clsx(
+          'flex-1 overflow-y-auto',
+          viewMode === 'immersive' ? 'px-4 py-6 sm:px-8 sm:py-8' : 'px-4 py-8'
+        )}
+      >
+        <div
+          className={clsx(
+            'mx-auto border border-slate-200 bg-white shadow-sm',
+            viewMode === 'immersive'
+              ? 'max-w-6xl rounded-[2.25rem] px-6 py-10 sm:px-12'
+              : 'max-w-4xl rounded-[2rem] px-6 py-8 sm:px-10'
+          )}
+        >
           <div
-            className="font-serif text-slate-900 whitespace-pre-wrap"
-            data-testid="document-read-mode"
+            className="font-serif text-slate-900"
+            data-testid={viewMode === 'immersive' ? 'document-immersive-mode' : 'document-read-mode'}
             style={{
               fontSize: `${documentTypography.renderedFontSize}px`,
               lineHeight: documentTypography.renderedLineHeight,
             }}
           >
             {blocks
-              .map((block) => block.rendered.trim())
-              .filter((rendered) => rendered.length > 0)
-              .join('\n\n')}
+              .filter((block) => block.rendered.trim().length > 0)
+              .map((block) => {
+                const renderedBlock = transliterate(block.source);
+                const renderedChars = Array.from(renderedBlock.unicode);
+
+                return (
+                  <p
+                    key={block.id}
+                    data-testid={`document-read-block-${block.id}`}
+                    className="whitespace-pre-wrap rounded-md px-1 py-1 transition-colors hover:bg-slate-50"
+                    title="Double-click to jump back into edit mode for this block"
+                    onDoubleClick={(event) => {
+                      const target = (event.target as HTMLElement).closest<HTMLElement>('[data-target-index]');
+                      if (!target) {
+                        jumpToEditPosition(block, 0);
+                        return;
+                      }
+
+                      const targetIndex = Number(target.dataset.targetIndex);
+                      if (Number.isNaN(targetIndex)) {
+                        return;
+                      }
+
+                      let wordStart = targetIndex;
+                      while (wordStart > 0 && /\S/.test(renderedChars[wordStart - 1] ?? '')) {
+                        wordStart -= 1;
+                      }
+
+                      const sourceWordStart = renderedBlock.targetToSourceMap[wordStart] ?? 0;
+                      jumpToEditPosition(block, sourceWordStart);
+                    }}
+                  >
+                    {renderedChars.map((char, index) => (
+                      <span
+                        key={`${block.id}-${index}-${char}`}
+                        data-target-index={index}
+                        className="cursor-text"
+                      >
+                        {char === ' ' ? '\u00A0' : char}
+                      </span>
+                    ))}
+                  </p>
+                );
+              })}
           </div>
         </div>
       </div>

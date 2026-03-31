@@ -207,7 +207,7 @@ test.describe('runtime lexical lookup normalization', () => {
 
     expect(counts.bhadraM).toEqual({ bha_draM: 1 });
     expect(counts.karNebhiH).toEqual({ "karNe'bhiH": 1 });
-    expect(counts.shRiNuyaama).toEqual({ "shR^iNu_yaama'": 1 });
+    expect(counts.shRRiNuyaama).toEqual({ "shR^iNu_yaama'": 1 });
     expect(counts.devaa).toBeUndefined();
   });
 

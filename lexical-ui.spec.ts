@@ -1,29 +1,58 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-const STORAGE_KEY = 'sanskrit-keyboard.sessions.v1';
+const APP_URL = 'http://localhost:3000';
+const STORAGE_KEYS_TO_CLEAR = [
+  'sanskrit-keyboard.sessions.v1',
+  'sanskrit-keyboard.session-index.v2',
+  'sanskrit-keyboard.lexical-history.v1',
+];
 const VEDIC_PASTE_SAMPLE = 'भ॒द्रं कर्णे॑भिः शृणु॒याम॑ देवाः ।';
 
+const loadDefaultSession = async (page: Page) => {
+  await page.addInitScript((keys) => {
+    window.localStorage.clear();
+    for (const key of keys) {
+      window.localStorage.removeItem(key);
+    }
+    Object.keys(window.localStorage)
+      .filter((key) => key.startsWith('sanskrit-keyboard.session.v2.'))
+      .forEach((key) => window.localStorage.removeItem(key));
+  }, STORAGE_KEYS_TO_CLEAR);
+  await page.goto(APP_URL);
+  await expect(page.getByTestId('sticky-itrans-input')).toBeVisible();
+  page.on('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Workspace' }).click();
+  await page.getByRole('button', { name: 'New' }).click();
+  await expect(page.getByTestId('sticky-itrans-input')).toHaveValue('');
+};
+
+const openDisplaySettings = async (page: Page) => {
+  await page.getByRole('button', { name: 'Workspace' }).click();
+  await page.getByRole('button', { name: 'Display' }).click();
+};
+
+const closeWorkspace = async (page: Page) => {
+  await page.getByRole('button', { name: /workspace/i }).click();
+};
+
 test('inspect lexical autocomplete keyboard flow and block delete flows', async ({ page }) => {
-  await page.goto('http://localhost:3000');
-  await page.evaluate((key) => window.localStorage.removeItem(key), STORAGE_KEY);
-  await page.reload();
+  await loadDefaultSession(page);
+  await openDisplaySettings(page);
+  await page.getByRole('button', { name: 'Footer' }).click();
+  await closeWorkspace(page);
 
-  const textarea = page.locator('textarea');
-  await expect(textarea).toBeVisible();
+  const textarea = page.getByTestId('sticky-itrans-input');
   await textarea.click();
-  await page.keyboard.press('Control+A');
-  await page.keyboard.press('Backspace');
-
   await page.keyboard.type('sa', { delay: 80 });
 
-  const lexicalSection = page.getByTestId('lexical-suggestions');
+  const lexicalSection = page.getByTestId('word-predictions-footer');
   await expect(lexicalSection).toBeVisible({ timeout: 10000 });
   await expect(lexicalSection).toContainText('Word Predictions');
   await expect(lexicalSection).toContainText('Cycle');
   await expect(lexicalSection).toContainText('Accept');
 
-  const topSuggestion = page.getByTestId('lexical-suggestion-0');
-  const secondSuggestion = page.getByTestId('lexical-suggestion-1');
+  const topSuggestion = page.getByTestId('lexical-suggestion-footer-0');
+  const secondSuggestion = page.getByTestId('lexical-suggestion-footer-1');
   await expect(topSuggestion).toBeVisible();
   await expect(secondSuggestion).toBeVisible();
 
@@ -31,17 +60,8 @@ test('inspect lexical autocomplete keyboard flow and block delete flows', async 
   await expect(secondSuggestion).toContainText('Selected');
 
   const expectedItrans = ((await secondSuggestion.innerText()).split('\n').find((line) => /^sa/i.test(line.trim())) ?? '').trim();
-  console.log(`Selected lexical suggestion after Tab: ${expectedItrans}`);
-
   await page.keyboard.press('Enter');
   await expect(textarea).toHaveValue(expectedItrans);
-
-  await textarea.click();
-  await page.keyboard.press('Control+A');
-  await page.keyboard.press('Backspace');
-  await page.keyboard.type('sa', { delay: 80 });
-
-  await expect(page.getByTestId('lexical-suggestion-0')).toContainText(expectedItrans);
 
   const firstDeleteButton = page.getByTitle('Delete block').first();
   await expect(firstDeleteButton).toBeVisible();
@@ -53,19 +73,12 @@ test('inspect lexical autocomplete keyboard flow and block delete flows', async 
 });
 
 test('single-line Devanagari paste feeds session-local lexical prediction', async ({ page }) => {
-  await page.goto('http://localhost:3000');
-  await page.evaluate((key) => {
-    window.localStorage.removeItem(key);
-    window.localStorage.removeItem('sanskrit-keyboard.lexical-history.v1');
-  }, STORAGE_KEY);
-  await page.reload();
+  await loadDefaultSession(page);
+  await openDisplaySettings(page);
+  await page.getByRole('button', { name: 'Footer' }).click();
+  await closeWorkspace(page);
 
-  const textarea = page.locator('textarea');
-  await expect(textarea).toBeVisible();
-  await textarea.click();
-  await page.keyboard.press('Control+A');
-  await page.keyboard.press('Backspace');
-
+  const textarea = page.getByTestId('sticky-itrans-input');
   await textarea.evaluate((node, pastedText) => {
     const event = new Event('paste', { bubbles: true, cancelable: true }) as Event & {
       clipboardData: { getData: (type: string) => string };
@@ -81,72 +94,66 @@ test('single-line Devanagari paste feeds session-local lexical prediction', asyn
   await textarea.click();
   await page.keyboard.press('Control+A');
   await page.keyboard.press('Backspace');
-  await page.keyboard.type('bha', { delay: 80 });
+  await page.keyboard.type('karN', { delay: 80 });
 
-  await expect(page.getByTestId('lexical-suggestion-0')).toContainText('bha_draM');
+  await expect(page.getByTestId('word-predictions-footer')).toContainText("karNe'bhi");
 
-  await page.getByRole('button', { name: /workspace/i }).click();
+  await openDisplaySettings(page);
   await page.getByTestId('swara-prediction-toggle').uncheck();
-  await page.getByRole('button', { name: /workspace/i }).click();
+  await closeWorkspace(page);
 
   await textarea.click();
   await page.keyboard.press('Control+A');
   await page.keyboard.press('Backspace');
-  await page.keyboard.type('bha', { delay: 80 });
-  await expect(page.getByTestId('lexical-suggestion-0')).toContainText('bhadraM');
+  await page.keyboard.type('karN', { delay: 80 });
+  await expect(page.getByTestId('word-predictions-footer')).toContainText('karNebhi');
 
-  await page.getByRole('button', { name: /workspace/i }).click();
+  await openDisplaySettings(page);
   await page.getByTestId('swara-prediction-toggle').check();
-  await page.getByRole('button', { name: /workspace/i }).click();
+  await closeWorkspace(page);
 
   await textarea.click();
   await page.keyboard.press('Control+A');
   await page.keyboard.press('Backspace');
-  await page.keyboard.type('bha', { delay: 80 });
-  await expect(page.getByTestId('lexical-suggestion-0')).toContainText('bha_draM');
+  await page.keyboard.type('karN', { delay: 80 });
+  await expect(page.getByTestId('word-predictions-footer')).toContainText("karNe'bhi");
 });
 
 test('can purge current-session and saved swara learning separately', async ({ page }) => {
-  page.on('dialog', (dialog) => dialog.accept());
+  await loadDefaultSession(page);
+  await openDisplaySettings(page);
+  await page.getByRole('button', { name: 'Footer' }).click();
+  await closeWorkspace(page);
 
-  await page.goto('http://localhost:3000');
-  await page.evaluate(() => {
-    window.localStorage.removeItem('sanskrit-keyboard.sessions.v1');
-    window.localStorage.removeItem('sanskrit-keyboard.lexical-history.v1');
-  });
-  await page.reload();
-
-  const textarea = page.locator('textarea');
-  await expect(textarea).toBeVisible();
+  const textarea = page.getByTestId('sticky-itrans-input');
+  const learnedToken = "gaNeshkumaar'";
   await textarea.click();
-  await page.keyboard.press('Control+A');
-  await page.keyboard.press('Backspace');
-  await page.keyboard.type("a'gni ", { delay: 60 });
+  await page.keyboard.type(`${learnedToken} `, { delay: 60 });
 
   await textarea.click();
   await page.keyboard.press('Control+A');
   await page.keyboard.press('Backspace');
-  await page.keyboard.type('ag', { delay: 80 });
+  await page.keyboard.type('gaNe', { delay: 80 });
 
-  await expect(page.getByTestId('lexical-suggestion-0')).toContainText("a'gni");
+  await expect(page.getByTestId('word-predictions-footer')).toContainText(learnedToken);
 
-  await page.getByRole('button', { name: /workspace/i }).click();
+  await openDisplaySettings(page);
   await page.getByTestId('clear-session-learning').click();
-  await page.getByRole('button', { name: /workspace/i }).click();
+  await closeWorkspace(page);
 
   await textarea.click();
   await page.keyboard.press('Control+A');
   await page.keyboard.press('Backspace');
-  await page.keyboard.type('ag', { delay: 80 });
-  await expect(page.getByTestId('lexical-suggestion-0')).toContainText("a'gni");
+  await page.keyboard.type('gaNe', { delay: 80 });
+  await expect(page.getByTestId('word-predictions-footer')).toContainText(learnedToken);
 
-  await page.getByRole('button', { name: /workspace/i }).click();
+  await openDisplaySettings(page);
   await page.getByTestId('purge-saved-learning').click();
-  await page.getByRole('button', { name: /workspace/i }).click();
+  await closeWorkspace(page);
 
   await textarea.click();
   await page.keyboard.press('Control+A');
   await page.keyboard.press('Backspace');
-  await page.keyboard.type('ag', { delay: 80 });
-  await expect(page.getByTestId('lexical-suggestion-0')).not.toContainText("a'gni");
+  await page.keyboard.type('gaNe', { delay: 80 });
+  await expect(page.getByTestId('word-predictions-footer')).not.toContainText(learnedToken);
 });

@@ -96,6 +96,40 @@ test('read and review modes visibly change the document view', async ({ page }) 
   await expect(page.getByTestId('document-read-mode')).toBeVisible();
   await expect(page.getByText('ITRANS Source')).toHaveCount(0);
   await expect(page.getByText('Focused Source')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Immersive mode' }).click();
+  await expect(page.getByTestId('document-immersive-mode')).toBeVisible();
+  await expect(page.getByTestId('sticky-composer-shell')).toHaveCount(0);
+});
+
+test('double-clicking read or immersive text jumps back into edit mode at the clicked word', async ({ page }) => {
+  await loadDefaultSession(page);
+  const textarea = page.getByTestId('sticky-itrans-input');
+  const sample = 'agniM ile purohitaM yajnasya';
+  const rendered = transliterate(sample);
+  const clickedWord = 'yajnasya';
+  const expectedSourceWordStart = sample.indexOf(clickedWord);
+  const clickedWordTargetIndex = rendered.sourceToTargetMap[expectedSourceWordStart] ?? 0;
+
+  await textarea.fill(sample);
+
+  await page.getByRole('button', { name: 'Read mode' }).click();
+  const readDocument = page.getByTestId('document-read-mode');
+  await expect(readDocument).toBeVisible();
+  await readDocument.locator(`[data-target-index="${clickedWordTargetIndex}"]`).dblclick();
+
+  await expect(page.getByRole('button', { name: 'Review mode' })).toHaveClass(/bg-blue-600/);
+  await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
+  await expect(textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).resolves.toBe(expectedSourceWordStart);
+
+  await page.getByRole('button', { name: 'Immersive mode' }).click();
+  const immersiveDocument = page.getByTestId('document-immersive-mode');
+  await expect(immersiveDocument).toBeVisible();
+  await immersiveDocument.locator(`[data-target-index="${clickedWordTargetIndex}"]`).dblclick();
+
+  await expect(page.getByRole('button', { name: 'Review mode' })).toHaveClass(/bg-blue-600/);
+  await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
+  await expect(textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).resolves.toBe(expectedSourceWordStart);
 });
 
 test('sticky composer stays bounded for long input', async ({ page }) => {
@@ -126,15 +160,19 @@ test('sticky composer stays bounded for long input', async ({ page }) => {
     }),
     preview.evaluate((node) => {
       const el = node as HTMLDivElement;
+      const rect = el.getBoundingClientRect();
       return {
         clientHeight: el.clientHeight,
         scrollHeight: el.scrollHeight,
+        bottom: rect.bottom,
       };
     }),
     hud.evaluate((node) => {
       const el = node as HTMLDivElement;
+      const rect = el.getBoundingClientRect();
       return {
         clientHeight: el.clientHeight,
+        top: rect.top,
       };
     }),
   ]);
@@ -143,6 +181,7 @@ test('sticky composer stays bounded for long input', async ({ page }) => {
   expect(metrics[1].scrollHeight).toBeGreaterThan(metrics[1].clientHeight);
   expect(metrics[2].scrollHeight).toBeGreaterThan(metrics[2].clientHeight);
   expect(metrics[3].clientHeight).toBeGreaterThan(0);
+  expect(metrics[2].bottom).toBeLessThanOrEqual(metrics[3].top);
 });
 
 test('clicking devanagari preview moves the itrans caret to the mapped source position', async ({ page }) => {

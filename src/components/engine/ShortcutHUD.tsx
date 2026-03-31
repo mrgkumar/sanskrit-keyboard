@@ -176,7 +176,7 @@ export const ShortcutHUD: React.FC = () => {
 
   return (
     <div
-      className="w-full min-h-0 max-w-5xl overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/55 px-3 py-2 md:max-h-[14vh]"
+      className="w-full shrink-0 min-h-0 max-w-5xl overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 md:max-h-[14vh]"
       data-testid="sticky-shortcut-hud"
     >
       {showQuickReference && (

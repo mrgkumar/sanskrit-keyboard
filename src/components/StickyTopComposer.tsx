@@ -573,7 +573,7 @@ export const StickyTopComposer: React.FC = () => {
       return;
     }
 
-    const durationMs = 20000;
+    const durationMs = 5000;
     const startedAt = window.performance.now();
     setDeleteToastProgress(1);
 
@@ -680,17 +680,17 @@ export const StickyTopComposer: React.FC = () => {
 
           <div
             className={clsx(
-              'grid min-h-0 gap-0 overflow-visible rounded-2xl border border-slate-200 bg-slate-50/70',
+              'grid min-h-0 flex-1 gap-0 overflow-visible rounded-2xl border border-slate-200 bg-slate-50/70',
               composerLayout === 'stacked'
                 ? 'grid-cols-1'
                 : 'grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_1px_minmax(0,0.85fr)]'
             )}
           >
-            <div ref={sourcePaneRef} className="relative flex min-h-0 flex-col gap-2 p-2.5">
+            <div ref={sourcePaneRef} className="relative flex min-h-0 flex-1 flex-col gap-2 p-2.5">
               <div className="flex items-center justify-between gap-3 px-1">
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">ITRANS Input</p>
               </div>
-              <div className="relative min-h-[7rem] max-h-[22vh] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm md:max-h-[24vh]">
+              <div className="relative min-h-[7rem] flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl py-2.5 pl-3 pr-7 font-mono text-lg text-slate-900 md:pr-8"
@@ -711,7 +711,7 @@ export const StickyTopComposer: React.FC = () => {
                   ref={composerRef}
                   autoFocus
                   data-testid="sticky-itrans-input"
-                  className="relative z-10 min-h-[7rem] max-h-[22vh] w-full overflow-y-auto rounded-xl bg-transparent px-3 py-2.5 font-mono text-lg text-transparent caret-transparent shadow-sm outline-none selection:bg-blue-200/80 selection:text-transparent placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 md:max-h-[24vh]"
+                  className="relative z-10 min-h-[7rem] h-full w-full overflow-y-auto rounded-xl bg-transparent px-3 py-2.5 font-mono text-lg text-transparent caret-transparent shadow-sm outline-none selection:bg-blue-200/80 selection:text-transparent placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500"
                   style={{
                     fontSize: `${composerTypography.itransFontSize}px`,
                     lineHeight: composerTypography.itransLineHeight,
@@ -735,15 +735,13 @@ export const StickyTopComposer: React.FC = () => {
 
             {composerLayout !== 'stacked' && <div className="hidden bg-slate-200 lg:block" aria-hidden="true" />}
 
-            <div className="group flex min-h-0 flex-col gap-2 border-t border-slate-200 p-2.5 text-blue-800 lg:border-t-0">
+            <div className="group flex min-h-0 flex-1 flex-col gap-2 border-t border-slate-200 p-2.5 text-blue-800 lg:border-t-0">
               <div className="min-w-0 px-1">
                 <p className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">
                   Devanagari Preview
                 </p>
               </div>
-              <div
-                className="relative"
-              >
+              <div className="relative min-h-[7rem] flex-1">
                 <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                   <button
                     onClick={handleDeleteBlock}
@@ -773,7 +771,7 @@ export const StickyTopComposer: React.FC = () => {
                 </div>
                 <div
                   ref={previewRef}
-                  className="min-h-[7rem] max-h-[22vh] overflow-y-auto rounded-xl border border-blue-100 bg-white px-3 py-2 pr-14 font-serif text-slate-900 shadow-sm md:max-h-[24vh]"
+                  className="min-h-[7rem] h-full overflow-y-auto rounded-xl border border-blue-100 bg-white px-3 pb-3 pt-2.5 pr-14 font-serif text-slate-900 shadow-sm"
                   data-testid="sticky-devanagari-preview"
                   onScroll={handlePreviewScroll}
                   onMouseDown={(event) => event.preventDefault()}

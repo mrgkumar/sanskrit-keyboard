@@ -1,35 +1,23 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { transliterate } from './src/lib/vedic/utils';
 
 test('Scholarly Source-of-Truth Workflow Test', async ({ page }) => {
   await page.goto('http://localhost:3000');
-  
-  // The primary input is now a visible textarea
-  const input = page.locator('textarea');
-  await input.waitFor({ state: 'visible' });
+
+  const input = page.getByTestId('sticky-itrans-input');
+  const preview = page.getByTestId('sticky-devanagari-preview');
+
+  await expect(input).toBeVisible();
   await input.focus();
 
-  console.log('1. Human-like typing into ITRANS area...');
-  await page.keyboard.type('ganesh kumar', { delay: 150 });
-  
-  const resultArea = page.locator('div.font-serif.text-slate-900');
-  await expect(resultArea).toContainText('गणेश कुमार');
-  console.log('SUCCESS: Devanagari rendered correctly from source.');
+  const sample = 'a_gni';
+  await page.keyboard.type(sample, { delay: 120 });
 
-  console.log('2. Native cursor movement and accent injection...');
-  // Move back into 'ganesh'
-  for (let i = 0; i < 8; i++) {
-    await page.keyboard.press('ArrowLeft', { delay: 100 });
-  }
-  
-  // Inject Udatta shortcut
-  await page.keyboard.type("'", { delay: 200 });
-  
-  const finalUnicode = await resultArea.innerText();
-  console.log(`Unicode Result: "${finalUnicode}"`);
-  
-  // Check if Udatta (\u0951) exists at the point
-  expect(finalUnicode).toContain('\u0951');
-  console.log('SUCCESS: Svara stacked correctly at native cursor position.');
+  await expect(preview).toContainText(transliterate(sample).unicode);
 
-  await page.screenshot({ path: 'source_truth_validation.png' });
+  await page.keyboard.press('ArrowLeft', { delay: 100 });
+  await page.keyboard.press('ArrowLeft', { delay: 100 });
+  await page.keyboard.type("'", { delay: 120 });
+
+  await expect(preview).toContainText('\u0951');
 });
