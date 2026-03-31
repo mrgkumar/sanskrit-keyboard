@@ -885,28 +885,26 @@ export const StickyTopComposer: React.FC = () => {
                         const showCaretBefore = index === targetCaretIndex;
 
                         return (
-                          <React.Fragment key={`${index}-${char}`}>
+                          <span
+                            key={`${index}-${char}`}
+                            className={clsx(
+                              'relative cursor-text rounded-[0.18em] transition-colors',
+                              isSelectionVisible && 'bg-blue-200/80 text-blue-950',
+                              isCurrentWordVisible && 'font-semibold text-[#6b1f1f]'
+                            )}
+                            data-current-word={isCurrentWordVisible ? 'true' : undefined}
+                            data-target-index={index}
+                            onClick={(event) => handlePreviewCharacterClick(event, index)}
+                          >
                             {showCaretBefore && (
                               <span
                                 aria-hidden="true"
-                                className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-blue-600 align-middle motion-safe:animate-caret"
+                                className="pointer-events-none absolute -left-[2px] top-1/2 inline-block h-[1.1em] w-[2px] -translate-y-1/2 rounded-full bg-blue-600 motion-safe:animate-caret"
                                 data-testid="preview-caret"
                               />
                             )}
-                            <span
-                              className={clsx(
-                                'cursor-text rounded-[0.18em] transition-colors',
-                                isSelectionVisible && 'bg-blue-200/80 text-blue-950',
-                                isCurrentWordVisible &&
-                                  'font-semibold text-[#6b1f1f]'
-                              )}
-                              data-current-word={isCurrentWordVisible ? 'true' : undefined}
-                              data-target-index={index}
-                              onClick={(event) => handlePreviewCharacterClick(event, index)}
-                            >
-                              {char === ' ' ? '\u00A0' : char}
-                            </span>
-                          </React.Fragment>
+                            {char === ' ' ? '\u00A0' : char}
+                          </span>
                         );
                       })}
                       {targetCaretIndex === renderedPreviewChars.length && (
