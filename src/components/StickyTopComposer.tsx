@@ -32,6 +32,7 @@ export const StickyTopComposer: React.FC = () => {
   const sourcePaneRef = React.useRef<HTMLDivElement>(null);
   const previewRef = React.useRef<HTMLDivElement>(null);
   const scrollSyncSourceRef = React.useRef<'source' | 'preview' | null>(null);
+  const programmaticScrollTargetRef = React.useRef<HTMLElement | null>(null);
   const [copyState, setCopyState] = React.useState<'idle' | 'copied' | 'error'>('idle');
   const [isShortcutPeekVisible, setIsShortcutPeekVisible] = React.useState(false);
   const [deleteToastProgress, setDeleteToastProgress] = React.useState(1);
@@ -233,7 +234,19 @@ export const StickyTopComposer: React.FC = () => {
       const sourceRange = Math.max(0, source.scrollHeight - source.clientHeight);
       const targetRange = Math.max(0, target.scrollHeight - target.clientHeight);
       const progress = sourceRange <= 0 ? 0 : source.scrollTop / sourceRange;
-      target.scrollTop = targetRange * progress;
+      const nextScrollTop = targetRange * progress;
+
+      if (Math.abs(target.scrollTop - nextScrollTop) < 1) {
+        return;
+      }
+
+      programmaticScrollTargetRef.current = target;
+      target.scrollTop = nextScrollTop;
+      window.requestAnimationFrame(() => {
+        if (programmaticScrollTargetRef.current === target) {
+          programmaticScrollTargetRef.current = null;
+        }
+      });
     },
     [syncComposerScroll]
   );
@@ -448,14 +461,47 @@ export const StickyTopComposer: React.FC = () => {
   };
 
   const handleComposerScroll = (event: React.UIEvent<HTMLTextAreaElement>) => {
+    if (programmaticScrollTargetRef.current === event.currentTarget) {
+      return;
+    }
+
     scrollSyncSourceRef.current = 'source';
     if (composerHighlightRef.current) {
       composerHighlightRef.current.style.transform = `translateY(-${event.currentTarget.scrollTop}px)`;
     }
     syncPaneScroll(event.currentTarget, previewRef.current);
+    window.requestAnimationFrame(() => {
+      const preview = previewRef.current;
+      if (!preview) {
+        return;
+      }
+
+      const anchor =
+        preview.querySelector<HTMLElement>('[data-current-word="true"]') ??
+        preview.querySelector<HTMLElement>(`[data-target-index="${targetCaretIndex}"]`) ??
+        preview.querySelector<HTMLElement>('[data-testid="preview-caret"]');
+
+      if (!anchor) {
+        return;
+      }
+
+      const containerRect = preview.getBoundingClientRect();
+      const anchorRect = anchor.getBoundingClientRect();
+      const isFullyVisible =
+        anchorRect.top >= containerRect.top + 8 &&
+        anchorRect.bottom <= containerRect.bottom - 8;
+
+      if (!isFullyVisible) {
+        anchor.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+      }
+    });
   };
 
   const handlePreviewScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    if (programmaticScrollTargetRef.current === event.currentTarget) {
+      return;
+    }
+
     scrollSyncSourceRef.current = 'preview';
     syncPaneScroll(event.currentTarget, composerRef.current);
   };
@@ -488,6 +534,47 @@ export const StickyTopComposer: React.FC = () => {
 
     composerHighlightRef.current.style.transform = `translateY(-${composerRef.current.scrollTop}px)`;
   }, [currentChunkSource, composerSelectionStart, composerSelectionEnd]);
+
+  React.useEffect(() => {
+    if (!syncComposerScroll || document.activeElement !== composerRef.current) {
+      return;
+    }
+
+    const rafId = window.requestAnimationFrame(() => {
+      const preview = previewRef.current;
+      if (!preview) {
+        return;
+      }
+
+      const anchor =
+        preview.querySelector<HTMLElement>('[data-current-word="true"]') ??
+        preview.querySelector<HTMLElement>(`[data-target-index="${targetCaretIndex}"]`) ??
+        preview.querySelector<HTMLElement>('[data-testid="preview-caret"]');
+
+      if (!anchor) {
+        return;
+      }
+
+      const containerRect = preview.getBoundingClientRect();
+      const anchorRect = anchor.getBoundingClientRect();
+      const isFullyVisible =
+        anchorRect.top >= containerRect.top + 8 &&
+        anchorRect.bottom <= containerRect.bottom - 8;
+
+      if (!isFullyVisible) {
+        anchor.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+      }
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [
+    composerSelectionStart,
+    composerSelectionEnd,
+    currentChunkSource,
+    currentWordTargetRange?.start,
+    currentWordTargetRange?.end,
+    syncComposerScroll,
+    targetCaretIndex,
+  ]);
 
   React.useEffect(() => {
     if (!isPredictionListbox || !hasLexicalSuggestions || isPredictionPopupSuppressed) {
@@ -811,7 +898,7 @@ export const StickyTopComposer: React.FC = () => {
                                 'cursor-text rounded-[0.18em] transition-colors',
                                 isSelectionVisible && 'bg-blue-200/80 text-blue-950',
                                 isCurrentWordVisible &&
-                                  'text-[1.25em] text-[#6b1f1f]'
+                                  'font-semibold text-[#6b1f1f]'
                               )}
                               data-current-word={isCurrentWordVisible ? 'true' : undefined}
                               data-target-index={index}

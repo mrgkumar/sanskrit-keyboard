@@ -14,6 +14,7 @@ export const MainDocumentArea: React.FC = () => {
   const activeChunkGroup = getActiveChunkGroup(); // Get active chunk group
   const documentTypography = displaySettings.typography.document;
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
+  const documentContainerRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     if (!copiedId) {
@@ -26,6 +27,36 @@ export const MainDocumentArea: React.FC = () => {
 
     return () => window.clearTimeout(timeoutId);
   }, [copiedId]);
+
+  React.useEffect(() => {
+    if (viewMode !== 'review' || !activeBlockId) {
+      return;
+    }
+
+    const scrollActiveTargetIntoView = () => {
+      const container = documentContainerRef.current;
+      if (!container) {
+        return;
+      }
+
+      const target =
+        (activeChunkGroup
+          ? container.querySelector<HTMLElement>(
+              `[data-testid="document-review-segment-${activeChunkGroup.blockId}-${activeChunkGroup.startSegmentIndex}"]`
+            )
+          : null) ??
+        container.querySelector<HTMLElement>(`[data-testid="document-review-block-${activeBlockId}"]`);
+
+      if (!target) {
+        return;
+      }
+
+      target.scrollIntoView({ block: 'center', behavior: 'auto' });
+    };
+
+    const rafId = window.requestAnimationFrame(scrollActiveTargetIntoView);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [activeBlockId, activeChunkGroup, viewMode]);
 
   const handleCopyBlock = async (blockId: string, text: string) => {
     try {
@@ -82,6 +113,8 @@ export const MainDocumentArea: React.FC = () => {
   if (viewMode === 'read' || viewMode === 'immersive') {
     return (
       <div
+        ref={documentContainerRef}
+        data-testid="main-document-scroll-container"
         className={clsx(
           'flex-1 overflow-y-auto',
           viewMode === 'immersive' ? 'px-4 py-6 sm:px-8 sm:py-8' : 'px-4 py-8'
@@ -296,7 +329,7 @@ export const MainDocumentArea: React.FC = () => {
           key={block.id}
           className={clsx(blockClassName, isLongAndActiveInReview && "bg-blue-100 border-blue-500")}
           onClick={() => activateBlock(block.id)}
-          data-testid="document-review-mode"
+          data-testid={`document-review-block-${block.id}`}
         >
           {commonBlockContent}
 
@@ -327,6 +360,7 @@ export const MainDocumentArea: React.FC = () => {
                     tabIndex={0}
                     role="button"
                     aria-label={`Review chunk ${index + 1} in ${block.title || block.id}`}
+                    data-testid={`document-review-segment-${block.id}-${index}`}
                   >
                     <p
                       className="font-mono text-slate-700 mb-1"
@@ -359,7 +393,7 @@ export const MainDocumentArea: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto py-8 px-4">
+    <div ref={documentContainerRef} className="flex-1 overflow-y-auto py-8 px-4" data-testid="main-document-scroll-container">
       <div className="max-w-5xl mx-auto space-y-8">
         {blocks.map(renderBlock)}
       </div>
