@@ -1,7 +1,13 @@
 import { expect, test } from '@playwright/test';
 
-import { transliterate, detransliterate } from './src/lib/vedic/utils';
-import { MAPPING_TRIE } from './src/lib/vedic/mapping';
+import { canonicalizeDevanagariPaste, formatSourceForOutput, transliterate, detransliterate } from './src/lib/vedic/utils';
+import {
+  canonicalizeAcceptedInputToken,
+  getAcceptedInputs,
+  getPreferredDisplayItrans,
+  MAPPING_TRIE,
+} from './src/lib/vedic/mapping';
+import { canonicalizeCommittedEditorSource } from './src/store/useFlowStore';
 import { loadCorpusSamples } from './test-support/transliterationCorpus';
 
 const normalize = (value: string) => value.normalize('NFC');
@@ -71,6 +77,119 @@ test('Distinct vedic anusvara variants keep separate round-trip aliases', () => 
   expect(detransliterate('॒ꣳ॒')).toBe('_MM~_');
   expect(transliterate('_M~M_').unicode).toBe('॒ं॒');
   expect(detransliterate('॒ं॒')).toBe('_M~M_');
+});
+
+test('Baraha-compatible aliases map forward while reverse stays canonical', () => {
+  expect(transliterate('Ru').unicode).toBe(transliterate('R^i').unicode);
+  expect(transliterate('RU').unicode).toBe(transliterate('R^I').unicode);
+  expect(transliterate('~lu').unicode).toBe(transliterate('L^i').unicode);
+  expect(transliterate('~lU').unicode).toBe(transliterate('L^I').unicode);
+  expect(transliterate('ee').unicode).toBe(transliterate('I').unicode);
+  expect(transliterate('oo').unicode).toBe(transliterate('U').unicode);
+  expect(transliterate('ou').unicode).toBe(transliterate('au').unicode);
+  expect(transliterate('oum').unicode).toBe(transliterate('OM').unicode);
+  expect(transliterate('&').unicode).toBe(transliterate('.a').unicode);
+  expect(transliterate('K').unicode).toBe(transliterate('kh').unicode);
+  expect(transliterate('C').unicode).toBe(transliterate('Ch').unicode);
+  expect(transliterate('~g').unicode).toBe(transliterate('~N').unicode);
+  expect(transliterate('~j').unicode).toBe(transliterate('~n').unicode);
+
+  expect(detransliterate(transliterate('Ru').unicode)).toBe('RRi');
+  expect(detransliterate(transliterate('~lu').unicode)).toBe('LLi');
+  expect(detransliterate(transliterate('ee').unicode)).toBe('I');
+  expect(detransliterate(transliterate('ou').unicode)).toBe('au');
+  expect(detransliterate(transliterate('oum').unicode)).toBe('OM');
+  expect(detransliterate(transliterate('&').unicode)).toBe('.a');
+  expect(detransliterate(transliterate('K').unicode)).toBe('kh');
+  expect(detransliterate(transliterate('C').unicode)).toBe('Ch');
+  expect(detransliterate(transliterate('~g').unicode)).toBe('~N');
+  expect(detransliterate(transliterate('~j').unicode)).toBe('~n');
+});
+
+test('Devanagari paste canonicalization stays canonical even when aliases are accepted for input', () => {
+  expect(canonicalizeDevanagariPaste('कृत')).toBe('kR^ita');
+  expect(canonicalizeDevanagariPaste('ॠ')).toBe('RRI');
+  expect(canonicalizeDevanagariPaste('ॡ')).toBe('LLI');
+  expect(canonicalizeDevanagariPaste('ॐ')).toBe('OM');
+  expect(canonicalizeDevanagariPaste('ऽ')).toBe('.a');
+  expect(canonicalizeDevanagariPaste('छ')).toBe('Cha');
+});
+
+test('Preferred display labels stay canonical while accepted inputs include aliases', () => {
+  expect(getPreferredDisplayItrans('Ru')).toBe('R^i');
+  expect(getPreferredDisplayItrans('K')).toBe('kh');
+  expect(getPreferredDisplayItrans('&')).toBe('.a');
+  expect(getAcceptedInputs('R^i')).toEqual(expect.arrayContaining(['R^i', 'Ru']));
+  expect(getAcceptedInputs('kh')).toEqual(expect.arrayContaining(['kh', 'K']));
+  expect(getAcceptedInputs('.a')).toEqual(expect.arrayContaining(['.a', '&']));
+});
+
+test('Accepted alias tokens canonicalize to canonical source tokens', () => {
+  expect(canonicalizeAcceptedInputToken('Ru')).toBe('R^i');
+  expect(canonicalizeAcceptedInputToken('RU')).toBe('R^I');
+  expect(canonicalizeAcceptedInputToken('~lu')).toBe('L^i');
+  expect(canonicalizeAcceptedInputToken('~lU')).toBe('L^I');
+  expect(canonicalizeAcceptedInputToken('Kavi')).toBe('khavi');
+  expect(canonicalizeAcceptedInputToken('&tman')).toBe('.atman');
+  expect(canonicalizeAcceptedInputToken('oum')).toBe('OM');
+});
+
+test('Committed editor tokens are canonicalized at delimiter boundaries', () => {
+  expect(canonicalizeCommittedEditorSource('Ru ', 3, 'Ru')).toEqual({
+    source: 'R^i ',
+    caret: 4,
+    canonicalBuffer: 'R^i',
+  });
+  expect(canonicalizeCommittedEditorSource('&tman ', 6, '&tman')).toEqual({
+    source: '.atman ',
+    caret: 7,
+    canonicalBuffer: '.atman',
+  });
+  expect(canonicalizeCommittedEditorSource('Kavi|', 5, 'Kavi')).toEqual({
+    source: 'khavi|',
+    caret: 6,
+    canonicalBuffer: 'khavi',
+  });
+});
+
+test('true-conflict aliases only activate under the Baraha-compatible input scheme', () => {
+  expect(transliterate('c').unicode).toBe('c');
+  expect(transliterate('c', { inputScheme: 'baraha-compatible' }).unicode).toBe(transliterate('ch').unicode);
+  expect(canonicalizeAcceptedInputToken('candra')).toBe('candra');
+  expect(canonicalizeAcceptedInputToken('candra', 'baraha-compatible')).toBe('chandra');
+  expect(getAcceptedInputs('ch')).not.toContain('c');
+  expect(getAcceptedInputs('ch', 'baraha-compatible')).toContain('c');
+  expect(canonicalizeCommittedEditorSource('c ', 2, 'c', 'baraha-compatible')).toEqual({
+    source: 'ch ',
+    caret: 3,
+    canonicalBuffer: 'ch',
+  });
+});
+
+test('output formatting stays explicit and does not change canonical paste behavior', () => {
+  expect(formatSourceForOutput('R^i kh ch Ch OM .a ~N ~n')).toBe('R^i kh ch Ch OM .a ~N ~n');
+  expect(formatSourceForOutput('R^i kh ch Ch OM .a ~N ~n', { outputScheme: 'baraha-compatible' })).toBe(
+    'Ru K c C oum & ~g ~j'
+  );
+  expect(detransliterate('कृत')).toBe('kR^ita');
+  expect(detransliterate('कृत', { outputScheme: 'baraha-compatible' })).toBe('kRuta');
+  expect(detransliterate('छ', { outputScheme: 'baraha-compatible' })).toBe('Ca');
+  expect(canonicalizeDevanagariPaste('कृत')).toBe('kR^ita');
+});
+
+test('Baraha-compatible output round-trips when paired with the matching input scheme', () => {
+  const canonicalSource = 'R^i kh ch Ch OM .a ~N ~n';
+  const barahaOutput = formatSourceForOutput(canonicalSource, { outputScheme: 'baraha-compatible' });
+
+  expect(transliterate(barahaOutput, { inputScheme: 'baraha-compatible' }).unicode).toBe(
+    transliterate(canonicalSource).unicode
+  );
+});
+
+test('Baraha om alias does not match inside ordinary words and reverse keeps canonical au', () => {
+  expect(transliterate('stoumi').unicode).toBe('स्तौमि');
+  expect(canonicalizeAcceptedInputToken('stoumi')).toBe('staumi');
+  expect(detransliterate('स्तौमि')).toBe('staumi');
 });
 
 test('Forward mapping preserves every direct mapping entry', () => {

@@ -1,6 +1,6 @@
 // app/src/lib/vedic/utils.ts
-import { VEDIC_MAPPINGS, MAPPING_TRIE, DEPENDENT_VOWELS } from './mapping.ts';
-import type { VedicMapping } from './mapping.ts';
+import { VEDIC_MAPPINGS, DEPENDENT_VOWELS, getInputMappings } from './mapping.ts';
+import type { InputScheme, OutputScheme, VedicMapping } from './mapping.ts';
 
 export interface CharConfidence {
   char: string;
@@ -15,13 +15,101 @@ export interface TransliterationResult {
   targetToSourceMap: number[];
 }
 
+interface TransliterationOptions {
+  inputScheme?: InputScheme;
+}
+
+interface OutputFormattingOptions {
+  outputScheme?: OutputScheme;
+}
+
+interface DetransliterationOptions {
+  outputScheme?: OutputScheme;
+}
+
 const TRANSLITERATION_CACHE = new Map<string, TransliterationResult>();
 const TRANSLITERATION_CACHE_MAX = 50000;
+const BARAHA_OUTPUT_OVERRIDES: Array<[string, string]> = [
+  ['R^i', 'Ru'],
+  ['R^I', 'RU'],
+  ['RRi', 'Ru'],
+  ['RRI', 'RU'],
+  ['L^i', '~lu'],
+  ['L^I', '~lU'],
+  ['LLi', '~lu'],
+  ['LLI', '~lU'],
+  ['kh', 'K'],
+  ['gh', 'G'],
+  ['ch', 'c'],
+  ['Ch', 'C'],
+  ['jh', 'J'],
+  ['ph', 'P'],
+  ['bh', 'B'],
+  ['I', 'ee'],
+  ['U', 'oo'],
+  ['au', 'ou'],
+  ['OM', 'oum'],
+  ['.a', '&'],
+  ['~N', '~g'],
+  ['~n', '~j'],
+];
+const BARAHA_OUTPUT_TOKENS = [...BARAHA_OUTPUT_OVERRIDES]
+  .sort((a, b) => b[0].length - a[0].length);
 
-export const transliterate = (itrans: string): TransliterationResult => {
-  if (TRANSLITERATION_CACHE.has(itrans)) {
-    return TRANSLITERATION_CACHE.get(itrans)!;
+const isTokenChar = (char: string) => /[A-Za-z0-9]/.test(char);
+
+const matchesInputEntryAt = (source: string, index: number, entry: VedicMapping) => {
+  if (!source.startsWith(entry.itrans, index)) {
+    return false;
   }
+
+  if (!entry.requiresTokenBoundary) {
+    return true;
+  }
+
+  const previousChar = source[index - 1] ?? '';
+  const nextChar = source[index + entry.itrans.length] ?? '';
+  return !isTokenChar(previousChar) && !isTokenChar(nextChar);
+};
+
+export const formatSourceForOutput = (
+  itrans: string,
+  options?: OutputFormattingOptions
+): string => {
+  const outputScheme = options?.outputScheme ?? 'canonical-vedic';
+  if (outputScheme === 'canonical-vedic' || !itrans) {
+    return itrans;
+  }
+
+  let formatted = '';
+  let index = 0;
+
+  while (index < itrans.length) {
+    const match = BARAHA_OUTPUT_TOKENS.find(([canonical]) => itrans.startsWith(canonical, index));
+
+    if (!match) {
+      formatted += itrans[index];
+      index += 1;
+      continue;
+    }
+
+    formatted += match[1];
+    index += match[0].length;
+  }
+
+  return formatted;
+};
+
+export const transliterate = (
+  itrans: string,
+  options?: TransliterationOptions
+): TransliterationResult => {
+  const inputScheme = options?.inputScheme ?? 'canonical-vedic';
+  const cacheKey = `${inputScheme}::${itrans}`;
+  if (TRANSLITERATION_CACHE.has(cacheKey)) {
+    return TRANSLITERATION_CACHE.get(cacheKey)!;
+  }
+  const mappingTrie = getInputMappings(inputScheme);
 
   let unicode = '';
   const confidences: CharConfidence[] = [];
@@ -45,8 +133,8 @@ export const transliterate = (itrans: string): TransliterationResult => {
     }
 
     let match: VedicMapping | null = null;
-    for (const entry of MAPPING_TRIE) {
-      if (itrans.startsWith(entry.itrans, i)) {
+    for (const entry of mappingTrie) {
+      if (matchesInputEntryAt(itrans, i, entry)) {
         match = entry;
         break;
       }
@@ -54,7 +142,7 @@ export const transliterate = (itrans: string): TransliterationResult => {
 
     if (match) {
       if (pendingNasalRemap && (match.itrans === 'N' || match.itrans === 'n')) {
-        const remapped = MAPPING_TRIE.find((entry) => entry.itrans === pendingNasalRemap);
+        const remapped = mappingTrie.find((entry) => entry.itrans === pendingNasalRemap);
         if (remapped) {
           match = { ...remapped, itrans: match.itrans };
         }
@@ -67,7 +155,7 @@ export const transliterate = (itrans: string): TransliterationResult => {
       const prevInputChar = itrans[i - 1] ?? '';
 
       if ((match.itrans === 'LLi' || match.itrans === 'LLI') && i > 0) {
-        const consonantalL = MAPPING_TRIE.find(
+        const consonantalL = mappingTrie.find(
           (entry) => entry.itrans === 'L' && entry.category === 'consonant'
         );
 
@@ -116,7 +204,7 @@ export const transliterate = (itrans: string): TransliterationResult => {
         nextChar &&
         /[aAiIuUeEoORL]/.test(nextChar)
       ) {
-        const consonantalAlternate = MAPPING_TRIE.find(
+        const consonantalAlternate = mappingTrie.find(
           (entry) =>
             entry.itrans === match!.itrans.slice(0, -1) &&
             entry.unicode === `${match!.unicode}\u094D`
@@ -258,7 +346,7 @@ export const transliterate = (itrans: string): TransliterationResult => {
       TRANSLITERATION_CACHE.clear();
     }
 
-    TRANSLITERATION_CACHE.set(itrans, result);
+    TRANSLITERATION_CACHE.set(cacheKey, result);
   }
   return result;
 };
@@ -271,33 +359,60 @@ interface ReverseMappingEntry {
   category: string;
 }
 
-const REVERSE_TRIE_MAP = new Map<string, { itrans: string; category: string }>();
+const REVERSE_TRIE_MAP = new Map<string, { itrans: string; category: string; priority: number }>();
 
-const addReverse = (unicode: string, itrans: string, category: string, force = false) => {
+const getReversePriority = (mapping: Pick<VedicMapping, 'isAlias' | 'preferredReverse'>) => {
+  if (mapping.preferredReverse) {
+    return 3;
+  }
+  if (!mapping.isAlias) {
+    return 2;
+  }
+  return 1;
+};
+
+const getPreferredMatraSourceMapping = (unicode: string) =>
+  VEDIC_MAPPINGS.find(
+    (mapping) => mapping.unicode === unicode && mapping.category === 'vowel' && !mapping.isAlias
+  ) ?? VEDIC_MAPPINGS.find((mapping) => mapping.unicode === unicode && mapping.category === 'vowel');
+
+const addReverse = (
+  unicode: string,
+  itrans: string,
+  category: string,
+  options?: { force?: boolean; priority?: number }
+) => {
   if (!unicode || !itrans) return;
-  // If force is true, or we don't have this unicode, or the new itrans is shorter (preferred shortcut)
-  if (force || !REVERSE_TRIE_MAP.has(unicode) || itrans.length < REVERSE_TRIE_MAP.get(unicode)!.itrans.length) {
-    REVERSE_TRIE_MAP.set(unicode, { itrans, category });
+  const force = options?.force ?? false;
+  const priority = options?.priority ?? 0;
+  const existing = REVERSE_TRIE_MAP.get(unicode);
+  if (
+    force ||
+    !existing ||
+    priority > existing.priority ||
+    (priority === existing.priority && itrans.length < existing.itrans.length)
+  ) {
+    REVERSE_TRIE_MAP.set(unicode, { itrans, category, priority });
   }
 };
 
 // 1. Base mappings from VEDIC_MAPPINGS
 VEDIC_MAPPINGS.forEach(m => {
-  addReverse(m.unicode, m.itrans, m.category);
+  addReverse(m.unicode, m.itrans, m.category, { priority: getReversePriority(m) });
   // Add bare consonant form (without virama) mapping to base itrans for the lookahead logic
   if (m.category === 'consonant' && m.unicode.endsWith('\u094D')) {
     const bare = m.unicode.slice(0, -1);
     if (bare) {
-       addReverse(bare, m.itrans, 'consonant');
+       addReverse(bare, m.itrans, 'consonant', { priority: getReversePriority(m) });
     }
   }
 });
 
 // 2. Matras from DEPENDENT_VOWELS
 for (const [indep, matra] of Object.entries(DEPENDENT_VOWELS)) {
-  const indepMapping = VEDIC_MAPPINGS.find(m => m.unicode === indep && m.category === 'vowel');
+  const indepMapping = getPreferredMatraSourceMapping(indep);
   if (indepMapping) {
-    addReverse(matra, indepMapping.itrans, 'mark');
+    addReverse(matra, indepMapping.itrans, 'mark', { priority: getReversePriority(indepMapping) });
   }
 }
 
@@ -309,7 +424,7 @@ const dependentVowelOverrides: Record<string, string> = {
 };
 
 for (const [uni, itrans] of Object.entries(dependentVowelOverrides)) {
-  addReverse(uni, itrans, 'mark', true);
+  addReverse(uni, itrans, 'mark', { force: true });
 }
 
 // 3. Requested shortcuts and essential vowels/symbols
@@ -331,13 +446,13 @@ const overrides: Record<string, string> = {
   '\u1CD6': "''",  // Normalize extended double-svarita style to dirgha-svarita input
 };
 for (const [uni, itrans] of Object.entries(overrides)) {
-  addReverse(uni, itrans, 'special', true);
+  addReverse(uni, itrans, 'special', { force: true });
 }
 
-addReverse('\u0903\uF176', ":''", 'special', true);
-addReverse('\u0952\uF156\u0952', '_M~_', 'special', true);
-addReverse('\u0952\uF156\u0902\u0952', '_M~M_', 'special', true);
-addReverse('\u0952\uA8F3\u0952', '_MM~_', 'special', true);
+addReverse('\u0903\uF176', ":''", 'special', { force: true });
+addReverse('\u0952\uF156\u0952', '_M~_', 'special', { force: true });
+addReverse('\u0952\uF156\u0902\u0952', '_M~M_', 'special', { force: true });
+addReverse('\u0952\uA8F3\u0952', '_MM~_', 'special', { force: true });
 
 // Convert Map to sorted array for greedy matching
 const REVERSE_MAPPING_TRIE: ReverseMappingEntry[] = Array.from(REVERSE_TRIE_MAP.entries())
@@ -372,8 +487,13 @@ const getPreviousSignificantUnicodeChar = (chars: string[], startIndex: number) 
   return '';
 };
 
+export const canonicalizeDevanagariPaste = (unicode: string) => detransliterate(unicode);
 
-export const detransliterate = (unicode: string): string => {
+
+export const detransliterate = (
+  unicode: string,
+  options?: DetransliterationOptions
+): string => {
   let itrans = '';
   let i = 0;
   const unicodeChars = Array.from(unicode); // Handle surrogate pairs correctly
@@ -492,5 +612,5 @@ export const detransliterate = (unicode: string): string => {
     }
   }
 
-  return itrans;
+  return formatSourceForOutput(itrans, { outputScheme: options?.outputScheme });
 };
