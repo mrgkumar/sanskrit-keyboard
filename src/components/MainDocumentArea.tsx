@@ -146,7 +146,7 @@ export const MainDocumentArea: React.FC = () => {
                   <p
                     key={block.id}
                     data-testid={`document-read-block-${block.id}`}
-                    className="whitespace-pre-wrap rounded-md px-1 py-1 transition-colors hover:bg-slate-50"
+                    className="whitespace-pre-wrap break-words rounded-md px-1 py-1 transition-colors hover:bg-slate-50"
                     title="Double-click to jump back into edit mode for this block"
                     onDoubleClick={(event) => {
                       const target = (event.target as HTMLElement).closest<HTMLElement>('[data-target-index]');
@@ -175,7 +175,7 @@ export const MainDocumentArea: React.FC = () => {
                         data-target-index={index}
                         className="cursor-text"
                       >
-                        {char === ' ' ? '\u00A0' : char}
+                        {char}
                       </span>
                     ))}
                   </p>
