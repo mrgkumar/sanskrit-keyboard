@@ -858,7 +858,7 @@ export const StickyTopComposer: React.FC = () => {
                     ref={composerHighlightRef}
                     className="whitespace-pre-wrap break-words"
                   >
-                    {currentChunkSource.length === 0 ? null : sourceMirrorFragments}
+                    {sourceMirrorFragments}
                   </div>
                 </div>
                 <textarea
