@@ -9,6 +9,7 @@ import {
 } from './src/lib/vedic/mapping';
 import { canonicalizeCommittedEditorSource } from './src/store/useFlowStore';
 import { loadCorpusSamples } from './test-support/transliterationCorpus';
+import { loadSanTrainSamples } from './test-support/sanTrainCorpus';
 
 const normalize = (value: string) => value.normalize('NFC');
 
@@ -248,4 +249,41 @@ test('Reverse mapping is stable for the same 2000 sampled corpus words', () => {
   }
 
   assertNoFailures(failures, 'Corpus reverse mapping', samples.length);
+});
+
+test('Baraha-style forward mapping self-validates against 2000 sampled san_train words', async () => {
+  const failures: string[] = [];
+  const samples = await loadSanTrainSamples();
+
+  for (const sample of samples) {
+    const canonical = detransliterate(sample.token);
+    const baraha = formatSourceForOutput(canonical, { outputScheme: 'baraha-compatible' });
+    const actual = transliterate(baraha, { inputScheme: 'baraha-compatible' }).unicode;
+
+    if (normalize(actual) !== normalize(sample.token)) {
+      failures.push(
+        `[#${sample.index} ${sample.id}] ${JSON.stringify(sample.token)} -> ${JSON.stringify(canonical)} -> ${JSON.stringify(baraha)} -> ${JSON.stringify(actual)}`
+      );
+    }
+  }
+
+  assertNoFailures(failures, 'Baraha san_train forward self-validation', samples.length);
+});
+
+test('Baraha-style reverse mapping self-validates against 2000 sampled san_train words', async () => {
+  const failures: string[] = [];
+  const samples = await loadSanTrainSamples();
+
+  for (const sample of samples) {
+    const baraha = detransliterate(sample.token, { outputScheme: 'baraha-compatible' });
+    const actual = transliterate(baraha, { inputScheme: 'baraha-compatible' }).unicode;
+
+    if (normalize(actual) !== normalize(sample.token)) {
+      failures.push(
+        `[#${sample.index} ${sample.id}] ${JSON.stringify(sample.token)} -> ${JSON.stringify(baraha)} -> ${JSON.stringify(actual)}`
+      );
+    }
+  }
+
+  assertNoFailures(failures, 'Baraha san_train reverse self-validation', samples.length);
 });
