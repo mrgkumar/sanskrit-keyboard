@@ -12,6 +12,36 @@ import { loadCorpusSamples } from './test-support/transliterationCorpus';
 import { loadSanTrainSamples } from './test-support/sanTrainCorpus';
 
 const normalize = (value: string) => value.normalize('NFC');
+const BARAHA_ALIAS_TOKENS = ['Ru', 'RU', '~lu', '~lU', 'K', 'G', 'c', 'C', 'J', 'P', 'B', 'ee', 'oo', 'ou', 'oum', '&', '~g', '~j'] as const;
+
+const collectBarahaCoverage = (values: string[]) => {
+  const aliasCounts = Object.fromEntries(BARAHA_ALIAS_TOKENS.map((alias) => [alias, 0])) as Record<
+    (typeof BARAHA_ALIAS_TOKENS)[number],
+    number
+  >;
+
+  let changed = 0;
+
+  for (const value of values) {
+    const canonical = detransliterate(value);
+    const baraha = formatSourceForOutput(canonical, { outputScheme: 'baraha-compatible' });
+
+    if (canonical !== baraha) {
+      changed += 1;
+    }
+
+    for (const alias of BARAHA_ALIAS_TOKENS) {
+      if (baraha.includes(alias)) {
+        aliasCounts[alias] += 1;
+      }
+    }
+  }
+
+  return {
+    changed,
+    aliasCounts,
+  };
+};
 
 const assertNoFailures = (
   failures: string[],
@@ -254,6 +284,7 @@ test('Reverse mapping is stable for the same 2000 sampled corpus words', () => {
 test('Baraha-style forward mapping self-validates against 2000 sampled san_train words', async () => {
   const failures: string[] = [];
   const samples = await loadSanTrainSamples();
+  const coverage = collectBarahaCoverage(samples.map((sample) => sample.token));
 
   for (const sample of samples) {
     const canonical = detransliterate(sample.token);
@@ -266,6 +297,18 @@ test('Baraha-style forward mapping self-validates against 2000 sampled san_train
       );
     }
   }
+
+  expect(
+    coverage.changed,
+    `Expected Baraha formatting to change a substantial portion of sampled san_train rows, but only ${coverage.changed} of ${samples.length} changed.`
+  ).toBeGreaterThanOrEqual(500);
+  expect(coverage.aliasCounts.Ru).toBeGreaterThan(0);
+  expect(coverage.aliasCounts.c).toBeGreaterThan(0);
+  expect(coverage.aliasCounts.B).toBeGreaterThan(0);
+  expect(coverage.aliasCounts.ou).toBeGreaterThan(0);
+  expect(coverage.aliasCounts['&']).toBeGreaterThan(0);
+  expect(coverage.aliasCounts['~g']).toBeGreaterThan(0);
+  expect(coverage.aliasCounts['~j']).toBeGreaterThan(0);
 
   assertNoFailures(failures, 'Baraha san_train forward self-validation', samples.length);
 });
