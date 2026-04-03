@@ -257,6 +257,20 @@ const TAMIL_PRECISION_CONSONANT_TOKENS = Object.keys(TAMIL_PRECISION_CONSONANTS_
   .sort((a, b) => b.length - a.length);
 const TAMIL_PRECISION_PUNCTUATION_PATTERN = /[().,?!-]/u;
 
+export const normalizeTamilPrecisionDisplayText = (text: string) => {
+  let normalized = text.replaceAll('ஂ', 'ம்');
+
+  // Move Sanskrit nasalization onto the following cluster, matching the Vignanam-style Tamil pages.
+  normalized = normalized.replace(
+    /([\p{Script=Tamil}])([ँं])([\p{Mark}]*)([\p{Letter}][\p{Letter}\p{Mark}]*)/gu,
+    (_match, base: string, _nasal: string, marks: string, nextCluster: string) => `${base}${marks}${nextCluster}ம்`
+  );
+
+  normalized = normalized.replace(/([\p{Script=Tamil}]+)([²³⁴])([ாிீுூேொோைௌ]+)/gu, '$1$3$2');
+
+  return normalized.replaceAll('-', ' ').replaceAll('ஞ்ஜ', 'ஜ');
+};
+
 const normalizeTamilPrecisionInput = (value: string) => {
   let normalized = value;
 
