@@ -5,6 +5,7 @@ import {
   formatSourceForOutput,
   formatSourceForPrimaryOutput,
   getCopySourceControlText,
+  reverseTamilInput,
   transliterate,
   detransliterate,
 } from './src/lib/vedic/utils';
@@ -136,6 +137,22 @@ const assertNoFailures = (
     `${label} failed for ${failures.length} of ${totalChecked} checked samples.\n${failures.join('\n')}`,
   ).toEqual([]);
 };
+
+const reverseTamilCanonical = (value: string) => {
+  const result = reverseTamilInput(value, { inputMode: 'tamil-precision', outputMode: 'canonical' });
+  expect(result, `Expected Tamil Precision reverse success for ${value}`).toMatchObject({
+    status: 'success',
+  });
+
+  if (result.status !== 'success') {
+    throw new Error(`Expected Tamil Precision success for ${value}, got ${result.inputKind}`);
+  }
+
+  return result.canonicalRoman;
+};
+
+const reverseTamilRejection = (value: string) =>
+  reverseTamilInput(value, { inputMode: 'tamil-precision', outputMode: 'canonical' });
 
 test('Accent scheme maps forward with the new canonical inputs', () => {
   expect(transliterate("ga'").unicode).toBe('ग॑');
@@ -535,6 +552,55 @@ test('Gate 0 keeps existing Sanskrit output schemes free of Tamil precision nota
   expect(barahaOutput).toBe('kRuta M H');
   expect(/[ஂஃ¹²³⁴]/u.test(canonicalOutput)).toBe(false);
   expect(/[ஂஃ¹²³⁴]/u.test(barahaOutput)).toBe(false);
+});
+
+test('Tamil reverse Gate 0 freezes the structured success result for canonical output', () => {
+  expect(reverseTamilInput('க³ீதா', { inputMode: 'tamil-precision', outputMode: 'canonical' })).toEqual({
+    status: 'success',
+    inputKind: 'tamil-precision',
+    canonicalRoman: 'gItA',
+  });
+});
+
+test('Tamil reverse Gate 0 treats Baraha output as formatter-only over canonical success', () => {
+  expect(reverseTamilInput('க்ரு¹த', { inputMode: 'tamil-precision', outputMode: 'baraha' })).toEqual({
+    status: 'success',
+    inputKind: 'tamil-precision',
+    canonicalRoman: 'kR^ita',
+    barahaRoman: 'kRuta',
+  });
+});
+
+test('Tamil reverse Gate 0 returns structured rejection results instead of plain strings', () => {
+  expect(reverseTamilInput('குரு', { inputMode: 'tamil-precision', outputMode: 'canonical' })).toEqual({
+    status: 'rejected',
+    inputKind: 'plain-tamil',
+    reason: 'Input is Tamil script but does not contain the frozen Tamil Precision distinctions required for exact Sanskrit recovery.',
+    originalText: 'குரு',
+  });
+
+  expect(reverseTamilInput('க^', { inputMode: 'tamil-precision', outputMode: 'canonical' })).toEqual({
+    status: 'rejected',
+    inputKind: 'malformed-precision',
+    reason: 'Input looks like Tamil Precision but contains incomplete or malformed precision markers.',
+    originalText: 'க^',
+  });
+});
+
+test('Tamil reverse Gate 0 keeps rejection identifiers stable across phase-1 classes', () => {
+  expect(reverseTamilInput('க³ுரு ரு', { inputMode: 'tamil-precision', outputMode: 'canonical' })).toMatchObject({
+    status: 'rejected',
+    inputKind: 'mixed-ambiguous',
+  });
+  expect(reverseTamilInput('ஸ்ரீ^^', { inputMode: 'tamil-precision', outputMode: 'canonical' })).toMatchObject({
+    status: 'rejected',
+    inputKind: 'baraha-tamil',
+  });
+});
+
+test('Tamil reverse Gate 0 does not let display outputScheme select parser mode implicitly', () => {
+  expect(detransliterate('க³ீதா', { outputScheme: 'sanskrit-tamil-precision' })).toBe('க³ீதா');
+  expect(reverseTamilCanonical('க³ீதா')).toBe('gItA');
 });
 
 test('Gate 1 migrates all legacy outputScheme values into the new output-target state', () => {
@@ -1004,58 +1070,46 @@ test('Gate 2 rich goldens exercise every superscript family and direct Grantha m
 
 test('Gate 3 parses every frozen Tamil precision rich golden back to canonical Roman', () => {
   for (const [canonical, tamilPrecision] of TAMIL_PRECISION_RICH_GOLDENS) {
-    expect(
-      detransliterate(tamilPrecision, { outputScheme: 'sanskrit-tamil-precision' }),
-      `${tamilPrecision} should parse back to ${canonical}`,
-    ).toBe(canonical);
+    expect(reverseTamilCanonical(tamilPrecision), `${tamilPrecision} should parse back to ${canonical}`).toBe(canonical);
   }
 });
 
 test('Gate 3 parses ASCII-safe Tamil precision fallbacks back to canonical Roman', () => {
   for (const [canonical, tamilPrecision] of TAMIL_PRECISION_ASCII_FALLBACK_GOLDENS) {
-    expect(
-      detransliterate(tamilPrecision, { outputScheme: 'sanskrit-tamil-precision' }),
-      `${tamilPrecision} should parse back to ${canonical}`,
-    ).toBe(canonical);
+    expect(reverseTamilCanonical(tamilPrecision), `${tamilPrecision} should parse back to ${canonical}`).toBe(canonical);
   }
 });
 
 test('Gate 3 keeps ordinary Tamil ru and lu sequences separate from vocalic precision vowels', () => {
-  expect(detransliterate('ரு', { outputScheme: 'sanskrit-tamil-precision' })).toBe('ரு');
-  expect(detransliterate('ரூ', { outputScheme: 'sanskrit-tamil-precision' })).toBe('ரூ');
-  expect(detransliterate('லு', { outputScheme: 'sanskrit-tamil-precision' })).toBe('லு');
-  expect(detransliterate('லூ', { outputScheme: 'sanskrit-tamil-precision' })).toBe('லூ');
-  expect(detransliterate('கவி', { outputScheme: 'sanskrit-tamil-precision' })).toBe('கவி');
-  expect(detransliterate('குரு', { outputScheme: 'sanskrit-tamil-precision' })).toBe('குரு');
-  expect(detransliterate('ரு', { outputScheme: 'sanskrit-tamil-precision' })).not.toBe('R^i');
-  expect(detransliterate('ரூ', { outputScheme: 'sanskrit-tamil-precision' })).not.toBe('R^I');
-  expect(detransliterate('லு', { outputScheme: 'sanskrit-tamil-precision' })).not.toBe('L^i');
-  expect(detransliterate('லூ', { outputScheme: 'sanskrit-tamil-precision' })).not.toBe('L^I');
-  expect(detransliterate('கவி', { outputScheme: 'sanskrit-tamil-precision' })).not.toBe('kavi');
-  expect(detransliterate('குரு', { outputScheme: 'sanskrit-tamil-precision' })).not.toBe('kuru');
+  expect(reverseTamilRejection('ரு')).toMatchObject({ status: 'rejected', inputKind: 'plain-tamil' });
+  expect(reverseTamilRejection('ரூ')).toMatchObject({ status: 'rejected', inputKind: 'plain-tamil' });
+  expect(reverseTamilRejection('லு')).toMatchObject({ status: 'rejected', inputKind: 'plain-tamil' });
+  expect(reverseTamilRejection('லூ')).toMatchObject({ status: 'rejected', inputKind: 'plain-tamil' });
+  expect(reverseTamilRejection('கவி')).toMatchObject({ status: 'rejected', inputKind: 'plain-tamil' });
+  expect(reverseTamilRejection('குரு')).toMatchObject({ status: 'rejected', inputKind: 'plain-tamil' });
 });
 
 test('Gate 3 rejects incomplete or ambiguous precision marker fragments instead of guessing', () => {
-  expect(detransliterate('க^', { outputScheme: 'sanskrit-tamil-precision' })).toBe('க^');
-  expect(detransliterate('க^^', { outputScheme: 'sanskrit-tamil-precision' })).toBe('க^^');
-  expect(detransliterate('க^1', { outputScheme: 'sanskrit-tamil-precision' })).toBe('க^1');
-  expect(detransliterate('க¹', { outputScheme: 'sanskrit-tamil-precision' })).toBe('க¹');
-  expect(detransliterate('ரு<R', { outputScheme: 'sanskrit-tamil-precision' })).toBe('ரு<R');
-  expect(detransliterate('லு<L', { outputScheme: 'sanskrit-tamil-precision' })).toBe('லு<L');
-  expect(detransliterate('க³ுரு ரு', { outputScheme: 'sanskrit-tamil-precision' })).toBe('க³ுரு ரு');
-  expect(detransliterate('க^3ுரு ரு<R', { outputScheme: 'sanskrit-tamil-precision' })).toBe('க^3ுரு ரு<R');
+  expect(reverseTamilRejection('க^')).toMatchObject({ status: 'rejected', inputKind: 'malformed-precision' });
+  expect(reverseTamilRejection('க^^')).toMatchObject({ status: 'rejected', inputKind: 'baraha-tamil' });
+  expect(reverseTamilRejection('க^1')).toMatchObject({ status: 'rejected', inputKind: 'malformed-precision' });
+  expect(reverseTamilRejection('க¹')).toMatchObject({ status: 'rejected', inputKind: 'malformed-precision' });
+  expect(reverseTamilRejection('ரு<R')).toMatchObject({ status: 'rejected', inputKind: 'malformed-precision' });
+  expect(reverseTamilRejection('லு<L')).toMatchObject({ status: 'rejected', inputKind: 'malformed-precision' });
+  expect(reverseTamilRejection('க³ுரு ரு')).toMatchObject({ status: 'rejected', inputKind: 'mixed-ambiguous' });
+  expect(reverseTamilRejection('க^3ுரு ரு<R')).toMatchObject({ status: 'rejected', inputKind: 'mixed-ambiguous' });
 });
 
 test('Gate 3 does not over-parse representative ordinary Baraha Tamil example words as precision-safe Sanskrit', () => {
-  expect(detransliterate('சென்று வருகிறேன்', { outputScheme: 'sanskrit-tamil-precision' })).toBe('சென்று வருகிறேன்');
-  expect(detransliterate('மழை பெய்து கொண்டிருக்கிறது', { outputScheme: 'sanskrit-tamil-precision' })).toBe('மழை பெய்து கொண்டிருக்கிறது');
-  expect(detransliterate('வாழ்த்துக்கள்', { outputScheme: 'sanskrit-tamil-precision' })).toBe('வாழ்த்துக்கள்');
+  expect(reverseTamilRejection('சென்று வருகிறேன்')).toMatchObject({ status: 'rejected', inputKind: 'plain-tamil' });
+  expect(reverseTamilRejection('மழை பெய்து கொண்டிருக்கிறது')).toMatchObject({ status: 'rejected', inputKind: 'plain-tamil' });
+  expect(reverseTamilRejection('வாழ்த்துக்கள்')).toMatchObject({ status: 'rejected', inputKind: 'plain-tamil' });
 });
 
 test('Gate 4 round-trips canonical Roman through Tamil precision rich display', () => {
   for (const [canonical, expectedTamil] of TAMIL_PRECISION_RICH_GOLDENS) {
     const formatted = formatSourceForOutput(canonical, { outputScheme: 'sanskrit-tamil-precision' });
-    const reversed = detransliterate(formatted, { outputScheme: 'sanskrit-tamil-precision' });
+    const reversed = reverseTamilCanonical(formatted);
 
     expect(formatted, `${canonical} should still format to frozen rich golden ${expectedTamil}`).toBe(expectedTamil);
     expect(reversed, `${canonical} rich round-trip should return canonical Roman`).toBe(canonical);
@@ -1064,7 +1118,7 @@ test('Gate 4 round-trips canonical Roman through Tamil precision rich display', 
 
 test('Gate 4 round-trips Tamil precision rich display back to the same frozen rich display', () => {
   for (const [canonical, expectedTamil] of TAMIL_PRECISION_RICH_GOLDENS) {
-    const reversed = detransliterate(expectedTamil, { outputScheme: 'sanskrit-tamil-precision' });
+    const reversed = reverseTamilCanonical(expectedTamil);
     const reformatted = formatSourceForOutput(reversed, { outputScheme: 'sanskrit-tamil-precision' });
 
     expect(reversed, `${expectedTamil} should reverse to canonical Roman ${canonical}`).toBe(canonical);
@@ -1074,7 +1128,7 @@ test('Gate 4 round-trips Tamil precision rich display back to the same frozen ri
 
 test('Gate 4 round-trips Tamil precision ASCII fallback back to frozen rich display', () => {
   for (const [canonical, asciiTamil] of TAMIL_PRECISION_ASCII_FALLBACK_GOLDENS) {
-    const reversed = detransliterate(asciiTamil, { outputScheme: 'sanskrit-tamil-precision' });
+    const reversed = reverseTamilCanonical(asciiTamil);
     const richReformatted = formatSourceForOutput(reversed, { outputScheme: 'sanskrit-tamil-precision' });
     const expectedRich = TAMIL_PRECISION_RICH_GOLDENS.find(([entryCanonical]) => entryCanonical === canonical)?.[1];
 
@@ -1088,7 +1142,7 @@ test('Gate 4 round-trips Devanagari through canonical Roman and Tamil precision 
   for (const [devanagari, canonical] of TAMIL_PRECISION_GATE4_DEVANAGARI_FIXTURES) {
     const reverseFromDevanagari = detransliterate(devanagari);
     const tamilPrecision = formatSourceForOutput(reverseFromDevanagari, { outputScheme: 'sanskrit-tamil-precision' });
-    const roundTripCanonical = detransliterate(tamilPrecision, { outputScheme: 'sanskrit-tamil-precision' });
+    const roundTripCanonical = reverseTamilCanonical(tamilPrecision);
 
     expect(roundTripCanonical, `${canonical} should survive Devanagari -> Tamil precision -> canonical Roman`).toBe(canonical);
   }
@@ -1103,7 +1157,7 @@ test('Gate 4 mixed fixtures exercise atomic, cluster, vocalic, anusvara, and vis
       `${canonical} should match fixed mixed-fixture Tamil output`,
     ).toBe(expectedTamil);
     expect(
-      detransliterate(expectedTamil, { outputScheme: 'sanskrit-tamil-precision' }),
+      reverseTamilCanonical(expectedTamil),
       `${expectedTamil} should reverse to canonical ${canonical}`,
     ).toBe(canonical);
   }
@@ -1158,8 +1212,8 @@ test('Gate 5 keeps existing canonical and Baraha output behavior unchanged along
 test('Gate 5 keeps paste canonicalization canonical while Tamil precision remains output-only', () => {
   expect(canonicalizeDevanagariPaste('कृत')).toBe('kR^ita');
   expect(canonicalizeDevanagariPaste('ॐ')).toBe('OM');
-  expect(detransliterate('க³ீதா', { outputScheme: 'sanskrit-tamil-precision' })).toBe('gItA');
-  expect(canonicalizeAcceptedInputToken(detransliterate('க³ீதா', { outputScheme: 'sanskrit-tamil-precision' }))).toBe('gItA');
+  expect(reverseTamilCanonical('க³ீதா')).toBe('gItA');
+  expect(canonicalizeAcceptedInputToken(reverseTamilCanonical('க³ீதா'))).toBe('gItA');
 });
 
 test('Forward mapping preserves every direct mapping entry', () => {

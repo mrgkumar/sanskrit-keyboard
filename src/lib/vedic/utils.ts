@@ -29,6 +29,34 @@ interface DetransliterationOptions {
   outputScheme?: OutputScheme;
 }
 
+export type TamilReverseInputKind =
+  | 'tamil-precision'
+  | 'plain-tamil'
+  | 'baraha-tamil'
+  | 'malformed-precision'
+  | 'mixed-ambiguous';
+
+export interface TamilReverseSuccessResult {
+  status: 'success';
+  inputKind: 'tamil-precision';
+  canonicalRoman: string;
+  barahaRoman?: string;
+}
+
+export interface TamilReverseRejectedResult {
+  status: 'rejected';
+  inputKind: Exclude<TamilReverseInputKind, 'tamil-precision'>;
+  reason: string;
+  originalText: string;
+}
+
+export type TamilReverseResult = TamilReverseSuccessResult | TamilReverseRejectedResult;
+
+export interface ReverseTamilInputOptions {
+  inputMode: 'tamil-precision';
+  outputMode: 'canonical' | 'baraha';
+}
+
 const TRANSLITERATION_CACHE = new Map<string, TransliterationResult>();
 const TRANSLITERATION_CACHE_MAX = 50000;
 const BARAHA_OUTPUT_OVERRIDES: Array<[string, string]> = [
@@ -213,6 +241,9 @@ const TAMIL_PRECISION_ASCII_SUPERSCRIPT_PATTERN = /([கசஜடதப])\^([234
 const TAMIL_PRECISION_AMBIGUOUS_PLAIN_VOCALIC_PATTERN = /(^|[\s().,?!-])(ரு|ரூ|லு|லூ)(?=$|[\s().,?!-])/u;
 const TAMIL_SCRIPT_PATTERN = /\p{Script=Tamil}/u;
 const TAMIL_PRECISION_SIGNAL_PATTERN = /[¹²³⁴ஜஶஷஸஹஂஃ]/u;
+const TAMIL_REVERSE_STRUCTURAL_PRECISION_SIGNAL_PATTERN = /(?:[¹²³⁴]|\^2|\^3|\^4|<R>|<L>)/u;
+const TAMIL_REVERSE_BARAHA_SIGNAL_PATTERN = /(?:\^\^|~~|~#|~\$|Rs)/u;
+const TAMIL_REVERSE_MALFORMED_PRECISION_SIGNAL_PATTERN = /(?:\^(?![234])|<R(?!>)|<L(?!>))/u;
 const TAMIL_PRECISION_INDEPENDENT_TOKENS = Object.keys(TAMIL_PRECISION_INDEPENDENT_VOWELS_TO_CANONICAL)
   .sort((a, b) => b.length - a.length);
 const TAMIL_PRECISION_DEPENDENT_VOCALIC_TOKENS = Object.keys(TAMIL_PRECISION_DEPENDENT_VOCALICS_TO_CANONICAL)
@@ -529,6 +560,88 @@ export const parseTamilPrecisionToCanonical = (value: string): string | null => 
   }
 
   return canonical;
+};
+
+const getTamilReverseRejectionReason = (
+  inputKind: Exclude<TamilReverseInputKind, 'tamil-precision'>,
+) => {
+  switch (inputKind) {
+    case 'plain-tamil':
+      return 'Input is Tamil script but does not contain the frozen Tamil Precision distinctions required for exact Sanskrit recovery.';
+    case 'baraha-tamil':
+      return 'Input appears to use Baraha Tamil control syntax, which phase 1 does not support as an exact reverse parser target.';
+    case 'malformed-precision':
+      return 'Input looks like Tamil Precision but contains incomplete or malformed precision markers.';
+    case 'mixed-ambiguous':
+      return 'Input mixes precise and ambiguous Tamil forms, so the parser cannot recover exact Sanskrit safely.';
+  }
+};
+
+const classifyTamilReverseInput = (
+  value: string,
+): Exclude<TamilReverseInputKind, 'tamil-precision'> => {
+  const normalized = normalizeTamilPrecisionInput(value);
+  const hasTamilScript = TAMIL_SCRIPT_PATTERN.test(value);
+  const hasBarahaSignal = TAMIL_REVERSE_BARAHA_SIGNAL_PATTERN.test(value);
+  const hasMalformedPrecisionSignal = TAMIL_REVERSE_MALFORMED_PRECISION_SIGNAL_PATTERN.test(value);
+  const hasPrecisionSignal = hasTamilPrecisionSignal(value);
+  const hasStructuralPrecisionSignal = TAMIL_REVERSE_STRUCTURAL_PRECISION_SIGNAL_PATTERN.test(value);
+  const hasAmbiguousPlainVocalic = TAMIL_PRECISION_AMBIGUOUS_PLAIN_VOCALIC_PATTERN.test(normalized);
+  const hasMixedTamilSegments = hasStructuralPrecisionSignal && hasTamilScript && /[\s().,?!-]/u.test(normalized);
+
+  if (hasBarahaSignal) {
+    return 'baraha-tamil';
+  }
+
+  if ((hasStructuralPrecisionSignal && hasAmbiguousPlainVocalic) || hasMixedTamilSegments) {
+    return 'mixed-ambiguous';
+  }
+
+  if (hasMalformedPrecisionSignal || hasStructuralPrecisionSignal || (hasPrecisionSignal && !hasTamilScript)) {
+    return 'malformed-precision';
+  }
+
+  if (hasTamilScript) {
+    return 'plain-tamil';
+  }
+
+  return 'mixed-ambiguous';
+};
+
+export const reverseTamilInput = (
+  value: string,
+  options: ReverseTamilInputOptions,
+): TamilReverseResult => {
+  if (options.inputMode !== 'tamil-precision') {
+    return {
+      status: 'rejected',
+      inputKind: 'mixed-ambiguous',
+      reason: getTamilReverseRejectionReason('mixed-ambiguous'),
+      originalText: value,
+    };
+  }
+
+  const canonicalRoman = parseTamilPrecisionToCanonical(value);
+  if (canonicalRoman !== null) {
+    return {
+      status: 'success',
+      inputKind: 'tamil-precision',
+      canonicalRoman,
+      ...(options.outputMode === 'baraha'
+        ? {
+            barahaRoman: formatSourceForOutput(canonicalRoman, { outputScheme: 'baraha-compatible' }),
+          }
+        : {}),
+    };
+  }
+
+  const inputKind = classifyTamilReverseInput(value);
+  return {
+    status: 'rejected',
+    inputKind,
+    reason: getTamilReverseRejectionReason(inputKind),
+    originalText: value,
+  };
 };
 
 export const transliterate = (
@@ -925,17 +1038,6 @@ export const detransliterate = (
   unicode: string,
   options?: DetransliterationOptions
 ): string => {
-  if (options?.outputScheme === 'sanskrit-tamil-precision') {
-    const tamilPrecision = parseTamilPrecisionToCanonical(unicode);
-    if (tamilPrecision !== null) {
-      return tamilPrecision;
-    }
-
-    if (TAMIL_SCRIPT_PATTERN.test(unicode)) {
-      return unicode;
-    }
-  }
-
   let itrans = '';
   let i = 0;
   const unicodeChars = Array.from(unicode); // Handle surrogate pairs correctly
