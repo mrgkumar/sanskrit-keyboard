@@ -16,8 +16,17 @@ interface ScriptTextProps {
 const TAMIL_PRECISION_MARKER_PATTERN = /[¹²³⁴]/u;
 const COMBINING_MARK_PATTERN = /\p{Mark}/u;
 
+const segmentGraphemes = (text: string) => {
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    const segmenter = new Intl.Segmenter('und', { granularity: 'grapheme' });
+    return Array.from(segmenter.segment(text), ({ segment }) => segment);
+  }
+
+  return Array.from(text);
+};
+
 const renderTamilPrecisionText = (text: string) => {
-  const chars = Array.from(text.replaceAll('ஂ', 'ம்'));
+  const chars = segmentGraphemes(text.replaceAll('ஂ', 'ம்'));
   const nodes: React.ReactNode[] = [];
 
   for (let index = 0; index < chars.length; index += 1) {
