@@ -800,6 +800,39 @@ test('Tamil reverse Gate 4 does not let Baraha output mode weaken rejection hone
   });
 });
 
+test('Tamil reverse Gate 5 round-trips canonical Roman through Tamil precision and back on the frozen reverse corpus', () => {
+  for (const [, canonical] of TAMIL_REVERSE_RICH_GOLDENS) {
+    const tamilPrecision = formatSourceForOutput(canonical, { outputScheme: 'sanskrit-tamil-precision' });
+    expect(reverseTamilCanonical(tamilPrecision), `${canonical} should survive canonical -> Tamil precision -> canonical`).toBe(canonical);
+  }
+});
+
+test('Tamil reverse Gate 5 converges rich and ASCII Tamil precision inputs to canonical Roman and frozen rich display', () => {
+  for (const [asciiTamil, canonical] of TAMIL_REVERSE_ASCII_GOLDENS) {
+    const reversed = reverseTamilCanonical(asciiTamil);
+    const richReformatted = formatSourceForOutput(reversed, { outputScheme: 'sanskrit-tamil-precision' });
+    const expectedRich = TAMIL_REVERSE_RICH_GOLDENS.find(([, candidateCanonical]) => candidateCanonical === canonical)?.[0];
+
+    expect(reversed, `${asciiTamil} should reverse to canonical ${canonical}`).toBe(canonical);
+    expect(expectedRich, `Missing frozen rich reverse golden for ${canonical}`).toBeDefined();
+    expect(richReformatted, `${asciiTamil} should re-render to the frozen rich Tamil precision form`).toBe(expectedRich);
+  }
+});
+
+test('Tamil reverse Gate 5 keeps vocalic lookalikes, plain Tamil words, and Baraha controls non-colliding', () => {
+  for (const value of ['ரு', 'ரூ', 'லு', 'லூ']) {
+    expect(reverseTamilRejection(value)).toMatchObject({ status: 'rejected', inputKind: 'plain-tamil' });
+  }
+
+  for (const value of TAMIL_REVERSE_PLAIN_TAMIL_REJECTION_FIXTURES) {
+    expect(reverseTamilRejection(value)).toMatchObject({ status: 'rejected', inputKind: 'plain-tamil' });
+  }
+
+  for (const value of TAMIL_REVERSE_BARAHA_TAMIL_REJECTION_FIXTURES) {
+    expect(reverseTamilRejection(value)).toMatchObject({ status: 'rejected', inputKind: 'baraha-tamil' });
+  }
+});
+
 test('Gate 1 migrates all legacy outputScheme values into the new output-target state', () => {
   expect(getOutputTargetSettingsFromLegacyOutputScheme('canonical-vedic')).toEqual({
     primaryOutputScript: 'roman',
