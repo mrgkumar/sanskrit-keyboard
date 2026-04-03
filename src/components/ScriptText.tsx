@@ -17,7 +17,7 @@ const TAMIL_PRECISION_MARKER_PATTERN = /[¹²³⁴]/u;
 const COMBINING_MARK_PATTERN = /\p{Mark}/u;
 
 const renderTamilPrecisionText = (text: string) => {
-  const chars = Array.from(text);
+  const chars = Array.from(text.replaceAll('ஂ', 'ம்'));
   const nodes: React.ReactNode[] = [];
 
   for (let index = 0; index < chars.length; index += 1) {
