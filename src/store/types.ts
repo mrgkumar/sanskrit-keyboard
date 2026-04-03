@@ -93,6 +93,9 @@ export interface TypographySettings {
   };
 }
 
+export type SanskritFontPreset = 'chandas' | 'siddhanta' | 'sampradaya';
+export type TamilFontPreset = 'hybrid' | 'noto-serif' | 'anek';
+
 export interface LegacyTypographySettings {
   itransFontSize: number;
   itransLineHeight: number;
@@ -111,6 +114,8 @@ export interface DisplaySettings {
   comparisonOutputScript: ComparisonOutputScript;
   romanOutputStyle: RomanOutputStyle;
   tamilOutputStyle: TamilOutputStyle;
+  sanskritFontPreset: SanskritFontPreset;
+  tamilFontPreset: TamilFontPreset;
   typography: TypographySettings;
 }
 

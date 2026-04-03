@@ -204,6 +204,8 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   inputScheme: 'canonical-vedic',
   outputScheme: 'canonical-vedic',
   ...DEFAULT_OUTPUT_TARGET_SETTINGS,
+  sanskritFontPreset: 'chandas',
+  tamilFontPreset: 'hybrid',
   typography: DEFAULT_TYPOGRAPHY,
 };
 const INITIAL_SESSION_ID = 'session-initial';
@@ -296,6 +298,9 @@ export const normalizeDisplaySettings = (
         displaySettings.outputScheme ?? DEFAULT_DISPLAY_SETTINGS.outputScheme,
       ),
       ...outputTargetSettings,
+      sanskritFontPreset:
+        displaySettings.sanskritFontPreset ?? DEFAULT_DISPLAY_SETTINGS.sanskritFontPreset,
+      tamilFontPreset: displaySettings.tamilFontPreset ?? DEFAULT_DISPLAY_SETTINGS.tamilFontPreset,
       typography: {
         composer: {
           ...DEFAULT_DISPLAY_SETTINGS.typography.composer,
@@ -478,6 +483,8 @@ export interface SanskritKeyboardState {
   ) => void;
   setRomanOutputStyle: (romanOutputStyle: DisplaySettings['romanOutputStyle']) => void;
   setTamilOutputStyle: (tamilOutputStyle: DisplaySettings['tamilOutputStyle']) => void;
+  setSanskritFontPreset: (sanskritFontPreset: DisplaySettings['sanskritFontPreset']) => void;
+  setTamilFontPreset: (tamilFontPreset: DisplaySettings['tamilFontPreset']) => void;
   setOutputScheme: (outputScheme: OutputScheme) => void;
   setTypography: (
     scope: keyof TypographySettings,
@@ -1293,6 +1300,22 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         },
       };
     });
+  },
+  setSanskritFontPreset: (sanskritFontPreset) => {
+    set((state) => ({
+      displaySettings: {
+        ...state.displaySettings,
+        sanskritFontPreset,
+      },
+    }));
+  },
+  setTamilFontPreset: (tamilFontPreset) => {
+    set((state) => ({
+      displaySettings: {
+        ...state.displaySettings,
+        tamilFontPreset,
+      },
+    }));
   },
   setOutputScheme: (outputScheme) => {
     const outputTargetSettings = getOutputTargetSettingsFromLegacyOutputScheme(outputScheme);

@@ -7,6 +7,7 @@ import { CanonicalBlock } from '@/store/types';
 import { clsx } from 'clsx';
 import { Check, Copy, Trash2 } from 'lucide-react';
 import { formatSourceForScript, transliterate } from '@/lib/vedic/utils';
+import { ScriptText } from '@/components/ScriptText';
 
 export const MainDocumentArea: React.FC = () => {
   const { blocks, editorState, setActiveBlockId, activateBlockChunk, deleteBlock, getActiveChunkGroup, displaySettings, setViewMode, setComposerSelection } = useFlowStore();
@@ -19,30 +20,20 @@ export const MainDocumentArea: React.FC = () => {
     comparisonOutputScript,
     romanOutputStyle,
     tamilOutputStyle,
+    sanskritFontPreset,
+    tamilFontPreset,
   } = displaySettings;
   const documentTypography = typography.document;
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
-  const [isWideCompareLayout, setIsWideCompareLayout] = React.useState(false);
   const documentContainerRef = React.useRef<HTMLDivElement | null>(null);
   const isDocumentCompareMode = comparisonOutputScript !== 'off';
   const activeComparisonScript = comparisonOutputScript === 'off' ? null : comparisonOutputScript;
-  const documentCompareLayout = isDocumentCompareMode && isWideCompareLayout ? 'split' : 'stacked';
-
-  React.useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia('(min-width: 1024px)');
-    const applyMatch = (event?: MediaQueryListEvent) => {
-      setIsWideCompareLayout(event?.matches ?? mediaQuery.matches);
-    };
-
-    applyMatch();
-    mediaQuery.addEventListener('change', applyMatch);
-
-    return () => mediaQuery.removeEventListener('change', applyMatch);
-  }, []);
+  const documentCompareLayout = isDocumentCompareMode ? 'stacked' : 'single';
+  const getRenderedLineHeightForScript = React.useCallback(
+    (script: typeof primaryOutputScript, baseLineHeight: number) =>
+      script === 'tamil' ? Math.max(baseLineHeight, 1.95) : baseLineHeight,
+    []
+  );
 
   React.useEffect(() => {
     if (!copiedId) {
@@ -153,7 +144,9 @@ export const MainDocumentArea: React.FC = () => {
           <p
             key={block.id}
             data-testid={`${viewTestIdPrefix}-block-${block.id}`}
-            className="whitespace-pre-wrap break-words rounded-md px-1 py-1 transition-colors hover:bg-slate-50"
+            className="script-text-devanagari whitespace-pre-wrap break-words rounded-md px-1 py-1 transition-colors hover:bg-slate-50"
+            data-font-preset={sanskritFontPreset}
+            lang="sa"
             title="Double-click to jump back into edit mode for this block"
             onDoubleClick={(event) => {
               const target = (event.target as HTMLElement).closest<HTMLElement>('[data-target-index]');
@@ -193,7 +186,9 @@ export const MainDocumentArea: React.FC = () => {
         <p
           key={`${block.id}-compare`}
           data-testid={`${viewTestIdPrefix}-compare-block-${block.id}`}
-          className="whitespace-pre-wrap break-words rounded-md px-1 py-1 text-slate-700"
+          className="script-text-devanagari whitespace-pre-wrap break-words rounded-md px-1 py-1 text-slate-700"
+          data-font-preset={sanskritFontPreset}
+          lang="sa"
         >
           {renderedBlock.unicode}
         </p>
@@ -209,12 +204,18 @@ export const MainDocumentArea: React.FC = () => {
       <p
         key={`${block.id}-${script}-${paneRole}`}
         data-testid={`${viewTestIdPrefix}-${paneRole}-block-${block.id}`}
-        className={clsx(
-          'whitespace-pre-wrap break-words rounded-md px-1 py-1',
-          script === 'roman' ? 'font-mono text-slate-800' : 'font-serif text-slate-900',
-        )}
+        className="rounded-md px-1 py-1"
+        style={{
+          fontSize: `${documentTypography.renderedFontSize}px`,
+          lineHeight: getRenderedLineHeightForScript(script, documentTypography.renderedLineHeight),
+        }}
       >
-        {formatted}
+        <ScriptText
+          script={script}
+          text={formatted}
+          sanskritFontPreset={sanskritFontPreset}
+          tamilFontPreset={tamilFontPreset}
+        />
       </p>
     );
   };
@@ -264,11 +265,7 @@ export const MainDocumentArea: React.FC = () => {
             <div
               className={clsx(
                 'grid gap-5',
-                isDocumentCompareMode
-                  ? documentCompareLayout === 'split'
-                    ? 'lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]'
-                    : 'grid-cols-1'
-                  : 'grid-cols-1'
+                'grid-cols-1'
               )}
             >
               <section
@@ -356,7 +353,9 @@ export const MainDocumentArea: React.FC = () => {
           </div>
         </div>
         <p
-          className="font-serif text-slate-800 mt-2"
+          className="script-text-devanagari mt-2 text-slate-800"
+          data-font-preset={sanskritFontPreset}
+          lang="sa"
           style={{
             fontSize: `${documentTypography.renderedFontSize}px`,
             lineHeight: documentTypography.renderedLineHeight,

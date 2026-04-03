@@ -4,10 +4,11 @@ import React from 'react';
 import { StickyTopComposer } from '@/components/StickyTopComposer';
 import { MainDocumentArea } from '@/components/MainDocumentArea';
 import { ReferenceSidePanel } from '@/components/ReferenceSidePanel'; // Import the side panel
+import { ScriptText } from '@/components/ScriptText';
 import { useFlowStore } from '@/store/useFlowStore';
 import { BookText, Check, Copy, Eye, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide-react';
 import { clsx } from 'clsx';
-import { SessionSnapshot } from '@/store/types';
+import { SessionSnapshot, SanskritFontPreset, TamilFontPreset } from '@/store/types';
 import { formatSourceForPrimaryOutput, getCopySourceControlText } from '@/lib/vedic/utils';
 import {
   OUTPUT_TARGET_CONTROL_LABELS,
@@ -124,6 +125,8 @@ export const TransliterationEngine: React.FC = () => {
     setPrimaryOutputScript,
     setComparisonOutputScript,
     setRomanOutputStyle,
+    setSanskritFontPreset,
+    setTamilFontPreset,
     setTypography,
     setViewMode,
     setSessionName,
@@ -154,7 +157,19 @@ export const TransliterationEngine: React.FC = () => {
     comparisonOutputScript,
     romanOutputStyle,
     tamilOutputStyle,
+    sanskritFontPreset,
+    tamilFontPreset,
   } = displaySettings;
+  const sanskritFontOptions: Array<{ value: SanskritFontPreset; label: string; sample: string }> = [
+    { value: 'chandas', label: 'Chandas', sample: 'नमस्ते रुद्राय' },
+    { value: 'siddhanta', label: 'Siddhanta', sample: 'नमस्ते रुद्राय' },
+    { value: 'sampradaya', label: 'Sampradaya', sample: 'नमस्ते रुद्राय' },
+  ];
+  const tamilFontOptions: Array<{ value: TamilFontPreset; label: string; sample: string }> = [
+    { value: 'hybrid', label: 'Hybrid', sample: 'நமஸ்தே ருத்³ராய' },
+    { value: 'noto-serif', label: 'Noto Serif Tamil', sample: 'நமஸ்தே ருத்³ராய' },
+    { value: 'anek', label: 'Anek Tamil', sample: 'நமஸ்தே ருத்³ராய' },
+  ];
   const { viewMode } = editorState;
   const copySourceControlText = getCopySourceControlText({
     primaryOutputScript,
@@ -594,21 +609,6 @@ export const TransliterationEngine: React.FC = () => {
             <div className="grid grid-cols-1 gap-2">
               <button
                 type="button"
-                data-testid="workspace-primary-script-roman"
-                aria-pressed={primaryOutputScript === 'roman'}
-                onClick={() => setPrimaryOutputScript('roman')}
-                className={clsx(
-                  'rounded-xl border px-3 py-3 text-left',
-                  primaryOutputScript === 'roman'
-                    ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                )}
-              >
-                <span className="block text-xs font-bold uppercase">{OUTPUT_TARGET_VALUE_LABELS.roman}</span>
-                <span className="mt-1 block text-xs">Show the source in Roman transliteration and use Roman style controls for copy/export.</span>
-              </button>
-              <button
-                type="button"
                 data-testid="workspace-primary-script-devanagari"
                 aria-pressed={primaryOutputScript === 'devanagari'}
                 onClick={() => setPrimaryOutputScript('devanagari')}
@@ -906,6 +906,63 @@ export const TransliterationEngine: React.FC = () => {
                         Floating listbox auto-hides after {Math.round(predictionPopupTimeoutMs / 1000)} seconds of inactivity.
                       </span>
                     </label>
+                  </section>
+
+                  <section className="space-y-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Script Fonts</p>
+                      <p className="mt-1 text-xs text-slate-500">Switch the reading fonts for Sanskrit and Tamil preview surfaces.</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-slate-600">Sanskrit Font</p>
+                      <div className="mt-2 grid gap-2">
+                        {sanskritFontOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setSanskritFontPreset(option.value)}
+                            className={clsx(
+                              'rounded-md border px-3 py-2 text-left',
+                              sanskritFontPreset === option.value
+                                ? 'border-blue-300 bg-blue-50 text-blue-950'
+                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                            )}
+                          >
+                            <span className="block text-xs font-bold uppercase">{option.label}</span>
+                            <span
+                              className="mt-1 block text-lg text-slate-900"
+                            >
+                              <ScriptText script="devanagari" text={option.sample} sanskritFontPreset={option.value} />
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-slate-600">Tamil Font</p>
+                      <div className="mt-2 grid gap-2">
+                        {tamilFontOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => setTamilFontPreset(option.value)}
+                            className={clsx(
+                              'rounded-md border px-3 py-2 text-left',
+                              tamilFontPreset === option.value
+                                ? 'border-amber-300 bg-amber-50 text-amber-950'
+                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                            )}
+                          >
+                            <span className="block text-xs font-bold uppercase">{option.label}</span>
+                            <span
+                              className="mt-1 block text-lg text-slate-900"
+                            >
+                              <ScriptText script="tamil" text={option.sample} tamilFontPreset={option.value} />
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </section>
 
                   <section className="space-y-3">

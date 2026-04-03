@@ -8,6 +8,7 @@ import { BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, Trash2, 
 import { clsx } from 'clsx';
 import { ShortcutHUD } from '@/components/engine/ShortcutHUD';
 import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
+import { ScriptText } from '@/components/ScriptText';
 import {
   canonicalizeDevanagariPaste,
   formatSourceForPrimaryOutput,
@@ -52,7 +53,6 @@ export const StickyTopComposer: React.FC = () => {
   const [isPredictionPopupSuppressed, setIsPredictionPopupSuppressed] = React.useState(false);
   const [predictionPopupPortalStyle, setPredictionPopupPortalStyle] = React.useState<React.CSSProperties>({});
   const [activeQuickSwitchMenu, setActiveQuickSwitchMenu] = React.useState<'read-as' | 'compare' | null>(null);
-  const [isWideCompareLayout, setIsWideCompareLayout] = React.useState(false);
   const activeBlock = getActiveBlock();
   const activeChunkGroup = getActiveChunkGroup();
   const { focusSpan, viewMode } = editorState;
@@ -67,6 +67,8 @@ export const StickyTopComposer: React.FC = () => {
     comparisonOutputScript,
     romanOutputStyle,
     tamilOutputStyle,
+    sanskritFontPreset,
+    tamilFontPreset,
   } = displaySettings;
   const composerTypography = typography.composer;
   const isPredictionListbox = predictionLayout === 'listbox';
@@ -96,8 +98,14 @@ export const StickyTopComposer: React.FC = () => {
     romanOutputStyle,
     tamilOutputStyle,
   });
+  const activeComparisonScript = comparisonOutputScript === 'off' ? null : comparisonOutputScript;
   const quickSwitchMenuRef = React.useRef<HTMLDivElement>(null);
   const renderedPreviewChars = Array.from(renderedPreview.unicode);
+  const getRenderedLineHeightForScript = React.useCallback(
+    (script: typeof primaryOutputScript, baseLineHeight: number) =>
+      script === 'tamil' ? Math.max(baseLineHeight, 1.95) : baseLineHeight,
+    []
+  );
   const currentEditTarget: ChunkEditTarget | undefined = activeChunkGroup?.blockId
     ? {
         blockId: activeChunkGroup.blockId,
@@ -145,7 +153,7 @@ export const StickyTopComposer: React.FC = () => {
   const shortcutPeekMappings = shortcutPeekState.mappings;
   const hasLexicalSuggestions = lexicalSuggestions.length > 0 && activeBuffer.length > 1;
   const isComposerCompareMode = comparisonOutputScript !== 'off';
-  const composerCompareLayout = isComposerCompareMode && isWideCompareLayout ? 'split' : 'stacked';
+  const composerCompareLayout = isComposerCompareMode ? 'stacked' : 'single';
   const primaryPreviewLabel =
     primaryOutputScript === 'roman'
       ? 'Roman Preview'
@@ -161,7 +169,6 @@ export const StickyTopComposer: React.FC = () => {
           ? 'Devanagari Compare'
           : '';
   const readAsOptions = [
-    { script: 'roman', label: OUTPUT_TARGET_VALUE_LABELS.roman },
     { script: 'devanagari', label: OUTPUT_TARGET_VALUE_LABELS.devanagari },
     { script: 'tamil', label: OUTPUT_TARGET_VALUE_LABELS.tamil },
   ] as const;
@@ -796,22 +803,6 @@ export const StickyTopComposer: React.FC = () => {
   }, [activeQuickSwitchMenu]);
 
   React.useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia('(min-width: 1024px)');
-    const applyMatch = (event?: MediaQueryListEvent) => {
-      setIsWideCompareLayout(event?.matches ?? mediaQuery.matches);
-    };
-
-    applyMatch();
-    mediaQuery.addEventListener('change', applyMatch);
-
-    return () => mediaQuery.removeEventListener('change', applyMatch);
-  }, []);
-
-  React.useEffect(() => {
     if (!recentlyDeletedBlock) {
       setDeleteToastProgress(1);
       return;
@@ -1053,7 +1044,7 @@ export const StickyTopComposer: React.FC = () => {
               'grid min-h-0 flex-1 gap-0 overflow-visible rounded-2xl border border-slate-200 bg-slate-50/70',
               composerLayout === 'stacked'
                 ? 'grid-cols-1'
-                : 'grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_1px_minmax(0,0.85fr)]'
+                : 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)]'
             )}
           >
             <div ref={sourcePaneRef} className="group relative flex min-h-0 flex-1 flex-col gap-2 p-2.5">
@@ -1181,11 +1172,7 @@ export const StickyTopComposer: React.FC = () => {
                   data-compare-layout={composerCompareLayout}
                   className={clsx(
                     'grid min-h-[7rem] h-full gap-3',
-                    isComposerCompareMode
-                      ? composerCompareLayout === 'split'
-                        ? 'lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]'
-                        : 'grid-cols-1'
-                      : 'grid-cols-1'
+                    'grid-cols-1'
                   )}
                 >
                   <div
@@ -1197,17 +1184,26 @@ export const StickyTopComposer: React.FC = () => {
                     onClick={primaryOutputScript === 'devanagari' ? handlePreviewContainerClick : undefined}
                     style={{
                       fontSize: `${composerTypography.renderedFontSize}px`,
-                      lineHeight: composerTypography.renderedLineHeight,
+                      lineHeight: getRenderedLineHeightForScript(primaryOutputScript, composerTypography.renderedLineHeight),
                     }}
                   >
                     <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">
                       {primaryPreviewLabel}
                     </p>
+                    {primaryOutputScript === 'tamil' && (
+                      <p className="mb-2 text-[11px] text-amber-700">
+                        Tamil preview is read-only. Cursor-linked navigation and highlight stay Devanagari-only.
+                      </p>
+                    )}
                     {primaryOutputScript === 'devanagari' ? (
                       renderedPreviewChars.length === 0 ? (
                         'Devanagari preview'
                       ) : (
-                        <span className="whitespace-pre-wrap break-words font-serif text-slate-900">
+                        <span
+                          className="script-text-devanagari whitespace-pre-wrap break-words text-slate-900"
+                          data-font-preset={sanskritFontPreset}
+                          lang="sa"
+                        >
                           {renderedPreviewChars.map((char, index) => {
                             const isSelectionVisible =
                               selectedTargetRange.end > selectedTargetRange.start &&
@@ -1253,9 +1249,13 @@ export const StickyTopComposer: React.FC = () => {
                         </span>
                       )
                     ) : (
-                      <span className="whitespace-pre-wrap break-words font-serif text-slate-900">
-                        {primaryPreviewText || (primaryOutputScript === 'tamil' ? 'Tamil preview' : 'Roman preview')}
-                      </span>
+                      <ScriptText
+                        script={primaryOutputScript}
+                        sanskritFontPreset={sanskritFontPreset}
+                        tamilFontPreset={tamilFontPreset}
+                        text={primaryPreviewText || (primaryOutputScript === 'tamil' ? 'Tamil preview' : 'Roman preview')}
+                        className="text-slate-900"
+                      />
                     )}
                   </div>
 
@@ -1265,15 +1265,21 @@ export const StickyTopComposer: React.FC = () => {
                       data-testid="sticky-preview-compare-pane"
                       style={{
                         fontSize: `${Math.max(composerTypography.renderedFontSize - 2, 14)}px`,
-                        lineHeight: composerTypography.renderedLineHeight,
+                        lineHeight: getRenderedLineHeightForScript(
+                          activeComparisonScript ?? primaryOutputScript,
+                          composerTypography.renderedLineHeight
+                        ),
                       }}
                     >
                       <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
                         {comparisonPreviewLabel}
                       </p>
-                      <span className="whitespace-pre-wrap break-words font-serif">
-                        {comparisonPreviewText}
-                      </span>
+                      <ScriptText
+                        script={activeComparisonScript ?? primaryOutputScript}
+                        sanskritFontPreset={sanskritFontPreset}
+                        tamilFontPreset={tamilFontPreset}
+                        text={comparisonPreviewText}
+                      />
                     </div>
                   )}
                 </div>

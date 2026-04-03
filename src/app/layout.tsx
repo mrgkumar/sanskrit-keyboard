@@ -20,6 +20,18 @@ const sampradaya = localFont({
   display: 'swap',
 });
 
+const notoSerifTamil = localFont({
+  src: '../../public/fonts/NotoSerifTamil-wdth-wght.ttf',
+  variable: '--font-noto-serif-tamil',
+  display: 'swap',
+});
+
+const anekTamil = localFont({
+  src: '../../public/fonts/AnekTamil-wdth-wght.ttf',
+  variable: '--font-anek-tamil',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: 'Sanskrit Keyboard',
   description: 'Canonical ITRANS editing workspace with Devanagari preview and lexical autocomplete.',
@@ -33,7 +45,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`h-full antialiased ${chandas.variable} ${siddhanta.variable} ${sampradaya.variable}`}
+      className={`h-full antialiased ${chandas.variable} ${siddhanta.variable} ${sampradaya.variable} ${notoSerifTamil.variable} ${anekTamil.variable}`}
     >
       <body className="min-h-full flex flex-col font-sans">{children}</body>
     </html>

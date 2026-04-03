@@ -5,6 +5,8 @@
   --font-serif: var(--font-chandas), var(--font-siddhanta), var(--font-sampradaya), "Tiro Devanagari Sanskrit", "Georgia", serif;
   --font-display: "Playfair Display", "serif";
   --font-mono: "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", monospace;
+  --font-tamil-reading: var(--font-noto-serif-tamil), var(--font-anek-tamil), "Noto Serif Tamil", "Nirmala UI", serif;
+  --font-tamil-ui: var(--font-anek-tamil), var(--font-noto-serif-tamil), "Noto Sans Tamil", "Nirmala UI", sans-serif;
 
   @keyframes caret {
     0%, 100% { opacity: 1; }
@@ -26,4 +28,60 @@ body {
 
 kbd {
   box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+}
+
+.script-text-wrap {
+  overflow-wrap: break-word;
+  word-break: normal;
+  line-break: auto;
+}
+
+.script-text-tamil {
+  font-feature-settings: "abvm" 1, "blwm" 1, "liga" 1;
+  text-rendering: optimizeLegibility;
+}
+
+.script-text-devanagari {
+  text-rendering: optimizeLegibility;
+}
+
+.script-text-devanagari[data-font-preset="chandas"] {
+  font-family: var(--font-chandas), var(--font-siddhanta), var(--font-sampradaya), "Tiro Devanagari Sanskrit", serif;
+}
+
+.script-text-devanagari[data-font-preset="siddhanta"] {
+  font-family: var(--font-siddhanta), var(--font-chandas), var(--font-sampradaya), "Tiro Devanagari Sanskrit", serif;
+}
+
+.script-text-devanagari[data-font-preset="sampradaya"] {
+  font-family: var(--font-sampradaya), var(--font-chandas), var(--font-siddhanta), "Tiro Devanagari Sanskrit", serif;
+}
+
+.script-text-tamil[data-font-preset="hybrid"] {
+  font-family: var(--font-anek-tamil), var(--font-noto-serif-tamil), "Nirmala UI", sans-serif;
+}
+
+.script-text-tamil[data-font-preset="noto-serif"] {
+  font-family: var(--font-noto-serif-tamil), "Noto Serif Tamil", "Nirmala UI", serif;
+}
+
+.script-text-tamil[data-font-preset="anek"] {
+  font-family: var(--font-anek-tamil), "Noto Sans Tamil", "Nirmala UI", sans-serif;
+}
+
+.tamil-precision-akshara {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.tamil-precision-marker {
+  font-family: inherit;
+  display: inline-block;
+  font-size: 0.74em;
+  font-weight: 600;
+  line-height: 1;
+  margin-left: 0.015em;
+  position: relative;
+  top: -0.42em;
+  vertical-align: baseline;
 }
