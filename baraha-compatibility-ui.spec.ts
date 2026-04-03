@@ -37,7 +37,7 @@ const clearTextarea = async (page: Page) => {
 
 const setReadAs = async (page: Page, script: 'roman' | 'devanagari' | 'tamil') => {
   await page.getByTestId('sticky-read-as-chip').click();
-  await page.getByTestId(`sticky-read-as-option-${script}`).click({ force: true });
+  await page.getByTestId(`sticky-read-as-option-${script}`).click();
 };
 
 test('alias input stays raw while typing and canonicalizes on commit', async ({ page }) => {
@@ -113,7 +113,7 @@ test('true-conflict aliases stay gated until Baraha-compatible mode is enabled',
   await expect(textarea).toHaveValue('ch ');
 });
 
-test('source copy follows the explicit output style without changing stored source', async ({ page }) => {
+test('source copy stays raw while whole-document copy buttons expose explicit scripts', async ({ page }) => {
   await loadDefaultSession(page);
 
   const textarea = page.getByTestId('sticky-itrans-input');
@@ -126,8 +126,30 @@ test('source copy follows the explicit output style without changing stored sour
   await expect(page.getByTestId('copy-whole-source')).toBeVisible();
   await page.getByRole('button', { name: 'Workspace' }).click();
 
-  await expect(page.getByTestId('copy-source-button')).toHaveAttribute('aria-label', /Roman \(Baraha\)/);
   await page.getByTestId('copy-source-button').click();
-  await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText())).toBe('Ru K c oum &');
+  await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText())).toBe('R^i kh ch OM .a');
   await expect(textarea).toHaveValue('R^i kh ch OM .a');
+});
+
+test('whole-document copy buttons stay next to Reference and copy the requested script', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  const textarea = page.getByTestId('sticky-itrans-input');
+  await textarea.click();
+  await page.keyboard.type("ma'", { delay: 40 });
+  await expect(textarea).toHaveValue("ma'");
+
+  await expect(page.getByTestId('copy-whole-document-devanagari')).toBeVisible();
+  await expect(page.getByTestId('copy-whole-document-itrans')).toBeVisible();
+  await expect(page.getByTestId('copy-whole-document-tamil')).toBeVisible();
+
+  await page.getByTestId('copy-whole-document-itrans').click();
+  await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText())).toBe("ma'");
+
+  await page.getByTestId('copy-whole-document-devanagari').click();
+  await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText())).toBe('म॑');
+
+  await setReadAs(page, 'tamil');
+  await page.getByTestId('copy-whole-document-tamil').click();
+  await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText())).toBe('ம॑');
 });

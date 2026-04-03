@@ -94,6 +94,39 @@ export const MainDocumentArea: React.FC = () => {
     activateBlockChunk(blockId, segmentIndex);
   };
 
+  const handleReadBlockDoubleClick = (
+    block: CanonicalBlock,
+    script: typeof primaryOutputScript,
+    event: React.MouseEvent<HTMLElement>
+  ) => {
+    if (script !== 'devanagari') {
+      jumpToEditPosition(block, 0);
+      return;
+    }
+
+    const target = (event.target as HTMLElement).closest<HTMLElement>('[data-target-index]');
+    if (!target) {
+      jumpToEditPosition(block, 0);
+      return;
+    }
+
+    const targetIndex = Number(target.dataset.targetIndex);
+    if (Number.isNaN(targetIndex)) {
+      return;
+    }
+
+    const renderedBlock = transliterate(block.source, { inputScheme });
+    const renderedChars = Array.from(renderedBlock.unicode);
+
+    let wordStart = targetIndex;
+    while (wordStart > 0 && /\S/.test(renderedChars[wordStart - 1] ?? '')) {
+      wordStart -= 1;
+    }
+
+    const sourceWordStart = renderedBlock.targetToSourceMap[wordStart] ?? 0;
+    jumpToEditPosition(block, sourceWordStart);
+  };
+
   const jumpToEditPosition = (block: CanonicalBlock, sourceOffset: number) => {
     const clampedSourceOffset = Math.max(0, Math.min(sourceOffset, block.source.length));
     let targetSegmentIndex = 0;
@@ -139,58 +172,32 @@ export const MainDocumentArea: React.FC = () => {
       const renderedBlock = transliterate(block.source, { inputScheme });
       const renderedChars = Array.from(renderedBlock.unicode);
 
-      if (paneRole === 'primary') {
-        return (
-          <p
-            key={block.id}
-            data-testid={`${viewTestIdPrefix}-block-${block.id}`}
-            className="script-text-devanagari whitespace-pre-wrap break-words rounded-md px-1 py-1 transition-colors hover:bg-slate-50"
-            data-font-preset={sanskritFontPreset}
-            lang="sa"
-            title="Double-click to jump back into edit mode for this block"
-            onDoubleClick={(event) => {
-              const target = (event.target as HTMLElement).closest<HTMLElement>('[data-target-index]');
-              if (!target) {
-                jumpToEditPosition(block, 0);
-                return;
-              }
-
-              const targetIndex = Number(target.dataset.targetIndex);
-              if (Number.isNaN(targetIndex)) {
-                return;
-              }
-
-              let wordStart = targetIndex;
-              while (wordStart > 0 && /\S/.test(renderedChars[wordStart - 1] ?? '')) {
-                wordStart -= 1;
-              }
-
-              const sourceWordStart = renderedBlock.targetToSourceMap[wordStart] ?? 0;
-              jumpToEditPosition(block, sourceWordStart);
-            }}
-          >
-            {renderedChars.map((char, index) => (
-              <span
-                key={`${block.id}-${index}-${char}`}
-                data-target-index={index}
-                className="cursor-text"
-              >
-                {char}
-              </span>
-            ))}
-          </p>
-        );
-      }
-
       return (
         <p
-          key={`${block.id}-compare`}
-          data-testid={`${viewTestIdPrefix}-compare-block-${block.id}`}
-          className="script-text-devanagari whitespace-pre-wrap break-words rounded-md px-1 py-1 text-slate-700"
+          key={`${block.id}-${paneRole}`}
+          data-testid={
+            paneRole === 'primary'
+              ? `${viewTestIdPrefix}-block-${block.id}`
+              : `${viewTestIdPrefix}-compare-block-${block.id}`
+          }
+          className={clsx(
+            'script-text-devanagari whitespace-pre-wrap break-words rounded-md px-1 py-1 transition-colors hover:bg-slate-50',
+            paneRole === 'compare' && 'text-slate-700'
+          )}
           data-font-preset={sanskritFontPreset}
           lang="sa"
+          title="Double-click to jump back into edit mode for this block"
+          onDoubleClick={(event) => handleReadBlockDoubleClick(block, script, event)}
         >
-          {renderedBlock.unicode}
+          {renderedChars.map((char, index) => (
+            <span
+              key={`${block.id}-${index}-${char}`}
+              data-target-index={index}
+              className="cursor-text"
+            >
+              {char}
+            </span>
+          ))}
         </p>
       );
     }
@@ -204,11 +211,13 @@ export const MainDocumentArea: React.FC = () => {
       <p
         key={`${block.id}-${script}-${paneRole}`}
         data-testid={`${viewTestIdPrefix}-${paneRole}-block-${block.id}`}
-        className="rounded-md px-1 py-1"
+        className="rounded-md px-1 py-1 cursor-text"
         style={{
           fontSize: `${documentTypography.renderedFontSize}px`,
           lineHeight: getRenderedLineHeightForScript(script, documentTypography.renderedLineHeight),
         }}
+        title="Double-click to jump back into edit mode for this block"
+        onDoubleClick={(event) => handleReadBlockDoubleClick(block, script, event)}
       >
         <ScriptText
           script={script}

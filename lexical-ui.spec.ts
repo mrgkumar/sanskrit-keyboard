@@ -119,6 +119,24 @@ test('single-line Devanagari paste feeds session-local lexical prediction', asyn
   await expect(page.getByTestId('word-predictions-footer')).toContainText("karNe'bhi");
 });
 
+test('Tamil read-as mode surfaces Tamil word predictions', async ({ page }) => {
+  await loadDefaultSession(page);
+  await openDisplaySettings(page);
+  await page.getByRole('button', { name: 'Footer' }).click();
+  await closeWorkspace(page);
+
+  await page.getByTestId('sticky-read-as-chip').click();
+  await page.getByTestId('sticky-read-as-option-tamil').click();
+
+  const textarea = page.getByTestId('sticky-itrans-input');
+  await textarea.click();
+  await page.keyboard.type('ga', { delay: 80 });
+
+  const lexicalSection = page.getByTestId('word-predictions-footer');
+  await expect(lexicalSection).toBeVisible({ timeout: 10000 });
+  await expect(lexicalSection).toContainText(/[\u0B80-\u0BFF]/);
+});
+
 test('can purge current-session and saved swara learning separately', async ({ page }) => {
   await loadDefaultSession(page);
   await openDisplaySettings(page);

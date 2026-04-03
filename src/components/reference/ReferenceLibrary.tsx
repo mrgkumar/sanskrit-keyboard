@@ -11,6 +11,23 @@ interface ReferenceLibraryProps {
   activeBuffer: string;
 }
 
+const JOIN_CONTROL_SHORTCUTS = [
+  {
+    label: 'ZWNJ',
+    shortcut: '^z',
+    name: 'Zero Width Non-Joiner',
+    description: 'Canonical shortcut for the literal zero-width non-joiner.',
+    example: 'अ‌क्ष',
+  },
+  {
+    label: 'ZWJ',
+    shortcut: '^Z',
+    name: 'Zero Width Joiner',
+    description: 'Canonical shortcut for the literal zero-width joiner.',
+    example: 'अ‍क्ष',
+  },
+] as const;
+
 export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffer, activeBuffer }) => {
   const [search, setSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -121,8 +138,34 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
           placeholder="Search characters or shortcuts..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-blue-500 transition-all text-lg"
+        className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-blue-500 transition-all text-lg"
         />
+      </div>
+
+      {/* Join Control Shortcuts */}
+      <div className="border-b border-slate-100 bg-white/70 px-6 py-4">
+        <div className="flex flex-wrap items-center gap-3">
+          {JOIN_CONTROL_SHORTCUTS.map((shortcut) => (
+            <button
+              key={shortcut.label}
+              type="button"
+              onClick={() => handleInsert(shortcut.shortcut)}
+              className="group flex min-w-[14rem] flex-1 items-start justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-left transition-all hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-md active:scale-[0.99]"
+            >
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">{shortcut.label}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">{shortcut.name}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  {shortcut.description}
+                  <span className="ml-1 font-medium text-slate-700">Example: {shortcut.example}</span>
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs font-bold text-slate-700 transition-colors group-hover:border-blue-200 group-hover:text-blue-700">
+                {shortcut.shortcut}
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Mappings List */}

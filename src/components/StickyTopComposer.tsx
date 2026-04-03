@@ -11,9 +11,7 @@ import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
 import { ScriptText } from '@/components/ScriptText';
 import {
   canonicalizeDevanagariPaste,
-  formatSourceForPrimaryOutput,
   formatSourceForScript,
-  getCopySourceControlText,
   transliterate,
 } from '@/lib/vedic/utils';
 import {
@@ -28,6 +26,7 @@ import type { ChunkEditTarget } from '@/store/types';
 
 export const StickyTopComposer: React.FC = () => {
   const { 
+    blocks,
     getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setNextBlock, setPrevBlock, setFocusSpan, toggleReferencePanel, addBlocks, deleteBlock, restoreDeletedBlock, dismissDeletedBlock, setDeletedBuffer, setComposerSelection, setLexicalSelectedSuggestionIndex, recordSessionLexicalText, recordSessionLexicalUse, setPrimaryOutputScript, setComparisonOutputScript, editorState,
     activeBuffer, // Get activeBuffer for Backspace logic
     lexicalSuggestions,
@@ -46,7 +45,23 @@ export const StickyTopComposer: React.FC = () => {
   const isPointerSelectingRef = React.useRef(false);
   const scrollSyncSourceRef = React.useRef<'source' | 'preview' | null>(null);
   const programmaticScrollTargetRef = React.useRef<HTMLElement | null>(null);
-  const [copyState, setCopyState] = React.useState<'idle' | 'copied' | 'error'>('idle');
+  type CopyState = 'idle' | 'copied' | 'error';
+  type CopyStateMap = {
+    source: CopyState;
+    preview: CopyState;
+    compare: CopyState;
+    devanagariWhole: CopyState;
+    itransWhole: CopyState;
+    tamilWhole: CopyState;
+  };
+  const [copyStates, setCopyStates] = React.useState<CopyStateMap>({
+    source: 'idle',
+    preview: 'idle',
+    compare: 'idle',
+    devanagariWhole: 'idle',
+    itransWhole: 'idle',
+    tamilWhole: 'idle',
+  });
   const [isShortcutPeekVisible, setIsShortcutPeekVisible] = React.useState(false);
   const [deleteToastProgress, setDeleteToastProgress] = React.useState(1);
   const [isPredictionPopupVisible, setIsPredictionPopupVisible] = React.useState(false);
@@ -75,12 +90,6 @@ export const StickyTopComposer: React.FC = () => {
   const isLongBlock = activeBlock?.type === 'long';
   const currentChunkSource = activeChunkGroup?.source || '';
   const renderedPreview = transliterate(currentChunkSource, { inputScheme });
-  const copySourceControlText = getCopySourceControlText({
-    primaryOutputScript,
-    comparisonOutputScript,
-    romanOutputStyle,
-    tamilOutputStyle,
-  });
   const primaryPreviewText = formatSourceForScript(currentChunkSource, primaryOutputScript, {
     romanOutputStyle,
     tamilOutputStyle,
@@ -250,6 +259,24 @@ export const StickyTopComposer: React.FC = () => {
         : renderedPreview.sourceToTargetMap[currentSourceWordRange.end] ?? renderedPreviewChars.length;
 
     return targetEnd > targetStart ? { start: targetStart, end: targetEnd } : null;
+  })();
+
+  const sourceRenderBoundaries = (() => {
+    const sourceLength = currentChunkSource.length;
+    const boundaries = new Set<number>([
+      0,
+      sourceLength,
+      Math.max(0, Math.min(composerSelectionStart, sourceLength)),
+      selectedSourceRange.start,
+      selectedSourceRange.end,
+    ]);
+
+    if (currentSourceWordRange) {
+      boundaries.add(currentSourceWordRange.start);
+      boundaries.add(currentSourceWordRange.end);
+    }
+
+    return Array.from(boundaries).sort((a, b) => a - b);
   })();
 
   const sourceMirrorFragments = (() => {
@@ -762,16 +789,24 @@ export const StickyTopComposer: React.FC = () => {
   }, [isPredictionListbox, isPredictionPopupVisible]);
 
   React.useEffect(() => {
-    if (copyState === 'idle') {
+    const hasFeedback = Object.values(copyStates).some((state) => state !== 'idle');
+    if (!hasFeedback) {
       return;
     }
 
     const timeoutId = window.setTimeout(() => {
-      setCopyState('idle');
+      setCopyStates({
+        source: 'idle',
+        preview: 'idle',
+        compare: 'idle',
+        devanagariWhole: 'idle',
+        itransWhole: 'idle',
+        tamilWhole: 'idle',
+      });
     }, 1500);
 
     return () => window.clearTimeout(timeoutId);
-  }, [copyState]);
+  }, [copyStates]);
 
   React.useEffect(() => {
     if (activeQuickSwitchMenu === null) {
@@ -825,6 +860,20 @@ export const StickyTopComposer: React.FC = () => {
     return () => window.clearInterval(intervalId);
   }, [dismissDeletedBlock, recentlyDeletedBlock]);
 
+  const handleCopyText = async (text: string, key: keyof CopyStateMap) => {
+    if (!text) {
+      setCopyStates((current) => ({ ...current, [key]: 'error' }));
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyStates((current) => ({ ...current, [key]: 'copied' }));
+    } catch {
+      setCopyStates((current) => ({ ...current, [key]: 'error' }));
+    }
+  };
+
   const handleCopyRendered = async () => {
     const canonicalSource = viewMode === 'focus'
       ? activeChunkGroup?.source || ''
@@ -834,38 +883,46 @@ export const StickyTopComposer: React.FC = () => {
       tamilOutputStyle,
     });
 
-    if (!textToCopy) {
-      setCopyState('error');
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(textToCopy);
-      setCopyState('copied');
-    } catch {
-      setCopyState('error');
-    }
+    await handleCopyText(textToCopy, 'preview');
   };
 
   const handleCopySource = async () => {
-    const sourceToCopy = formatSourceForPrimaryOutput(currentChunkSource, {
-      primaryOutputScript,
-      comparisonOutputScript,
+    await handleCopyText(currentChunkSource, 'source');
+  };
+
+  const handleCopyComparison = async () => {
+    if (comparisonPreviewText) {
+      await handleCopyText(comparisonPreviewText, 'compare');
+    }
+  };
+
+  const handleCopyWholeDocument = async (
+    script: 'devanagari' | 'itrans' | 'tamil'
+  ) => {
+    const fullSource = blocks
+      .map((block) => block.source.trim())
+      .filter((source) => source.length > 0)
+      .join('\n\n');
+
+    if (!fullSource) {
+      await handleCopyText('', script === 'devanagari' ? 'devanagariWhole' : script === 'itrans' ? 'itransWhole' : 'tamilWhole');
+      return;
+    }
+
+    if (script === 'itrans') {
+      await handleCopyText(fullSource, 'itransWhole');
+      return;
+    }
+
+    const formatted = formatSourceForScript(fullSource, script, {
       romanOutputStyle,
       tamilOutputStyle,
     });
 
-    if (!sourceToCopy) {
-      setCopyState('error');
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(sourceToCopy);
-      setCopyState('copied');
-    } catch {
-      setCopyState('error');
-    }
+    await handleCopyText(
+      formatted,
+      script === 'devanagari' ? 'devanagariWhole' : 'tamilWhole'
+    );
   };
 
   const handleDeleteBlock = () => {
@@ -896,6 +953,82 @@ export const StickyTopComposer: React.FC = () => {
     });
   };
 
+  const renderTamilSurface = () => {
+    if (!currentChunkSource) {
+      return null;
+    }
+
+    const fragments: React.ReactNode[] = [];
+    for (let index = 0; index < sourceRenderBoundaries.length - 1; index += 1) {
+      const start = sourceRenderBoundaries[index];
+      const end = sourceRenderBoundaries[index + 1];
+
+      if (end <= start) {
+        continue;
+      }
+
+      const fragmentSource = currentChunkSource.slice(start, end);
+      const fragmentText = formatSourceForScript(fragmentSource, 'tamil', {
+        romanOutputStyle,
+        tamilOutputStyle,
+      });
+      const isSelectionVisible =
+        selectedSourceRange.end > selectedSourceRange.start &&
+        start >= selectedSourceRange.start &&
+        end <= selectedSourceRange.end;
+      const isCurrentWordVisible =
+        !isSelectionVisible &&
+        currentSourceWordRange !== null &&
+        start >= currentSourceWordRange.start &&
+        end <= currentSourceWordRange.end;
+      const showCaretBefore = composerSelectionStart === composerSelectionEnd && start === composerSelectionStart;
+
+      if (showCaretBefore) {
+        fragments.push(
+          <span
+            key={`tamil-caret-${start}`}
+            aria-hidden="true"
+            className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-blue-600 align-middle motion-safe:animate-caret"
+            data-testid="preview-caret"
+          />
+        );
+      }
+
+      fragments.push(
+        <span
+          key={`tamil-fragment-${start}-${end}`}
+          className={clsx(
+            'rounded-[0.18em]',
+            isSelectionVisible && 'bg-blue-200/80 text-blue-950',
+            isCurrentWordVisible && 'font-semibold text-[#6b1f1f]'
+          )}
+          data-current-word={isCurrentWordVisible ? 'true' : undefined}
+          data-target-index={start}
+          data-source-selection={isSelectionVisible ? 'true' : undefined}
+        >
+          {fragmentText}
+        </span>
+      );
+    }
+
+    if (composerSelectionStart === composerSelectionEnd && composerSelectionStart === currentChunkSource.length) {
+      fragments.push(
+        <span
+          key="tamil-caret-end"
+          aria-hidden="true"
+          className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-blue-600 align-middle motion-safe:animate-caret"
+          data-testid="preview-caret"
+        />
+      );
+    }
+
+    return (
+      <span className="script-text-tamil script-text-wrap whitespace-pre-wrap text-slate-900" data-font-preset={tamilFontPreset} lang="ta" dir="ltr">
+        {fragments}
+      </span>
+    );
+  };
+
   return (
     <>
     <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
@@ -922,13 +1055,13 @@ export const StickyTopComposer: React.FC = () => {
           data-testid="sticky-composer-shell"
           data-layout={composerLayout}
         >
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/85 px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/85 px-3 py-2">
             <div className="flex min-w-0 items-center gap-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
               <span>ITRANS</span>
               <span className="text-slate-300">/</span>
               <span className="text-blue-700">Preview</span>
             </div>
-            <div ref={quickSwitchMenuRef} className="relative z-10 flex shrink-0 items-center gap-2">
+            <div ref={quickSwitchMenuRef} className="relative z-40 flex shrink-0 flex-wrap items-center gap-2">
               <div className="relative">
                 <button
                   data-testid="sticky-read-as-chip"
@@ -946,7 +1079,7 @@ export const StickyTopComposer: React.FC = () => {
                 {activeQuickSwitchMenu === 'read-as' && (
                   <div
                     data-testid="sticky-read-as-menu"
-                    className="absolute right-0 top-[calc(100%+0.35rem)] min-w-[11rem] rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"
+                    className="absolute right-0 top-[calc(100%+0.35rem)] z-[80] min-w-[11rem] rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"
                   >
                     <p className="px-2 pb-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
                       {OUTPUT_TARGET_CONTROL_LABELS.readAs}
@@ -994,7 +1127,7 @@ export const StickyTopComposer: React.FC = () => {
                 {activeQuickSwitchMenu === 'compare' && (
                   <div
                     data-testid="sticky-compare-menu"
-                    className="absolute right-0 top-[calc(100%+0.35rem)] min-w-[11rem] rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"
+                    className="absolute right-0 top-[calc(100%+0.35rem)] z-[80] min-w-[11rem] rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"
                   >
                     <p className="px-2 pb-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
                       {OUTPUT_TARGET_CONTROL_LABELS.compare}
@@ -1036,12 +1169,78 @@ export const StickyTopComposer: React.FC = () => {
                 <BookOpen className="h-3.5 w-3.5" />
                 Reference
               </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveQuickSwitchMenu(null);
+                  void handleCopyWholeDocument('devanagari');
+                }}
+                data-testid="copy-whole-document-devanagari"
+                className={clsx(
+                  'inline-flex touch-manipulation items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em]',
+                  copyStates.devanagariWhole === 'copied'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : copyStates.devanagariWhole === 'error'
+                      ? 'border-rose-200 bg-rose-50 text-rose-700'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                )}
+                aria-label="Copy whole document as Devanagari"
+                title={copyStates.devanagariWhole === 'copied' ? 'Copied' : 'Copy whole document as Devanagari'}
+              >
+                {copyStates.devanagariWhole === 'copied' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                Devanagari
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveQuickSwitchMenu(null);
+                  void handleCopyWholeDocument('itrans');
+                }}
+                data-testid="copy-whole-document-itrans"
+                className={clsx(
+                  'inline-flex touch-manipulation items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em]',
+                  copyStates.itransWhole === 'copied'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : copyStates.itransWhole === 'error'
+                      ? 'border-rose-200 bg-rose-50 text-rose-700'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                )}
+                aria-label="Copy whole document as ITRANS"
+                title={copyStates.itransWhole === 'copied' ? 'Copied' : 'Copy whole document as ITRANS'}
+              >
+                {copyStates.itransWhole === 'copied' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                ITRANS
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveQuickSwitchMenu(null);
+                  void handleCopyWholeDocument('tamil');
+                }}
+                data-testid="copy-whole-document-tamil"
+                className={clsx(
+                  'inline-flex touch-manipulation items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em]',
+                  copyStates.tamilWhole === 'copied'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : copyStates.tamilWhole === 'error'
+                      ? 'border-rose-200 bg-rose-50 text-rose-700'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                )}
+                aria-label="Copy whole document as Tamil"
+                title={copyStates.tamilWhole === 'copied' ? 'Copied' : 'Copy whole document as Tamil'}
+              >
+                {copyStates.tamilWhole === 'copied' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                Tamil
+              </button>
             </div>
           </div>
 
           <div
             className={clsx(
-              'grid min-h-0 flex-1 gap-0 overflow-visible rounded-2xl border border-slate-200 bg-slate-50/70',
+              'grid min-h-0 flex-1 gap-0 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70',
               composerLayout === 'stacked'
                 ? 'grid-cols-1'
                 : 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)]'
@@ -1058,23 +1257,17 @@ export const StickyTopComposer: React.FC = () => {
                     onClick={handleCopySource}
                     className={clsx(
                       'pointer-events-auto rounded-md border bg-white/95 p-1.5 shadow-sm',
-                      copyState === 'copied'
+                      copyStates.source === 'copied'
                         ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                        : copyState === 'error'
+                        : copyStates.source === 'error'
                           ? 'border-rose-200 bg-rose-50 text-rose-700'
                           : 'border-blue-200 text-slate-700 hover:bg-blue-100'
                     )}
                     type="button"
-                    aria-label={copySourceControlText.ariaLabel}
-                    title={
-                      copyState === 'copied'
-                        ? 'Copied'
-                        : copyState === 'error'
-                          ? 'Copy failed'
-                          : copySourceControlText.title
-                    }
+                    aria-label="Copy ITRANS source"
+                    title={copyStates.source === 'copied' ? 'Copied' : copyStates.source === 'error' ? 'Copy failed' : 'Copy ITRANS source'}
                   >
-                    {copyState === 'copied' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    {copyStates.source === 'copied' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </button>
                 </div>
                 <div
@@ -1085,10 +1278,7 @@ export const StickyTopComposer: React.FC = () => {
                     lineHeight: composerTypography.itransLineHeight,
                   }}
                 >
-                  <div
-                    ref={composerHighlightRef}
-                    className="whitespace-pre-wrap break-words"
-                  >
+                  <div ref={composerHighlightRef} className="whitespace-pre-wrap break-words">
                     {sourceMirrorFragments}
                   </div>
                 </div>
@@ -1153,25 +1343,43 @@ export const StickyTopComposer: React.FC = () => {
                     onClick={handleCopyRendered}
                     className={clsx(
                       'pointer-events-auto rounded-md border bg-white/95 p-1.5 shadow-sm',
-                      copyState === 'copied'
+                      copyStates.preview === 'copied'
                         ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                        : copyState === 'error'
+                        : copyStates.preview === 'error'
                           ? 'border-rose-200 bg-rose-50 text-rose-700'
                           : 'border-blue-200 text-slate-700 hover:bg-blue-100'
                     )}
                     type="button"
                     aria-label={`Copy ${primaryPreviewLabel}`}
-                    title={copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : `Copy ${primaryPreviewLabel}`}
+                    title={copyStates.preview === 'copied' ? 'Copied' : copyStates.preview === 'error' ? 'Copy failed' : `Copy ${primaryPreviewLabel}`}
                   >
-                    {copyState === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copyStates.preview === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   </button>
+                  {isComposerCompareMode && (
+                    <button
+                      onClick={handleCopyComparison}
+                      className={clsx(
+                        'pointer-events-auto rounded-md border bg-white/95 p-1.5 shadow-sm',
+                        copyStates.compare === 'copied'
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                          : copyStates.compare === 'error'
+                            ? 'border-rose-200 bg-rose-50 text-rose-700'
+                            : 'border-slate-200 text-slate-700 hover:bg-slate-100'
+                      )}
+                      type="button"
+                      aria-label={`Copy ${comparisonPreviewLabel}`}
+                      title={copyStates.compare === 'copied' ? 'Copied' : copyStates.compare === 'error' ? 'Copy failed' : `Copy ${comparisonPreviewLabel}`}
+                    >
+                      {copyStates.compare === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  )}
                 </div>
                 <div
                   data-testid="sticky-preview-surface"
                   data-compare-mode={isComposerCompareMode ? 'compare' : 'single'}
                   data-compare-layout={composerCompareLayout}
                   className={clsx(
-                    'grid min-h-[7rem] h-full gap-3',
+                    'grid min-h-[7rem] h-full items-stretch gap-3',
                     'grid-cols-1'
                   )}
                 >
@@ -1181,7 +1389,11 @@ export const StickyTopComposer: React.FC = () => {
                     data-testid="sticky-preview-primary-pane"
                     onScroll={handlePreviewScroll}
                     onMouseDown={(event) => event.preventDefault()}
-                    onClick={primaryOutputScript === 'devanagari' ? handlePreviewContainerClick : undefined}
+                    onClick={
+                      primaryOutputScript === 'devanagari' || primaryOutputScript === 'tamil'
+                        ? handlePreviewContainerClick
+                        : undefined
+                    }
                     style={{
                       fontSize: `${composerTypography.renderedFontSize}px`,
                       lineHeight: getRenderedLineHeightForScript(primaryOutputScript, composerTypography.renderedLineHeight),
@@ -1192,7 +1404,7 @@ export const StickyTopComposer: React.FC = () => {
                     </p>
                     {primaryOutputScript === 'tamil' && (
                       <p className="mb-2 text-[11px] text-amber-700">
-                        Tamil preview is read-only. Cursor-linked navigation and highlight stay Devanagari-only.
+                        Tamil preview is read-only, and the current source cursor and word stay mirrored here.
                       </p>
                     )}
                     {primaryOutputScript === 'devanagari' ? (
@@ -1248,12 +1460,14 @@ export const StickyTopComposer: React.FC = () => {
                           )}
                         </span>
                       )
+                    ) : primaryOutputScript === 'tamil' ? (
+                      renderTamilSurface() ?? 'Tamil preview'
                     ) : (
                       <ScriptText
                         script={primaryOutputScript}
                         sanskritFontPreset={sanskritFontPreset}
                         tamilFontPreset={tamilFontPreset}
-                        text={primaryPreviewText || (primaryOutputScript === 'tamil' ? 'Tamil preview' : 'Roman preview')}
+                        text={primaryPreviewText || 'Roman preview'}
                         className="text-slate-900"
                       />
                     )}
@@ -1263,6 +1477,7 @@ export const StickyTopComposer: React.FC = () => {
                     <div
                       className="min-h-[7rem] h-full overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 px-3 pb-3 pt-2.5 text-slate-700 shadow-sm"
                       data-testid="sticky-preview-compare-pane"
+                      onClick={activeComparisonScript === 'tamil' ? handlePreviewContainerClick : undefined}
                       style={{
                         fontSize: `${Math.max(composerTypography.renderedFontSize - 2, 14)}px`,
                         lineHeight: getRenderedLineHeightForScript(
@@ -1274,12 +1489,16 @@ export const StickyTopComposer: React.FC = () => {
                       <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
                         {comparisonPreviewLabel}
                       </p>
-                      <ScriptText
-                        script={activeComparisonScript ?? primaryOutputScript}
-                        sanskritFontPreset={sanskritFontPreset}
-                        tamilFontPreset={tamilFontPreset}
-                        text={comparisonPreviewText}
-                      />
+                      {activeComparisonScript === 'tamil' ? (
+                        renderTamilSurface() ?? 'Tamil compare'
+                      ) : (
+                        <ScriptText
+                          script={activeComparisonScript ?? primaryOutputScript}
+                          sanskritFontPreset={sanskritFontPreset}
+                          tamilFontPreset={tamilFontPreset}
+                          text={comparisonPreviewText}
+                        />
+                      )}
                     </div>
                   )}
                 </div>

@@ -319,6 +319,8 @@ export const VEDIC_MAPPINGS: VedicMapping[] = [
   { itrans: ":_", unicode: '\u0903\u0952', category: 'mark' },
   { itrans: ":''", unicode: '\u0903\uF176', category: 'mark' },
   { itrans: ':\"', unicode: '\u0903\uF176', category: 'mark' },
+  { itrans: '^z', unicode: '\u200C', name: 'zwnj', category: 'special' },
+  { itrans: '^Z', unicode: '\u200D', name: 'zwj', category: 'special' },
   { itrans: "H_k", unicode: '\u1CF5', name: 'jihvamuliya', category: 'vedic' },
   { itrans: "H_p", unicode: '\u1CF6', name: 'upadhmaniya', category: 'vedic' },
   { itrans: "H^", unicode: '\u1CF2', category: 'vedic' },

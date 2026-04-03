@@ -23,10 +23,10 @@ export const TAMIL_REVERSE_ATOMIC_AKSHARA_FIXTURES = [
 
 export const TAMIL_REVERSE_DEAD_CONSONANT_FIXTURES = [
   ['க்', 'k'],
-  ['க²்', 'kh'],
+  ['க்²', 'kh'],
   ['ஜ்', 'j'],
-  ['த⁴்', 'dh'],
-  ['ப³்', 'b'],
+  ['த்⁴', 'dh'],
+  ['ப்³', 'b'],
   ['ஹ்', 'h'],
   ['க்ஷ்', 'kSh'],
 ] as const;
@@ -71,7 +71,7 @@ export const TAMIL_REVERSE_CLUSTER_FIXTURES = [
 
 export const TAMIL_REVERSE_ASCII_NORMALIZATION_FIXTURES = [
   { rich: 'க³ீதா', ascii: 'க^3ீதா', tokens: ['க³', 'ீ', 'த', 'ா'] },
-  { rich: 'க²்', ascii: 'க^2்', tokens: ['க²', '்'] },
+  { rich: 'க்²', ascii: 'க^2்', tokens: ['க²', '்'] },
   { rich: 'ரு¹', ascii: 'ரு<R>', tokens: ['ரு¹'] },
   { rich: 'லூ¹', ascii: 'லூ<L>', tokens: ['லூ¹'] },
   { rich: 'க்ரு¹த', ascii: 'க்ரு<R>த', tokens: ['க', '்ரு¹', 'த'] },

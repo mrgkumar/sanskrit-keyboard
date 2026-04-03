@@ -2,6 +2,7 @@ import React from 'react';
 import { clsx } from 'clsx';
 import { useFlowStore } from '@/store/useFlowStore';
 import type { ChunkEditTarget } from '@/store/types';
+import { formatSourceForScript } from '@/lib/vedic/utils';
 
 type WordPredictionTrayVariant = 'inline' | 'split' | 'footer' | 'listbox';
 
@@ -29,7 +30,13 @@ export const WordPredictionTray: React.FC<WordPredictionTrayProps> = ({
     setLexicalSelectedSuggestionIndex,
     updateChunkSource,
     composerSelectionEnd,
+    displaySettings,
   } = useFlowStore();
+  const {
+    primaryOutputScript,
+    romanOutputStyle,
+    tamilOutputStyle,
+  } = displaySettings;
 
   const activeChunkGroup = getActiveChunkGroup();
   const currentChunkSource = activeChunkGroup?.source || '';
@@ -65,6 +72,7 @@ export const WordPredictionTray: React.FC<WordPredictionTrayProps> = ({
   const isInline = variant === 'inline';
   const isSplit = variant === 'split';
   const isListbox = variant === 'listbox';
+  const visibleSuggestions = lexicalSuggestions.slice(0, isInline ? 6 : isListbox ? 7 : 5);
 
   return (
     <section
@@ -119,48 +127,55 @@ export const WordPredictionTray: React.FC<WordPredictionTrayProps> = ({
         role={isListbox ? 'listbox' : undefined}
         aria-label={isListbox ? 'Word predictions' : undefined}
       >
-        {lexicalSuggestions.slice(0, isInline ? 6 : isListbox ? 7 : 5).map((entry, index) => (
-          <button
-            key={`${variant}-lex-${index}`}
-            data-testid={`lexical-suggestion-${variant}-${index}`}
-            onClick={() => handleLexicalInsert(entry.itrans, index)}
-            className={clsx(
-              'rounded-xl border px-3 py-2 text-left transition-all active:scale-[0.99]',
-              isInline
-                ? 'min-w-[9.5rem] shrink-0'
-                : isListbox
-                  ? 'flex w-full items-center justify-between gap-3'
-                  : 'min-w-[8.5rem]',
-              index === lexicalSelectedSuggestionIndex
-                ? 'border-emerald-400 bg-emerald-100 shadow-sm hover:bg-emerald-200'
-                : 'border-emerald-200 bg-white hover:border-emerald-300 hover:bg-emerald-50'
-            )}
-            aria-label={`Use word prediction ${entry.itrans}`}
-            role={isListbox ? 'option' : undefined}
-            aria-selected={isListbox ? index === lexicalSelectedSuggestionIndex : undefined}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className={clsx('truncate font-serif text-slate-900', isInline ? 'text-sm' : 'text-lg')}>
-                  {entry.devanagari}
+        {visibleSuggestions.map((entry, index) => {
+          const suggestionText = formatSourceForScript(entry.itrans, primaryOutputScript, {
+            romanOutputStyle,
+            tamilOutputStyle,
+          });
+
+          return (
+            <button
+              key={`${variant}-lex-${index}`}
+              data-testid={`lexical-suggestion-${variant}-${index}`}
+              onClick={() => handleLexicalInsert(entry.itrans, index)}
+              className={clsx(
+                'rounded-xl border px-3 py-2 text-left transition-all active:scale-[0.99]',
+                isInline
+                  ? 'min-w-[9.5rem] shrink-0'
+                  : isListbox
+                    ? 'flex w-full items-center justify-between gap-3'
+                    : 'min-w-[8.5rem]',
+                index === lexicalSelectedSuggestionIndex
+                  ? 'border-emerald-400 bg-emerald-100 shadow-sm hover:bg-emerald-200'
+                  : 'border-emerald-200 bg-white hover:border-emerald-300 hover:bg-emerald-50'
+              )}
+              aria-label={`Use word prediction ${entry.itrans}`}
+              role={isListbox ? 'option' : undefined}
+              aria-selected={isListbox ? index === lexicalSelectedSuggestionIndex : undefined}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className={clsx('truncate font-serif text-slate-900', isInline ? 'text-sm' : 'text-lg')}>
+                    {suggestionText}
+                  </div>
+                  <kbd className="mt-1 inline-block max-w-full truncate text-[11px] font-mono font-bold tracking-tight text-emerald-800">
+                    {entry.itrans}
+                  </kbd>
                 </div>
-                <kbd className="mt-1 inline-block max-w-full truncate text-[11px] font-mono font-bold tracking-tight text-emerald-800">
-                  {entry.itrans}
-                </kbd>
-              </div>
-              <div className="flex shrink-0 flex-col items-end gap-1">
-                {index === lexicalSelectedSuggestionIndex && (
-                  <span className="rounded-full bg-emerald-700 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white">
-                    Selected
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  {index === lexicalSelectedSuggestionIndex && (
+                    <span className="rounded-full bg-emerald-700 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white">
+                      Selected
+                    </span>
+                  )}
+                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">
+                    {entry.count}
                   </span>
-                )}
-                <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">
-                  {entry.count}
-                </span>
+                </div>
               </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
     </section>
   );

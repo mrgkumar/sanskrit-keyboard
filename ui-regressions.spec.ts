@@ -19,16 +19,16 @@ const loadDefaultSession = async (page: Page) => {
       .forEach((key) => window.localStorage.removeItem(key));
   }, STORAGE_KEYS_TO_CLEAR);
   await page.goto(APP_URL);
-  await expect(page.locator('textarea')).toBeVisible();
+  await expect(page.getByTestId('sticky-itrans-input')).toBeVisible();
   page.on('dialog', (dialog) => dialog.accept());
   await page.getByRole('button', { name: 'Workspace' }).click();
   await page.getByRole('button', { name: 'New' }).click();
-  await expect(page.locator('textarea')).toHaveValue('');
+  await expect(page.getByTestId('sticky-itrans-input')).toHaveValue('');
 };
 
 const setReadAs = async (page: Page, script: 'devanagari' | 'roman' | 'tamil') => {
   await page.getByTestId('sticky-read-as-chip').click();
-  await page.getByTestId(`sticky-read-as-option-${script}`).click({ force: true });
+  await page.getByTestId(`sticky-read-as-option-${script}`).click();
 };
 
 const openDisplaySettings = async (page: Page) => {
@@ -77,7 +77,7 @@ test('delete toast auto-dismisses after a short timeout', async ({ page }) => {
 test('backspace correction replaces the intended suffix', async ({ page }) => {
   await loadDefaultSession(page);
 
-  const textarea = page.locator('textarea');
+  const textarea = page.getByTestId('sticky-itrans-input');
   await textarea.click();
   await page.keyboard.press('Control+A');
   await page.keyboard.press('Backspace');
@@ -92,7 +92,7 @@ test('backspace correction replaces the intended suffix', async ({ page }) => {
 test('clicking a correction keeps the caret at the replacement point', async ({ page }) => {
   await loadDefaultSession(page);
 
-  const textarea = page.locator('textarea');
+  const textarea = page.getByTestId('sticky-itrans-input');
   await textarea.click();
   await page.keyboard.press('Control+A');
   await page.keyboard.press('Backspace');
@@ -123,6 +123,22 @@ test('read and review modes visibly change the document view', async ({ page }) 
   await expect(page.getByTestId('document-immersive-mode')).toBeVisible();
 });
 
+test('Tamil read-as mode and Tamil compare mode both surface Tamil highlights', async ({ page }) => {
+  await loadDefaultSession(page);
+  await page.getByTestId('sticky-itrans-input').fill("ma'");
+
+  await setReadAs(page, 'tamil');
+  const primaryPane = page.getByTestId('sticky-preview-primary-pane');
+  await expect(primaryPane).toContainText('ம॑');
+
+  await page.getByTestId('sticky-compare-chip').click();
+  await page.getByTestId('sticky-compare-option-tamil').click();
+  const comparePane = page.getByTestId('sticky-preview-compare-pane');
+  await expect(comparePane).toContainText('ம॑');
+  await expect(comparePane.getByTestId('preview-caret')).toBeVisible();
+  await expect(comparePane.locator('[data-current-word="true"]').first()).toBeVisible();
+});
+
 test('double-clicking read or immersive text jumps back into edit mode at the clicked word', async ({ page }) => {
   await loadDefaultSession(page);
   const textarea = page.getByTestId('sticky-itrans-input');
@@ -147,6 +163,32 @@ test('double-clicking read or immersive text jumps back into edit mode at the cl
   const immersiveDocument = page.getByTestId('document-immersive-mode');
   await expect(immersiveDocument).toBeVisible();
   await immersiveDocument.locator(`[data-target-index="${clickedWordTargetIndex}"]`).dblclick();
+
+  await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
+  await expect(textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).resolves.toBe(expectedSourceWordStart);
+});
+
+test('double-clicking read-mode compare panes jumps back into edit mode too', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  const textarea = page.getByTestId('sticky-itrans-input');
+  const sample = 'agniM ile purohitaM yajnasya';
+  const rendered = transliterate(sample);
+  const clickedWord = 'yajnasya';
+  const expectedSourceWordStart = sample.indexOf(clickedWord);
+  const clickedWordTargetIndex = rendered.sourceToTargetMap[expectedSourceWordStart] ?? 0;
+
+  await textarea.fill(sample);
+  await setReadAs(page, 'tamil');
+  await page.getByTestId('sticky-compare-chip').click();
+  await page.getByTestId('sticky-compare-option-devanagari').click();
+
+  await page.getByRole('button', { name: 'Read mode' }).click();
+  const readDocument = page.getByTestId('document-read-mode');
+  await expect(readDocument).toBeVisible();
+
+  const comparePane = readDocument.getByTestId('document-read-compare-pane');
+  await comparePane.locator(`[data-target-index="${clickedWordTargetIndex}"]`).dblclick();
 
   await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
   await expect(textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).resolves.toBe(expectedSourceWordStart);
@@ -207,6 +249,14 @@ test('double-clicking deep read text reactivates editing on the targeted documen
 
   expect(composerState.selectionStart).toBeGreaterThan(0);
   expect(composerState.valueLength).toBeGreaterThan(0);
+});
+
+test('reference quick shortcuts keep ZWJ and ZWNJ without the old join controls header', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  await page.getByRole('button', { name: 'Reference' }).click();
+  await expect(page.getByText('^z').first()).toBeVisible();
+  await expect(page.getByText('^Z').first()).toBeVisible();
 });
 
 test('sticky composer stays bounded for long input', async ({ page }) => {
@@ -380,8 +430,8 @@ test('display settings switch composer layout and keep composer and document typ
   const preview = page.getByTestId('sticky-preview-primary-pane');
 
   await setRangeValue(page, 'ITRANS Size', '26');
-  await setRangeValue(page, 'Preview Sanskrit Size', '42');
-  await setRangeValue(page, 'Document Sanskrit Size', '22');
+  await setRangeValue(page, 'Preview Size', '42');
+  await setRangeValue(page, 'Document Preview Size', '22');
 
   await composerInput.fill('agniM ile purohitaM\naayaahi viitaye');
   await page.getByRole('button', { name: 'Read mode' }).click();
