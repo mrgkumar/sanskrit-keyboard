@@ -25,8 +25,20 @@ const segmentGraphemes = (text: string) => {
   return Array.from(text);
 };
 
+const normalizeTamilPrecisionDisplay = (text: string) => {
+  let normalized = text.replaceAll('ஂ', 'ம்');
+
+  // Move Sanskrit nasalization onto the following cluster, matching the Vignanam-style Tamil pages.
+  normalized = normalized.replace(
+    /([\p{Script=Tamil}])([ँं])([\p{Mark}]*)([\p{Letter}][\p{Letter}\p{Mark}]*)/gu,
+    (_match, base: string, _nasal: string, marks: string, nextCluster: string) => `${base}${marks}${nextCluster}ம்`
+  );
+
+  return normalized.replaceAll('-', ' ').replaceAll('ஞ்ஜ', 'ஜ');
+};
+
 const renderTamilPrecisionText = (text: string) => {
-  const chars = segmentGraphemes(text.replaceAll('ஂ', 'ம்'));
+  const chars = segmentGraphemes(normalizeTamilPrecisionDisplay(text));
   const nodes: React.ReactNode[] = [];
 
   for (let index = 0; index < chars.length; index += 1) {
