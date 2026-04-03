@@ -39,6 +39,8 @@ kbd {
 .script-text-tamil {
   font-feature-settings: "abvm" 1, "blwm" 1, "liga" 1;
   text-rendering: optimizeLegibility;
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 .script-text-devanagari {
@@ -72,16 +74,6 @@ kbd {
 .tamil-precision-akshara {
   display: inline-block;
   white-space: nowrap;
-}
-
-.tamil-precision-marker {
-  font-family: inherit;
-  display: inline-block;
-  font-size: 0.74em;
-  font-weight: 600;
-  line-height: 1;
-  margin-left: 0.015em;
-  position: relative;
-  top: -0.42em;
-  vertical-align: baseline;
+  direction: ltr;
+  unicode-bidi: isolate;
 }

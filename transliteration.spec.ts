@@ -5,12 +5,14 @@ import {
   formatSourceForOutput,
   formatSourceForPrimaryOutput,
   getCopySourceControlText,
+  formatSourceForScript,
   normalizeTamilPrecisionDisplayText,
   tokenizeTamilPrecisionInput,
   reverseTamilInput,
   transliterate,
   detransliterate,
 } from './src/lib/vedic/utils';
+import { renderTamilPrecisionText } from './src/components/ScriptText';
 import {
   canonicalizeAcceptedInputToken,
   DEFAULT_OUTPUT_TARGET_SETTINGS,
@@ -223,6 +225,32 @@ test('Vocalic r round-trips through dependent vowel forms', () => {
   expect(transliterate('kR^ita').unicode).toBe('कृत');
   expect(detransliterate('कॄ')).toBe('kR^I');
   expect(transliterate('kR^I').unicode).toBe('कॄ');
+});
+
+test('Canonical ZWJ and ZWNJ shortcuts round-trip as literal join controls', () => {
+  expect(transliterate('^z').unicode).toBe('\u200C');
+  expect(transliterate('^Z').unicode).toBe('\u200D');
+  expect(detransliterate('\u200C')).toBe('^z');
+  expect(detransliterate('\u200D')).toBe('^Z');
+  expect(transliterate("hi_raN^zma'yiiM").unicode).toBe('हि॒रण्\u200Cम॑यीं');
+  expect(detransliterate('हि॒रण्\u200Cम॑यीं')).toBe("hi_raN^zma'yiiM");
+});
+
+test('Split canonical Sri Suktam word forms preserve the Tamil Vedic swara order', () => {
+  expect(
+    formatSourceForOutput("hi_raN^zma'yiiM la_kShmIm", { outputScheme: 'sanskrit-tamil-precision' }),
+  ).toBe('ஹி॒ரண்\u200Cம॑யீம் ல॒க்ஷ்மீம்');
+});
+
+test('Tamil precision display preserves explicit hyphen separators for split canonical Sri Suktam forms', () => {
+  expect(
+    normalizeTamilPrecisionDisplayText("ஹி॒ரண்\u200Cம॑யீம்-ல॒க்ஷ்மீம்"),
+  ).toBe("ஹி॒ரண்\u200Cம॑யீம்-ல॒க்ஷ்மீம்");
+});
+
+test('Tamil precision rendering keeps simple ma swara marks after the base consonant', () => {
+  expect(formatSourceForOutput("ma'", { outputScheme: 'sanskrit-tamil-precision' })).toBe('ம॑');
+  expect(formatSourceForOutput('ma_', { outputScheme: 'sanskrit-tamil-precision' })).toBe('ம॒');
 });
 
 test('Distinct vedic anusvara variants keep separate round-trip aliases', () => {
@@ -585,6 +613,28 @@ test("Tamil Precision display normalization keeps च॒न्द्रां as
 
   expect(normalizeTamilPrecisionDisplayText(line)).toBe(line);
   expect(normalizeTamilPrecisionDisplayText(line)).toContain('ச॒ந்த்³ராம்');
+});
+
+test("Tamil Precision display normalization moves Vedic accents before trailing ம்", () => {
+  expect(normalizeTamilPrecisionDisplayText('ஹிர॑ண்யவர்ணாம்॒')).toBe('ஹிர॑ண்யவர்ணா॒ம்');
+});
+
+test('Tamil precision renderer keeps Vedic tone marks in the same text node as the akshara', () => {
+  const rendered = renderTamilPrecisionText(formatSourceForOutput("ma'", { outputScheme: 'sanskrit-tamil-precision' }));
+  expect(rendered).toHaveLength(1);
+
+  const akshara = rendered[0] as { props: { className: string; children: string } };
+  expect(akshara.props.className).toBe('tamil-precision-akshara');
+  expect(akshara.props.children).toBe('ம॑');
+});
+
+test("Tamil Precision forward formatting keeps च॒न्द्रां as ச॒ந்த்³ராம்", () => {
+  expect(
+    formatSourceForScript('chandraam', 'tamil', {
+      romanOutputStyle: 'canonical',
+      tamilOutputStyle: 'precision',
+    }),
+  ).toBe('சந்த்³ராம்');
 });
 
 test('Tamil reverse Gate 0 freezes the structured success result for canonical output', () => {
@@ -1201,7 +1251,7 @@ test('Gate 2 routes primary copy formatting by script and style instead of legac
       ...DEFAULT_OUTPUT_TARGET_SETTINGS,
       primaryOutputScript: 'tamil',
     }),
-  ).toBe('ரு¹ க²் ஓம் க்ரு¹த');
+  ).toBe('ரு¹ க்² ஓம் க்ரு¹த');
   expect(
     formatSourceForPrimaryOutput(source, {
       ...DEFAULT_OUTPUT_TARGET_SETTINGS,
@@ -1237,7 +1287,7 @@ test('Gate 2 keeps comparison state and inactive styles from changing the primar
         tamilOutputStyle: 'precision',
       },
     ),
-  ).toBe('ரு¹ க²் ஓம்');
+  ).toBe('ரு¹ க்² ஓம்');
   expect(
     formatSourceForPrimaryOutput(
       source,
@@ -1444,8 +1494,8 @@ test('Gate 5 keeps existing canonical and Baraha output behavior unchanged along
     'Ru K c C oum & ~g ~j kRuta',
   );
   expect(formatSourceForOutput('R^i', { outputScheme: 'sanskrit-tamil-precision' })).toBe('ரு¹');
-  expect(formatSourceForOutput('kh', { outputScheme: 'sanskrit-tamil-precision' })).toBe('க²்');
-  expect(formatSourceForOutput('Ch', { outputScheme: 'sanskrit-tamil-precision' })).toBe('ச²்');
+  expect(formatSourceForOutput('kh', { outputScheme: 'sanskrit-tamil-precision' })).toBe('க்²');
+  expect(formatSourceForOutput('Ch', { outputScheme: 'sanskrit-tamil-precision' })).toBe('ச்²');
   expect(formatSourceForOutput('kR^ita', { outputScheme: 'sanskrit-tamil-precision' })).toBe('க்ரு¹த');
 });
 

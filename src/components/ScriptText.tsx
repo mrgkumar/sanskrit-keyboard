@@ -14,61 +14,12 @@ interface ScriptTextProps {
   tamilFontPreset?: TamilFontPreset;
 }
 
-const TAMIL_PRECISION_MARKER_PATTERN = /[¹²³⁴]/u;
-const COMBINING_MARK_PATTERN = /\p{Mark}/u;
-
-const segmentGraphemes = (text: string) => {
-  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
-    const segmenter = new Intl.Segmenter('und', { granularity: 'grapheme' });
-    return Array.from(segmenter.segment(text), ({ segment }) => segment);
-  }
-
-  return Array.from(text);
-};
-
-const renderTamilPrecisionText = (text: string) => {
-  const chars = segmentGraphemes(normalizeTamilPrecisionDisplayText(text));
-  const nodes: React.ReactNode[] = [];
-
-  for (let index = 0; index < chars.length; index += 1) {
-    const char = chars[index];
-    const marker = chars[index + 1];
-
-    if (marker && TAMIL_PRECISION_MARKER_PATTERN.test(marker)) {
-      let trailingMarks = '';
-      let cursor = index + 2;
-
-      while (cursor < chars.length && COMBINING_MARK_PATTERN.test(chars[cursor])) {
-        trailingMarks += chars[cursor];
-        cursor += 1;
-      }
-
-      nodes.push(
-        <span key={`${index}-${char}-${marker}`} className="tamil-precision-akshara">
-          {char}
-          <span aria-hidden="true" className="tamil-precision-marker">
-            {marker}
-          </span>
-          {trailingMarks}
-        </span>
-      );
-      index = cursor - 1;
-      continue;
-    }
-
-    if (TAMIL_PRECISION_MARKER_PATTERN.test(char)) {
-      nodes.push(
-        <span key={`${index}-${char}`} aria-hidden="true" className="tamil-precision-marker">
-          {char}
-        </span>
-      );
-      continue;
-    }
-
-    nodes.push(<React.Fragment key={`${index}-${char}`}>{char}</React.Fragment>);
-  }
-
-  return nodes;
+export const renderTamilPrecisionText = (text: string) => {
+  return [
+    <span key="tamil-precision" className="tamil-precision-akshara" dir="ltr">
+      {normalizeTamilPrecisionDisplayText(text)}
+    </span>,
+  ];
 };
 
 export const ScriptText: React.FC<ScriptTextProps> = ({
@@ -92,6 +43,7 @@ export const ScriptText: React.FC<ScriptTextProps> = ({
         className={clsx('script-text-tamil script-text-wrap whitespace-pre-wrap text-slate-900', className)}
         data-font-preset={tamilFontPreset}
         lang="ta"
+        dir="ltr"
       >
         {renderTamilPrecisionText(text)}
       </span>
