@@ -43,3 +43,17 @@ test('Gate 6 keeps Tamil read mode explicitly gated away from exact cursor-linke
 
   expect(stickyComposerSource).toContain('Tamil preview is read-only. Cursor-linked navigation and highlight stay Devanagari-only.');
 });
+
+test('Tamil Precision recovery copy stays bounded to precision-only input and honest rejection language', () => {
+  const engineSource = readSource('src/components/engine/TransliterationEngine.tsx');
+
+  expect(engineSource).toContain('Tamil Precision Recovery');
+  expect(engineSource).toContain('Utility');
+  expect(engineSource).toContain(
+    'Phase 1 utility: recovers Roman Sanskrit only from frozen Tamil Precision input. Plain Tamil and Baraha Tamil reject instead of guessing.',
+  );
+  expect(engineSource).toContain('Derived Baraha Roman');
+  expect(engineSource).toContain('Derived from the canonical recovery result. It is not a separate Tamil parser mode.');
+  expect(engineSource).toContain('Rejected Source');
+  expect(engineSource).not.toMatch(/supports generic Tamil input/i);
+});

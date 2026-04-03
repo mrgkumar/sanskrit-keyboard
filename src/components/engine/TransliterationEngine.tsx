@@ -9,7 +9,7 @@ import { useFlowStore } from '@/store/useFlowStore';
 import { BookText, Check, Copy, Eye, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { SessionSnapshot, SanskritFontPreset, TamilFontPreset } from '@/store/types';
-import { formatSourceForPrimaryOutput, getCopySourceControlText } from '@/lib/vedic/utils';
+import { formatSourceForPrimaryOutput, getCopySourceControlText, reverseTamilInput } from '@/lib/vedic/utils';
 import {
   OUTPUT_TARGET_CONTROL_LABELS,
   OUTPUT_TARGET_VALUE_LABELS,
@@ -142,6 +142,8 @@ export const TransliterationEngine: React.FC = () => {
   const [savedSessions, setSavedSessions] = React.useState<SessionListItem[]>([]);
   const [copyAllState, setCopyAllState] = React.useState<'idle' | 'copied' | 'error'>('idle');
   const [copySourceState, setCopySourceState] = React.useState<'idle' | 'copied' | 'error'>('idle');
+  const [tamilRecoveryInput, setTamilRecoveryInput] = React.useState('');
+  const [tamilRecoveryCopyState, setTamilRecoveryCopyState] = React.useState<'idle' | 'canonical' | 'baraha' | 'error'>('idle');
   const [isDisplayMenuOpen, setIsDisplayMenuOpen] = React.useState(false);
   const [isWorkspacePanelOpen, setIsWorkspacePanelOpen] = React.useState(false);
   const hasLoadedSessions = React.useRef(false);
@@ -177,6 +179,16 @@ export const TransliterationEngine: React.FC = () => {
     romanOutputStyle,
     tamilOutputStyle,
   });
+  const tamilRecoveryResult = React.useMemo(() => {
+    if (tamilRecoveryInput.trim().length === 0) {
+      return null;
+    }
+
+    return reverseTamilInput(tamilRecoveryInput, {
+      inputMode: 'tamil-precision',
+      outputMode: 'baraha',
+    });
+  }, [tamilRecoveryInput]);
   const hasMeaningfulContent = React.useMemo(
     () => blocks.some((block) => block.source.trim().length > 0 || block.rendered.trim().length > 0),
     [blocks]
@@ -322,6 +334,18 @@ export const TransliterationEngine: React.FC = () => {
     return () => window.clearTimeout(timeoutId);
   }, [copySourceState]);
 
+  React.useEffect(() => {
+    if (tamilRecoveryCopyState === 'idle') {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setTamilRecoveryCopyState('idle');
+    }, 1500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [tamilRecoveryCopyState]);
+
   const handleSaveNow = () => {
     const snapshot = exportSessionSnapshot();
     snapshot.updatedAt = new Date().toISOString();
@@ -402,6 +426,20 @@ export const TransliterationEngine: React.FC = () => {
 
     clearPersistedLexicalLearning();
     window.localStorage.removeItem(LEXICAL_HISTORY_KEY);
+  };
+
+  const handleCopyTamilRecovery = async (value: string, mode: 'canonical' | 'baraha') => {
+    if (!value) {
+      setTamilRecoveryCopyState('error');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(value);
+      setTamilRecoveryCopyState(mode);
+    } catch {
+      setTamilRecoveryCopyState('error');
+    }
   };
 
   return (
@@ -738,6 +776,129 @@ export const TransliterationEngine: React.FC = () => {
               </div>
             </section>
           )}
+
+          <section className="space-y-3" data-testid="workspace-tamil-precision-recovery">
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                  Tamil Precision Recovery
+                </p>
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-amber-800">
+                  Utility
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Phase 1 utility: recovers Roman Sanskrit only from frozen Tamil Precision input. Plain Tamil and Baraha Tamil reject instead of guessing.
+              </p>
+            </div>
+            <label className="block text-xs font-semibold uppercase text-slate-600">
+              Tamil Precision Input
+              <textarea
+                data-testid="tamil-recovery-input"
+                value={tamilRecoveryInput}
+                onChange={(event) => setTamilRecoveryInput(event.target.value)}
+                rows={4}
+                placeholder="நமஸ்தே ருத்³ராய"
+                className="mt-2 min-h-[6.5rem] w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-base normal-case tracking-normal text-slate-900 shadow-sm"
+              />
+            </label>
+            {tamilRecoveryResult === null ? (
+              <div
+                data-testid="tamil-recovery-empty"
+                className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-xs text-slate-500"
+              >
+                Paste Tamil Precision text here to recover canonical Roman and derived Baraha Roman safely.
+              </div>
+            ) : tamilRecoveryResult.status === 'success' ? (
+              <div className="space-y-3" data-testid="tamil-recovery-success">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-xs text-emerald-900">
+                  Exact recovery succeeded from Tamil Precision input.
+                </div>
+                <div className="space-y-2 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                      Canonical Roman
+                    </p>
+                    <button
+                      type="button"
+                      data-testid="tamil-recovery-copy-canonical"
+                      onClick={() => handleCopyTamilRecovery(tamilRecoveryResult.canonicalRoman, 'canonical')}
+                      className={clsx(
+                        'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold uppercase',
+                        tamilRecoveryCopyState === 'canonical'
+                          ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
+                          : tamilRecoveryCopyState === 'error'
+                            ? 'border-rose-200 bg-rose-50 text-rose-700'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                      )}
+                    >
+                      {tamilRecoveryCopyState === 'canonical' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      {tamilRecoveryCopyState === 'canonical' ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <pre
+                    data-testid="tamil-recovery-canonical-output"
+                    className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg bg-slate-50 px-3 py-2 font-mono text-sm text-slate-900"
+                  >
+                    {tamilRecoveryResult.canonicalRoman}
+                  </pre>
+                </div>
+                <div className="space-y-2 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                      Derived Baraha Roman
+                    </p>
+                    <button
+                      type="button"
+                      data-testid="tamil-recovery-copy-baraha"
+                      onClick={() => handleCopyTamilRecovery(tamilRecoveryResult.barahaRoman ?? '', 'baraha')}
+                      className={clsx(
+                        'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold uppercase',
+                        tamilRecoveryCopyState === 'baraha'
+                          ? 'border-emerald-200 bg-emerald-100 text-emerald-800'
+                          : tamilRecoveryCopyState === 'error'
+                            ? 'border-rose-200 bg-rose-50 text-rose-700'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                      )}
+                    >
+                      {tamilRecoveryCopyState === 'baraha' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      {tamilRecoveryCopyState === 'baraha' ? 'Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <pre
+                    data-testid="tamil-recovery-baraha-output"
+                    className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg bg-slate-50 px-3 py-2 font-mono text-sm text-slate-900"
+                  >
+                    {tamilRecoveryResult.barahaRoman ?? ''}
+                  </pre>
+                  <p className="text-[11px] text-slate-500">
+                    Derived from the canonical recovery result. It is not a separate Tamil parser mode.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div
+                data-testid="tamil-recovery-rejection"
+                className="space-y-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-900"
+              >
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-700">
+                  Rejected: {tamilRecoveryResult.inputKind}
+                </p>
+                <p className="text-sm leading-6">{tamilRecoveryResult.reason}</p>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-700">
+                    Rejected Source
+                  </p>
+                  <pre
+                    data-testid="tamil-recovery-rejected-source"
+                    className="overflow-x-auto whitespace-pre-wrap break-words rounded-lg bg-white/70 px-3 py-2 font-medium text-sm text-rose-950"
+                  >
+                    {tamilRecoveryResult.originalText}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </section>
 
           <section className="space-y-3">
             <div>

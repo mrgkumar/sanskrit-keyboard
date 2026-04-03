@@ -668,7 +668,7 @@ test('Tamil reverse Gate 1 freezes longest-match tokenization for kSha, vocalic 
 });
 
 test('Tamil reverse Gate 1 keeps accepted reverse fixtures independent from forward formatter output corpora', () => {
-  const forwardRichValues = new Set(TAMIL_PRECISION_RICH_GOLDENS.map(([, tamilPrecision]) => tamilPrecision));
+  const forwardRichValues = new Set<string>(TAMIL_PRECISION_RICH_GOLDENS.map(([, tamilPrecision]) => tamilPrecision));
   const reverseOnlyFixtures = [
     ...TAMIL_REVERSE_DEAD_CONSONANT_FIXTURES.map(([tamilPrecision]) => tamilPrecision),
     ...TAMIL_REVERSE_ASCII_NORMALIZATION_FIXTURES.map(({ ascii }) => ascii),
@@ -737,7 +737,9 @@ test('Tamil reverse Gate 2 cannot pass by returning canonical-looking guesses fo
   for (const value of suspiciousInputs) {
     const result = reverseTamilInput(value, { inputMode: 'tamil-precision', outputMode: 'canonical' });
     expect(result.status, `${value} must not succeed in phase 1`).toBe('rejected');
-    expect(result.originalText).toBe(value);
+    if (result.status === 'rejected') {
+      expect(result.originalText).toBe(value);
+    }
   }
 });
 
