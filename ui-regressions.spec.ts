@@ -139,6 +139,50 @@ test('Tamil read-as mode and Tamil compare mode both surface Tamil highlights', 
   await expect(comparePane.locator('[data-current-word="true"]').first()).toBeVisible();
 });
 
+test('Tamil preview renders the same precision accents as immersive Tamil mode', async ({ page }) => {
+  await loadDefaultSession(page);
+  await page.getByTestId('sticky-itrans-input').fill("jaata'vedo");
+
+  await setReadAs(page, 'tamil');
+
+  const preview = page.getByTestId('sticky-preview-primary-pane');
+  await expect(preview).toContainText('ஜாத॑வேதோ³');
+
+  await page.getByRole('button', { name: 'Immersive mode' }).click();
+  const immersiveDocument = page.getByTestId('document-immersive-mode');
+  await expect(immersiveDocument).toContainText('ஜாத॑வேதோ³');
+});
+
+test('Tamil read-as word predictions render in Tamil and omit the selected badge', async ({ page }) => {
+  await loadDefaultSession(page);
+  await setReadAs(page, 'tamil');
+
+  const textarea = page.getByTestId('sticky-itrans-input');
+  await textarea.fill('ga');
+
+  const tray = page.getByTestId('word-predictions-footer');
+  await expect(tray).toBeVisible({ timeout: 10000 });
+  await expect(tray).toContainText('க³');
+  await expect(tray).not.toContainText('Selected');
+});
+
+test('clicking Tamil preview text moves the edit cursor to the clicked chunk', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  const textarea = page.getByTestId('sticky-itrans-input');
+  await textarea.fill('agniM ile purohitaM');
+  await setReadAs(page, 'tamil');
+
+  const preview = page.getByTestId('sticky-preview-primary-pane');
+  await expect(preview).toContainText('அக்³நி');
+  const before = await textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart);
+
+  await preview.locator('[data-target-index="0"]').click();
+
+  await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).not.toBe(before);
+  await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeGreaterThan(0);
+});
+
 test('double-clicking read or immersive text jumps back into edit mode at the clicked word', async ({ page }) => {
   await loadDefaultSession(page);
   const textarea = page.getByTestId('sticky-itrans-input');
@@ -166,6 +210,33 @@ test('double-clicking read or immersive text jumps back into edit mode at the cl
 
   await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
   await expect(textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).resolves.toBe(expectedSourceWordStart);
+});
+
+test('read mode arrow keys move the selected line and highlight it', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await loadDefaultSession(page);
+
+  const lines = [
+    'agniM ile purohitaM',
+    'yajnasya devasya',
+    'hotaaram ratna-dhaatamam',
+  ];
+
+  await page.getByTestId('sticky-itrans-input').fill(lines.join('\n'));
+  await setReadAs(page, 'devanagari');
+  await page.getByRole('button', { name: 'Read mode' }).click();
+
+  const readDocument = page.getByTestId('document-read-mode');
+  await expect(readDocument).toBeVisible();
+  const firstSelected = readDocument.locator('[data-selected-read-line="true"]');
+  await expect(firstSelected).toHaveCount(1);
+
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+
+  const selectedLine = readDocument.locator('[data-selected-read-line="true"]');
+  await expect(selectedLine).toHaveCount(1);
+  await expect(selectedLine).toContainText(transliterate(lines[2]).unicode);
 });
 
 test('double-clicking read-mode compare panes jumps back into edit mode too', async ({ page }) => {

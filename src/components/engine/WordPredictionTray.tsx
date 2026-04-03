@@ -3,6 +3,7 @@ import { clsx } from 'clsx';
 import { useFlowStore } from '@/store/useFlowStore';
 import type { ChunkEditTarget } from '@/store/types';
 import { formatSourceForScript } from '@/lib/vedic/utils';
+import { ScriptText } from '@/components/ScriptText';
 
 type WordPredictionTrayVariant = 'inline' | 'split' | 'footer' | 'listbox';
 
@@ -155,19 +156,19 @@ export const WordPredictionTray: React.FC<WordPredictionTrayProps> = ({
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <div className={clsx('truncate font-serif text-slate-900', isInline ? 'text-sm' : 'text-lg')}>
-                    {suggestionText}
+                  <div className={clsx('truncate text-slate-900', isInline ? 'text-sm' : 'text-lg')}>
+                    <ScriptText
+                      script={primaryOutputScript}
+                      text={suggestionText}
+                      tamilFontPreset={displaySettings.tamilFontPreset}
+                      sanskritFontPreset={displaySettings.sanskritFontPreset}
+                    />
                   </div>
                   <kbd className="mt-1 inline-block max-w-full truncate text-[11px] font-mono font-bold tracking-tight text-emerald-800">
                     {entry.itrans}
                   </kbd>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
-                  {index === lexicalSelectedSuggestionIndex && (
-                    <span className="rounded-full bg-emerald-700 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-white">
-                      Selected
-                    </span>
-                  )}
                   <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">
                     {entry.count}
                   </span>

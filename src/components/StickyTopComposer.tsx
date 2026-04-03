@@ -8,7 +8,7 @@ import { BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, Trash2, 
 import { clsx } from 'clsx';
 import { ShortcutHUD } from '@/components/engine/ShortcutHUD';
 import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
-import { ScriptText } from '@/components/ScriptText';
+import { getScriptDisplayText, ScriptText } from '@/components/ScriptText';
 import {
   canonicalizeDevanagariPaste,
   formatSourceForScript,
@@ -573,10 +573,13 @@ export const StickyTopComposer: React.FC = () => {
 
   const focusComposerAt = (nextCaret: number) => {
     setComposerSelection(nextCaret, nextCaret);
-    requestAnimationFrame(() => {
+    const applySelection = () => {
       composerRef.current?.focus();
       composerRef.current?.setSelectionRange(nextCaret, nextCaret);
-    });
+    };
+
+    applySelection();
+    requestAnimationFrame(applySelection);
   };
 
   const handlePreviewCharacterClick = (
@@ -585,6 +588,39 @@ export const StickyTopComposer: React.FC = () => {
   ) => {
     event.preventDefault();
     const nextCaret = getTargetCaretForClick(targetIndex, event.clientX, event.currentTarget);
+    focusComposerAt(nextCaret);
+  };
+
+  const handleTamilPreviewFragmentClick = (
+    event: React.MouseEvent<HTMLSpanElement>,
+    start: number,
+    end: number,
+  ) => {
+    event.preventDefault();
+    const rect = event.currentTarget.getBoundingClientRect();
+    const midpoint = rect.left + rect.width / 2;
+    const nextCaret = event.clientX >= midpoint ? end : start;
+    focusComposerAt(nextCaret);
+  };
+
+  const handleTamilPreviewMouseDown = (event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
+    const target = (event.target as HTMLElement).closest<HTMLElement>('[data-target-index]');
+    if (!target) {
+      event.preventDefault();
+      focusComposerAt(currentChunkSource.length);
+      return;
+    }
+
+    const start = Number(target.dataset.targetIndex);
+    const end = Number(target.dataset.targetEnd ?? target.dataset.targetIndex);
+    if (Number.isNaN(start) || Number.isNaN(end)) {
+      return;
+    }
+
+    event.preventDefault();
+    const rect = target.getBoundingClientRect();
+    const midpoint = rect.left + rect.width / 2;
+    const nextCaret = event.clientX >= midpoint ? end : start;
     focusComposerAt(nextCaret);
   };
 
@@ -972,6 +1008,7 @@ export const StickyTopComposer: React.FC = () => {
         romanOutputStyle,
         tamilOutputStyle,
       });
+      const fragmentDisplayText = getScriptDisplayText('tamil', fragmentText);
       const isSelectionVisible =
         selectedSourceRange.end > selectedSourceRange.start &&
         start >= selectedSourceRange.start &&
@@ -998,15 +1035,17 @@ export const StickyTopComposer: React.FC = () => {
         <span
           key={`tamil-fragment-${start}-${end}`}
           className={clsx(
-            'rounded-[0.18em]',
+            'cursor-text rounded-[0.18em]',
             isSelectionVisible && 'bg-blue-200/80 text-blue-950',
             isCurrentWordVisible && 'font-semibold text-[#6b1f1f]'
           )}
           data-current-word={isCurrentWordVisible ? 'true' : undefined}
           data-target-index={start}
+          data-target-end={end}
           data-source-selection={isSelectionVisible ? 'true' : undefined}
+          onMouseDown={(event) => handleTamilPreviewFragmentClick(event, start, end)}
         >
-          {fragmentText}
+          {fragmentDisplayText}
         </span>
       );
     }
@@ -1387,6 +1426,7 @@ export const StickyTopComposer: React.FC = () => {
                     ref={previewRef}
                     className="min-h-[7rem] h-full overflow-y-auto rounded-xl border border-blue-100 bg-white px-3 pb-3 pt-2.5 pr-14 shadow-sm"
                     data-testid="sticky-preview-primary-pane"
+                    onPointerDownCapture={primaryOutputScript === 'tamil' ? handleTamilPreviewMouseDown : undefined}
                     onScroll={handlePreviewScroll}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={
@@ -1404,7 +1444,7 @@ export const StickyTopComposer: React.FC = () => {
                     </p>
                     {primaryOutputScript === 'tamil' && (
                       <p className="mb-2 text-[11px] text-amber-700">
-                        Tamil preview is read-only, and the current source cursor and word stay mirrored here.
+                        Tamil preview is read-only, but clicking a word moves the edit cursor back to the matching ITRANS position.
                       </p>
                     )}
                     {primaryOutputScript === 'devanagari' ? (
@@ -1477,12 +1517,13 @@ export const StickyTopComposer: React.FC = () => {
                     <div
                       className="min-h-[7rem] h-full overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 px-3 pb-3 pt-2.5 text-slate-700 shadow-sm"
                       data-testid="sticky-preview-compare-pane"
+                      onPointerDownCapture={activeComparisonScript === 'tamil' ? handleTamilPreviewMouseDown : undefined}
                       onClick={activeComparisonScript === 'tamil' ? handlePreviewContainerClick : undefined}
                       style={{
                         fontSize: `${Math.max(composerTypography.renderedFontSize - 2, 14)}px`,
                         lineHeight: getRenderedLineHeightForScript(
-                          activeComparisonScript ?? primaryOutputScript,
-                          composerTypography.renderedLineHeight
+                        activeComparisonScript ?? primaryOutputScript,
+                        composerTypography.renderedLineHeight
                         ),
                       }}
                     >

@@ -1164,7 +1164,7 @@ export const TransliterationEngine: React.FC = () => {
                         <input
                           className="mt-2 w-full"
                           type="range"
-                          min="24"
+                          min="18"
                           max="56"
                           value={typography.composer.renderedFontSize}
                           onChange={(e) => setTypography('composer', { renderedFontSize: Number(e.target.value) })}
@@ -1219,7 +1219,7 @@ export const TransliterationEngine: React.FC = () => {
                         <input
                           className="mt-2 w-full"
                           type="range"
-                          min="20"
+                          min="16"
                           max="56"
                           value={typography.document.renderedFontSize}
                           onChange={(e) => setTypography('document', { renderedFontSize: Number(e.target.value) })}

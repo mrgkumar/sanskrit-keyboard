@@ -25,10 +25,15 @@ export const MainDocumentArea: React.FC = () => {
   } = displaySettings;
   const documentTypography = typography.document;
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
+  const [selectedReadBlockId, setSelectedReadBlockId] = React.useState<string | null>(null);
   const documentContainerRef = React.useRef<HTMLDivElement | null>(null);
   const isDocumentCompareMode = comparisonOutputScript !== 'off';
   const activeComparisonScript = comparisonOutputScript === 'off' ? null : comparisonOutputScript;
   const documentCompareLayout = isDocumentCompareMode ? 'stacked' : 'single';
+  const readModeBlocks = React.useMemo(
+    () => blocks.filter((block) => block.rendered.trim().length > 0),
+    [blocks]
+  );
   const getRenderedLineHeightForScript = React.useCallback(
     (script: typeof primaryOutputScript, baseLineHeight: number) =>
       script === 'tamil' ? Math.max(baseLineHeight, 1.95) : baseLineHeight,
@@ -77,6 +82,32 @@ export const MainDocumentArea: React.FC = () => {
     return () => window.cancelAnimationFrame(rafId);
   }, [activeBlockId, activeChunkGroup, viewMode]);
 
+  React.useEffect(() => {
+    if (viewMode !== 'read' && viewMode !== 'immersive') {
+      return;
+    }
+
+    setSelectedReadBlockId((current) => {
+      if (current && readModeBlocks.some((block) => block.id === current)) {
+        return current;
+      }
+
+      return activeBlockId ?? readModeBlocks[0]?.id ?? null;
+    });
+  }, [activeBlockId, readModeBlocks, viewMode]);
+
+  React.useEffect(() => {
+    if (viewMode !== 'read' && viewMode !== 'immersive') {
+      return;
+    }
+
+    const rafId = window.requestAnimationFrame(() => {
+      documentContainerRef.current?.focus();
+    });
+
+    return () => window.cancelAnimationFrame(rafId);
+  }, [viewMode]);
+
   const handleCopyBlock = async (blockId: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -92,6 +123,51 @@ export const MainDocumentArea: React.FC = () => {
 
   const activateChunk = (blockId: string, segmentIndex: number) => {
     activateBlockChunk(blockId, segmentIndex);
+  };
+
+  const selectReadLine = (blockId: string) => {
+    setSelectedReadBlockId(blockId);
+    documentContainerRef.current?.focus();
+  };
+
+  const moveReadLineSelection = (direction: 1 | -1) => {
+    if (readModeBlocks.length === 0) {
+      return;
+    }
+
+    const currentIndex = Math.max(
+      0,
+      readModeBlocks.findIndex((block) => block.id === selectedReadBlockId)
+    );
+    const nextIndex = Math.max(0, Math.min(readModeBlocks.length - 1, currentIndex + direction));
+    const nextBlock = readModeBlocks[nextIndex];
+    if (nextBlock) {
+      setSelectedReadBlockId(nextBlock.id);
+      const target = documentContainerRef.current?.querySelector<HTMLElement>(
+        `[data-testid="document-read-block-${nextBlock.id}"], [data-testid="document-immersive-block-${nextBlock.id}"]`
+      );
+      target?.scrollIntoView({ block: 'center', behavior: 'auto' });
+    }
+  };
+
+  const handleReadModeKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (viewMode !== 'read' && viewMode !== 'immersive') {
+      return;
+    }
+
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      moveReadLineSelection(1);
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      moveReadLineSelection(-1);
+    }
   };
 
   const handleReadBlockDoubleClick = (
@@ -169,28 +245,33 @@ export const MainDocumentArea: React.FC = () => {
     viewTestIdPrefix: 'document-read' | 'document-immersive',
   ) => {
     if (script === 'devanagari') {
-      const renderedBlock = transliterate(block.source, { inputScheme });
-      const renderedChars = Array.from(renderedBlock.unicode);
+    const renderedBlock = transliterate(block.source, { inputScheme });
+    const renderedChars = Array.from(renderedBlock.unicode);
+    const isSelectedReadLine =
+      (viewMode === 'read' || viewMode === 'immersive') && selectedReadBlockId === block.id;
 
-      return (
-        <p
-          key={`${block.id}-${paneRole}`}
-          data-testid={
+    return (
+      <p
+        key={`${block.id}-${paneRole}`}
+        data-testid={
             paneRole === 'primary'
               ? `${viewTestIdPrefix}-block-${block.id}`
               : `${viewTestIdPrefix}-compare-block-${block.id}`
           }
-          className={clsx(
-            'script-text-devanagari whitespace-pre-wrap break-words rounded-md px-1 py-1 transition-colors hover:bg-slate-50',
-            paneRole === 'compare' && 'text-slate-700'
-          )}
-          data-font-preset={sanskritFontPreset}
-          lang="sa"
-          title="Double-click to jump back into edit mode for this block"
-          onDoubleClick={(event) => handleReadBlockDoubleClick(block, script, event)}
-        >
-          {renderedChars.map((char, index) => (
-            <span
+        className={clsx(
+          'script-text-devanagari whitespace-pre-wrap break-words rounded-md px-1 py-1 transition-colors hover:bg-slate-50',
+          paneRole === 'compare' && 'text-slate-700',
+          isSelectedReadLine && 'bg-blue-50/80 ring-1 ring-blue-200'
+        )}
+        data-font-preset={sanskritFontPreset}
+        data-selected-read-line={isSelectedReadLine ? 'true' : undefined}
+        lang="sa"
+        title="Double-click to jump back into edit mode for this block"
+        onClick={() => selectReadLine(block.id)}
+        onDoubleClick={(event) => handleReadBlockDoubleClick(block, script, event)}
+      >
+        {renderedChars.map((char, index) => (
+          <span
               key={`${block.id}-${index}-${char}`}
               data-target-index={index}
               className="cursor-text"
@@ -211,12 +292,23 @@ export const MainDocumentArea: React.FC = () => {
       <p
         key={`${block.id}-${script}-${paneRole}`}
         data-testid={`${viewTestIdPrefix}-${paneRole}-block-${block.id}`}
-        className="rounded-md px-1 py-1 cursor-text"
+        className={clsx(
+          'cursor-text rounded-md px-1 py-1 transition-colors',
+          (viewMode === 'read' || viewMode === 'immersive') &&
+            selectedReadBlockId === block.id &&
+            'bg-blue-50/80 ring-1 ring-blue-200'
+        )}
+        data-selected-read-line={
+          (viewMode === 'read' || viewMode === 'immersive') && selectedReadBlockId === block.id
+            ? 'true'
+            : undefined
+        }
         style={{
           fontSize: `${documentTypography.renderedFontSize}px`,
           lineHeight: getRenderedLineHeightForScript(script, documentTypography.renderedLineHeight),
         }}
         title="Double-click to jump back into edit mode for this block"
+        onClick={() => selectReadLine(block.id)}
         onDoubleClick={(event) => handleReadBlockDoubleClick(block, script, event)}
       >
         <ScriptText
@@ -248,10 +340,17 @@ export const MainDocumentArea: React.FC = () => {
       <div
         ref={documentContainerRef}
         data-testid="main-document-scroll-container"
+        tabIndex={0}
         className={clsx(
-          'flex-1 overflow-y-auto',
+          'flex-1 overflow-y-auto outline-none',
           viewMode === 'immersive' ? 'px-4 py-6 sm:px-8 sm:py-8' : 'px-4 py-8'
         )}
+        onKeyDown={handleReadModeKeyDown}
+        onMouseDown={() => {
+          if (viewMode === 'read' || viewMode === 'immersive') {
+            documentContainerRef.current?.focus();
+          }
+        }}
       >
         <div
           className={clsx(
