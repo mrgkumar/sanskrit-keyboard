@@ -50,6 +50,9 @@ import {
   TAMIL_PRECISION_RICH_GOLDENS,
 } from './test-support/tamilPrecisionGoldens';
 import {
+  TAMIL_REVERSE_BARAHA_GOLDENS,
+} from './test-support/tamilReverseBarahaGoldens';
+import {
   TAMIL_REVERSE_ASCII_GOLDENS,
   TAMIL_REVERSE_RICH_GOLDENS,
 } from './test-support/tamilReverseGoldens';
@@ -768,6 +771,33 @@ test('Tamil reverse Gate 3 keeps canonical reverse output on frozen internal not
     expect(canonicalizeAcceptedInputToken(canonical), `${canonical} must already be canonical`).toBe(canonical);
     expect(exactBarahaOnlyAliases.has(canonical), `${canonical} must not collapse to an exact Baraha-only alias`).toBe(false);
   }
+});
+
+test('Tamil reverse Gate 4 freezes Baraha output as formatter-only over successful canonical reverse', () => {
+  for (const [tamilPrecision, canonical, baraha] of TAMIL_REVERSE_BARAHA_GOLDENS) {
+    expect(reverseTamilInput(tamilPrecision, { inputMode: 'tamil-precision', outputMode: 'baraha' })).toEqual({
+      status: 'success',
+      inputKind: 'tamil-precision',
+      canonicalRoman: canonical,
+      barahaRoman: baraha,
+    });
+  }
+});
+
+test('Tamil reverse Gate 4 does not let Baraha output mode weaken rejection honesty', () => {
+  expect(reverseTamilInput('குரு', { inputMode: 'tamil-precision', outputMode: 'baraha' })).toEqual({
+    status: 'rejected',
+    inputKind: 'plain-tamil',
+    reason: 'Input is Tamil script but does not contain the frozen Tamil Precision distinctions required for exact Sanskrit recovery.',
+    originalText: 'குரு',
+  });
+
+  expect(reverseTamilInput('ஸ்ரீ^^', { inputMode: 'tamil-precision', outputMode: 'baraha' })).toEqual({
+    status: 'rejected',
+    inputKind: 'baraha-tamil',
+    reason: 'Input appears to use Baraha Tamil control syntax, which phase 1 does not support as an exact reverse parser target.',
+    originalText: 'ஸ்ரீ^^',
+  });
 });
 
 test('Gate 1 migrates all legacy outputScheme values into the new output-target state', () => {

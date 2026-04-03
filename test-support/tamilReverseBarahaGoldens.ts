@@ -1,0 +1,17 @@
+export const TAMIL_REVERSE_BARAHA_GOLDENS = [
+  ['ரு¹', 'R^i', 'Ru'],
+  ['ரூ¹', 'R^I', 'RU'],
+  ['லு¹', 'L^i', '~lu'],
+  ['லூ¹', 'L^I', '~lU'],
+  ['க²', 'kha', 'Ka'],
+  ['க⁴', 'gha', 'Ga'],
+  ['ஜ²', 'jha', 'Ja'],
+  ['ச²', 'Cha', 'Ca'],
+  ['க³ீதா', 'gItA', 'geetA'],
+  ['அம்ரு¹த', 'amR^ita', 'amRuta'],
+  ['க்ரு¹த', 'kR^ita', 'kRuta'],
+  ['ஸஂஸ்க்ரு¹த', 'saMskR^ita', 'saMskRuta'],
+  ['க³ுருஃ', 'guru:', 'guru:'],
+  ['க்ஷ', 'kSha', 'kSha'],
+  ['க்ரு<R>த', 'kR^ita', 'kRuta'],
+] as const;
