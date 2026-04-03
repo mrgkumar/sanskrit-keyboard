@@ -62,10 +62,14 @@ import {
 import {
   TAMIL_REVERSE_ASCII_NORMALIZATION_FIXTURES,
   TAMIL_REVERSE_ATOMIC_AKSHARA_FIXTURES,
+  TAMIL_REVERSE_BARAHA_TAMIL_REJECTION_FIXTURES,
   TAMIL_REVERSE_CLUSTER_FIXTURES,
   TAMIL_REVERSE_DEAD_CONSONANT_FIXTURES,
   TAMIL_REVERSE_DIRECT_GRANTHA_FIXTURES,
   TAMIL_REVERSE_LONGEST_MATCH_TOKEN_FIXTURES,
+  TAMIL_REVERSE_MALFORMED_PRECISION_FIXTURES,
+  TAMIL_REVERSE_MIXED_AMBIGUOUS_FIXTURES,
+  TAMIL_REVERSE_PLAIN_TAMIL_REJECTION_FIXTURES,
   TAMIL_REVERSE_SPECIAL_MARK_FIXTURES,
   TAMIL_REVERSE_VOCALIC_FIXTURES,
 } from './test-support/tamilReverseFixtures';
@@ -666,6 +670,68 @@ test('Tamil reverse Gate 1 keeps accepted reverse fixtures independent from forw
   expect(reverseOnlyFixtures.every((fixture) => !forwardRichValues.has(fixture))).toBe(true);
   expect(reverseOnlyFixtures).toContain('க்ஷ்');
   expect(reverseOnlyFixtures).toContain('க்ரு<R>த');
+});
+
+test('Tamil reverse Gate 2 rejects the frozen plain-Tamil corpus honestly instead of guessing Sanskrit', () => {
+  for (const value of TAMIL_REVERSE_PLAIN_TAMIL_REJECTION_FIXTURES) {
+    expect(reverseTamilInput(value, { inputMode: 'tamil-precision', outputMode: 'canonical' })).toEqual({
+      status: 'rejected',
+      inputKind: 'plain-tamil',
+      reason: 'Input is Tamil script but does not contain the frozen Tamil Precision distinctions required for exact Sanskrit recovery.',
+      originalText: value,
+    });
+  }
+});
+
+test('Tamil reverse Gate 2 rejects Baraha-Tamil control syntax as out of phase-1 scope', () => {
+  for (const value of TAMIL_REVERSE_BARAHA_TAMIL_REJECTION_FIXTURES) {
+    expect(reverseTamilInput(value, { inputMode: 'tamil-precision', outputMode: 'canonical' })).toEqual({
+      status: 'rejected',
+      inputKind: 'baraha-tamil',
+      reason: 'Input appears to use Baraha Tamil control syntax, which phase 1 does not support as an exact reverse parser target.',
+      originalText: value,
+    });
+  }
+});
+
+test('Tamil reverse Gate 2 rejects malformed precision-like inputs instead of preserving or guessing', () => {
+  for (const value of TAMIL_REVERSE_MALFORMED_PRECISION_FIXTURES) {
+    const result = reverseTamilInput(value, { inputMode: 'tamil-precision', outputMode: 'canonical' });
+    expect(result).toEqual({
+      status: 'rejected',
+      inputKind: 'malformed-precision',
+      reason: 'Input looks like Tamil Precision but contains incomplete or malformed precision markers.',
+      originalText: value,
+    });
+    expect('canonicalRoman' in result).toBe(false);
+    expect('barahaRoman' in result).toBe(false);
+  }
+});
+
+test('Tamil reverse Gate 2 rejects mixed-script and mixed-notation ambiguity explicitly', () => {
+  for (const value of TAMIL_REVERSE_MIXED_AMBIGUOUS_FIXTURES) {
+    expect(reverseTamilInput(value, { inputMode: 'tamil-precision', outputMode: 'canonical' })).toEqual({
+      status: 'rejected',
+      inputKind: 'mixed-ambiguous',
+      reason: 'Input mixes precise and ambiguous Tamil forms, so the parser cannot recover exact Sanskrit safely.',
+      originalText: value,
+    });
+  }
+});
+
+test('Tamil reverse Gate 2 cannot pass by returning canonical-looking guesses for rejected Tamil input', () => {
+  const suspiciousInputs = [
+    ...TAMIL_REVERSE_PLAIN_TAMIL_REJECTION_FIXTURES,
+    ...TAMIL_REVERSE_BARAHA_TAMIL_REJECTION_FIXTURES,
+    ...TAMIL_REVERSE_MALFORMED_PRECISION_FIXTURES,
+    ...TAMIL_REVERSE_MIXED_AMBIGUOUS_FIXTURES,
+  ];
+
+  for (const value of suspiciousInputs) {
+    const result = reverseTamilInput(value, { inputMode: 'tamil-precision', outputMode: 'canonical' });
+    expect(result.status, `${value} must not succeed in phase 1`).toBe('rejected');
+    expect(result.originalText).toBe(value);
+  }
 });
 
 test('Gate 1 migrates all legacy outputScheme values into the new output-target state', () => {

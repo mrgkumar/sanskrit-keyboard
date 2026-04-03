@@ -85,3 +85,38 @@ export const TAMIL_REVERSE_LONGEST_MATCH_TOKEN_FIXTURES = [
   { source: 'த⁴ர்ம', tokens: ['த⁴', 'ர', '்', 'ம'] },
   { source: 'க்ரு¹த', tokens: ['க', '்ரு¹', 'த'] },
 ] as const;
+
+export const TAMIL_REVERSE_PLAIN_TAMIL_REJECTION_FIXTURES = [
+  'குரு',
+  'தர்ம',
+  'பகவதே',
+  'கவி',
+  'சென்று வருகிறேன்',
+  'மழை பெய்து கொண்டிருக்கிறது',
+  'வாழ்த்துக்கள்',
+] as const;
+
+export const TAMIL_REVERSE_BARAHA_TAMIL_REJECTION_FIXTURES = [
+  'ஸ்ரீ^^',
+  'கRs',
+  'ஹ~~',
+  'ஸ~#',
+  'லூ~$',
+] as const;
+
+export const TAMIL_REVERSE_MALFORMED_PRECISION_FIXTURES = [
+  'க^',
+  'க^1',
+  'க¹',
+  'ரு<R',
+  'லு<L',
+  '<R>',
+] as const;
+
+export const TAMIL_REVERSE_MIXED_AMBIGUOUS_FIXTURES = [
+  'க³ுரு ரு',
+  'க^3ுரு ரு',
+  'க³ீதா gItA',
+  'gItA க³ீதா',
+  'க³ீதா संस्कृतम्',
+] as const;
