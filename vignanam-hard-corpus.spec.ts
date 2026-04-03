@@ -9,6 +9,12 @@ const normalizeFixtureText = (value: string) =>
     .replace(/\s+/gu, ' ')
     .trim();
 
+const splitSentences = (value: string) =>
+  value
+    .split(/(?<=[।॥])/u)
+    .map((sentence) => normalizeFixtureText(sentence))
+    .filter(Boolean);
+
 const VIGNANAM_CORPUS_PAGE_HASHES: Record<string, string> = {
   'sri-rudram-namakam': 'c63cd9c672ac4a17e98df37967041810636932c03f0fabd66092260c9ec2259e',
   'sri-rudram-chamakam': 'd9ff445552e4959be7f7b81e9140ff44f6ada21043bebc35115f0a91db782358',
@@ -53,4 +59,62 @@ test('Vignanam hard corpus is frozen as exact golden reference snapshots', () =>
       expect(paragraph.tamil, `${page.id} paragraph ${paragraph.index} should remain frozen`).not.toBe('');
     }
   }
+});
+
+test('Vignanam hard corpus is frozen at sentence level', () => {
+  const VIGNANAM_SENTENCE_COUNTS: Record<string, number> = {
+    'sri-rudram-namakam': 107,
+    'sri-rudram-chamakam': 26,
+    'purusha-suktam': 117,
+    'narayana-suktam': 42,
+    'sri-suktam': 77,
+  };
+
+  const VIGNANAM_SENTENCE_HASHES: Record<string, string> = {
+    'sri-rudram-namakam': 'dfcf55e984acb1ba197a05ef4324f57a4bd253846933d80d5be80f10601d6511',
+    'sri-rudram-chamakam': '04c03188d1cbf94d6cb28c1fada032ccedd7ff8a848b0668cd0d9747249bf096',
+    'purusha-suktam': '485002ddce848bb097fb33d0471099cbc0e8600c5016152ef8acbc9e007b4d8f',
+    'narayana-suktam': '6d05e8532db4196ed2380b0689f0cac570462ba1aeede4346233f94d88ba08ae',
+    'sri-suktam': '5dd17643fe88622cd3eb760fb7428926c868e61fa5d7933335a9086d2d64d06e',
+  };
+
+  for (const page of VIGNANAM_HARD_CORPUS) {
+    const sentencePairs = page.paragraphs.flatMap((paragraph) => {
+      const devanagariSentences = splitSentences(paragraph.devanagari);
+      const tamilSentences = splitSentences(paragraph.tamil);
+
+      expect(
+        devanagariSentences.length,
+        `${page.id} paragraph ${paragraph.index} should keep sentence counts aligned`,
+      ).toBe(tamilSentences.length);
+
+      return devanagariSentences.map((devanagari, index) => ({
+        paragraph: paragraph.index,
+        sentence: index + 1,
+        devanagari,
+        tamil: tamilSentences[index] ?? '',
+      }));
+    });
+
+    expect(sentencePairs.length, `${page.id} should keep its frozen sentence count`).toBe(
+      VIGNANAM_SENTENCE_COUNTS[page.id],
+    );
+    expect(hashJson(sentencePairs), `${page.id} should keep its frozen sentence hash`).toBe(
+      VIGNANAM_SENTENCE_HASHES[page.id],
+    );
+  }
+
+  const sriSuktam = VIGNANAM_HARD_CORPUS.find((page) => page.id === 'sri-suktam');
+  const paragraphOne = sriSuktam?.paragraphs.find((paragraph) => paragraph.index === 1);
+  expect(paragraphOne, 'Sri Suktam paragraph 1 should exist').toBeDefined();
+  if (!paragraphOne) {
+    return;
+  }
+
+  const tamilSentences = splitSentences(paragraphOne.tamil);
+  expect(tamilSentences).toEqual([
+    'ஓம் ॥',
+    'ஹிர॑ண்யவர்ணாம்॒ ஹரி॑ணீம் ஸு॒வர்ண॑ரஜ॒தஸ்ர॑ஜாம் ।',
+    'ச॒ந்த்³ராம் ஹி॒ரண்ம॑யீம் ல॒க்ஷ்மீம் ஜாத॑வேதோ³ ம॒மாவ॑ஹ ॥',
+  ]);
 });
