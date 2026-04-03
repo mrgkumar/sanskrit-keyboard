@@ -48,6 +48,14 @@ const VIGNANAM_ALIGNMENT_ANCHORS: Record<string, Array<{ index: number; minimumS
   ],
 };
 
+const VIGNANAM_ALIGNMENT_METRICS: Record<string, { average: number; minimum: number }> = {
+  'sri-rudram-namakam': { average: 0.866402, minimum: 0.776471 },
+  'sri-rudram-chamakam': { average: 0.851802, minimum: 0.765864 },
+  'purusha-suktam': { average: 0.870243, minimum: 0.775281 },
+  'narayana-suktam': { average: 0.889816, minimum: 0.814815 },
+  'sri-suktam': { average: 0.873515, minimum: 0.804598 },
+};
+
 test('Vignanam hard corpus freezes the aligned page snapshots and paragraph counts', () => {
   expect(VIGNANAM_HARD_CORPUS.map((page) => page.id)).toEqual([
     'sri-rudram-namakam',
@@ -112,7 +120,13 @@ test('Vignanam hard corpus aligns on normalized Roman keys without pretending to
     }
 
     const averageScore = totalScore / page.paragraphs.length;
-    expect(averageScore, `${page.id} should stay alignable after normalization`).toBeGreaterThanOrEqual(0.85);
-    expect(minimumScore, `${page.id} should not fall out of alignment on any paragraph`).toBeGreaterThanOrEqual(0.76);
+    const frozenMetrics = VIGNANAM_ALIGNMENT_METRICS[page.id];
+    expect(frozenMetrics, `${page.id} should have frozen alignment metrics`).toBeDefined();
+    expect(Number(averageScore.toFixed(6)), `${page.id} should keep its frozen average alignment score`).toBe(
+      frozenMetrics?.average,
+    );
+    expect(Number(minimumScore.toFixed(6)), `${page.id} should keep its frozen minimum alignment score`).toBe(
+      frozenMetrics?.minimum,
+    );
   }
 });
