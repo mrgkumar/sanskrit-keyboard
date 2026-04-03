@@ -2,12 +2,18 @@ import { expect, test } from '@playwright/test';
 import { createHash } from 'node:crypto';
 
 import { VIGNANAM_HARD_CORPUS } from './test-support/vignanamHardCorpus';
+import { detransliterate, transliterate } from './src/lib/vedic/utils';
 
 const normalizeFixtureText = (value: string) =>
   value
     .replace(/\u00A0/gu, ' ')
     .replace(/\s+/gu, ' ')
     .trim();
+
+const normalizeChainText = (value: string) =>
+  normalizeFixtureText(value)
+    .replace(/।।/gu, '॥')
+    .replace(/[०-९]/gu, (digit) => String.fromCharCode(digit.codePointAt(0)! - 0x0966 + 0x30));
 
 const splitSentences = (value: string) =>
   value
@@ -117,4 +123,29 @@ test('Vignanam hard corpus is frozen at sentence level', () => {
     'ஹிர॑ண்யவர்ணாம்॒ ஹரி॑ணீம் ஸு॒வர்ண॑ரஜ॒தஸ்ர॑ஜாம் ।',
     'ச॒ந்த்³ராம் ஹி॒ரண்ம॑யீம் ல॒க்ஷ்மீம் ஜாத॑வேதோ³ ம॒மாவ॑ஹ ॥',
   ]);
+});
+
+test('Vignanam hard corpus keeps the Devanagari -> Roman -> Devanagari -> Roman chain closed per sentence', () => {
+  for (const page of VIGNANAM_HARD_CORPUS) {
+    for (const paragraph of page.paragraphs) {
+      const devanagariSentences = splitSentences(paragraph.devanagari);
+
+      expect(
+        devanagariSentences.length,
+        `${page.id} paragraph ${paragraph.index} should keep sentence counts aligned for the chain`,
+      ).toBe(splitSentences(paragraph.tamil).length);
+
+      devanagariSentences.forEach((devanagari, sentenceIndex) => {
+        const roman1 = detransliterate(devanagari);
+        const devanagari2 = transliterate(roman1).unicode;
+        const roman2 = detransliterate(devanagari2);
+
+        expect(roman2, `${page.id} paragraph ${paragraph.index} sentence ${sentenceIndex + 1} should keep Roman stable`).toBe(roman1);
+        expect(
+          normalizeChainText(devanagari2),
+          `${page.id} paragraph ${paragraph.index} sentence ${sentenceIndex + 1} should return to the frozen Devanagari sentence`,
+        ).toBe(normalizeChainText(devanagari));
+      });
+    }
+  }
 });
