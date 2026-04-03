@@ -1,4 +1,12 @@
 // app/src/store/types.ts
+import type {
+  ComparisonOutputScript,
+  InputScheme,
+  OutputScheme,
+  OutputScript,
+  RomanOutputStyle,
+  TamilOutputStyle,
+} from '@/lib/vedic/mapping';
 
 /**
  * A CanonicalBlock is the primary storage and reading unit of the document.
@@ -97,6 +105,12 @@ export interface DisplaySettings {
   syncComposerScroll: boolean;
   predictionLayout: 'footer' | 'inline' | 'split' | 'listbox';
   predictionPopupTimeoutMs: number;
+  inputScheme: InputScheme;
+  outputScheme: OutputScheme;
+  primaryOutputScript: OutputScript;
+  comparisonOutputScript: ComparisonOutputScript;
+  romanOutputStyle: RomanOutputStyle;
+  tamilOutputStyle: TamilOutputStyle;
   typography: TypographySettings;
 }
 

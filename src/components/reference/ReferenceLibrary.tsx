@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { VEDIC_MAPPINGS, MAPPING_TRIE } from '@/lib/vedic/mapping';
+import { DISPLAY_MAPPINGS, getAcceptedInputs, getAlternateAcceptedInputs, getInputMappings } from '@/lib/vedic/mapping';
 import { Search } from 'lucide-react';
 import { useFlowStore } from '@/store/useFlowStore';
 import type { ChunkEditTarget } from '@/store/types';
@@ -14,7 +14,16 @@ interface ReferenceLibraryProps {
 export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffer, activeBuffer }) => {
   const [search, setSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
-  const { updateChunkSource, getActiveChunkGroup, toggleReferencePanel, composerSelectionStart, composerSelectionEnd } = useFlowStore();
+  const {
+    updateChunkSource,
+    getActiveChunkGroup,
+    toggleReferencePanel,
+    composerSelectionStart,
+    composerSelectionEnd,
+    displaySettings,
+  } = useFlowStore();
+  const { inputScheme } = displaySettings;
+  const activeMappings = getInputMappings(inputScheme);
 
   const handleInsert = (itrans: string) => {
     const activeChunkGroup = getActiveChunkGroup();
@@ -55,9 +64,14 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
 
   const categories = ['vowel', 'consonant', 'vedic', 'mark', 'special'];
   
-  const filteredMappings = VEDIC_MAPPINGS.filter(m => 
-    fuzzySearch(search, m.itrans) || fuzzySearch(search, m.name || '')
-  );
+  const filteredMappings = DISPLAY_MAPPINGS.filter((m) => {
+    const acceptedInputs = getAcceptedInputs(m.itrans, inputScheme).join(' ');
+    return (
+      fuzzySearch(search, m.itrans) ||
+      fuzzySearch(search, acceptedInputs) ||
+      fuzzySearch(search, m.name || '')
+    );
+  });
 
   useEffect(() => {
     let targetItrans: string | null = null;
@@ -72,7 +86,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
       let longestMatch = '';
       for (let i = 0; i < activeBuffer.length; i++) {
         const suffix = activeBuffer.substring(i);
-        if (MAPPING_TRIE.some(m => m.itrans === suffix)) {
+        if (activeMappings.some((m) => m.itrans === suffix)) {
           longestMatch = suffix;
           break;
         }
@@ -87,7 +101,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
-  }, [deletedBuffer, activeBuffer]); // Depend on deletedBuffer and activeBuffer
+  }, [deletedBuffer, activeBuffer, activeMappings]); // Depend on deletedBuffer and activeBuffer
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -128,14 +142,21 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
               <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 pl-2 bg-blue-50/50 py-1 rounded w-fit px-3">{cat}s</h3>
               <div className="space-y-1">
                 {catMappings.map((m, i) => (
-                  <div 
-                    key={i} 
+                  <div
+                    key={i}
                     onClick={() => handleInsert(m.itrans)}
                     data-itrans={m.itrans}
-                    className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md hover:border-blue-200 hover:bg-blue-50/30 transition-all group cursor-pointer active:scale-95"
+                    className="flex items-center justify-between gap-4 p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md hover:border-blue-200 hover:bg-blue-50/30 transition-all group cursor-pointer active:scale-95"
                   >
                     <span className="text-3xl font-serif text-slate-900 group-hover:scale-110 transition-transform">{m.unicode}</span>
-                    <kbd className="px-2 py-1 bg-slate-50 border border-slate-200 rounded text-blue-600 font-mono font-bold text-sm tracking-tight">{m.itrans}</kbd>
+                    <div className="min-w-0 text-right">
+                      <kbd className="inline-flex px-2 py-1 bg-slate-50 border border-slate-200 rounded text-blue-600 font-mono font-bold text-sm tracking-tight">{m.itrans}</kbd>
+                      {getAlternateAcceptedInputs(m.itrans, inputScheme).length > 0 && (
+                        <p className="mt-1 text-[10px] font-medium text-slate-400">
+                          Also accepts {getAlternateAcceptedInputs(m.itrans, inputScheme).join(', ')}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

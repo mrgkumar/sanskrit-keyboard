@@ -5,9 +5,14 @@ import { StickyTopComposer } from '@/components/StickyTopComposer';
 import { MainDocumentArea } from '@/components/MainDocumentArea';
 import { ReferenceSidePanel } from '@/components/ReferenceSidePanel'; // Import the side panel
 import { useFlowStore } from '@/store/useFlowStore';
-import { BookText, Check, Copy, Eye, FileCode2, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide-react';
+import { BookText, Check, Copy, Eye, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { SessionSnapshot } from '@/store/types';
+import { formatSourceForPrimaryOutput, getCopySourceControlText } from '@/lib/vedic/utils';
+import {
+  OUTPUT_TARGET_CONTROL_LABELS,
+  OUTPUT_TARGET_VALUE_LABELS,
+} from '@/lib/vedic/mapping';
 
 const LEGACY_STORAGE_KEY = 'sanskrit-keyboard.sessions.v1';
 const SESSION_INDEX_KEY = 'sanskrit-keyboard.session-index.v2';
@@ -115,6 +120,10 @@ export const TransliterationEngine: React.FC = () => {
     setPredictionLayout,
     setPredictionPopupTimeoutMs,
     setSyncComposerScroll,
+    setInputScheme,
+    setPrimaryOutputScript,
+    setComparisonOutputScript,
+    setRomanOutputStyle,
     setTypography,
     setViewMode,
     setSessionName,
@@ -129,12 +138,30 @@ export const TransliterationEngine: React.FC = () => {
   } = useFlowStore();
   const [savedSessions, setSavedSessions] = React.useState<SessionListItem[]>([]);
   const [copyAllState, setCopyAllState] = React.useState<'idle' | 'copied' | 'error'>('idle');
+  const [copySourceState, setCopySourceState] = React.useState<'idle' | 'copied' | 'error'>('idle');
   const [isDisplayMenuOpen, setIsDisplayMenuOpen] = React.useState(false);
   const [isWorkspacePanelOpen, setIsWorkspacePanelOpen] = React.useState(false);
   const hasLoadedSessions = React.useRef(false);
   const hasLoadedLexicalLearning = React.useRef(false);
-  const { composerLayout, predictionLayout, predictionPopupTimeoutMs, syncComposerScroll, typography } = displaySettings;
+  const {
+    composerLayout,
+    predictionLayout,
+    predictionPopupTimeoutMs,
+    syncComposerScroll,
+    typography,
+    inputScheme,
+    primaryOutputScript,
+    comparisonOutputScript,
+    romanOutputStyle,
+    tamilOutputStyle,
+  } = displaySettings;
   const { viewMode } = editorState;
+  const copySourceControlText = getCopySourceControlText({
+    primaryOutputScript,
+    comparisonOutputScript,
+    romanOutputStyle,
+    tamilOutputStyle,
+  });
   const hasMeaningfulContent = React.useMemo(
     () => blocks.some((block) => block.source.trim().length > 0 || block.rendered.trim().length > 0),
     [blocks]
@@ -268,6 +295,18 @@ export const TransliterationEngine: React.FC = () => {
     return () => window.clearTimeout(timeoutId);
   }, [copyAllState]);
 
+  React.useEffect(() => {
+    if (copySourceState === 'idle') {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCopySourceState('idle');
+    }, 1500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [copySourceState]);
+
   const handleSaveNow = () => {
     const snapshot = exportSessionSnapshot();
     snapshot.updatedAt = new Date().toISOString();
@@ -305,6 +344,31 @@ export const TransliterationEngine: React.FC = () => {
       setCopyAllState('copied');
     } catch {
       setCopyAllState('error');
+    }
+  };
+
+  const handleCopyWholeSource = async () => {
+    const fullSourceDocument = blocks
+      .map((block) => block.source.trim())
+      .filter((source) => source.length > 0)
+      .join('\n\n');
+    const formattedSource = formatSourceForPrimaryOutput(fullSourceDocument, {
+      primaryOutputScript,
+      comparisonOutputScript,
+      romanOutputStyle,
+      tamilOutputStyle,
+    });
+
+    if (!formattedSource) {
+      setCopySourceState('error');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(formattedSource);
+      setCopySourceState('copied');
+    } catch {
+      setCopySourceState('error');
     }
   };
 
@@ -348,18 +412,6 @@ export const TransliterationEngine: React.FC = () => {
             title="Read mode"
           >
             <Eye className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('review')}
-            className={clsx(
-              'touch-manipulation inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
-              viewMode === 'review' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
-            )}
-            aria-label="Review mode"
-            title="Review mode"
-          >
-            <FileCode2 className="h-4 w-4" />
           </button>
           <button
             type="button"
@@ -466,7 +518,226 @@ export const TransliterationEngine: React.FC = () => {
               {copyAllState === 'copied' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copyAllState === 'copied' ? 'Copied Whole Document' : copyAllState === 'error' ? 'Copy Failed' : 'Copy Whole Document'}
             </button>
+            <button
+              data-testid="copy-whole-source"
+              onClick={handleCopyWholeSource}
+              className={clsx(
+                'inline-flex w-full items-center justify-center gap-2 rounded-md border px-3 py-2 text-xs font-bold uppercase',
+                copySourceState === 'copied'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                  : copySourceState === 'error'
+                    ? 'border-rose-200 bg-rose-50 text-rose-700'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+              )}
+              type="button"
+              aria-label={copySourceControlText.ariaLabel}
+              title={copySourceControlText.title}
+            >
+              {copySourceState === 'copied' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copySourceState === 'copied'
+                ? `Copied ${copySourceControlText.targetLabel}`
+                : copySourceState === 'error'
+                  ? 'Copy Failed'
+                  : `Copy ${copySourceControlText.targetLabel}`}
+            </button>
+            <p className="text-xs text-slate-500">
+              Source copy follows the current Read As target. Stored source and Devanagari paste remain canonical.
+            </p>
           </section>
+
+          <section className="space-y-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Input Scheme</p>
+              <p className="mt-1 text-xs text-slate-500">Canonical Vedic remains the default. Baraha-compatible mode only enables deferred conflict aliases behind an explicit opt-in.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                type="button"
+                data-testid="input-scheme-canonical"
+                onClick={() => setInputScheme('canonical-vedic')}
+                className={clsx(
+                  'rounded-xl border px-3 py-3 text-left',
+                  inputScheme === 'canonical-vedic'
+                    ? 'border-blue-300 bg-blue-50 text-blue-900'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                )}
+              >
+                <span className="block text-xs font-bold uppercase">Canonical Vedic</span>
+                <span className="mt-1 block text-xs">Uses the current canonical conflict semantics and keeps `c` literal.</span>
+              </button>
+              <button
+                type="button"
+                data-testid="input-scheme-baraha"
+                onClick={() => setInputScheme('baraha-compatible')}
+                className={clsx(
+                  'rounded-xl border px-3 py-3 text-left',
+                  inputScheme === 'baraha-compatible'
+                    ? 'border-blue-300 bg-blue-50 text-blue-900'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                )}
+              >
+                <span className="block text-xs font-bold uppercase">Baraha Compatible</span>
+                <span className="mt-1 block text-xs">Enables conflict aliases intentionally. Current scoped addition: `c` is accepted as `ch` and canonicalizes on commit.</span>
+              </button>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                {OUTPUT_TARGET_CONTROL_LABELS.primaryScript}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Read As changes the main reading target and default source copy target. Stored source and canonical paste remain unchanged.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                type="button"
+                data-testid="workspace-primary-script-roman"
+                aria-pressed={primaryOutputScript === 'roman'}
+                onClick={() => setPrimaryOutputScript('roman')}
+                className={clsx(
+                  'rounded-xl border px-3 py-3 text-left',
+                  primaryOutputScript === 'roman'
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                )}
+              >
+                <span className="block text-xs font-bold uppercase">{OUTPUT_TARGET_VALUE_LABELS.roman}</span>
+                <span className="mt-1 block text-xs">Show the source in Roman transliteration and use Roman style controls for copy/export.</span>
+              </button>
+              <button
+                type="button"
+                data-testid="workspace-primary-script-devanagari"
+                aria-pressed={primaryOutputScript === 'devanagari'}
+                onClick={() => setPrimaryOutputScript('devanagari')}
+                className={clsx(
+                  'rounded-xl border px-3 py-3 text-left',
+                  primaryOutputScript === 'devanagari'
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                )}
+              >
+                <span className="block text-xs font-bold uppercase">{OUTPUT_TARGET_VALUE_LABELS.devanagari}</span>
+                <span className="mt-1 block text-xs">Keep the primary reading surface in Devanagari while source copy targets Devanagari.</span>
+              </button>
+              <button
+                type="button"
+                data-testid="workspace-primary-script-tamil"
+                aria-pressed={primaryOutputScript === 'tamil'}
+                onClick={() => setPrimaryOutputScript('tamil')}
+                className={clsx(
+                  'rounded-xl border px-3 py-3 text-left',
+                  primaryOutputScript === 'tamil'
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                )}
+              >
+                <span className="block text-xs font-bold uppercase">{OUTPUT_TARGET_VALUE_LABELS.tamil}</span>
+                <span className="mt-1 block text-xs">Use the reversible Tamil precision reading mode for Sanskrit-in-Tamil verification.</span>
+              </button>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                {OUTPUT_TARGET_CONTROL_LABELS.compareWith}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Comparison stays off by default and never changes the current Read As target.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {(['off', 'roman', 'devanagari', 'tamil'] as const).map((script) => (
+                <button
+                  key={script}
+                  type="button"
+                  data-testid={`workspace-compare-script-${script}`}
+                  aria-pressed={comparisonOutputScript === script}
+                  onClick={() => setComparisonOutputScript(script)}
+                  className={clsx(
+                    'rounded-md border px-3 py-2 text-xs font-bold uppercase',
+                    comparisonOutputScript === script
+                      ? 'border-blue-300 bg-blue-50 text-blue-900'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                  )}
+                >
+                  {OUTPUT_TARGET_VALUE_LABELS[script]}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {(primaryOutputScript === 'roman' || comparisonOutputScript === 'roman') && (
+            <section className="space-y-3" data-testid="workspace-roman-style">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                  {OUTPUT_TARGET_CONTROL_LABELS.romanStyle}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Roman style applies anywhere Roman is active, whether it is primary or only used for comparison.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  type="button"
+                  data-testid="workspace-roman-style-canonical"
+                  aria-pressed={romanOutputStyle === 'canonical'}
+                  onClick={() => setRomanOutputStyle('canonical')}
+                  className={clsx(
+                    'rounded-xl border px-3 py-3 text-left',
+                    romanOutputStyle === 'canonical'
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                  )}
+                >
+                  <span className="block text-xs font-bold uppercase">{OUTPUT_TARGET_VALUE_LABELS.canonical}</span>
+                  <span className="mt-1 block text-xs">Use canonical Vedic Roman output for display and source copy.</span>
+                </button>
+                <button
+                  type="button"
+                  data-testid="workspace-roman-style-baraha"
+                  aria-pressed={romanOutputStyle === 'baraha'}
+                  onClick={() => setRomanOutputStyle('baraha')}
+                  className={clsx(
+                    'rounded-xl border px-3 py-3 text-left',
+                    romanOutputStyle === 'baraha'
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
+                  )}
+                >
+                  <span className="block text-xs font-bold uppercase">{OUTPUT_TARGET_VALUE_LABELS.baraha}</span>
+                  <span className="mt-1 block text-xs">Keep Baraha-compatible Roman aliases for source copy without changing stored canonical input.</span>
+                </button>
+              </div>
+            </section>
+          )}
+
+          {(primaryOutputScript === 'tamil' || comparisonOutputScript === 'tamil') && (
+            <section className="space-y-3" data-testid="workspace-tamil-mode">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                  {OUTPUT_TARGET_CONTROL_LABELS.tamilMode}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Phase 1 keeps Tamil in the reversible precision mode. Additional Tamil reading styles are intentionally out of scope.
+                </p>
+              </div>
+              <div
+                data-testid="workspace-tamil-mode-precision"
+                className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-left text-slate-700"
+              >
+                <span className="block text-xs font-bold uppercase text-amber-900">
+                  {OUTPUT_TARGET_VALUE_LABELS.precision}
+                </span>
+                <span className="mt-1 block text-xs">
+                  Tamil output stays in the scholarly precision notation so the Sanskrit contrasts remain reversible.
+                </span>
+              </div>
+            </section>
+          )}
 
           <section className="space-y-3">
             <div>

@@ -9,7 +9,7 @@
     "dev:turbo": "next dev --turbo",
     "prebuild": "node scripts/copyAutocompleteAssets.mjs",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/serve-static-export.mjs",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d out",
     "lint": "eslint",

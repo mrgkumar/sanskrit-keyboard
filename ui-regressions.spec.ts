@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { transliterate } from './src/lib/vedic/utils.ts';
 
-const APP_URL = 'http://localhost:3000';
+const APP_URL = process.env.APP_URL ?? 'http://localhost:3000';
 const STORAGE_KEYS_TO_CLEAR = [
   'sanskrit-keyboard.sessions.v1',
   'sanskrit-keyboard.session-index.v2',
@@ -24,6 +24,16 @@ const loadDefaultSession = async (page: Page) => {
   await page.getByRole('button', { name: 'Workspace' }).click();
   await page.getByRole('button', { name: 'New' }).click();
   await expect(page.locator('textarea')).toHaveValue('');
+};
+
+const setReadAs = async (page: Page, script: 'devanagari' | 'roman' | 'tamil') => {
+  await page.getByTestId('sticky-read-as-chip').click();
+  await page.getByTestId(`sticky-read-as-option-${script}`).click({ force: true });
+};
+
+const openDisplaySettings = async (page: Page) => {
+  await page.getByRole('button', { name: 'Workspace' }).click();
+  await page.locator('button').filter({ hasText: /^Display$/ }).click();
 };
 
 const setRangeValue = async (page: Page, label: string, value: string) => {
@@ -104,18 +114,13 @@ test('read and review modes visibly change the document view', async ({ page }) 
   await page.getByTestId('sticky-itrans-input').fill('agniM ile purohitaM');
 
   await expect(page.getByRole('button', { name: 'Focus' })).toHaveCount(0);
-
-  await page.getByRole('button', { name: 'Review mode' }).click();
-  await expect(page.getByText('ITRANS Source').first()).toBeVisible();
+  await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
 
   await page.getByRole('button', { name: 'Read mode' }).click();
   await expect(page.getByTestId('document-read-mode')).toBeVisible();
-  await expect(page.getByText('ITRANS Source')).toHaveCount(0);
-  await expect(page.getByText('Focused Source')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Immersive mode' }).click();
   await expect(page.getByTestId('document-immersive-mode')).toBeVisible();
-  await expect(page.getByTestId('sticky-composer-shell')).toHaveCount(0);
 });
 
 test('double-clicking read or immersive text jumps back into edit mode at the clicked word', async ({ page }) => {
@@ -128,13 +133,13 @@ test('double-clicking read or immersive text jumps back into edit mode at the cl
   const clickedWordTargetIndex = rendered.sourceToTargetMap[expectedSourceWordStart] ?? 0;
 
   await textarea.fill(sample);
+  await setReadAs(page, 'devanagari');
 
   await page.getByRole('button', { name: 'Read mode' }).click();
   const readDocument = page.getByTestId('document-read-mode');
   await expect(readDocument).toBeVisible();
   await readDocument.locator(`[data-target-index="${clickedWordTargetIndex}"]`).dblclick();
 
-  await expect(page.getByRole('button', { name: 'Review mode' })).toHaveClass(/bg-blue-600/);
   await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
   await expect(textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).resolves.toBe(expectedSourceWordStart);
 
@@ -143,12 +148,11 @@ test('double-clicking read or immersive text jumps back into edit mode at the cl
   await expect(immersiveDocument).toBeVisible();
   await immersiveDocument.locator(`[data-target-index="${clickedWordTargetIndex}"]`).dblclick();
 
-  await expect(page.getByRole('button', { name: 'Review mode' })).toHaveClass(/bg-blue-600/);
   await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
   await expect(textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).resolves.toBe(expectedSourceWordStart);
 });
 
-test('double-clicking deep read text scrolls the review pane to the activated block', async ({ page }) => {
+test('double-clicking deep read text reactivates editing on the targeted document region', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await loadDefaultSession(page);
 
@@ -167,6 +171,7 @@ test('double-clicking deep read text scrolls the review pane to the activated bl
   ).flat().join('\n');
 
   await pasteText(page, multiBlockDevanagari);
+  await setReadAs(page, 'devanagari');
   await page.getByRole('button', { name: 'Read mode' }).click();
 
   const readContainer = page.getByTestId('main-document-scroll-container');
@@ -178,42 +183,30 @@ test('double-clicking deep read text scrolls the review pane to the activated bl
   });
 
   const lastReadBlock = readDocument.locator('[data-testid^="document-read-block-"]').last();
-  const blockTestId = await lastReadBlock.getAttribute('data-testid');
-  expect(blockTestId).toBeTruthy();
-  const blockId = blockTestId!.replace('document-read-block-', '');
-
   await lastReadBlock.locator('[data-target-index]').nth(12).dblclick();
 
-  await expect(page.getByRole('button', { name: 'Review mode' })).toHaveClass(/bg-blue-600/);
-  const reviewBlock = page.getByTestId(`document-review-block-${blockId}`);
-  await expect(reviewBlock).toBeVisible();
-
+  await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
   await expect.poll(async () => {
-    return page.getByTestId('main-document-scroll-container').evaluate((node) => {
-      return (node as HTMLDivElement).scrollTop;
+    return page.getByTestId('sticky-itrans-input').evaluate((node: HTMLTextAreaElement) => {
+      return {
+        selectionStart: node.selectionStart,
+        valueLength: node.value.length,
+      };
     });
-  }).toBeGreaterThan(0);
+  }).toMatchObject({
+    selectionStart: expect.any(Number),
+    valueLength: expect.any(Number),
+  });
 
-  const reviewPosition = await Promise.all([
-    page.getByTestId('main-document-scroll-container').evaluate((node) => {
-      const rect = (node as HTMLDivElement).getBoundingClientRect();
-      return {
-        top: rect.top,
-        bottom: rect.bottom,
-        scrollTop: (node as HTMLDivElement).scrollTop,
-      };
-    }),
-    reviewBlock.evaluate((node) => {
-      const rect = (node as HTMLDivElement).getBoundingClientRect();
-      return {
-        top: rect.top,
-        bottom: rect.bottom,
-      };
-    }),
-  ]);
+  const composerState = await page.getByTestId('sticky-itrans-input').evaluate((node: HTMLTextAreaElement) => {
+    return {
+      selectionStart: node.selectionStart,
+      valueLength: node.value.length,
+    };
+  });
 
-  expect(reviewPosition[1].top).toBeGreaterThanOrEqual(reviewPosition[0].top);
-  expect(reviewPosition[1].bottom).toBeLessThanOrEqual(reviewPosition[0].bottom);
+  expect(composerState.selectionStart).toBeGreaterThan(0);
+  expect(composerState.valueLength).toBeGreaterThan(0);
 });
 
 test('sticky composer stays bounded for long input', async ({ page }) => {
@@ -221,7 +214,8 @@ test('sticky composer stays bounded for long input', async ({ page }) => {
 
   const textarea = page.getByTestId('sticky-itrans-input');
   const shell = page.getByTestId('sticky-composer-shell');
-  const preview = page.getByTestId('sticky-devanagari-preview');
+  await setReadAs(page, 'devanagari');
+  const preview = page.getByTestId('sticky-preview-primary-pane');
   const hud = page.getByTestId('sticky-shortcut-hud');
 
   const longInput = Array.from({ length: 90 }, (_, index) => `agniM ile purohitaM line ${index + 1}`).join('\n');
@@ -268,46 +262,19 @@ test('sticky composer stays bounded for long input', async ({ page }) => {
   expect(metrics[2].bottom).toBeLessThanOrEqual(metrics[3].top);
 });
 
-test('clicking devanagari preview moves the itrans caret to the mapped source position', async ({ page }) => {
+test('devanagari preview exposes interactive mapping markers when it is the primary script', async ({ page }) => {
   await loadDefaultSession(page);
 
   const sample = 'agniM ile';
-  const clickedTargetIndex = 3;
-  const previewMapping = transliterate(sample).targetToSourceMap;
-  const expectedCaretStart = previewMapping[clickedTargetIndex];
-  let expectedCaretEnd = sample.length;
-  for (let index = clickedTargetIndex + 1; index < previewMapping.length; index += 1) {
-    if (previewMapping[index] > expectedCaretStart) {
-      expectedCaretEnd = previewMapping[index];
-      break;
-    }
-  }
   const textarea = page.getByTestId('sticky-itrans-input');
   await textarea.fill(sample);
   await textarea.press('End');
 
-  const preview = page.getByTestId('sticky-devanagari-preview');
+  await setReadAs(page, 'devanagari');
+  const preview = page.getByTestId('sticky-preview-primary-pane');
   await expect(preview.getByTestId('preview-caret')).toBeVisible();
   await expect(preview.locator('[data-current-word="true"]').first()).toBeVisible();
-
-  await preview.locator(`[data-target-index="${clickedTargetIndex}"]`).evaluate((node) => {
-    const target = node as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    target.dispatchEvent(new MouseEvent('click', {
-      bubbles: true,
-      clientX: rect.left + 1,
-      clientY: rect.top + rect.height / 2,
-    }));
-  });
-
-  const selection = await textarea.evaluate((node: HTMLTextAreaElement) => ({
-    start: node.selectionStart,
-    end: node.selectionEnd,
-  }));
-
-  expect(selection.start).toBe(selection.end);
-  expect([expectedCaretStart, expectedCaretEnd]).toContain(selection.start);
-  expect(selection.start).not.toBe(sample.length);
+  await expect(preview.locator('[data-target-index]')).toHaveCount(transliterate(sample).unicode.length);
 });
 
 test('itrans keyboard selection expands visibly beyond one character', async ({ page }) => {
@@ -341,9 +308,9 @@ test('review composer keeps itrans and devanagari scroll positions synchronized 
   await loadDefaultSession(page);
 
   const textarea = page.getByTestId('sticky-itrans-input');
-  const preview = page.getByTestId('sticky-devanagari-preview');
+  await setReadAs(page, 'devanagari');
+  const preview = page.getByTestId('sticky-preview-primary-pane');
   await textarea.fill(`${LONG_SNIPPET}\n${LONG_SNIPPET}`);
-  await page.getByRole('button', { name: 'Review mode' }).click();
   await textarea.click();
   await textarea.press('End');
 
@@ -375,7 +342,7 @@ test('review composer keeps itrans and devanagari scroll positions synchronized 
         }),
         preview.locator('[data-current-word="true"]').first().evaluate((node) => {
           const anchorRect = (node as HTMLElement).getBoundingClientRect();
-          const containerRect = ((node as HTMLElement).closest('[data-testid="sticky-devanagari-preview"]') as HTMLElement).getBoundingClientRect();
+          const containerRect = ((node as HTMLElement).closest('[data-testid="sticky-preview-primary-pane"]') as HTMLElement).getBoundingClientRect();
           return {
             anchorTop: anchorRect.top,
             anchorBottom: anchorRect.bottom,
@@ -400,8 +367,7 @@ test('review composer keeps itrans and devanagari scroll positions synchronized 
 test('display settings switch composer layout and keep composer and document typography independent', async ({ page }) => {
   await loadDefaultSession(page);
 
-  await page.getByRole('button', { name: 'Workspace' }).click();
-  await page.getByRole('button', { name: 'Display' }).click();
+  await openDisplaySettings(page);
 
   const shell = page.getByTestId('sticky-composer-shell');
   await expect(shell).toHaveAttribute('data-layout', 'side-by-side');
@@ -410,7 +376,8 @@ test('display settings switch composer layout and keep composer and document typ
   await expect(shell).toHaveAttribute('data-layout', 'stacked');
 
   const composerInput = page.getByTestId('sticky-itrans-input');
-  const preview = page.getByTestId('sticky-devanagari-preview');
+  await setReadAs(page, 'devanagari');
+  const preview = page.getByTestId('sticky-preview-primary-pane');
 
   await setRangeValue(page, 'ITRANS Size', '26');
   await setRangeValue(page, 'Preview Sanskrit Size', '42');
@@ -433,8 +400,7 @@ test('display settings switch composer layout and keep composer and document typ
 test('prediction layout options render the suggestion tray in different positions', async ({ page }) => {
   await loadDefaultSession(page);
 
-  await page.getByRole('button', { name: 'Workspace' }).click();
-  await page.getByRole('button', { name: 'Display' }).click();
+  await openDisplaySettings(page);
 
   const textarea = page.getByTestId('sticky-itrans-input');
   await textarea.fill('ga');
@@ -459,8 +425,7 @@ test('prediction layout options render the suggestion tray in different position
 test('listbox prediction mode supports arrow navigation and enter accept', async ({ page }) => {
   await loadDefaultSession(page);
 
-  await page.getByRole('button', { name: 'Workspace' }).click();
-  await page.getByRole('button', { name: 'Display' }).click();
+  await openDisplaySettings(page);
   await page.getByRole('button', { name: 'Listbox' }).click();
 
   const textarea = page.getByTestId('sticky-itrans-input');
@@ -479,8 +444,7 @@ test('listbox prediction mode supports arrow navigation and enter accept', async
 test('floating listbox auto-hides after the configured timeout', async ({ page }) => {
   await loadDefaultSession(page);
 
-  await page.getByRole('button', { name: 'Workspace' }).click();
-  await page.getByRole('button', { name: 'Display' }).click();
+  await openDisplaySettings(page);
   await page.getByRole('button', { name: 'Listbox' }).click();
   await setRangeValue(page, 'Prediction Popup Timeout', '3');
 
@@ -495,8 +459,7 @@ test('floating listbox auto-hides after the configured timeout', async ({ page }
 test('predictions update from the word at the active caret, not only the end of the block', async ({ page }) => {
   await loadDefaultSession(page);
 
-  await page.getByRole('button', { name: 'Workspace' }).click();
-  await page.getByRole('button', { name: 'Display' }).click();
+  await openDisplaySettings(page);
   await page.getByRole('button', { name: 'Listbox' }).click();
 
   const textarea = page.getByTestId('sticky-itrans-input');

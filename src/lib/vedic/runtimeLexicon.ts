@@ -1,5 +1,6 @@
 import { transliterate } from '@/lib/vedic/utils';
 import {
+  canonicalizeLexicalItrans,
   hasLexicalSvaraMarkers,
   normalizeForLexicalLookup,
 } from '@/lib/vedic/lexicalNormalization';
@@ -178,6 +179,7 @@ export const incrementExactFormUsage = (
   rawValue: string
 ) => {
   const normalized = normalizeForLexicalLookup(rawValue);
+  const canonicalExactForm = canonicalizeLexicalItrans(rawValue);
   if (!shouldLookupLexicalSuggestions(normalized) || !hasLexicalSvaraMarkers(rawValue)) {
     return counts;
   }
@@ -186,7 +188,7 @@ export const incrementExactFormUsage = (
     ...counts,
     [normalized]: {
       ...(counts[normalized] ?? {}),
-      [rawValue]: ((counts[normalized] ?? {})[rawValue] ?? 0) + 1,
+      [canonicalExactForm]: ((counts[normalized] ?? {})[canonicalExactForm] ?? 0) + 1,
     },
   };
 };
@@ -380,22 +382,28 @@ const rankExactFormVariants = ({
   >();
 
   for (const variant of corpusVariants) {
-    variants.set(variant.itrans, {
-      itrans: variant.itrans,
-      devanagari: variant.devanagari,
+    const canonicalItrans = canonicalizeLexicalItrans(variant.itrans);
+    const existing = variants.get(canonicalItrans);
+    variants.set(canonicalItrans, {
+      itrans: canonicalItrans,
+      devanagari: existing?.devanagari ?? variant.devanagari,
       corpusCount: variant.count,
-      userCount: 0,
-      sessionCount: 0,
+      userCount: existing?.userCount ?? 0,
+      sessionCount: existing?.sessionCount ?? 0,
       prefixBonus: 0,
-      score: variant.count * SWARA_CORPUS_WEIGHT,
+      score:
+        variant.count * SWARA_CORPUS_WEIGHT +
+        (existing?.userCount ?? 0) * SWARA_USER_WEIGHT +
+        (existing?.sessionCount ?? 0) * SWARA_SESSION_WEIGHT,
     });
   }
 
   for (const [itrans, count] of Object.entries(userExactForms[normalized] ?? {})) {
-    const existing = variants.get(itrans);
+    const canonicalItrans = canonicalizeLexicalItrans(itrans);
+    const existing = variants.get(canonicalItrans);
     const next = existing ?? {
-      itrans,
-      devanagari: transliterate(itrans).unicode,
+      itrans: canonicalItrans,
+      devanagari: transliterate(canonicalItrans).unicode,
       corpusCount: 0,
       userCount: 0,
       sessionCount: 0,
@@ -404,14 +412,15 @@ const rankExactFormVariants = ({
     };
     next.userCount = count;
     next.score = next.corpusCount * SWARA_CORPUS_WEIGHT + count * SWARA_USER_WEIGHT + next.sessionCount * SWARA_SESSION_WEIGHT;
-    variants.set(itrans, next);
+    variants.set(canonicalItrans, next);
   }
 
   for (const [itrans, count] of Object.entries(sessionExactForms[normalized] ?? {})) {
-    const existing = variants.get(itrans);
+    const canonicalItrans = canonicalizeLexicalItrans(itrans);
+    const existing = variants.get(canonicalItrans);
     const next = existing ?? {
-      itrans,
-      devanagari: transliterate(itrans).unicode,
+      itrans: canonicalItrans,
+      devanagari: transliterate(canonicalItrans).unicode,
       corpusCount: 0,
       userCount: 0,
       sessionCount: 0,
@@ -420,7 +429,7 @@ const rankExactFormVariants = ({
     };
     next.sessionCount = count;
     next.score = next.corpusCount * SWARA_CORPUS_WEIGHT + next.userCount * SWARA_USER_WEIGHT + count * SWARA_SESSION_WEIGHT;
-    variants.set(itrans, next);
+    variants.set(canonicalItrans, next);
   }
 
   for (const variant of variants.values()) {

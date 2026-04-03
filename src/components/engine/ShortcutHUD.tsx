@@ -1,6 +1,6 @@
 import React from 'react';
 import { useFlowStore } from '@/store/useFlowStore';
-import { VEDIC_MAPPINGS, MAPPING_TRIE } from '@/lib/vedic/mapping';
+import { DISPLAY_MAPPINGS, MAPPING_TRIE } from '@/lib/vedic/mapping';
 import { clsx } from 'clsx';
 import type { ChunkEditTarget } from '@/store/types';
 import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
@@ -21,10 +21,10 @@ const DEFAULT_SHORTCUTS = [
   // Semivowels & Sibilants
   'y', 'r', 'l', 'v', 'sh', 'Sh', 's', 'h',
   // Common Marks
-  'M', 'H',
+  'M', ':',
 ].map(itrans => 
-  VEDIC_MAPPINGS.find(m => m.itrans === itrans)
-).filter(Boolean) as typeof VEDIC_MAPPINGS;
+  DISPLAY_MAPPINGS.find(m => m.itrans === itrans)
+).filter(Boolean) as typeof DISPLAY_MAPPINGS;
 
 const PHONETIC_GROUPS = {
   // Stop Consonants (Varga)
@@ -46,7 +46,7 @@ const PHONETIC_GROUPS = {
   l_vowels: ['LLi', 'LLI'],
 
   // Marks & Svaras
-  marks: ['H', 'M', '.n', '~', '.N'],
+  marks: [':', 'M', '.n', '~', '.N'],
   svaras: ["'", '_', '^', "''", '"']
 };
 
@@ -58,8 +58,8 @@ const SIMILAR_SOUND_MAP: { [key: string]: string[] } = {
   's': ['S', 'sh'], // Dental s, Retroflex S, Palatal sh
   'S': ['s', 'sh'],
   'sh': ['s', 'S'],
-  'M': ['H'], // Anusvara, Visarga
-  'H': ['M'],
+  'M': [':'], // Anusvara, Visarga
+  ':': ['M'],
   'k': ['kh', 'g', 'gh'], // Some common gutturals
   'g': ['gh', 'k', 'kh'],
   'c': ['ch'], // for 'c' and 'ch'
@@ -154,7 +154,7 @@ export const ShortcutHUD: React.FC = () => {
     if (group) {
       completions = group
         .map((itrans: string) => {
-          const mapping = VEDIC_MAPPINGS.find(m => m.itrans === itrans);
+          const mapping = DISPLAY_MAPPINGS.find(m => m.itrans === itrans);
           return mapping ? { ...mapping, tail: longestItransSuffix } : null;
         })
         .filter(Boolean) as { itrans: string; unicode: string; tail: string; }[];

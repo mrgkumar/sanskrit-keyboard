@@ -4,19 +4,30 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { useFlowStore } from '@/store/useFlowStore';
-import { Check, ChevronLeft, ChevronRight, Copy, Trash2, Undo2 } from 'lucide-react';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, Trash2, Undo2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { ShortcutHUD } from '@/components/engine/ShortcutHUD';
 import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
-import { detransliterate, transliterate } from '@/lib/vedic/utils';
-import { VEDIC_MAPPINGS } from '@/lib/vedic/mapping';
+import {
+  canonicalizeDevanagariPaste,
+  formatSourceForPrimaryOutput,
+  formatSourceForScript,
+  getCopySourceControlText,
+  transliterate,
+} from '@/lib/vedic/utils';
+import {
+  DISPLAY_MAPPINGS,
+  getAcceptedInputs,
+  getOutputTargetQuickLabels,
+  OUTPUT_TARGET_CONTROL_LABELS,
+  OUTPUT_TARGET_VALUE_LABELS,
+} from '@/lib/vedic/mapping';
 import { applyShortcutPeekCorrection } from '@/lib/vedic/correction';
 import type { ChunkEditTarget } from '@/store/types';
 
 export const StickyTopComposer: React.FC = () => {
   const { 
-    getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setNextBlock, setPrevBlock, setFocusSpan, toggleReferencePanel, addBlocks, deleteBlock, restoreDeletedBlock, dismissDeletedBlock, setDeletedBuffer, setComposerSelection, setLexicalSelectedSuggestionIndex, recordSessionLexicalText, recordSessionLexicalUse, editorState,
+    getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setNextBlock, setPrevBlock, setFocusSpan, toggleReferencePanel, addBlocks, deleteBlock, restoreDeletedBlock, dismissDeletedBlock, setDeletedBuffer, setComposerSelection, setLexicalSelectedSuggestionIndex, recordSessionLexicalText, recordSessionLexicalUse, setPrimaryOutputScript, setComparisonOutputScript, editorState,
     activeBuffer, // Get activeBuffer for Backspace logic
     lexicalSuggestions,
     lexicalSelectedSuggestionIndex,
@@ -40,15 +51,52 @@ export const StickyTopComposer: React.FC = () => {
   const [isPredictionPopupVisible, setIsPredictionPopupVisible] = React.useState(false);
   const [isPredictionPopupSuppressed, setIsPredictionPopupSuppressed] = React.useState(false);
   const [predictionPopupPortalStyle, setPredictionPopupPortalStyle] = React.useState<React.CSSProperties>({});
+  const [activeQuickSwitchMenu, setActiveQuickSwitchMenu] = React.useState<'read-as' | 'compare' | null>(null);
+  const [isWideCompareLayout, setIsWideCompareLayout] = React.useState(false);
   const activeBlock = getActiveBlock();
   const activeChunkGroup = getActiveChunkGroup();
   const { focusSpan, viewMode } = editorState;
-  const { composerLayout, predictionLayout, predictionPopupTimeoutMs, syncComposerScroll, typography } = displaySettings;
+  const {
+    composerLayout,
+    predictionLayout,
+    predictionPopupTimeoutMs,
+    syncComposerScroll,
+    typography,
+    inputScheme,
+    primaryOutputScript,
+    comparisonOutputScript,
+    romanOutputStyle,
+    tamilOutputStyle,
+  } = displaySettings;
   const composerTypography = typography.composer;
   const isPredictionListbox = predictionLayout === 'listbox';
   const isLongBlock = activeBlock?.type === 'long';
   const currentChunkSource = activeChunkGroup?.source || '';
-  const renderedPreview = transliterate(currentChunkSource);
+  const renderedPreview = transliterate(currentChunkSource, { inputScheme });
+  const copySourceControlText = getCopySourceControlText({
+    primaryOutputScript,
+    comparisonOutputScript,
+    romanOutputStyle,
+    tamilOutputStyle,
+  });
+  const primaryPreviewText = formatSourceForScript(currentChunkSource, primaryOutputScript, {
+    romanOutputStyle,
+    tamilOutputStyle,
+  });
+  const comparisonPreviewText =
+    comparisonOutputScript === 'off'
+      ? ''
+      : formatSourceForScript(currentChunkSource, comparisonOutputScript, {
+          romanOutputStyle,
+          tamilOutputStyle,
+        });
+  const quickSwitchLabels = getOutputTargetQuickLabels({
+    primaryOutputScript,
+    comparisonOutputScript,
+    romanOutputStyle,
+    tamilOutputStyle,
+  });
+  const quickSwitchMenuRef = React.useRef<HTMLDivElement>(null);
   const renderedPreviewChars = Array.from(renderedPreview.unicode);
   const currentEditTarget: ChunkEditTarget | undefined = activeChunkGroup?.blockId
     ? {
@@ -62,14 +110,15 @@ export const StickyTopComposer: React.FC = () => {
     ? `${activeChunkGroup.blockId ?? 'none'}:${activeChunkGroup.startSegmentIndex}:${activeChunkGroup.endSegmentIndex}`
     : 'no-active-chunk';
   const resolvePeekMappings = (query: string) =>
-    VEDIC_MAPPINGS
+    DISPLAY_MAPPINGS
       .filter((mapping) =>
         mapping.itrans.toLowerCase().startsWith(query.toLowerCase()) ||
+        getAcceptedInputs(mapping.itrans).some((input) => input.toLowerCase().startsWith(query.toLowerCase())) ||
         (mapping.name || '').toLowerCase().includes(query.toLowerCase())
       )
       .slice(0, 6);
 
-  let shortcutPeekState: { query: string; mappings: typeof VEDIC_MAPPINGS } = {
+  let shortcutPeekState: { query: string; mappings: typeof DISPLAY_MAPPINGS } = {
     query: deletedBuffer || activeBuffer,
     mappings: [],
   };
@@ -95,6 +144,33 @@ export const StickyTopComposer: React.FC = () => {
   const shortcutPeekQuery = shortcutPeekState.query;
   const shortcutPeekMappings = shortcutPeekState.mappings;
   const hasLexicalSuggestions = lexicalSuggestions.length > 0 && activeBuffer.length > 1;
+  const isComposerCompareMode = comparisonOutputScript !== 'off';
+  const composerCompareLayout = isComposerCompareMode && isWideCompareLayout ? 'split' : 'stacked';
+  const primaryPreviewLabel =
+    primaryOutputScript === 'roman'
+      ? 'Roman Preview'
+      : primaryOutputScript === 'tamil'
+        ? 'Tamil Preview'
+        : 'Devanagari Preview';
+  const comparisonPreviewLabel =
+    comparisonOutputScript === 'roman'
+      ? 'Roman Compare'
+      : comparisonOutputScript === 'tamil'
+        ? 'Tamil Compare'
+        : comparisonOutputScript === 'devanagari'
+          ? 'Devanagari Compare'
+          : '';
+  const readAsOptions = [
+    { script: 'roman', label: OUTPUT_TARGET_VALUE_LABELS.roman },
+    { script: 'devanagari', label: OUTPUT_TARGET_VALUE_LABELS.devanagari },
+    { script: 'tamil', label: OUTPUT_TARGET_VALUE_LABELS.tamil },
+  ] as const;
+  const compareOptions = [
+    { script: 'off', label: OUTPUT_TARGET_VALUE_LABELS.off },
+    { script: 'roman', label: OUTPUT_TARGET_VALUE_LABELS.roman },
+    { script: 'devanagari', label: OUTPUT_TARGET_VALUE_LABELS.devanagari },
+    { script: 'tamil', label: OUTPUT_TARGET_VALUE_LABELS.tamil },
+  ] as const;
 
   const targetCaretIndex = (() => {
     if (composerSelectionStart >= currentChunkSource.length) {
@@ -308,7 +384,7 @@ export const StickyTopComposer: React.FC = () => {
 
     if (isDevanagari) {
       e.preventDefault();
-      const itransText = detransliterate(pastedText);
+      const itransText = canonicalizeDevanagariPaste(pastedText);
 
       if (isMultiLine) {
         const itransLines = itransText.split(/\r?\n/).filter(line => line.trim().length > 0);
@@ -691,6 +767,51 @@ export const StickyTopComposer: React.FC = () => {
   }, [copyState]);
 
   React.useEffect(() => {
+    if (activeQuickSwitchMenu === null) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      if (quickSwitchMenuRef.current?.contains(event.target as Node)) {
+        return;
+      }
+      setActiveQuickSwitchMenu(null);
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setActiveQuickSwitchMenu(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [activeQuickSwitchMenu]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const applyMatch = (event?: MediaQueryListEvent) => {
+      setIsWideCompareLayout(event?.matches ?? mediaQuery.matches);
+    };
+
+    applyMatch();
+    mediaQuery.addEventListener('change', applyMatch);
+
+    return () => mediaQuery.removeEventListener('change', applyMatch);
+  }, []);
+
+  React.useEffect(() => {
     if (!recentlyDeletedBlock) {
       setDeleteToastProgress(1);
       return;
@@ -714,9 +835,13 @@ export const StickyTopComposer: React.FC = () => {
   }, [dismissDeletedBlock, recentlyDeletedBlock]);
 
   const handleCopyRendered = async () => {
-    const textToCopy = viewMode === 'focus'
-      ? activeChunkGroup?.rendered || ''
-      : activeBlock?.rendered || '';
+    const canonicalSource = viewMode === 'focus'
+      ? activeChunkGroup?.source || ''
+      : activeBlock?.source || '';
+    const textToCopy = formatSourceForScript(canonicalSource, primaryOutputScript, {
+      romanOutputStyle,
+      tamilOutputStyle,
+    });
 
     if (!textToCopy) {
       setCopyState('error');
@@ -732,13 +857,20 @@ export const StickyTopComposer: React.FC = () => {
   };
 
   const handleCopySource = async () => {
-    if (!currentChunkSource) {
+    const sourceToCopy = formatSourceForPrimaryOutput(currentChunkSource, {
+      primaryOutputScript,
+      comparisonOutputScript,
+      romanOutputStyle,
+      tamilOutputStyle,
+    });
+
+    if (!sourceToCopy) {
       setCopyState('error');
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(currentChunkSource);
+      await navigator.clipboard.writeText(sourceToCopy);
       setCopyState('copied');
     } catch {
       setCopyState('error');
@@ -805,14 +937,115 @@ export const StickyTopComposer: React.FC = () => {
               <span className="text-slate-300">/</span>
               <span className="text-blue-700">Preview</span>
             </div>
-            <button
-              onClick={toggleReferencePanel}
-              className="relative z-10 inline-flex shrink-0 touch-manipulation items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 hover:bg-slate-100"
-              type="button"
-            >
-              <BookOpen className="h-3.5 w-3.5" />
-              Reference
-            </button>
+            <div ref={quickSwitchMenuRef} className="relative z-10 flex shrink-0 items-center gap-2">
+              <div className="relative">
+                <button
+                  data-testid="sticky-read-as-chip"
+                  aria-expanded={activeQuickSwitchMenu === 'read-as'}
+                  aria-haspopup="menu"
+                  onClick={() =>
+                    setActiveQuickSwitchMenu((current) => (current === 'read-as' ? null : 'read-as'))
+                  }
+                  className="inline-flex touch-manipulation items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 hover:bg-slate-100"
+                  type="button"
+                >
+                  {quickSwitchLabels.readAs}
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+                {activeQuickSwitchMenu === 'read-as' && (
+                  <div
+                    data-testid="sticky-read-as-menu"
+                    className="absolute right-0 top-[calc(100%+0.35rem)] min-w-[11rem] rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"
+                  >
+                    <p className="px-2 pb-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+                      {OUTPUT_TARGET_CONTROL_LABELS.readAs}
+                    </p>
+                    <div className="grid gap-1">
+                      {readAsOptions.map((option) => (
+                        <button
+                          key={option.script}
+                          type="button"
+                          data-testid={`sticky-read-as-option-${option.script}`}
+                          aria-pressed={primaryOutputScript === option.script}
+                          onClick={() => {
+                            setPrimaryOutputScript(option.script);
+                            setActiveQuickSwitchMenu(null);
+                          }}
+                          className={clsx(
+                            'rounded-lg px-2 py-2 text-left text-[11px] font-bold uppercase tracking-[0.08em]',
+                            primaryOutputScript === option.script
+                              ? 'bg-emerald-50 text-emerald-900'
+                              : 'text-slate-700 hover:bg-slate-100'
+                          )}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative">
+                <button
+                  data-testid="sticky-compare-chip"
+                  aria-expanded={activeQuickSwitchMenu === 'compare'}
+                  aria-haspopup="menu"
+                  onClick={() =>
+                    setActiveQuickSwitchMenu((current) => (current === 'compare' ? null : 'compare'))
+                  }
+                  className="inline-flex touch-manipulation items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 hover:bg-slate-100"
+                  type="button"
+                >
+                  {quickSwitchLabels.compare}
+                  <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+                {activeQuickSwitchMenu === 'compare' && (
+                  <div
+                    data-testid="sticky-compare-menu"
+                    className="absolute right-0 top-[calc(100%+0.35rem)] min-w-[11rem] rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"
+                  >
+                    <p className="px-2 pb-1 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+                      {OUTPUT_TARGET_CONTROL_LABELS.compare}
+                    </p>
+                    <div className="grid gap-1">
+                      {compareOptions.map((option) => (
+                        <button
+                          key={option.script}
+                          type="button"
+                          data-testid={`sticky-compare-option-${option.script}`}
+                          aria-pressed={comparisonOutputScript === option.script}
+                          onClick={() => {
+                            setComparisonOutputScript(option.script);
+                            setActiveQuickSwitchMenu(null);
+                          }}
+                          className={clsx(
+                            'rounded-lg px-2 py-2 text-left text-[11px] font-bold uppercase tracking-[0.08em]',
+                            comparisonOutputScript === option.script
+                              ? 'bg-blue-50 text-blue-900'
+                              : 'text-slate-700 hover:bg-slate-100'
+                          )}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => {
+                  setActiveQuickSwitchMenu(null);
+                  toggleReferencePanel();
+                }}
+                className="inline-flex touch-manipulation items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 hover:bg-slate-100"
+                type="button"
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                Reference
+              </button>
+            </div>
           </div>
 
           <div
@@ -830,6 +1063,7 @@ export const StickyTopComposer: React.FC = () => {
               <div className="relative min-h-[7rem] flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div className="pointer-events-none absolute right-2 top-2 z-20 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                   <button
+                    data-testid="copy-source-button"
                     onClick={handleCopySource}
                     className={clsx(
                       'pointer-events-auto rounded-md border bg-white/95 p-1.5 shadow-sm',
@@ -840,8 +1074,14 @@ export const StickyTopComposer: React.FC = () => {
                           : 'border-blue-200 text-slate-700 hover:bg-blue-100'
                     )}
                     type="button"
-                    aria-label="Copy ITRANS source"
-                    title={copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : 'Copy ITRANS'}
+                    aria-label={copySourceControlText.ariaLabel}
+                    title={
+                      copyState === 'copied'
+                        ? 'Copied'
+                        : copyState === 'error'
+                          ? 'Copy failed'
+                          : copySourceControlText.title
+                    }
                   >
                     {copyState === 'copied' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </button>
@@ -904,7 +1144,7 @@ export const StickyTopComposer: React.FC = () => {
             <div className="group flex min-h-0 flex-1 flex-col gap-2 border-t border-slate-200 p-2.5 text-blue-800 lg:border-t-0">
               <div className="min-w-0 px-1">
                 <p className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">
-                  Devanagari Preview
+                  {isComposerCompareMode ? `${primaryPreviewLabel} / ${comparisonPreviewLabel}` : primaryPreviewLabel}
                 </p>
               </div>
               <div className="relative min-h-[7rem] flex-1">
@@ -929,71 +1169,112 @@ export const StickyTopComposer: React.FC = () => {
                           : 'border-blue-200 text-slate-700 hover:bg-blue-100'
                     )}
                     type="button"
-                    aria-label="Copy rendered Sanskrit"
-                    title={copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : 'Copy Sanskrit'}
+                    aria-label={`Copy ${primaryPreviewLabel}`}
+                    title={copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : `Copy ${primaryPreviewLabel}`}
                   >
                     {copyState === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
                 <div
-                  ref={previewRef}
-                  className="min-h-[7rem] h-full overflow-y-auto rounded-xl border border-blue-100 bg-white px-3 pb-3 pt-2.5 pr-14 font-serif text-slate-900 shadow-sm"
-                  data-testid="sticky-devanagari-preview"
-                  onScroll={handlePreviewScroll}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={handlePreviewContainerClick}
-                  style={{
-                    fontSize: `${composerTypography.renderedFontSize}px`,
-                    lineHeight: composerTypography.renderedLineHeight,
-                  }}
+                  data-testid="sticky-preview-surface"
+                  data-compare-mode={isComposerCompareMode ? 'compare' : 'single'}
+                  data-compare-layout={composerCompareLayout}
+                  className={clsx(
+                    'grid min-h-[7rem] h-full gap-3',
+                    isComposerCompareMode
+                      ? composerCompareLayout === 'split'
+                        ? 'lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]'
+                        : 'grid-cols-1'
+                      : 'grid-cols-1'
+                  )}
                 >
-                  {renderedPreviewChars.length === 0 ? (
-                    'Devanagari preview'
-                  ) : (
-                    <span className="whitespace-pre-wrap break-words">
-                      {renderedPreviewChars.map((char, index) => {
-                        const isSelectionVisible =
-                          selectedTargetRange.end > selectedTargetRange.start &&
-                          index >= selectedTargetRange.start &&
-                          index < selectedTargetRange.end;
-                        const isCurrentWordVisible =
-                          !isSelectionVisible &&
-                          currentWordTargetRange !== null &&
-                          index >= currentWordTargetRange.start &&
-                          index < currentWordTargetRange.end;
-                        const showCaretBefore = index === targetCaretIndex;
+                  <div
+                    ref={previewRef}
+                    className="min-h-[7rem] h-full overflow-y-auto rounded-xl border border-blue-100 bg-white px-3 pb-3 pt-2.5 pr-14 shadow-sm"
+                    data-testid="sticky-preview-primary-pane"
+                    onScroll={handlePreviewScroll}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={primaryOutputScript === 'devanagari' ? handlePreviewContainerClick : undefined}
+                    style={{
+                      fontSize: `${composerTypography.renderedFontSize}px`,
+                      lineHeight: composerTypography.renderedLineHeight,
+                    }}
+                  >
+                    <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">
+                      {primaryPreviewLabel}
+                    </p>
+                    {primaryOutputScript === 'devanagari' ? (
+                      renderedPreviewChars.length === 0 ? (
+                        'Devanagari preview'
+                      ) : (
+                        <span className="whitespace-pre-wrap break-words font-serif text-slate-900">
+                          {renderedPreviewChars.map((char, index) => {
+                            const isSelectionVisible =
+                              selectedTargetRange.end > selectedTargetRange.start &&
+                              index >= selectedTargetRange.start &&
+                              index < selectedTargetRange.end;
+                            const isCurrentWordVisible =
+                              !isSelectionVisible &&
+                              currentWordTargetRange !== null &&
+                              index >= currentWordTargetRange.start &&
+                              index < currentWordTargetRange.end;
+                            const showCaretBefore = index === targetCaretIndex;
 
-                        return (
-                          <span
-                            key={`${index}-${char}`}
-                            className={clsx(
-                              'relative cursor-text rounded-[0.18em] transition-colors',
-                              isSelectionVisible && 'bg-blue-200/80 text-blue-950',
-                              isCurrentWordVisible && 'font-semibold text-[#6b1f1f]'
-                            )}
-                            data-current-word={isCurrentWordVisible ? 'true' : undefined}
-                            data-target-index={index}
-                            onClick={(event) => handlePreviewCharacterClick(event, index)}
-                          >
-                            {showCaretBefore && (
+                            return (
                               <span
-                                aria-hidden="true"
-                                className="pointer-events-none absolute -left-[2px] top-1/2 inline-block h-[1.1em] w-[2px] -translate-y-1/2 rounded-full bg-blue-600 motion-safe:animate-caret"
-                                data-testid="preview-caret"
-                              />
-                            )}
-                            {char === ' ' ? '\u00A0' : char}
-                          </span>
-                        );
-                      })}
-                      {targetCaretIndex === renderedPreviewChars.length && (
-                        <span
-                          aria-hidden="true"
-                          className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-blue-600 align-middle motion-safe:animate-caret"
-                          data-testid="preview-caret"
-                        />
-                      )}
-                    </span>
+                                key={`${index}-${char}`}
+                                className={clsx(
+                                  'relative cursor-text rounded-[0.18em] transition-colors',
+                                  isSelectionVisible && 'bg-blue-200/80 text-blue-950',
+                                  isCurrentWordVisible && 'font-semibold text-[#6b1f1f]'
+                                )}
+                                data-current-word={isCurrentWordVisible ? 'true' : undefined}
+                                data-target-index={index}
+                                onClick={(event) => handlePreviewCharacterClick(event, index)}
+                              >
+                                {showCaretBefore && (
+                                  <span
+                                    aria-hidden="true"
+                                    className="pointer-events-none absolute -left-[2px] top-1/2 inline-block h-[1.1em] w-[2px] -translate-y-1/2 rounded-full bg-blue-600 motion-safe:animate-caret"
+                                    data-testid="preview-caret"
+                                  />
+                                )}
+                                {char === ' ' ? '\u00A0' : char}
+                              </span>
+                            );
+                          })}
+                          {targetCaretIndex === renderedPreviewChars.length && (
+                            <span
+                              aria-hidden="true"
+                              className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-blue-600 align-middle motion-safe:animate-caret"
+                              data-testid="preview-caret"
+                            />
+                          )}
+                        </span>
+                      )
+                    ) : (
+                      <span className="whitespace-pre-wrap break-words font-serif text-slate-900">
+                        {primaryPreviewText || (primaryOutputScript === 'tamil' ? 'Tamil preview' : 'Roman preview')}
+                      </span>
+                    )}
+                  </div>
+
+                  {isComposerCompareMode && (
+                    <div
+                      className="min-h-[7rem] h-full overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 px-3 pb-3 pt-2.5 text-slate-700 shadow-sm"
+                      data-testid="sticky-preview-compare-pane"
+                      style={{
+                        fontSize: `${Math.max(composerTypography.renderedFontSize - 2, 14)}px`,
+                        lineHeight: composerTypography.renderedLineHeight,
+                      }}
+                    >
+                      <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                        {comparisonPreviewLabel}
+                      </p>
+                      <span className="whitespace-pre-wrap break-words font-serif">
+                        {comparisonPreviewText}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>

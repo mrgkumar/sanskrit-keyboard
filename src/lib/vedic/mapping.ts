@@ -10,7 +10,195 @@ export interface VedicMapping {
 }
 
 export type InputScheme = 'canonical-vedic' | 'baraha-compatible';
-export type OutputScheme = 'canonical-vedic' | 'baraha-compatible';
+export type OutputScheme = 'canonical-vedic' | 'baraha-compatible' | 'sanskrit-tamil-precision';
+export type OutputScript = 'roman' | 'devanagari' | 'tamil';
+export type ComparisonOutputScript = 'off' | OutputScript;
+export type RomanOutputStyle = 'canonical' | 'baraha';
+export type TamilOutputStyle = 'precision';
+
+export interface OutputTargetSettings {
+  primaryOutputScript: OutputScript;
+  comparisonOutputScript: ComparisonOutputScript;
+  romanOutputStyle: RomanOutputStyle;
+  tamilOutputStyle: TamilOutputStyle;
+}
+
+export const OUTPUT_TARGET_CONTROL_LABELS = {
+  readAs: 'Read As',
+  compare: 'Compare',
+  primaryScript: 'Primary Script',
+  compareWith: 'Compare With',
+  romanStyle: 'Roman Style',
+  tamilMode: 'Tamil Mode',
+} as const;
+
+export const OUTPUT_TARGET_VALUE_LABELS: Record<
+  OutputScript | ComparisonOutputScript | RomanOutputStyle | TamilOutputStyle,
+  string
+> = {
+  roman: 'Roman',
+  devanagari: 'Devanagari',
+  tamil: 'Tamil',
+  off: 'Off',
+  canonical: 'Canonical',
+  baraha: 'Baraha',
+  precision: 'Precision',
+};
+
+export const OUTPUT_TARGET_STYLE_OPTIONS = {
+  roman: ['canonical', 'baraha'],
+  tamil: ['precision'],
+} as const satisfies {
+  roman: RomanOutputStyle[];
+  tamil: TamilOutputStyle[];
+};
+
+export const DEFAULT_OUTPUT_TARGET_SETTINGS: OutputTargetSettings = {
+  primaryOutputScript: 'roman',
+  comparisonOutputScript: 'off',
+  romanOutputStyle: 'canonical',
+  tamilOutputStyle: 'precision',
+};
+
+export const setPrimaryOutputScript = (
+  settings: OutputTargetSettings,
+  primaryOutputScript: OutputScript
+): OutputTargetSettings => ({
+  ...settings,
+  primaryOutputScript,
+});
+
+export const setComparisonOutputScript = (
+  settings: OutputTargetSettings,
+  comparisonOutputScript: ComparisonOutputScript
+): OutputTargetSettings => ({
+  ...settings,
+  comparisonOutputScript,
+});
+
+export const getOutputTargetQuickLabels = (settings: OutputTargetSettings) => ({
+  readAs: `${OUTPUT_TARGET_CONTROL_LABELS.readAs}: ${
+    OUTPUT_TARGET_VALUE_LABELS[settings.primaryOutputScript]
+  }`,
+  compare: `${OUTPUT_TARGET_CONTROL_LABELS.compare}: ${
+    OUTPUT_TARGET_VALUE_LABELS[settings.comparisonOutputScript]
+  }`,
+});
+
+export const getPrimaryCopyTargetDescriptor = (settings: OutputTargetSettings) => {
+  if (settings.primaryOutputScript === 'roman') {
+    const styleLabel = OUTPUT_TARGET_VALUE_LABELS[settings.romanOutputStyle];
+    return {
+      script: 'roman' as const,
+      styleLabel,
+      label: `Roman (${styleLabel})`,
+      legacyOutputScheme:
+        settings.romanOutputStyle === 'baraha'
+          ? ('baraha-compatible' as const)
+          : ('canonical-vedic' as const),
+    };
+  }
+
+  if (settings.primaryOutputScript === 'tamil') {
+    const styleLabel = OUTPUT_TARGET_VALUE_LABELS[settings.tamilOutputStyle];
+    return {
+      script: 'tamil' as const,
+      styleLabel,
+      label: `Tamil (${styleLabel})`,
+      legacyOutputScheme: 'sanskrit-tamil-precision' as const,
+    };
+  }
+
+  return {
+    script: 'devanagari' as const,
+    styleLabel: null,
+    label: OUTPUT_TARGET_VALUE_LABELS.devanagari,
+    legacyOutputScheme: null,
+  };
+};
+
+export const getOutputTargetSettingsFromLegacyOutputScheme = (
+  outputScheme: OutputScheme = 'canonical-vedic'
+): OutputTargetSettings => {
+  if (outputScheme === 'baraha-compatible') {
+    return {
+      ...DEFAULT_OUTPUT_TARGET_SETTINGS,
+      primaryOutputScript: 'roman',
+      romanOutputStyle: 'baraha',
+    };
+  }
+
+  if (outputScheme === 'sanskrit-tamil-precision') {
+    return {
+      ...DEFAULT_OUTPUT_TARGET_SETTINGS,
+      primaryOutputScript: 'tamil',
+      tamilOutputStyle: 'precision',
+    };
+  }
+
+  return {
+    ...DEFAULT_OUTPUT_TARGET_SETTINGS,
+    primaryOutputScript: 'roman',
+    romanOutputStyle: 'canonical',
+  };
+};
+
+export const normalizeOutputTargetSettings = (
+  value?: Partial<OutputTargetSettings> & { outputScheme?: OutputScheme }
+): OutputTargetSettings => {
+  const hasAnyNewField =
+    value?.primaryOutputScript !== undefined ||
+    value?.comparisonOutputScript !== undefined ||
+    value?.romanOutputStyle !== undefined ||
+    value?.tamilOutputStyle !== undefined;
+
+  if (!hasAnyNewField) {
+    return getOutputTargetSettingsFromLegacyOutputScheme(value?.outputScheme);
+  }
+
+  return {
+    primaryOutputScript:
+      value?.primaryOutputScript ?? DEFAULT_OUTPUT_TARGET_SETTINGS.primaryOutputScript,
+    comparisonOutputScript:
+      value?.comparisonOutputScript ?? DEFAULT_OUTPUT_TARGET_SETTINGS.comparisonOutputScript,
+    romanOutputStyle:
+      value?.romanOutputStyle ?? DEFAULT_OUTPUT_TARGET_SETTINGS.romanOutputStyle,
+    tamilOutputStyle: 'precision',
+  };
+};
+
+export const resolveLegacyOutputSchemeBridge = (
+  settings: OutputTargetSettings,
+  _fallback: OutputScheme = 'canonical-vedic'
+): OutputScheme => {
+  void _fallback;
+  const descriptor = getPrimaryCopyTargetDescriptor(settings);
+  return descriptor.legacyOutputScheme ?? 'canonical-vedic';
+};
+
+export const OUTPUT_SCHEME_LABELS: Record<OutputScheme, string> = {
+  'canonical-vedic': 'Canonical Vedic',
+  'baraha-compatible': 'Baraha-compatible',
+  'sanskrit-tamil-precision': 'Tamil Precision',
+};
+
+export const OUTPUT_SCHEME_UI_METADATA: Record<
+  OutputScheme,
+  { buttonTitle: string; buttonDescription: string }
+> = {
+  'canonical-vedic': {
+    buttonTitle: 'Canonical Vedic Output',
+    buttonDescription: 'Copies canonical source such as `R^i`, `kh`, `ch`, and `.a`.',
+  },
+  'baraha-compatible': {
+    buttonTitle: 'Baraha-Compatible Output',
+    buttonDescription: 'Copies compatible source such as `Ru`, `K`, `c`, `oum`, and `&` without changing internal storage.',
+  },
+  'sanskrit-tamil-precision': {
+    buttonTitle: 'Tamil Precision Output',
+    buttonDescription: 'Copies Sanskrit-in-Tamil precision forms such as `க³ீதா`, `அம்ரு¹த`, and `க³ுருஃ` without changing stored source.',
+  },
+};
 
 /**
  * DEFINITIVE SCHOLARLY VEDIC MAPPING

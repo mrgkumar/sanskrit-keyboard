@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const APP_URL = 'http://localhost:3000';
+const APP_URL = process.env.APP_URL ?? 'http://localhost:3000';
 const STORAGE_KEYS_TO_CLEAR = [
   'sanskrit-keyboard.sessions.v1',
   'sanskrit-keyboard.session-index.v2',
@@ -28,7 +28,7 @@ const loadDefaultSession = async (page: Page) => {
 
 const openDisplaySettings = async (page: Page) => {
   await page.getByRole('button', { name: 'Workspace' }).click();
-  await page.getByRole('button', { name: 'Display' }).click();
+  await page.locator('button').filter({ hasText: /^Display$/ }).click();
 };
 
 const closeWorkspace = async (page: Page) => {

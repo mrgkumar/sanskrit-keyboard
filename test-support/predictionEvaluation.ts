@@ -141,6 +141,52 @@ export interface RetrievalGapAnalysis {
   sampleMissingFamilies: RetrievalGapSample[];
 }
 
+export type RetrievalMissTaxonomyBucket =
+  | 'A_exact_target_absent'
+  | 'B_present_but_not_reachable_by_normalization'
+  | 'C_family_present_exact_absent'
+  | 'D_sandhi_or_compound_variant_mismatch'
+  | 'E_segmentation_mismatch'
+  | 'F_swara_mark_mismatch'
+  | 'G_canonicalization_mismatch'
+  | 'H_evaluation_artifact_or_noisy_ground_truth';
+
+export interface RetrievalMissTaxonomyFlags {
+  exactTargetAbsent: boolean;
+  presentButNormalizationBlocked: boolean;
+  familyPresentExactAbsent: boolean;
+  sandhiOrCompoundVariantMismatch: boolean;
+  segmentationMismatch: boolean;
+  swaraMarkMismatch: boolean;
+  canonicalizationMismatch: boolean;
+  evaluationArtifactOrNoisyGroundTruth: boolean;
+}
+
+export interface RetrievalMissTaxonomySample {
+  datasetId: string;
+  rowId: string;
+  target: string;
+  devanagari: string;
+  weight: number;
+  finalPrefix: string;
+  finalPrefixSuggestions: string[];
+  familyNeighbors: string[];
+  alternateCanonicalForms: string[];
+  primaryBucket: RetrievalMissTaxonomyBucket;
+  confidence: 'high' | 'medium' | 'low';
+  flags: RetrievalMissTaxonomyFlags;
+}
+
+export interface RetrievalMissTaxonomyAnalysis {
+  profileId: string;
+  datasetId: string;
+  datasetLabel: string;
+  missingWords: number;
+  bucketCounts: Record<RetrievalMissTaxonomyBucket, number>;
+  sampleMisses: RetrievalMissTaxonomySample[];
+  limitations: string[];
+}
+
 export interface PreparedEvaluationQuery {
   rowId: string;
   target: string;
@@ -169,9 +215,14 @@ interface CachedSourceIndexPayload {
   sourceIndex: Array<[string, SourceCountIndexEntry]>;
 }
 
+interface CanonicalVariantIndex {
+  byDevanagari: Map<string, Set<string>>;
+}
+
 const SHARD_PREFIX_LENGTH = 2;
 const MIN_LOOKUP_PREFIX_LENGTH = 2;
 const MAX_SAMPLED_MISSES = 10;
+const MAX_TAXONOMY_SAMPLES = 25;
 const DEFAULT_SUGGESTION_LIMIT = 5;
 const CANONICAL_MAPPING_FILE = 'canonical-mapping.ndjson';
 const PREPARED_DATASET_CACHE_VERSION = 2;
@@ -206,6 +257,163 @@ const toFileFingerprint = (filePath: string): FileFingerprint => {
     path: path.resolve(filePath),
     size: stats.size,
     mtimeMs: stats.mtimeMs,
+  };
+};
+
+const createEmptyBucketCounts = (): Record<RetrievalMissTaxonomyBucket, number> => ({
+  A_exact_target_absent: 0,
+  B_present_but_not_reachable_by_normalization: 0,
+  C_family_present_exact_absent: 0,
+  D_sandhi_or_compound_variant_mismatch: 0,
+  E_segmentation_mismatch: 0,
+  F_swara_mark_mismatch: 0,
+  G_canonicalization_mismatch: 0,
+  H_evaluation_artifact_or_noisy_ground_truth: 0,
+});
+
+const getSharedPrefixLength = (left: string, right: string) => {
+  const leftChars = Array.from(left);
+  const rightChars = Array.from(right);
+  const maxLength = Math.min(leftChars.length, rightChars.length);
+  let count = 0;
+
+  while (count < maxLength && leftChars[count] === rightChars[count]) {
+    count += 1;
+  }
+
+  return count;
+};
+
+const buildCanonicalVariantIndex = async (dataRoot: string): Promise<CanonicalVariantIndex> => {
+  const canonicalPath = path.join(dataRoot, CANONICAL_MAPPING_FILE);
+  const byDevanagari = new Map<string, Set<string>>();
+
+  if (!fs.existsSync(canonicalPath)) {
+    return { byDevanagari };
+  }
+
+  const rl = readline.createInterface({
+    input: fs.createReadStream(canonicalPath, { encoding: 'utf8' }),
+    crlfDelay: Infinity,
+  });
+
+  for await (const line of rl) {
+    if (!line.trim()) {
+      continue;
+    }
+
+    const record = JSON.parse(line) as { devanagari?: string; itrans?: string };
+    const devanagari = typeof record.devanagari === 'string' ? record.devanagari : '';
+    const itrans = typeof record.itrans === 'string' ? normalizeForLexicalLookup(record.itrans) : '';
+    if (!devanagari || itrans.length < MIN_LOOKUP_PREFIX_LENGTH) {
+      continue;
+    }
+
+    const bucket = byDevanagari.get(devanagari) ?? new Set<string>();
+    bucket.add(itrans);
+    byDevanagari.set(devanagari, bucket);
+  }
+
+  return { byDevanagari };
+};
+
+const classifyRetrievalMiss = ({
+  datasetId,
+  query,
+  lexicon,
+  profile,
+  canonicalVariants,
+}: {
+  datasetId: string;
+  query: PreparedEvaluationQuery;
+  lexicon: DiskRuntimeLexicon;
+  profile: PredictionExperimentProfile;
+  canonicalVariants: CanonicalVariantIndex;
+}): RetrievalMissTaxonomySample => {
+  const finalPrefixLength = Math.max(MIN_LOOKUP_PREFIX_LENGTH, query.target.length - 1);
+  const finalPrefix = query.target.slice(0, finalPrefixLength);
+  const finalPrefixSuggestions = lexicon.getSuggestions(finalPrefix, profile, DEFAULT_SUGGESTION_LIMIT);
+  const familyNeighbors = lexicon
+    .getEntriesWithPrefix(finalPrefix)
+    .slice(0, 12)
+    .map((entry) => entry.itrans);
+  const alternateCanonicalForms = [...(canonicalVariants.byDevanagari.get(query.devanagari) ?? new Set<string>())]
+    .filter((candidate) => candidate !== query.target)
+    .sort((left, right) => left.localeCompare(right));
+  const shardNeighbors = lexicon
+    .getEntriesForShardValue(query.target)
+    .map((entry) => ({
+      itrans: entry.itrans,
+      sharedPrefixLength: getSharedPrefixLength(query.target, entry.itrans),
+    }))
+    .filter((entry) => entry.sharedPrefixLength >= Math.min(4, finalPrefix.length))
+    .sort((left, right) => {
+      if (right.sharedPrefixLength !== left.sharedPrefixLength) {
+        return right.sharedPrefixLength - left.sharedPrefixLength;
+      }
+
+      return left.itrans.localeCompare(right.itrans);
+    });
+
+  const hasFamilyNeighbors = familyNeighbors.length > 0;
+  const hasCompoundLikeNeighbor = shardNeighbors.some((entry) => {
+    const lengthDelta = Math.abs(entry.itrans.length - query.target.length);
+    return (
+      query.target.length >= 8 &&
+      entry.sharedPrefixLength >= Math.max(4, Math.min(query.target.length, entry.itrans.length) - 2) &&
+      lengthDelta >= 3
+    );
+  });
+  const hasSegmentationSignal =
+    !hasFamilyNeighbors &&
+    shardNeighbors.some((entry) => entry.itrans.includes('/') !== query.target.includes('/'));
+  const hasCanonicalizationSignal = alternateCanonicalForms.length > 0;
+  const hasEvaluationArtifactSignal = alternateCanonicalForms.length >= 2 && !hasFamilyNeighbors;
+
+  const flags: RetrievalMissTaxonomyFlags = {
+    exactTargetAbsent: true,
+    presentButNormalizationBlocked: false,
+    familyPresentExactAbsent: hasFamilyNeighbors,
+    sandhiOrCompoundVariantMismatch: hasCompoundLikeNeighbor,
+    segmentationMismatch: hasSegmentationSignal,
+    swaraMarkMismatch: false,
+    canonicalizationMismatch: hasCanonicalizationSignal,
+    evaluationArtifactOrNoisyGroundTruth: hasEvaluationArtifactSignal,
+  };
+
+  let primaryBucket: RetrievalMissTaxonomyBucket = 'A_exact_target_absent';
+  let confidence: RetrievalMissTaxonomySample['confidence'] = 'high';
+
+  if (flags.canonicalizationMismatch) {
+    primaryBucket = 'G_canonicalization_mismatch';
+    confidence = 'medium';
+  } else if (flags.sandhiOrCompoundVariantMismatch) {
+    primaryBucket = 'D_sandhi_or_compound_variant_mismatch';
+    confidence = 'medium';
+  } else if (flags.segmentationMismatch) {
+    primaryBucket = 'E_segmentation_mismatch';
+    confidence = 'low';
+  } else if (flags.familyPresentExactAbsent) {
+    primaryBucket = 'C_family_present_exact_absent';
+    confidence = 'high';
+  } else if (flags.evaluationArtifactOrNoisyGroundTruth) {
+    primaryBucket = 'H_evaluation_artifact_or_noisy_ground_truth';
+    confidence = 'low';
+  }
+
+  return {
+    datasetId,
+    rowId: query.rowId,
+    target: query.target,
+    devanagari: query.devanagari,
+    weight: query.weight,
+    finalPrefix,
+    finalPrefixSuggestions: finalPrefixSuggestions.map((entry) => entry.itrans),
+    familyNeighbors,
+    alternateCanonicalForms,
+    primaryBucket,
+    confidence,
+    flags,
   };
 };
 
@@ -744,6 +952,24 @@ export class DiskRuntimeLexicon {
     return this.getSuggestionsForNormalizedPrefix(normalizedPrefix, profile, limit);
   }
 
+  getEntriesWithPrefix(prefix: string) {
+    const normalizedPrefix = normalizeForLexicalLookup(prefix);
+    if (normalizedPrefix.length < MIN_LOOKUP_PREFIX_LENGTH) {
+      return [] as RuntimeLexiconEntry[];
+    }
+
+    return this.loadShardData(toShardPrefix(normalizedPrefix)).entries.filter((entry) => entry.itrans.startsWith(normalizedPrefix));
+  }
+
+  getEntriesForShardValue(value: string) {
+    const normalized = normalizeForLexicalLookup(value);
+    if (normalized.length < MIN_LOOKUP_PREFIX_LENGTH) {
+      return [] as RuntimeLexiconEntry[];
+    }
+
+    return [...this.loadShardData(toShardPrefix(normalized)).entries];
+  }
+
   hasEntry(itrans: string) {
     const normalized = normalizeForLexicalLookup(itrans);
     if (normalized.length < MIN_LOOKUP_PREFIX_LENGTH) {
@@ -1007,4 +1233,59 @@ export const evaluateLexicalPredictionsForDataset = async ({
     lexicon,
     profileId: profile.id,
   });
+};
+
+export const analyzePreparedRetrievalMissTaxonomy = async ({
+  prepared,
+  lexicon,
+  dataRoot,
+  profileId = 'baseline',
+}: {
+  prepared: PreparedDatasetEvaluation;
+  lexicon: DiskRuntimeLexicon;
+  dataRoot: string;
+  profileId?: string;
+}): Promise<RetrievalMissTaxonomyAnalysis> => {
+  const profile = resolvePredictionExperimentProfile(profileId);
+  const canonicalVariants = await buildCanonicalVariantIndex(dataRoot);
+  const bucketCounts = createEmptyBucketCounts();
+  const sampleMisses: RetrievalMissTaxonomySample[] = [];
+  let missingWords = 0;
+
+  for (const query of prepared.queries) {
+    if (lexicon.hasEntry(query.target)) {
+      continue;
+    }
+
+    missingWords += query.weight;
+    const classified = classifyRetrievalMiss({
+      datasetId: prepared.datasetId,
+      query,
+      lexicon,
+      profile,
+      canonicalVariants,
+    });
+    bucketCounts[classified.primaryBucket] += query.weight;
+
+    if (sampleMisses.length < MAX_TAXONOMY_SAMPLES) {
+      sampleMisses.push({
+        ...classified,
+        datasetId: prepared.datasetId,
+      });
+    }
+  }
+
+  return {
+    profileId: profile.id,
+    datasetId: prepared.datasetId,
+    datasetLabel: prepared.datasetLabel,
+    missingWords,
+    bucketCounts,
+    sampleMisses,
+    limitations: [
+      'Prepared evaluation queries are already normalized for lexical lookup, so B_present_but_not_reachable_by_normalization and F_swara_mark_mismatch are under-observed in this audit.',
+      'D_sandhi_or_compound_variant_mismatch and E_segmentation_mismatch are heuristic buckets inferred from neighbor structure, not morphological ground truth.',
+      'G_canonicalization_mismatch is inferred from alternate canonical ITRANS forms for the same Devanagari surface in canonical-mapping.ndjson.',
+    ],
+  };
 };

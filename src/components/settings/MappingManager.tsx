@@ -1,14 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { VEDIC_MAPPINGS } from '@/lib/vedic/mapping';
+import { DISPLAY_MAPPINGS, getAcceptedInputs, getAlternateAcceptedInputs } from '@/lib/vedic/mapping';
 import { Search, Edit3, Command } from 'lucide-react';
+import { useFlowStore } from '@/store/useFlowStore';
 
 export const MappingManager: React.FC = () => {
   const [search, setSearch] = useState('');
+  const inputScheme = useFlowStore((state) => state.displaySettings.inputScheme);
   
-  const filteredMappings = VEDIC_MAPPINGS.filter(m => 
+  const filteredMappings = DISPLAY_MAPPINGS.filter((m) =>
     m.itrans.toLowerCase().includes(search.toLowerCase()) ||
+    getAcceptedInputs(m.itrans, inputScheme).some((input) => input.toLowerCase().includes(search.toLowerCase())) ||
     m.unicode.includes(search)
   );
 
@@ -40,6 +43,11 @@ export const MappingManager: React.FC = () => {
                 <code className="text-sm font-bold text-slate-700 bg-slate-200/50 px-2 py-0.5 rounded font-mono">
                   {m.itrans}
                 </code>
+                {getAlternateAcceptedInputs(m.itrans, inputScheme).length > 0 && (
+                  <p className="text-[11px] text-slate-500">
+                    Also accepts <span className="font-mono">{getAlternateAcceptedInputs(m.itrans, inputScheme).join(', ')}</span>
+                  </p>
+                )}
               </div>
             </div>
 

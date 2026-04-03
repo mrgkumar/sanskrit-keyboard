@@ -12,7 +12,17 @@ import {
   SessionSnapshot,
 } from './types';
 import { transliterate } from '@/lib/vedic/utils';
-import { MAPPING_TRIE } from '@/lib/vedic/mapping';
+import {
+  canonicalizeAcceptedInputToken,
+  DEFAULT_OUTPUT_TARGET_SETTINGS,
+  getDisplayMapping,
+  getInputMappings,
+  getOutputTargetSettingsFromLegacyOutputScheme,
+  normalizeOutputTargetSettings,
+  resolveLegacyOutputSchemeBridge,
+  type InputScheme,
+  type OutputScheme,
+} from '@/lib/vedic/mapping';
 import {
   applyLearnedSwaraVariants,
   accumulateExactFormUsageFromText,
@@ -186,11 +196,14 @@ const DEFAULT_TYPOGRAPHY: TypographySettings = {
     renderedLineHeight: 1.75,
   },
 };
-const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
+export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   composerLayout: 'side-by-side',
   syncComposerScroll: true,
   predictionLayout: 'footer',
   predictionPopupTimeoutMs: 10000,
+  inputScheme: 'canonical-vedic',
+  outputScheme: 'canonical-vedic',
+  ...DEFAULT_OUTPUT_TARGET_SETTINGS,
   typography: DEFAULT_TYPOGRAPHY,
 };
 const INITIAL_SESSION_ID = 'session-initial';
@@ -200,7 +213,8 @@ const createDefaultSessionName = () => {
   const now = new Date();
   return `Session ${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 };
-const SESSION_LEXICAL_TOKEN_PATTERN = /[A-Za-z\\^'"_~.=\/]+/g;
+const SESSION_LEXICAL_TOKEN_PATTERN = /[A-Za-z0-9\\^'"_~.=\/&#$]+/g;
+const ACTIVE_BUFFER_PATTERN = /[A-Za-z0-9\\^'"_~.=\/&#$]+$/;
 const COMMIT_DELIMITER_PATTERN = /[\s|.,;!?\n]/;
 const DEFAULT_SWARA_PREDICTION_ENABLED = true;
 
@@ -263,17 +277,25 @@ const cloneTypographySettings = (settings: TypographySettings): TypographySettin
   document: { ...settings.document },
 });
 
-const normalizeDisplaySettings = (
+export const normalizeDisplaySettings = (
   displaySettings?: DisplaySettings,
   legacyTypography?: LegacyTypographySettings
 ): DisplaySettings => {
   if (displaySettings) {
+    const outputTargetSettings = normalizeOutputTargetSettings(displaySettings);
+
     return {
       composerLayout: displaySettings.composerLayout ?? DEFAULT_DISPLAY_SETTINGS.composerLayout,
       syncComposerScroll: displaySettings.syncComposerScroll ?? DEFAULT_DISPLAY_SETTINGS.syncComposerScroll,
       predictionLayout: displaySettings.predictionLayout ?? DEFAULT_DISPLAY_SETTINGS.predictionLayout,
       predictionPopupTimeoutMs:
         displaySettings.predictionPopupTimeoutMs ?? DEFAULT_DISPLAY_SETTINGS.predictionPopupTimeoutMs,
+      inputScheme: displaySettings.inputScheme ?? DEFAULT_DISPLAY_SETTINGS.inputScheme,
+      outputScheme: resolveLegacyOutputSchemeBridge(
+        outputTargetSettings,
+        displaySettings.outputScheme ?? DEFAULT_DISPLAY_SETTINGS.outputScheme,
+      ),
+      ...outputTargetSettings,
       typography: {
         composer: {
           ...DEFAULT_DISPLAY_SETTINGS.typography.composer,
@@ -317,6 +339,55 @@ const shouldRecordCommittedBuffer = (activeBuffer: string, source: string, caret
   const delimiter = source.slice(caret - 1, caret);
   return COMMIT_DELIMITER_PATTERN.test(delimiter);
 };
+
+export const canonicalizeCommittedEditorSource = (
+  source: string,
+  caret: number,
+  committedBuffer: string,
+  inputScheme: InputScheme = 'canonical-vedic'
+) => {
+  if (!committedBuffer || caret <= 0) {
+    return {
+      source,
+      caret,
+      canonicalBuffer: committedBuffer,
+    };
+  }
+
+  const canonicalBuffer = canonicalizeAcceptedInputToken(committedBuffer, inputScheme);
+  if (canonicalBuffer === committedBuffer) {
+    return {
+      source,
+      caret,
+      canonicalBuffer,
+    };
+  }
+
+  const delimiterIndex = caret - 1;
+  const tokenStart = delimiterIndex - committedBuffer.length;
+  if (tokenStart < 0 || source.slice(tokenStart, delimiterIndex) !== committedBuffer) {
+    return {
+      source,
+      caret,
+      canonicalBuffer: committedBuffer,
+    };
+  }
+
+  const nextSource =
+    source.slice(0, tokenStart) +
+    canonicalBuffer +
+    source.slice(delimiterIndex);
+  const delta = canonicalBuffer.length - committedBuffer.length;
+
+  return {
+    source: nextSource,
+    caret: caret + delta,
+    canonicalBuffer,
+  };
+};
+
+const normalizeViewMode = (mode: EditorState['viewMode']): EditorState['viewMode'] =>
+  mode === 'review' ? 'read' : mode;
 
 interface DeletedBlockSnapshot {
   block: CanonicalBlock;
@@ -400,6 +471,14 @@ export interface SanskritKeyboardState {
   setSyncComposerScroll: (enabled: boolean) => void;
   setPredictionLayout: (layout: DisplaySettings['predictionLayout']) => void;
   setPredictionPopupTimeoutMs: (timeoutMs: number) => void;
+  setInputScheme: (inputScheme: InputScheme) => void;
+  setPrimaryOutputScript: (primaryOutputScript: DisplaySettings['primaryOutputScript']) => void;
+  setComparisonOutputScript: (
+    comparisonOutputScript: DisplaySettings['comparisonOutputScript']
+  ) => void;
+  setRomanOutputStyle: (romanOutputStyle: DisplaySettings['romanOutputStyle']) => void;
+  setTamilOutputStyle: (tamilOutputStyle: DisplaySettings['tamilOutputStyle']) => void;
+  setOutputScheme: (outputScheme: OutputScheme) => void;
   setTypography: (
     scope: keyof TypographySettings,
     patch: Partial<TypographySettings[keyof TypographySettings]>
@@ -540,7 +619,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   },
   setViewMode: (mode) => {
     set((state) => ({
-      editorState: { ...state.editorState, viewMode: mode },
+      editorState: { ...state.editorState, viewMode: normalizeViewMode(mode) },
     }));
   },
   activateBlockChunk: (blockId, segmentIndex = 0) => {
@@ -627,8 +706,23 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     }
 
     const previousActiveBuffer = get().activeBuffer;
-    const nextSelectionStart = selectionStart ?? get().composerSelectionStart;
-    const nextSelectionEnd = selectionEnd ?? nextSelectionStart;
+    let nextSelectionStart = selectionStart ?? get().composerSelectionStart;
+    let nextSelectionEnd = selectionEnd ?? nextSelectionStart;
+    const inputScheme = get().displaySettings.inputScheme;
+    const activeMappings = getInputMappings(inputScheme);
+    const shouldCanonicalizeCommittedToken = shouldRecordCommittedBuffer(previousActiveBuffer, newSource, nextSelectionEnd);
+
+    if (shouldCanonicalizeCommittedToken) {
+      const canonicalized = canonicalizeCommittedEditorSource(
+        newSource,
+        nextSelectionEnd,
+        previousActiveBuffer,
+        inputScheme
+      );
+      newSource = canonicalized.source;
+      nextSelectionStart = canonicalized.caret;
+      nextSelectionEnd = canonicalized.caret;
+    }
 
     const isNowLong = isLongBlockSource(newSource);
     
@@ -639,7 +733,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         ...activeBlock,
         type: 'long',
         source: newSource,
-        rendered: transliterate(newSource).unicode,
+        rendered: transliterate(newSource, { inputScheme }).unicode,
         segments: newSegments,
       };
       
@@ -674,7 +768,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       set((state) => ({
         blocks: state.blocks.map((block) =>
           block.id === activeBlock!.id // activeBlock is guaranteed here
-            ? { ...block, source: newSource, rendered: transliterate(newSource).unicode }
+            ? { ...block, source: newSource, rendered: transliterate(newSource, { inputScheme }).unicode }
             : block
         ),
         composerSelectionStart: nextSelectionStart,
@@ -693,7 +787,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
             {
               id: `seg-${Date.now()}-active`,
               source: newSource,
-              rendered: transliterate(newSource).unicode,
+              rendered: transliterate(newSource, { inputScheme }).unicode,
               startOffset: 0,
               endOffset: 0,
             },
@@ -712,7 +806,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
           });
 
           const newFullSource = updatedSegments.map((segment) => segment.source).join('');
-          const newFullRendered = transliterate(newFullSource).unicode;
+          const newFullRendered = transliterate(newFullSource, { inputScheme }).unicode;
 
           return { ...block, source: newFullSource, rendered: newFullRendered, segments: updatedSegments };
         }
@@ -735,19 +829,25 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     const sourceBeforeCaret = newSource.slice(0, nextSelectionEnd);
     const wordsWithSpaces = sourceBeforeCaret.split(/(\s+)/);
     const lastWord = wordsWithSpaces[wordsWithSpaces.length - 1] || '';
-    const activeBuffer = lastWord.match(/[a-zA-Z\^'_\.~=]+$/)?.[0] || '';
+    const activeBuffer = lastWord.match(ACTIVE_BUFFER_PATTERN)?.[0] || '';
 
-    let completionMatches: typeof MAPPING_TRIE = [];
+    let completionMatches: typeof activeMappings = [];
     for (let len = Math.min(activeBuffer.length, 5); len > 0; len--) {
       const suffix = activeBuffer.slice(-len);
-      const found = MAPPING_TRIE.filter(m => m.itrans.startsWith(suffix) && m.itrans !== suffix);
+      const found = activeMappings.filter(m => m.itrans.startsWith(suffix) && m.itrans !== suffix);
       if (found.length > 0) {
         completionMatches = found;
         break;
       }
     }
-    const suggestions = (completionMatches.length > 0 ? completionMatches : MAPPING_TRIE.filter(m => m.itrans.startsWith(activeBuffer) && activeBuffer.length > 0))
-      .slice(0, 5) // Limit to 5 suggestions
+    const suggestions = (
+      completionMatches.length > 0
+        ? completionMatches
+        : activeMappings.filter(m => m.itrans.startsWith(activeBuffer) && activeBuffer.length > 0)
+    )
+      .map((mapping) => getDisplayMapping(mapping.itrans) ?? mapping)
+      .filter((mapping, index, list) => list.findIndex((entry) => entry.itrans === mapping.itrans) === index)
+      .slice(0, 5)
       .map(({ itrans, unicode }) => ({ itrans, unicode }));
 
     const alternateSuggestions: { itrans: string; unicode: string }[] = [];
@@ -759,9 +859,9 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       }
     };
     
-    const getMapping = (itrans: string) => MAPPING_TRIE.find(m => m.itrans === itrans);
+    const getMapping = (itrans: string) => getDisplayMapping(itrans) ?? activeMappings.find(m => m.itrans === itrans);
 
-    MAPPING_TRIE.filter(m => m.itrans === activeBuffer).forEach(addSuggestion);
+    activeMappings.filter(m => m.itrans === activeBuffer).forEach(addSuggestion);
 
     if (activeBuffer.length === 1 && activeBuffer.toLowerCase() !== activeBuffer.toUpperCase()) {
       addSuggestion(getMapping(activeBuffer.toLowerCase()));
@@ -793,8 +893,8 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       composerSelectionStart: nextSelectionStart,
       composerSelectionEnd: nextSelectionEnd,
     });
-    if (shouldRecordCommittedBuffer(previousActiveBuffer, newSource, nextSelectionEnd)) {
-      get().recordSessionLexicalUse(previousActiveBuffer);
+    if (shouldCanonicalizeCommittedToken) {
+      get().recordSessionLexicalUse(canonicalizeAcceptedInputToken(previousActiveBuffer, inputScheme));
     }
     void get().updateLexicalSuggestions(activeBuffer);
   },
@@ -1101,6 +1201,109 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       },
     }));
   },
+  setInputScheme: (inputScheme) => {
+    set((state) => ({
+      displaySettings: {
+        ...state.displaySettings,
+        inputScheme,
+      },
+      suggestions: [],
+      alternateSuggestions: [],
+      ghostText: null,
+      blocks: state.blocks.map((block) => ({
+        ...block,
+        rendered: transliterate(block.source, { inputScheme }).unicode,
+        segments:
+          block.type === 'long' && block.segments
+            ? block.segments.map((segment) => ({
+                ...segment,
+                rendered: transliterate(segment.source, { inputScheme }).unicode,
+              }))
+            : block.segments,
+      })),
+    }));
+  },
+  setPrimaryOutputScript: (primaryOutputScript) => {
+    set((state) => {
+      const nextOutputTargetSettings = {
+        primaryOutputScript,
+        comparisonOutputScript: state.displaySettings.comparisonOutputScript,
+        romanOutputStyle: state.displaySettings.romanOutputStyle,
+        tamilOutputStyle: state.displaySettings.tamilOutputStyle,
+      };
+
+      return {
+        displaySettings: {
+          ...state.displaySettings,
+          ...nextOutputTargetSettings,
+          outputScheme: resolveLegacyOutputSchemeBridge(
+            nextOutputTargetSettings,
+            state.displaySettings.outputScheme,
+          ),
+        },
+      };
+    });
+  },
+  setComparisonOutputScript: (comparisonOutputScript) => {
+    set((state) => ({
+      displaySettings: {
+        ...state.displaySettings,
+        comparisonOutputScript,
+      },
+    }));
+  },
+  setRomanOutputStyle: (romanOutputStyle) => {
+    set((state) => {
+      const nextOutputTargetSettings = {
+        primaryOutputScript: state.displaySettings.primaryOutputScript,
+        comparisonOutputScript: state.displaySettings.comparisonOutputScript,
+        romanOutputStyle,
+        tamilOutputStyle: state.displaySettings.tamilOutputStyle,
+      };
+
+      return {
+        displaySettings: {
+          ...state.displaySettings,
+          ...nextOutputTargetSettings,
+          outputScheme: resolveLegacyOutputSchemeBridge(
+            nextOutputTargetSettings,
+            state.displaySettings.outputScheme,
+          ),
+        },
+      };
+    });
+  },
+  setTamilOutputStyle: (tamilOutputStyle) => {
+    set((state) => {
+      const nextOutputTargetSettings = {
+        primaryOutputScript: state.displaySettings.primaryOutputScript,
+        comparisonOutputScript: state.displaySettings.comparisonOutputScript,
+        romanOutputStyle: state.displaySettings.romanOutputStyle,
+        tamilOutputStyle,
+      };
+
+      return {
+        displaySettings: {
+          ...state.displaySettings,
+          ...nextOutputTargetSettings,
+          outputScheme: resolveLegacyOutputSchemeBridge(
+            nextOutputTargetSettings,
+            state.displaySettings.outputScheme,
+          ),
+        },
+      };
+    });
+  },
+  setOutputScheme: (outputScheme) => {
+    const outputTargetSettings = getOutputTargetSettingsFromLegacyOutputScheme(outputScheme);
+    set((state) => ({
+      displaySettings: {
+        ...state.displaySettings,
+        outputScheme,
+        ...outputTargetSettings,
+      },
+    }));
+  },
   setTypography: (scope, patch) => {
     set((state) => ({
       displaySettings: {
@@ -1146,7 +1349,10 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   loadSessionSnapshot: (snapshot) => {
     set({
       blocks: snapshot.blocks,
-      editorState: snapshot.editorState,
+      editorState: {
+        ...snapshot.editorState,
+        viewMode: normalizeViewMode(snapshot.editorState.viewMode),
+      },
       displaySettings: normalizeDisplaySettings(snapshot.displaySettings, snapshot.typography),
       sessionId: snapshot.sessionId,
       sessionName: snapshot.sessionName,
@@ -1247,7 +1453,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       startSegmentIndex,
       endSegmentIndex,
       source,
-      rendered: transliterate(source).unicode,
+      rendered: transliterate(source, { inputScheme: get().displaySettings.inputScheme }).unicode,
       blockId: activeBlock.id,
     };
   },

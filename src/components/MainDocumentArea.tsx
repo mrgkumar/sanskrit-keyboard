@@ -6,15 +6,43 @@ import { useFlowStore } from '@/store/useFlowStore';
 import { CanonicalBlock } from '@/store/types';
 import { clsx } from 'clsx';
 import { Check, Copy, Trash2 } from 'lucide-react';
-import { transliterate } from '@/lib/vedic/utils';
+import { formatSourceForScript, transliterate } from '@/lib/vedic/utils';
 
 export const MainDocumentArea: React.FC = () => {
   const { blocks, editorState, setActiveBlockId, activateBlockChunk, deleteBlock, getActiveChunkGroup, displaySettings, setViewMode, setComposerSelection } = useFlowStore();
   const { activeBlockId, viewMode, focusSpan } = editorState;
   const activeChunkGroup = getActiveChunkGroup(); // Get active chunk group
-  const documentTypography = displaySettings.typography.document;
+  const {
+    typography,
+    inputScheme,
+    primaryOutputScript,
+    comparisonOutputScript,
+    romanOutputStyle,
+    tamilOutputStyle,
+  } = displaySettings;
+  const documentTypography = typography.document;
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
+  const [isWideCompareLayout, setIsWideCompareLayout] = React.useState(false);
   const documentContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const isDocumentCompareMode = comparisonOutputScript !== 'off';
+  const activeComparisonScript = comparisonOutputScript === 'off' ? null : comparisonOutputScript;
+  const documentCompareLayout = isDocumentCompareMode && isWideCompareLayout ? 'split' : 'stacked';
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const applyMatch = (event?: MediaQueryListEvent) => {
+      setIsWideCompareLayout(event?.matches ?? mediaQuery.matches);
+    };
+
+    applyMatch();
+    mediaQuery.addEventListener('change', applyMatch);
+
+    return () => mediaQuery.removeEventListener('change', applyMatch);
+  }, []);
 
   React.useEffect(() => {
     if (!copiedId) {
@@ -110,7 +138,102 @@ export const MainDocumentArea: React.FC = () => {
     window.setTimeout(() => applyComposerSelection(0), 0);
   };
 
+  const renderScriptBlock = (
+    block: CanonicalBlock,
+    script: typeof primaryOutputScript,
+    paneRole: 'primary' | 'compare',
+    viewTestIdPrefix: 'document-read' | 'document-immersive',
+  ) => {
+    if (script === 'devanagari') {
+      const renderedBlock = transliterate(block.source, { inputScheme });
+      const renderedChars = Array.from(renderedBlock.unicode);
+
+      if (paneRole === 'primary') {
+        return (
+          <p
+            key={block.id}
+            data-testid={`${viewTestIdPrefix}-block-${block.id}`}
+            className="whitespace-pre-wrap break-words rounded-md px-1 py-1 transition-colors hover:bg-slate-50"
+            title="Double-click to jump back into edit mode for this block"
+            onDoubleClick={(event) => {
+              const target = (event.target as HTMLElement).closest<HTMLElement>('[data-target-index]');
+              if (!target) {
+                jumpToEditPosition(block, 0);
+                return;
+              }
+
+              const targetIndex = Number(target.dataset.targetIndex);
+              if (Number.isNaN(targetIndex)) {
+                return;
+              }
+
+              let wordStart = targetIndex;
+              while (wordStart > 0 && /\S/.test(renderedChars[wordStart - 1] ?? '')) {
+                wordStart -= 1;
+              }
+
+              const sourceWordStart = renderedBlock.targetToSourceMap[wordStart] ?? 0;
+              jumpToEditPosition(block, sourceWordStart);
+            }}
+          >
+            {renderedChars.map((char, index) => (
+              <span
+                key={`${block.id}-${index}-${char}`}
+                data-target-index={index}
+                className="cursor-text"
+              >
+                {char}
+              </span>
+            ))}
+          </p>
+        );
+      }
+
+      return (
+        <p
+          key={`${block.id}-compare`}
+          data-testid={`${viewTestIdPrefix}-compare-block-${block.id}`}
+          className="whitespace-pre-wrap break-words rounded-md px-1 py-1 text-slate-700"
+        >
+          {renderedBlock.unicode}
+        </p>
+      );
+    }
+
+    const formatted = formatSourceForScript(block.source, script, {
+      romanOutputStyle,
+      tamilOutputStyle,
+    });
+
+    return (
+      <p
+        key={`${block.id}-${script}-${paneRole}`}
+        data-testid={`${viewTestIdPrefix}-${paneRole}-block-${block.id}`}
+        className={clsx(
+          'whitespace-pre-wrap break-words rounded-md px-1 py-1',
+          script === 'roman' ? 'font-mono text-slate-800' : 'font-serif text-slate-900',
+        )}
+      >
+        {formatted}
+      </p>
+    );
+  };
+
   if (viewMode === 'read' || viewMode === 'immersive') {
+    const viewTestIdPrefix = viewMode === 'immersive' ? 'document-immersive' : 'document-read';
+    const primaryPaneLabel =
+      primaryOutputScript === 'roman'
+        ? 'Roman'
+        : primaryOutputScript === 'tamil'
+          ? 'Tamil'
+          : 'Devanagari';
+    const comparePaneLabel =
+      comparisonOutputScript === 'roman'
+        ? 'Roman'
+        : comparisonOutputScript === 'tamil'
+          ? 'Tamil'
+          : 'Devanagari';
+
     return (
       <div
         ref={documentContainerRef}
@@ -131,56 +254,51 @@ export const MainDocumentArea: React.FC = () => {
           <div
             className="font-serif text-slate-900"
             data-testid={viewMode === 'immersive' ? 'document-immersive-mode' : 'document-read-mode'}
+            data-compare-mode={isDocumentCompareMode ? 'compare' : 'single'}
+            data-compare-layout={documentCompareLayout}
             style={{
               fontSize: `${documentTypography.renderedFontSize}px`,
               lineHeight: documentTypography.renderedLineHeight,
             }}
           >
-            {blocks
-              .filter((block) => block.rendered.trim().length > 0)
-              .map((block) => {
-                const renderedBlock = transliterate(block.source);
-                const renderedChars = Array.from(renderedBlock.unicode);
+            <div
+              className={clsx(
+                'grid gap-5',
+                isDocumentCompareMode
+                  ? documentCompareLayout === 'split'
+                    ? 'lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]'
+                    : 'grid-cols-1'
+                  : 'grid-cols-1'
+              )}
+            >
+              <section
+                data-testid={`${viewTestIdPrefix}-primary-pane`}
+                className="space-y-3 rounded-2xl border border-blue-100 bg-white px-4 py-4 shadow-sm"
+              >
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">
+                  {primaryPaneLabel}
+                </p>
+                {blocks
+                  .filter((block) => block.rendered.trim().length > 0)
+                  .map((block) => renderScriptBlock(block, primaryOutputScript, 'primary', viewTestIdPrefix))}
+              </section>
 
-                return (
-                  <p
-                    key={block.id}
-                    data-testid={`document-read-block-${block.id}`}
-                    className="whitespace-pre-wrap break-words rounded-md px-1 py-1 transition-colors hover:bg-slate-50"
-                    title="Double-click to jump back into edit mode for this block"
-                    onDoubleClick={(event) => {
-                      const target = (event.target as HTMLElement).closest<HTMLElement>('[data-target-index]');
-                      if (!target) {
-                        jumpToEditPosition(block, 0);
-                        return;
-                      }
-
-                      const targetIndex = Number(target.dataset.targetIndex);
-                      if (Number.isNaN(targetIndex)) {
-                        return;
-                      }
-
-                      let wordStart = targetIndex;
-                      while (wordStart > 0 && /\S/.test(renderedChars[wordStart - 1] ?? '')) {
-                        wordStart -= 1;
-                      }
-
-                      const sourceWordStart = renderedBlock.targetToSourceMap[wordStart] ?? 0;
-                      jumpToEditPosition(block, sourceWordStart);
-                    }}
-                  >
-                    {renderedChars.map((char, index) => (
-                      <span
-                        key={`${block.id}-${index}-${char}`}
-                        data-target-index={index}
-                        className="cursor-text"
-                      >
-                        {char}
-                      </span>
-                    ))}
+              {activeComparisonScript && (
+                <section
+                  data-testid={`${viewTestIdPrefix}-compare-pane`}
+                  className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-slate-700"
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                    {comparePaneLabel}
                   </p>
-                );
-              })}
+                  {blocks
+                    .filter((block) => block.rendered.trim().length > 0)
+                    .map((block) =>
+                      renderScriptBlock(block, activeComparisonScript, 'compare', viewTestIdPrefix),
+                    )}
+                </section>
+              )}
+            </div>
           </div>
         </div>
       </div>

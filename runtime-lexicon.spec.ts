@@ -34,6 +34,20 @@ test.describe('runtime lexical lookup normalization', () => {
     expect(normalizeForLexicalLookup('RRi')).toBe('RRi');
   });
 
+  test('collapses shipped Baraha-compatible aliases into canonical lexical buckets', () => {
+    expect(normalizeForLexicalLookup('Ru')).toBe('RRi');
+    expect(normalizeForLexicalLookup('RU')).toBe('RRI');
+    expect(normalizeForLexicalLookup('~lu')).toBe('LLi');
+    expect(normalizeForLexicalLookup('~lU')).toBe('LLI');
+    expect(normalizeForLexicalLookup('ee')).toBe('I');
+    expect(normalizeForLexicalLookup('oo')).toBe('U');
+    expect(normalizeForLexicalLookup('ou')).toBe('au');
+    expect(normalizeForLexicalLookup('oum')).toBe('OM');
+    expect(normalizeForLexicalLookup('&')).toBe('.a');
+    expect(normalizeForLexicalLookup('Karma')).toBe('kharma');
+    expect(normalizeForLexicalLookup('~gama')).toBe('~Nama');
+  });
+
   test('allows lexical lookup after stripping svara markers', () => {
     expect(shouldLookupLexicalSuggestions("a'g")).toBe(true);
     expect(shouldLookupLexicalSuggestions('a\\_g')).toBe(true);
@@ -199,6 +213,14 @@ test.describe('runtime lexical lookup normalization', () => {
     expect(counts.devaaH).toBe(1);
   });
 
+  test('session lexical usage merges canonical and Baraha-compatible alias forms', () => {
+    const counts = accumulateSessionLexicalUsageFromText({}, 'RuShi R^iShi &tman .atman oum OM');
+
+    expect(counts.RRiShi).toBe(2);
+    expect(counts['.atman']).toBe(2);
+    expect(counts.OM).toBe(2);
+  });
+
   test('extracts exact swara-marked forms separately from normalized lexical counts', () => {
     const counts = accumulateSessionExactFormUsageFromText(
       {},
@@ -207,8 +229,14 @@ test.describe('runtime lexical lookup normalization', () => {
 
     expect(counts.bhadraM).toEqual({ bha_draM: 1 });
     expect(counts.karNebhiH).toEqual({ "karNe'bhiH": 1 });
-    expect(counts.shRRiNuyaama).toEqual({ "shR^iNu_yaama'": 1 });
+    expect(counts.shRRiNuyaama).toEqual({ "shRRiNu_yaama'": 1 });
     expect(counts.devaa).toBeUndefined();
+  });
+
+  test('canonicalizes alias-flavored exact swara forms before they are stored for prediction', () => {
+    const counts = accumulateSessionExactFormUsageFromText({}, "Ru'Si R^i'Si");
+
+    expect(counts.RRiSi).toEqual({ "RRi'Si": 2 });
   });
 
   test('applies learned swara variants from corpus and user overlays when enabled', async () => {

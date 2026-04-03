@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import readline from 'node:readline';
-import { fileURLToPath } from 'node:url';
 import { getAutocompleteDataRoot } from '../src/lib/server/autocompleteDataRoot.ts';
 
 interface CanonicalMappingRecord {
@@ -45,8 +44,6 @@ interface RuntimeLexiconSummary {
   };
 }
 
-const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
-const APP_ROOT = path.resolve(SCRIPT_DIR, '..');
 const DEFAULT_OUTPUT_DIR = getAutocompleteDataRoot();
 const DEFAULT_INPUT_PATH = path.resolve(DEFAULT_OUTPUT_DIR, 'canonical-mapping.ndjson');
 const DEFAULT_TEMP_BUCKET_DIR = path.resolve(DEFAULT_OUTPUT_DIR, '.runtime-lexicon-buckets');
