@@ -15,26 +15,36 @@ const VIGNANAM_ALIGNMENT_ANCHORS: Record<string, Array<{ index: number; minimumS
     { index: 30, minimumScore: 0.92 },
     { index: 4, minimumScore: 0.92 },
     { index: 17, minimumScore: 0.92 },
+    { index: 24, minimumScore: 0.91 },
+    { index: 22, minimumScore: 0.91 },
   ],
   'sri-rudram-chamakam': [
     { index: 10, minimumScore: 0.89 },
     { index: 7, minimumScore: 0.88 },
     { index: 11, minimumScore: 0.88 },
+    { index: 6, minimumScore: 0.88 },
+    { index: 1, minimumScore: 0.86 },
   ],
   'purusha-suktam': [
     { index: 25, minimumScore: 0.93 },
     { index: 15, minimumScore: 0.90 },
     { index: 18, minimumScore: 0.90 },
+    { index: 19, minimumScore: 0.90 },
+    { index: 11, minimumScore: 0.90 },
   ],
   'narayana-suktam': [
     { index: 6, minimumScore: 0.95 },
     { index: 5, minimumScore: 0.93 },
     { index: 10, minimumScore: 0.93 },
+    { index: 4, minimumScore: 0.90 },
+    { index: 2, minimumScore: 0.90 },
   ],
   'sri-suktam': [
     { index: 31, minimumScore: 0.96 },
     { index: 11, minimumScore: 0.93 },
     { index: 22, minimumScore: 0.92 },
+    { index: 28, minimumScore: 0.91 },
+    { index: 6, minimumScore: 0.91 },
   ],
 };
 
