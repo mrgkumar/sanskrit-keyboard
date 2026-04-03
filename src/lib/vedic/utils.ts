@@ -57,6 +57,10 @@ export interface ReverseTamilInputOptions {
   outputMode: 'canonical' | 'baraha';
 }
 
+export interface TamilPrecisionToken {
+  token: string;
+}
+
 const TRANSLITERATION_CACHE = new Map<string, TransliterationResult>();
 const TRANSLITERATION_CACHE_MAX = 50000;
 const BARAHA_OUTPUT_OVERRIDES: Array<[string, string]> = [
@@ -196,6 +200,7 @@ const TAMIL_PRECISION_DEPENDENT_VOCALICS_TO_CANONICAL: Record<string, string> = 
   '்லு¹': 'L^i',
 };
 const TAMIL_PRECISION_CONSONANTS_TO_CANONICAL: Record<string, string> = {
+  'க்ஷ': 'kSh',
   'க²': 'kh',
   'க³': 'g',
   'க⁴': 'gh',
@@ -250,6 +255,7 @@ const TAMIL_PRECISION_DEPENDENT_VOCALIC_TOKENS = Object.keys(TAMIL_PRECISION_DEP
   .sort((a, b) => b.length - a.length);
 const TAMIL_PRECISION_CONSONANT_TOKENS = Object.keys(TAMIL_PRECISION_CONSONANTS_TO_CANONICAL)
   .sort((a, b) => b.length - a.length);
+const TAMIL_PRECISION_PUNCTUATION_PATTERN = /[().,?!-]/u;
 
 const normalizeTamilPrecisionInput = (value: string) => {
   let normalized = value;
@@ -482,11 +488,12 @@ export const getCopySourceControlText = (settings: OutputTargetSettings) => {
 };
 
 export const parseTamilPrecisionToCanonical = (value: string): string | null => {
-  const normalized = normalizeTamilPrecisionInput(value);
-  if (!hasTamilPrecisionSignal(value) && !isAtomicPlainTamilPrecisionForm(normalized)) {
+  const tokens = tokenizeTamilPrecisionInput(value);
+  if (!tokens) {
     return null;
   }
 
+  const normalized = tokens.map(({ token }) => token).join('');
   if (TAMIL_PRECISION_AMBIGUOUS_PLAIN_VOCALIC_PATTERN.test(normalized)) {
     return null;
   }
@@ -494,64 +501,60 @@ export const parseTamilPrecisionToCanonical = (value: string): string | null => 
   let canonical = '';
   let index = 0;
 
-  while (index < normalized.length) {
-    const independent = matchLongestTamilPrecisionToken(normalized, index, TAMIL_PRECISION_INDEPENDENT_TOKENS);
-    if (independent) {
-      canonical += TAMIL_PRECISION_INDEPENDENT_VOWELS_TO_CANONICAL[independent];
-      index += independent.length;
+  while (index < tokens.length) {
+    const currentToken = tokens[index]?.token;
+    if (!currentToken) {
+      break;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(TAMIL_PRECISION_INDEPENDENT_VOWELS_TO_CANONICAL, currentToken)) {
+      canonical += TAMIL_PRECISION_INDEPENDENT_VOWELS_TO_CANONICAL[currentToken];
+      index += 1;
       continue;
     }
 
-    const consonant = matchLongestTamilPrecisionToken(normalized, index, TAMIL_PRECISION_CONSONANT_TOKENS);
-    if (consonant) {
-      const consonantSource = TAMIL_PRECISION_CONSONANTS_TO_CANONICAL[consonant];
-      const afterConsonant = index + consonant.length;
-      const dependentVocalic = matchLongestTamilPrecisionToken(
-        normalized,
-        afterConsonant,
-        TAMIL_PRECISION_DEPENDENT_VOCALIC_TOKENS,
-      );
+    if (Object.prototype.hasOwnProperty.call(TAMIL_PRECISION_CONSONANTS_TO_CANONICAL, currentToken)) {
+      const consonantSource = TAMIL_PRECISION_CONSONANTS_TO_CANONICAL[currentToken];
+      const nextToken = tokens[index + 1]?.token ?? '';
 
-      if (dependentVocalic) {
-        canonical += consonantSource + TAMIL_PRECISION_DEPENDENT_VOCALICS_TO_CANONICAL[dependentVocalic];
-        index = afterConsonant + dependentVocalic.length;
+      if (Object.prototype.hasOwnProperty.call(TAMIL_PRECISION_DEPENDENT_VOCALICS_TO_CANONICAL, nextToken)) {
+        canonical += consonantSource + TAMIL_PRECISION_DEPENDENT_VOCALICS_TO_CANONICAL[nextToken];
+        index += 2;
         continue;
       }
 
-      const nextChar = normalized[afterConsonant] ?? '';
-      if (nextChar === TAMIL_PRECISION_PULLI) {
+      if (nextToken === TAMIL_PRECISION_PULLI) {
         canonical += consonantSource;
-        index = afterConsonant + 1;
+        index += 2;
         continue;
       }
 
-      const dependentVowel = TAMIL_PRECISION_DEPENDENT_VOWELS_TO_CANONICAL[nextChar];
+      const dependentVowel = TAMIL_PRECISION_DEPENDENT_VOWELS_TO_CANONICAL[nextToken];
       if (dependentVowel) {
         canonical += consonantSource + dependentVowel;
-        index = afterConsonant + 1;
+        index += 2;
         continue;
       }
 
       canonical += `${consonantSource}a`;
-      index = afterConsonant;
+      index += 1;
       continue;
     }
 
-    const current = normalized[index];
-    if (current === 'ஂ') {
+    if (currentToken === 'ஂ') {
       canonical += 'M';
       index += 1;
       continue;
     }
 
-    if (current === 'ஃ') {
+    if (currentToken === 'ஃ') {
       canonical += ':';
       index += 1;
       continue;
     }
 
-    if (/\s/u.test(current) || /[().,?!-]/u.test(current)) {
-      canonical += current;
+    if (/\s/u.test(currentToken) || TAMIL_PRECISION_PUNCTUATION_PATTERN.test(currentToken)) {
+      canonical += currentToken;
       index += 1;
       continue;
     }
@@ -560,6 +563,57 @@ export const parseTamilPrecisionToCanonical = (value: string): string | null => 
   }
 
   return canonical;
+};
+
+export const tokenizeTamilPrecisionInput = (value: string): TamilPrecisionToken[] | null => {
+  const normalized = normalizeTamilPrecisionInput(value);
+  if (!hasTamilPrecisionSignal(value) && !isAtomicPlainTamilPrecisionForm(normalized)) {
+    return null;
+  }
+
+  const tokens: TamilPrecisionToken[] = [];
+  let index = 0;
+
+  while (index < normalized.length) {
+    const independent = matchLongestTamilPrecisionToken(normalized, index, TAMIL_PRECISION_INDEPENDENT_TOKENS);
+    if (independent) {
+      tokens.push({ token: independent });
+      index += independent.length;
+      continue;
+    }
+
+    const consonant = matchLongestTamilPrecisionToken(normalized, index, TAMIL_PRECISION_CONSONANT_TOKENS);
+    if (consonant) {
+      tokens.push({ token: consonant });
+      index += consonant.length;
+      continue;
+    }
+
+    const dependentVocalic = matchLongestTamilPrecisionToken(normalized, index, TAMIL_PRECISION_DEPENDENT_VOCALIC_TOKENS);
+    if (dependentVocalic) {
+      tokens.push({ token: dependentVocalic });
+      index += dependentVocalic.length;
+      continue;
+    }
+
+    const current = normalized[index];
+    if (
+      current === TAMIL_PRECISION_PULLI ||
+      Object.prototype.hasOwnProperty.call(TAMIL_PRECISION_DEPENDENT_VOWELS_TO_CANONICAL, current) ||
+      current === 'ஂ' ||
+      current === 'ஃ' ||
+      /\s/u.test(current) ||
+      TAMIL_PRECISION_PUNCTUATION_PATTERN.test(current)
+    ) {
+      tokens.push({ token: current });
+      index += 1;
+      continue;
+    }
+
+    return null;
+  }
+
+  return tokens;
 };
 
 const getTamilReverseRejectionReason = (

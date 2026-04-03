@@ -1,0 +1,87 @@
+export const TAMIL_REVERSE_ATOMIC_AKSHARA_FIXTURES = [
+  ['க', 'ka'],
+  ['க²', 'kha'],
+  ['க³', 'ga'],
+  ['க⁴', 'gha'],
+  ['ச', 'cha'],
+  ['ச²', 'Cha'],
+  ['ஜ', 'ja'],
+  ['ஜ²', 'jha'],
+  ['ட', 'Ta'],
+  ['ட²', 'Tha'],
+  ['ட³', 'Da'],
+  ['ட⁴', 'Dha'],
+  ['த', 'ta'],
+  ['த²', 'tha'],
+  ['த³', 'da'],
+  ['த⁴', 'dha'],
+  ['ப', 'pa'],
+  ['ப²', 'pha'],
+  ['ப³', 'ba'],
+  ['ப⁴', 'bha'],
+] as const;
+
+export const TAMIL_REVERSE_DEAD_CONSONANT_FIXTURES = [
+  ['க்', 'k'],
+  ['க²்', 'kh'],
+  ['ஜ்', 'j'],
+  ['த⁴்', 'dh'],
+  ['ப³்', 'b'],
+  ['ஹ்', 'h'],
+  ['க்ஷ்', 'kSh'],
+] as const;
+
+export const TAMIL_REVERSE_DIRECT_GRANTHA_FIXTURES = [
+  ['ஶ', 'sha'],
+  ['ஷ', 'Sha'],
+  ['ஸ', 'sa'],
+  ['ஹ', 'ha'],
+  ['க்ஷ', 'kSha'],
+] as const;
+
+export const TAMIL_REVERSE_VOCALIC_FIXTURES = [
+  ['ரு¹', 'R^i'],
+  ['ரூ¹', 'R^I'],
+  ['லு¹', 'L^i'],
+  ['லூ¹', 'L^I'],
+  ['ரு<R>', 'R^i'],
+  ['ரூ<R>', 'R^I'],
+  ['லு<L>', 'L^i'],
+  ['லூ<L>', 'L^I'],
+] as const;
+
+export const TAMIL_REVERSE_SPECIAL_MARK_FIXTURES = [
+  ['ஂ', 'M'],
+  ['ஃ', ':'],
+] as const;
+
+export const TAMIL_REVERSE_CLUSTER_FIXTURES = [
+  ['க³ீதா', 'gItA'],
+  ['த⁴ர்ம', 'dharma'],
+  ['ப⁴க்தி', 'bhakti'],
+  ['லக்ஷ்மீ', 'lakShmI'],
+  ['ஜ்ஞாந', 'j~nAna'],
+  ['அம்ரு¹த', 'amR^ita'],
+  ['க்ரு¹த', 'kR^ita'],
+  ['க்லு¹ப்த', 'kL^ipta'],
+  ['ஸஂஸ்க்ரு¹த', 'saMskR^ita'],
+  ['க³ுருஃ', 'guru:'],
+  ['ஶ்ரீ', 'shrI'],
+] as const;
+
+export const TAMIL_REVERSE_ASCII_NORMALIZATION_FIXTURES = [
+  { rich: 'க³ீதா', ascii: 'க^3ீதா', tokens: ['க³', 'ீ', 'த', 'ா'] },
+  { rich: 'க²்', ascii: 'க^2்', tokens: ['க²', '்'] },
+  { rich: 'ரு¹', ascii: 'ரு<R>', tokens: ['ரு¹'] },
+  { rich: 'லூ¹', ascii: 'லூ<L>', tokens: ['லூ¹'] },
+  { rich: 'க்ரு¹த', ascii: 'க்ரு<R>த', tokens: ['க', '்ரு¹', 'த'] },
+] as const;
+
+export const TAMIL_REVERSE_LONGEST_MATCH_TOKEN_FIXTURES = [
+  { source: 'க்ஷ', tokens: ['க்ஷ'] },
+  { source: 'க்ஷ்', tokens: ['க்ஷ', '்'] },
+  { source: 'ரு¹', tokens: ['ரு¹'] },
+  { source: 'க²', tokens: ['க²'] },
+  { source: 'த⁴ர்ம', tokens: ['த⁴', 'ர', '்', 'ம'] },
+  { source: 'க்ரு¹த', tokens: ['க', '்ரு¹', 'த'] },
+] as const;

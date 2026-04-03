@@ -5,6 +5,7 @@ import {
   formatSourceForOutput,
   formatSourceForPrimaryOutput,
   getCopySourceControlText,
+  tokenizeTamilPrecisionInput,
   reverseTamilInput,
   transliterate,
   detransliterate,
@@ -58,6 +59,16 @@ import {
   TAMIL_PRECISION_SUPERSCRIPT_MARKERS,
   TAMIL_PRECISION_VOCALIC_TOKENS,
 } from './test-support/tamilPrecisionNotation';
+import {
+  TAMIL_REVERSE_ASCII_NORMALIZATION_FIXTURES,
+  TAMIL_REVERSE_ATOMIC_AKSHARA_FIXTURES,
+  TAMIL_REVERSE_CLUSTER_FIXTURES,
+  TAMIL_REVERSE_DEAD_CONSONANT_FIXTURES,
+  TAMIL_REVERSE_DIRECT_GRANTHA_FIXTURES,
+  TAMIL_REVERSE_LONGEST_MATCH_TOKEN_FIXTURES,
+  TAMIL_REVERSE_SPECIAL_MARK_FIXTURES,
+  TAMIL_REVERSE_VOCALIC_FIXTURES,
+} from './test-support/tamilReverseFixtures';
 
 const normalize = (value: string) => value.normalize('NFC');
 const BARAHA_ALIAS_TOKENS = ['Ru', 'RU', '~lu', '~lU', 'K', 'G', 'c', 'C', 'J', 'P', 'B', 'ee', 'oo', 'ou', 'oum', '&', '~g', '~j'] as const;
@@ -153,6 +164,9 @@ const reverseTamilCanonical = (value: string) => {
 
 const reverseTamilRejection = (value: string) =>
   reverseTamilInput(value, { inputMode: 'tamil-precision', outputMode: 'canonical' });
+
+const tokenizeTamilPrecision = (value: string) =>
+  tokenizeTamilPrecisionInput(value)?.map(({ token }) => token) ?? null;
 
 test('Accent scheme maps forward with the new canonical inputs', () => {
   expect(transliterate("ga'").unicode).toBe('ग॑');
@@ -601,6 +615,57 @@ test('Tamil reverse Gate 0 keeps rejection identifiers stable across phase-1 cla
 test('Tamil reverse Gate 0 does not let display outputScheme select parser mode implicitly', () => {
   expect(detransliterate('க³ீதா', { outputScheme: 'sanskrit-tamil-precision' })).toBe('க³ீதா');
   expect(reverseTamilCanonical('க³ீதா')).toBe('gItA');
+});
+
+test('Tamil reverse Gate 1 freezes accepted atomic aksharas as inherent-a output units', () => {
+  const acceptedFixtures = [
+    ...TAMIL_REVERSE_ATOMIC_AKSHARA_FIXTURES,
+    ...TAMIL_REVERSE_DIRECT_GRANTHA_FIXTURES,
+    ...TAMIL_REVERSE_VOCALIC_FIXTURES,
+    ...TAMIL_REVERSE_SPECIAL_MARK_FIXTURES,
+  ];
+
+  for (const [tamilPrecision, canonical] of acceptedFixtures) {
+    expect(reverseTamilCanonical(tamilPrecision), `${tamilPrecision} should reverse to ${canonical}`).toBe(canonical);
+  }
+});
+
+test('Tamil reverse Gate 1 freezes dead-consonant tokenization separately from inherent-a aksharas', () => {
+  for (const [tamilPrecision, canonical] of TAMIL_REVERSE_DEAD_CONSONANT_FIXTURES) {
+    expect(reverseTamilCanonical(tamilPrecision), `${tamilPrecision} should reverse to dead consonant ${canonical}`).toBe(canonical);
+  }
+});
+
+test('Tamil reverse Gate 1 freezes cluster fixtures across virama clusters, vowel signs, and mixed precision markers', () => {
+  for (const [tamilPrecision, canonical] of TAMIL_REVERSE_CLUSTER_FIXTURES) {
+    expect(reverseTamilCanonical(tamilPrecision), `${tamilPrecision} should reverse to frozen cluster output ${canonical}`).toBe(canonical);
+  }
+});
+
+test('Tamil reverse Gate 1 normalizes rich and ASCII fallback forms to the same token stream and canonical output', () => {
+  for (const { rich, ascii, tokens } of TAMIL_REVERSE_ASCII_NORMALIZATION_FIXTURES) {
+    expect(tokenizeTamilPrecision(rich), `${rich} should tokenize to frozen token stream`).toEqual(tokens);
+    expect(tokenizeTamilPrecision(ascii), `${ascii} should normalize to frozen token stream`).toEqual(tokens);
+    expect(reverseTamilCanonical(rich), `${rich} should reverse canonically`).toBe(reverseTamilCanonical(ascii));
+  }
+});
+
+test('Tamil reverse Gate 1 freezes longest-match tokenization for kSha, vocalic markers, and superscript-bearing aksharas', () => {
+  for (const { source, tokens } of TAMIL_REVERSE_LONGEST_MATCH_TOKEN_FIXTURES) {
+    expect(tokenizeTamilPrecision(source), `${source} should preserve longest-match tokenization`).toEqual(tokens);
+  }
+});
+
+test('Tamil reverse Gate 1 keeps accepted reverse fixtures independent from forward formatter output corpora', () => {
+  const forwardRichValues = new Set(TAMIL_PRECISION_RICH_GOLDENS.map(([, tamilPrecision]) => tamilPrecision));
+  const reverseOnlyFixtures = [
+    ...TAMIL_REVERSE_DEAD_CONSONANT_FIXTURES.map(([tamilPrecision]) => tamilPrecision),
+    ...TAMIL_REVERSE_ASCII_NORMALIZATION_FIXTURES.map(({ ascii }) => ascii),
+  ];
+
+  expect(reverseOnlyFixtures.every((fixture) => !forwardRichValues.has(fixture))).toBe(true);
+  expect(reverseOnlyFixtures).toContain('க்ஷ்');
+  expect(reverseOnlyFixtures).toContain('க்ரு<R>த');
 });
 
 test('Gate 1 migrates all legacy outputScheme values into the new output-target state', () => {
