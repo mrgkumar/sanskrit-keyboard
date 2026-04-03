@@ -45,10 +45,10 @@ const renderTamilPrecisionText = (text: string) => {
       nodes.push(
         <span key={`${index}-${char}-${marker}`} className="tamil-precision-akshara">
           {char}
-          {trailingMarks}
           <span aria-hidden="true" className="tamil-precision-marker">
             {marker}
           </span>
+          {trailingMarks}
         </span>
       );
       index = cursor - 1;
