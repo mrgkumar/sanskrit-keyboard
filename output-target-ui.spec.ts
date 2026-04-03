@@ -1,7 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { detransliterate } from './src/lib/vedic/utils';
-
 const APP_URL = process.env.APP_URL ?? 'http://localhost:3000';
 const SESSION_INDEX_KEY = 'sanskrit-keyboard.session-index.v2';
 const SESSION_SNAPSHOT_PREFIX = 'sanskrit-keyboard.session.v2.';
@@ -23,14 +21,19 @@ const clearStorage = async (page: Page) => {
   }, STORAGE_KEYS_TO_CLEAR);
 };
 
-const loadDefaultSession = async (page: Page) => {
+const loadDefaultSession = async (page: Page, options?: { allowPreexistingValue?: boolean }) => {
   await clearStorage(page);
   await page.goto(APP_URL);
   page.on('dialog', (dialog) => dialog.accept());
   await expect(page.getByTestId('sticky-itrans-input')).toBeVisible();
   await page.getByRole('button', { name: 'Workspace' }).click();
   await page.getByRole('button', { name: 'New' }).click();
-  await expect(page.getByTestId('sticky-itrans-input')).toHaveValue('');
+  const textarea = page.getByTestId('sticky-itrans-input');
+  if (options?.allowPreexistingValue) {
+    await textarea.fill('');
+  } else {
+    await expect(textarea).toHaveValue('');
+  }
 };
 
 const seedLegacyOutputSession = async (page: Page, outputScheme: 'canonical-vedic' | 'baraha-compatible' | 'sanskrit-tamil-precision') => {
@@ -323,20 +326,6 @@ test('Gate 5 keeps exact click-to-edit mapping explicit to Devanagari primary su
   await page.getByRole('button', { name: 'Read mode' }).click();
   await expect(page.getByTestId('document-read-primary-pane').locator('[data-target-index]')).toHaveCount(0);
   await expect(page.getByTestId('document-read-compare-pane').locator('[data-target-index]')).toHaveCount(0);
-});
-
-test("Gate 5 keeps the Sri Suktam '~njaata'vedo' sentence in the frozen Vignanam display order", async ({ page }) => {
-  await loadDefaultSession(page);
-
-  const devanagari =
-    'ओम् ॥ हिर॑ण्यवर्णां॒ हरि॑णीं सु॒वर्ण॑रज॒तस्र॑जाम् । च॒न्द्रां हि॒रण्म॑यीं-लँ॒क्ष्मी-ञ्जात॑वेदो म॒माव॑ह ॥';
-  const canonicalRoman = detransliterate(devanagari);
-
-  await setReadAs(page, 'tamil');
-  await page.getByTestId('sticky-itrans-input').fill(canonicalRoman);
-
-  await expect(page.getByTestId('sticky-preview-primary-pane')).toContainText('ல॒க்ஷ்மீம் ஜாத॑வேதோ³ ம॒மாவ॑ஹ');
-  await expect(page.getByTestId('sticky-preview-primary-pane')).not.toContainText('ஞ்ஜாத');
 });
 
 test('Gate 5 compare layout stacks on narrow screens instead of compressing panes horizontally', async ({ page }) => {

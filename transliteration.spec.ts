@@ -5,6 +5,7 @@ import {
   formatSourceForOutput,
   formatSourceForPrimaryOutput,
   getCopySourceControlText,
+  normalizeTamilPrecisionDisplayText,
   tokenizeTamilPrecisionInput,
   reverseTamilInput,
   transliterate,
@@ -577,6 +578,13 @@ test('Gate 0 keeps existing Sanskrit output schemes free of Tamil precision nota
   expect(barahaOutput).toBe('kRuta M H');
   expect(/[ஂஃ¹²³⁴]/u.test(canonicalOutput)).toBe(false);
   expect(/[ஂஃ¹²³⁴]/u.test(barahaOutput)).toBe(false);
+});
+
+test("Tamil Precision display normalization keeps च॒न्द्रां as ச॒ந்த்³ராம்", () => {
+  const line = 'ச॒ந்த்³ராம் ஹி॒ரண்ம॑யீம் ல॒க்ஷ்மீம் ஜாத॑வேதோ³ ம॒மாவ॑ஹ';
+
+  expect(normalizeTamilPrecisionDisplayText(line)).toBe(line);
+  expect(normalizeTamilPrecisionDisplayText(line)).toContain('ச॒ந்த்³ராம்');
 });
 
 test('Tamil reverse Gate 0 freezes the structured success result for canonical output', () => {
