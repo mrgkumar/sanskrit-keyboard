@@ -81,6 +81,22 @@ const server = createServer((req, res) => {
   serveFile(target.filePath, res);
 });
 
+server.on('error', (error) => {
+  if (error && typeof error === 'object' && 'code' in error) {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`Port ${port} is already in use. Stop the process on ${host}:${port} or run with a different PORT.`);
+      process.exit(1);
+    }
+
+    if (error.code === 'EPERM') {
+      console.error(`Permission denied while binding ${host}:${port}. If you are in a sandboxed environment, local port binds may be blocked.`);
+      process.exit(1);
+    }
+  }
+
+  throw error;
+});
+
 server.listen(port, host, () => {
   console.log(`Static export preview running at http://${host}:${port}${basePath}/`);
 });
