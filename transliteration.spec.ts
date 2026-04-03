@@ -50,6 +50,10 @@ import {
   TAMIL_PRECISION_RICH_GOLDENS,
 } from './test-support/tamilPrecisionGoldens';
 import {
+  TAMIL_REVERSE_ASCII_GOLDENS,
+  TAMIL_REVERSE_RICH_GOLDENS,
+} from './test-support/tamilReverseGoldens';
+import {
   canonicalizeTamilPrecisionFragment,
   isTamilPrecisionSuperscriptFallback,
   TAMIL_PRECISION_MARK_TOKENS,
@@ -731,6 +735,38 @@ test('Tamil reverse Gate 2 cannot pass by returning canonical-looking guesses fo
     const result = reverseTamilInput(value, { inputMode: 'tamil-precision', outputMode: 'canonical' });
     expect(result.status, `${value} must not succeed in phase 1`).toBe('rejected');
     expect(result.originalText).toBe(value);
+  }
+});
+
+test('Tamil reverse Gate 3 freezes a dedicated rich reverse-golden corpus to canonical Roman', () => {
+  expect(TAMIL_REVERSE_RICH_GOLDENS.length).toBeGreaterThanOrEqual(25);
+
+  for (const [tamilPrecision, canonical] of TAMIL_REVERSE_RICH_GOLDENS) {
+    const result = reverseTamilInput(tamilPrecision, { inputMode: 'tamil-precision', outputMode: 'canonical' });
+    expect(result, `${tamilPrecision} should succeed as frozen reverse golden`).toEqual({
+      status: 'success',
+      inputKind: 'tamil-precision',
+      canonicalRoman: canonical,
+    });
+  }
+});
+
+test('Tamil reverse Gate 3 freezes paired ASCII fallback reverse goldens to the same canonical Roman', () => {
+  for (const [asciiTamil, canonical] of TAMIL_REVERSE_ASCII_GOLDENS) {
+    expect(reverseTamilCanonical(asciiTamil), `${asciiTamil} should reverse to canonical ${canonical}`).toBe(canonical);
+  }
+});
+
+test('Tamil reverse Gate 3 keeps canonical reverse output on frozen internal notation only', () => {
+  const canonicalOutputs = [
+    ...TAMIL_REVERSE_RICH_GOLDENS.map(([, canonical]) => canonical),
+    ...TAMIL_REVERSE_ASCII_GOLDENS.map(([, canonical]) => canonical),
+  ];
+  const exactBarahaOnlyAliases = new Set(['Ru', 'RU', '~lu', '~lU', 'K', 'G', 'c', 'C', 'J', 'P', 'B', 'ee', 'oo', 'ou', 'oum', '&', '~g', '~j']);
+
+  for (const canonical of canonicalOutputs) {
+    expect(canonicalizeAcceptedInputToken(canonical), `${canonical} must already be canonical`).toBe(canonical);
+    expect(exactBarahaOnlyAliases.has(canonical), `${canonical} must not collapse to an exact Baraha-only alias`).toBe(false);
   }
 });
 
