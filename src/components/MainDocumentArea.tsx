@@ -34,6 +34,7 @@ export const MainDocumentArea: React.FC = () => {
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
   const [selectedReadBlockId, setSelectedReadBlockId] = React.useState<string | null>(null);
   const documentContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const skipNextScrollRef = React.useRef<boolean>(false);
   const primaryPaneScrollRef = React.useRef<HTMLDivElement | null>(null);
   const readModeBlocks = React.useMemo(
     () => blocks.filter((block) => block.rendered.trim().length > 0),
@@ -151,6 +152,13 @@ export const MainDocumentArea: React.FC = () => {
     }
 
     const scrollActiveDocumentBlockIntoView = () => {
+      if (skipNextScrollRef.current) {
+        console.log('Skipping scroll for activeBlockId:', activeBlockId);
+        skipNextScrollRef.current = false;
+        return;
+      }
+      console.log('Performing scroll for activeBlockId:', activeBlockId);
+
       const container = documentContainerRef.current;
       if (!container) {
         return;
@@ -161,7 +169,7 @@ export const MainDocumentArea: React.FC = () => {
         return;
       }
 
-      target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     };
 
     const rafId = window.requestAnimationFrame(scrollActiveDocumentBlockIntoView);
@@ -178,10 +186,12 @@ export const MainDocumentArea: React.FC = () => {
   };
 
   const activateBlock = (blockId: string) => {
+    skipNextScrollRef.current = true;
     setActiveBlockId(blockId);
   };
 
   const activateChunk = (blockId: string, segmentIndex: number) => {
+    skipNextScrollRef.current = true;
     activateBlockChunk(blockId, segmentIndex);
   };
 
@@ -763,7 +773,11 @@ export const MainDocumentArea: React.FC = () => {
             return (
               <div
                 key={block.id}
-                onClick={() => activateBlock(block.id)}
+                onMouseDown={(e) => {
+                  // Prevent focus from leaving the composer if possible
+                  e.preventDefault();
+                  activateBlock(block.id);
+                }}
                 data-testid={`document-canvas-block-${block.id}`}
                 className={clsx(
                   'group relative cursor-pointer transition-all',

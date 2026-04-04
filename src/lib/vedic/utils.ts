@@ -654,6 +654,13 @@ export const parseTamilPrecisionToCanonical = (value: string): string | null => 
       }
 
       if (nextToken === TAMIL_PRECISION_PULLI) {
+        const nextNextToken = tokens[index + 2]?.token ?? '';
+        // If it's a pulli followed by a vocalic, it's m + R^i
+        if (Object.prototype.hasOwnProperty.call(TAMIL_PRECISION_DEPENDENT_VOCALICS_TO_CANONICAL, nextNextToken)) {
+           canonical += consonantSource + TAMIL_PRECISION_DEPENDENT_VOCALICS_TO_CANONICAL[nextNextToken];
+           index += 3;
+           continue;
+        }
         canonical += consonantSource;
         index += 2;
         continue;

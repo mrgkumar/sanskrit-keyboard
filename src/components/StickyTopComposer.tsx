@@ -1337,9 +1337,7 @@ export const StickyTopComposer: React.FC = () => {
                       </div>
                     </div>
                     <textarea
-                      key={textareaKey}
                       ref={composerRef}
-                      autoFocus
                       data-testid="sticky-itrans-input"
                       className="relative z-10 h-full w-full overflow-y-auto rounded-[1.125rem] bg-transparent px-3 py-2.5 font-mono text-lg text-transparent caret-transparent outline-none selection:bg-blue-200/80 selection:text-transparent placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500"
                       style={{
