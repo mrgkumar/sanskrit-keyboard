@@ -2,9 +2,10 @@ import fs from 'fs';
 
 // Load all harvested link files
 const veda = JSON.parse(fs.readFileSync('veda_links.json', 'utf8'));
+const upa = JSON.parse(fs.readFileSync('upa_links.json', 'utf8'));
 const others = JSON.parse(fs.readFileSync('combined_links.json', 'utf8'));
 
-const allLinks = [...veda, ...others];
+const allLinks = [...veda, ...upa, ...others];
 
 // Deduplicate by href
 const uniqueLinks = [];

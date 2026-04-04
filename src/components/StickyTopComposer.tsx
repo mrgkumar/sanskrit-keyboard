@@ -642,7 +642,7 @@ export const StickyTopComposer: React.FC = () => {
   const focusComposerAt = (nextCaret: number) => {
     setComposerSelection(nextCaret, nextCaret);
     const applySelection = () => {
-      composerRef.current?.focus();
+      composerRef.current?.focus({ preventScroll: true });
       composerRef.current?.setSelectionRange(nextCaret, nextCaret);
     };
 

@@ -41,7 +41,7 @@ export const ScriptText: React.FC<ScriptTextProps> = ({
 }) => {
   if (script === 'roman') {
     return (
-      <span className={clsx('script-text-wrap whitespace-pre-wrap font-mono text-slate-800', className)} style={style}>
+      <span className={clsx('contents script-text-wrap whitespace-pre-wrap break-words font-mono text-slate-800', className)} style={style}>
         {text}
       </span>
     );
@@ -50,7 +50,7 @@ export const ScriptText: React.FC<ScriptTextProps> = ({
   if (script === 'tamil') {
     return (
       <span
-        className={clsx('script-text-tamil script-text-wrap whitespace-pre-wrap text-slate-900', className)}
+        className={clsx('contents script-text-tamil script-text-wrap whitespace-pre-wrap break-words text-slate-900', className)}
         data-font-preset={tamilFontPreset}
         lang="ta"
         dir="ltr"
@@ -63,7 +63,7 @@ export const ScriptText: React.FC<ScriptTextProps> = ({
 
   return (
     <span
-      className={clsx('script-text-devanagari script-text-wrap whitespace-pre-wrap text-slate-900', className)}
+      className={clsx('contents script-text-devanagari script-text-wrap whitespace-pre-wrap break-words text-slate-900', className)}
       data-font-preset={sanskritFontPreset}
       lang="sa"
       style={style}

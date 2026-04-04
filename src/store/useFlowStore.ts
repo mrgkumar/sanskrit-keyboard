@@ -203,7 +203,7 @@ const DEFAULT_TYPOGRAPHY: TypographySettings = {
     itransFontSize: 18,
     devanagariFontSize: 27,
     tamilFontSize: 23,
-    devanagariLineHeight: 1.6,
+    devanagariLineHeight: 1.8,
     tamilLineHeight: 1.8,
     itransLineHeight: 1.6,
     primaryPaneHeight: 480,

@@ -72,8 +72,7 @@ kbd {
 }
 
 .tamil-precision-akshara {
-  display: inline-block;
-  white-space: nowrap;
+  display: inline;
   direction: ltr;
   unicode-bidi: isolate;
 }

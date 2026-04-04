@@ -1,7 +1,7 @@
 import { test } from '@playwright/test';
 import fs from 'fs';
 
-test('harvest veda mantra links', async ({ page }) => {
+test('harvest upanishad links', async ({ page }) => {
     await page.goto('https://vignanam.org/devanagari.html');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(5000);
@@ -14,17 +14,14 @@ test('harvest veda mantra links', async ({ page }) => {
         }))
     );
 
-    // Veda Mantras header is typically "वेद मन्त्राः (87)"
-    const vedaHeaderIdx = allLinks.findIndex(l => l.text.includes('वेद मन्त्राः'));
-    let vedaLinks: any[] = [];
-    if (vedaHeaderIdx !== -1) {
-        console.log(`Found Veda header at index ${vedaHeaderIdx}: ${allLinks[vedaHeaderIdx].text}`);
-        // The list count is 87, but user's list might be longer/shorter. 
-        // We'll take 90 to be safe and filter later if needed.
-        vedaLinks = allLinks.slice(vedaHeaderIdx + 1, vedaHeaderIdx + 95);
+    // Upanishads header is "उपनिषदः (34)"
+    const upaHeaderIdx = allLinks.findIndex(l => l.text.includes('उपनिषदः'));
+    let upaLinks: any[] = [];
+    if (upaHeaderIdx !== -1) {
+        console.log(`Found Upanishad header at index ${upaHeaderIdx}: ${allLinks[upaHeaderIdx].text}`);
+        upaLinks = allLinks.slice(upaHeaderIdx + 1, upaHeaderIdx + 36);
     }
 
-    // Combine with previous if they exist, or just save these for now
-    fs.writeFileSync('veda_links.json', JSON.stringify(vedaLinks, null, 2));
-    console.log(`Saved ${vedaLinks.length} Veda links to veda_links.json`);
+    fs.writeFileSync('upa_links.json', JSON.stringify(upaLinks, null, 2));
+    console.log(`Saved ${upaLinks.length} Upanishad links to upa_links.json`);
 });

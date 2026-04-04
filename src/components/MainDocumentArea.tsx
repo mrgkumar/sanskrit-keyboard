@@ -137,12 +137,36 @@ export const MainDocumentArea: React.FC = () => {
         return;
       }
 
-      target.scrollIntoView({ block: 'center', behavior: 'auto' });
+      // Use 'nearest' for Read mode to avoid double-scroll jumps with the inner pane
+      target.scrollIntoView({ block: 'nearest', behavior: 'auto' });
     };
 
     const rafId = window.requestAnimationFrame(scrollSelectedReadLineIntoView);
     return () => window.cancelAnimationFrame(rafId);
   }, [selectedReadBlockId, viewMode]);
+
+  React.useEffect(() => {
+    if (viewMode !== 'document' || !activeBlockId) {
+      return;
+    }
+
+    const scrollActiveDocumentBlockIntoView = () => {
+      const container = documentContainerRef.current;
+      if (!container) {
+        return;
+      }
+
+      const target = container.querySelector<HTMLElement>(`[data-testid="document-canvas-block-${activeBlockId}"]`);
+      if (!target) {
+        return;
+      }
+
+      target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    };
+
+    const rafId = window.requestAnimationFrame(scrollActiveDocumentBlockIntoView);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [activeBlockId, viewMode]);
 
   const handleCopyBlock = async (blockId: string, text: string) => {
     try {
@@ -263,7 +287,7 @@ export const MainDocumentArea: React.FC = () => {
       setComposerSelection(chunkLocalOffset, chunkLocalOffset);
       const composer = document.querySelector('[data-testid="sticky-itrans-input"]') as HTMLTextAreaElement | null;
       if (composer) {
-        composer.focus();
+        composer.focus({ preventScroll: true });
         composer.setSelectionRange(chunkLocalOffset, chunkLocalOffset);
         return;
       }
@@ -389,7 +413,7 @@ export const MainDocumentArea: React.FC = () => {
         {lineGuide}
         <p
           data-testid={`${viewTestIdPrefix}-${paneRole}-block-${block.id}`}
-          className="cursor-text rounded-md px-1 py-1 transition-colors"
+          className="cursor-text rounded-md px-1 py-1 transition-colors whitespace-pre-wrap break-words"
           data-selected-read-line={
             (viewMode === 'read' || viewMode === 'immersive') && selectedReadBlockId === block.id
               ? 'true'
@@ -727,7 +751,7 @@ export const MainDocumentArea: React.FC = () => {
 
   const renderDocumentCanvas = () => {
     return (
-      <div className="mx-auto w-full max-w-4xl rounded-[2.5rem] border border-slate-200 bg-white p-12 shadow-xl sm:p-16">
+      <div className="mx-auto w-full max-w-4xl overflow-x-hidden rounded-[2.5rem] border border-slate-200 bg-white p-12 shadow-xl sm:p-16">
         <div className="space-y-8">
           {blocks.map((block) => {
             const isActive = block.id === activeBlockId;
@@ -740,6 +764,7 @@ export const MainDocumentArea: React.FC = () => {
               <div
                 key={block.id}
                 onClick={() => activateBlock(block.id)}
+                data-testid={`document-canvas-block-${block.id}`}
                 className={clsx(
                   'group relative cursor-pointer transition-all',
                   isActive ? 'bg-blue-50/30 -mx-4 px-4 py-2 rounded-xl ring-1 ring-blue-100' : 'hover:bg-slate-50/50 -mx-4 px-4 py-2 rounded-xl'
