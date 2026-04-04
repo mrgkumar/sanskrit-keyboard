@@ -330,6 +330,8 @@ export const normalizeDisplaySettings = (
       sanskritFontPreset:
         displaySettings.sanskritFontPreset ?? DEFAULT_DISPLAY_SETTINGS.sanskritFontPreset,
       tamilFontPreset: displaySettings.tamilFontPreset ?? DEFAULT_DISPLAY_SETTINGS.tamilFontPreset,
+      autoSwapVisargaSvarita:
+        displaySettings.autoSwapVisargaSvarita ?? DEFAULT_DISPLAY_SETTINGS.autoSwapVisargaSvarita,
       typography: {
         composer: {
           ...DEFAULT_DISPLAY_SETTINGS.typography.composer,
