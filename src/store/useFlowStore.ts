@@ -188,20 +188,22 @@ const LEGACY_DEFAULT_TYPOGRAPHY: LegacyTypographySettings = {
 const DEFAULT_TYPOGRAPHY: TypographySettings = {
   composer: {
     ...LEGACY_DEFAULT_TYPOGRAPHY,
-    devanagariFontSize: 32,
-    tamilFontSize: 28,
-    devanagariLineHeight: 1.7,
-    tamilLineHeight: 1.95,
+    devanagariFontSize: 27,
+    tamilFontSize: 23,
+    devanagariLineHeight: 1.6,
+    tamilLineHeight: 1.8,
+    itransFontSize: 18,
+    itransLineHeight: 1.6,
     itransPanelHeight: 168,
     primaryPreviewHeight: 224,
     comparePreviewHeight: 224,
   },
   document: {
-    itransFontSize: 16,
-    devanagariFontSize: 30,
-    tamilFontSize: 26,
-    devanagariLineHeight: 1.75,
-    tamilLineHeight: 1.95,
+    itransFontSize: 18,
+    devanagariFontSize: 27,
+    tamilFontSize: 23,
+    devanagariLineHeight: 1.6,
+    tamilLineHeight: 1.8,
     itransLineHeight: 1.6,
     primaryPaneHeight: 480,
     comparePaneHeight: 480,
@@ -212,13 +214,14 @@ const DEFAULT_TYPOGRAPHY: TypographySettings = {
 export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   composerLayout: 'side-by-side',
   syncComposerScroll: true,
-  predictionLayout: 'footer',
+  predictionLayout: 'listbox',
   predictionPopupTimeoutMs: 10000,
   inputScheme: 'canonical-vedic',
   outputScheme: 'canonical-vedic',
   ...DEFAULT_OUTPUT_TARGET_SETTINGS,
-  sanskritFontPreset: 'siddhanta',
-  tamilFontPreset: 'noto-serif',
+  sanskritFontPreset: 'chandas',
+  tamilFontPreset: 'anek',
+  autoSwapVisargaSvarita: true,
   typography: DEFAULT_TYPOGRAPHY,
 };
 const INITIAL_SESSION_ID = 'session-initial';
@@ -572,6 +575,7 @@ export interface SanskritKeyboardState {
   setTamilOutputStyle: (tamilOutputStyle: DisplaySettings['tamilOutputStyle']) => void;
   setSanskritFontPreset: (sanskritFontPreset: DisplaySettings['sanskritFontPreset']) => void;
   setTamilFontPreset: (tamilFontPreset: DisplaySettings['tamilFontPreset']) => void;
+  setAutoSwapVisargaSvarita: (enabled: boolean) => void;
   setOutputScheme: (outputScheme: OutputScheme) => void;
   setTypography: (
     scope: keyof TypographySettings,
@@ -816,6 +820,16 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       newSource = canonicalized.source;
       nextSelectionStart = canonicalized.caret;
       nextSelectionEnd = canonicalized.caret;
+    }
+
+    // --- Auto-Swap Visarga/Svarita Logic ---
+    if (get().displaySettings.autoSwapVisargaSvarita && nextSelectionEnd >= 2) {
+      const lastTwo = newSource.slice(nextSelectionEnd - 2, nextSelectionEnd);
+      if (lastTwo === ":'") {
+        newSource =
+          newSource.slice(0, nextSelectionEnd - 2) + "':" + newSource.slice(nextSelectionEnd);
+        // Keep caret at the same relative position
+      }
     }
 
     const isNowLong = isLongBlockSource(newSource);
@@ -1401,6 +1415,14 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       displaySettings: {
         ...state.displaySettings,
         tamilFontPreset,
+      },
+    }));
+  },
+  setAutoSwapVisargaSvarita: (enabled) => {
+    set((state) => ({
+      displaySettings: {
+        ...state.displaySettings,
+        autoSwapVisargaSvarita: enabled,
       },
     }));
   },

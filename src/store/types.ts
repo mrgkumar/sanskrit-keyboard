@@ -129,6 +129,7 @@ export interface DisplaySettings {
   tamilOutputStyle: TamilOutputStyle;
   sanskritFontPreset: SanskritFontPreset;
   tamilFontPreset: TamilFontPreset;
+  autoSwapVisargaSvarita: boolean;
   typography: TypographySettings;
 }
 

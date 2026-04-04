@@ -27,7 +27,6 @@ import type { ChunkEditTarget } from '@/store/types';
 
 export const StickyTopComposer: React.FC = () => {
   const { 
-    blocks,
     getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setNextBlock, setPrevBlock, setFocusSpan, toggleReferencePanel, addBlocks, deleteBlock, restoreDeletedBlock, dismissDeletedBlock, setDeletedBuffer, setComposerSelection, setLexicalSelectedSuggestionIndex, recordSessionLexicalText, recordSessionLexicalUse, setPrimaryOutputScript, setComparisonOutputScript, editorState,
     activeBuffer, // Get activeBuffer for Backspace logic
     lexicalSuggestions,
@@ -39,6 +38,7 @@ export const StickyTopComposer: React.FC = () => {
     recentlyDeletedBlock,
     displaySettings,
     setTypography,
+    setAutoSwapVisargaSvarita,
   } = useFlowStore();
   const composerRef = React.useRef<HTMLTextAreaElement>(null);
   const composerHighlightRef = React.useRef<HTMLDivElement>(null);
@@ -87,6 +87,7 @@ export const StickyTopComposer: React.FC = () => {
     tamilOutputStyle,
     sanskritFontPreset,
     tamilFontPreset,
+    autoSwapVisargaSvarita,
   } = displaySettings;
   const composerTypography = typography.composer;
   const isStackedComposer = composerLayout === 'stacked';
@@ -977,34 +978,6 @@ export const StickyTopComposer: React.FC = () => {
     }
   };
 
-  const handleCopyWholeDocument = async (
-    script: 'devanagari' | 'itrans' | 'tamil'
-  ) => {
-    const fullSource = blocks
-      .map((block) => block.source.trim())
-      .filter((source) => source.length > 0)
-      .join('\n\n');
-
-    if (!fullSource) {
-      await handleCopyText('', script === 'devanagari' ? 'devanagariWhole' : script === 'itrans' ? 'itransWhole' : 'tamilWhole');
-      return;
-    }
-
-    if (script === 'itrans') {
-      await handleCopyText(fullSource, 'itransWhole');
-      return;
-    }
-
-    const formatted = formatSourceForScript(fullSource, script, {
-      romanOutputStyle,
-      tamilOutputStyle,
-    });
-
-    await handleCopyText(
-      formatted,
-      script === 'devanagari' ? 'devanagariWhole' : 'tamilWhole'
-    );
-  };
 
   const handleDeleteBlock = () => {
     if (!activeBlock) {
@@ -1265,72 +1238,6 @@ export const StickyTopComposer: React.FC = () => {
                 <BookOpen className="h-3.5 w-3.5" />
                 Reference
               </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveQuickSwitchMenu(null);
-                  void handleCopyWholeDocument('devanagari');
-                }}
-                data-testid="copy-whole-document-devanagari"
-                className={clsx(
-                  'inline-flex touch-manipulation items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em]',
-                  copyStates.devanagariWhole === 'copied'
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                    : copyStates.devanagariWhole === 'error'
-                      ? 'border-rose-200 bg-rose-50 text-rose-700'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                )}
-                aria-label="Copy whole document as Devanagari"
-                title={copyStates.devanagariWhole === 'copied' ? 'Copied' : 'Copy whole document as Devanagari'}
-              >
-                {copyStates.devanagariWhole === 'copied' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                Devanagari
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveQuickSwitchMenu(null);
-                  void handleCopyWholeDocument('itrans');
-                }}
-                data-testid="copy-whole-document-itrans"
-                className={clsx(
-                  'inline-flex touch-manipulation items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em]',
-                  copyStates.itransWhole === 'copied'
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                    : copyStates.itransWhole === 'error'
-                      ? 'border-rose-200 bg-rose-50 text-rose-700'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                )}
-                aria-label="Copy whole document as ITRANS"
-                title={copyStates.itransWhole === 'copied' ? 'Copied' : 'Copy whole document as ITRANS'}
-              >
-                {copyStates.itransWhole === 'copied' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                ITRANS
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveQuickSwitchMenu(null);
-                  void handleCopyWholeDocument('tamil');
-                }}
-                data-testid="copy-whole-document-tamil"
-                className={clsx(
-                  'inline-flex touch-manipulation items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em]',
-                  copyStates.tamilWhole === 'copied'
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                    : copyStates.tamilWhole === 'error'
-                      ? 'border-rose-200 bg-rose-50 text-rose-700'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                )}
-                aria-label="Copy whole document as Tamil"
-                title={copyStates.tamilWhole === 'copied' ? 'Copied' : 'Copy whole document as Tamil'}
-              >
-                {copyStates.tamilWhole === 'copied' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                Tamil
-              </button>
             </div>
           </div>
 
@@ -1350,11 +1257,22 @@ export const StickyTopComposer: React.FC = () => {
               )}
             >
               <div className="flex items-start justify-between gap-3 px-1">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">ITRANS Input</p>
-                  <p className="mt-1 text-[11px] leading-5 text-slate-500">
-                    Type in ITRANS here. The live preview mirrors the active chunk.
-                  </p>
+                <div className="flex flex-1 flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">ITRANS Input</p>
+                    <p className="mt-1 text-[11px] leading-5 text-slate-500">
+                      Type in ITRANS here. The live preview mirrors the active chunk.
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/50 px-2 py-1.5 transition-colors hover:bg-slate-100">
+                    <input
+                      type="checkbox"
+                      checked={autoSwapVisargaSvarita}
+                      onChange={(e) => setAutoSwapVisargaSvarita(e.target.checked)}
+                      className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-[10px] font-bold uppercase tracking-tight text-slate-600">Auto-swap :&apos; to &apos;:</span>
+                  </label>
                 </div>
               </div>
               <div
