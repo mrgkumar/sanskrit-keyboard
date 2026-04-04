@@ -9,6 +9,7 @@ import { clsx } from 'clsx';
 import { ShortcutHUD } from '@/components/engine/ShortcutHUD';
 import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
 import { getScriptDisplayText, ScriptText } from '@/components/ScriptText';
+import { VerticalResizeHandle } from '@/components/VerticalResizeHandle';
 import {
   canonicalizeDevanagariPaste,
   formatSourceForScript,
@@ -37,11 +38,13 @@ export const StickyTopComposer: React.FC = () => {
     composerSelectionEnd,
     recentlyDeletedBlock,
     displaySettings,
+    setTypography,
   } = useFlowStore();
   const composerRef = React.useRef<HTMLTextAreaElement>(null);
   const composerHighlightRef = React.useRef<HTMLDivElement>(null);
   const sourcePaneRef = React.useRef<HTMLDivElement>(null);
   const previewRef = React.useRef<HTMLDivElement>(null);
+  const itransPanelRef = React.useRef<HTMLDivElement>(null);
   const isPointerSelectingRef = React.useRef(false);
   const scrollSyncSourceRef = React.useRef<'source' | 'preview' | null>(null);
   const programmaticScrollTargetRef = React.useRef<HTMLElement | null>(null);
@@ -70,7 +73,7 @@ export const StickyTopComposer: React.FC = () => {
   const [activeQuickSwitchMenu, setActiveQuickSwitchMenu] = React.useState<'read-as' | 'compare' | null>(null);
   const activeBlock = getActiveBlock();
   const activeChunkGroup = getActiveChunkGroup();
-  const { focusSpan, viewMode } = editorState;
+  const { focusSpan } = editorState;
   const {
     composerLayout,
     predictionLayout,
@@ -86,6 +89,25 @@ export const StickyTopComposer: React.FC = () => {
     tamilFontPreset,
   } = displaySettings;
   const composerTypography = typography.composer;
+  const isStackedComposer = composerLayout === 'stacked';
+  const isComposerCompareMode = comparisonOutputScript !== 'off';
+  const previewResizeHandleHeight = 16;
+  const composerPreviewHeight = Math.max(
+    composerTypography.primaryPreviewHeight,
+    composerTypography.comparePreviewHeight
+  );
+  const composerPreviewStackHeight =
+    composerPreviewHeight * (isComposerCompareMode ? 2 : 1) + previewResizeHandleHeight;
+  const composerInputHeight = composerTypography.itransPanelHeight;
+  const updateComposerPreviewHeight = React.useCallback(
+    (nextHeight: number) => {
+      setTypography('composer', {
+        primaryPreviewHeight: nextHeight,
+        comparePreviewHeight: nextHeight,
+      } as Partial<typeof composerTypography>);
+    },
+    [setTypography]
+  );
   const isPredictionListbox = predictionLayout === 'listbox';
   const isLongBlock = activeBlock?.type === 'long';
   const currentChunkSource = activeChunkGroup?.source || '';
@@ -111,9 +133,18 @@ export const StickyTopComposer: React.FC = () => {
   const quickSwitchMenuRef = React.useRef<HTMLDivElement>(null);
   const renderedPreviewChars = Array.from(renderedPreview.unicode);
   const getRenderedLineHeightForScript = React.useCallback(
-    (script: typeof primaryOutputScript, baseLineHeight: number) =>
-      script === 'tamil' ? Math.max(baseLineHeight, 1.95) : baseLineHeight,
-    []
+    (script: typeof primaryOutputScript) =>
+      script === 'tamil'
+        ? composerTypography.tamilLineHeight
+        : composerTypography.devanagariLineHeight,
+    [composerTypography.devanagariLineHeight, composerTypography.tamilLineHeight]
+  );
+  const getRenderedFontSizeForScript = React.useCallback(
+    (script: typeof primaryOutputScript) =>
+      script === 'tamil'
+        ? composerTypography.tamilFontSize
+        : composerTypography.devanagariFontSize,
+    [composerTypography.devanagariFontSize, composerTypography.tamilFontSize]
   );
   const currentEditTarget: ChunkEditTarget | undefined = activeChunkGroup?.blockId
     ? {
@@ -161,7 +192,6 @@ export const StickyTopComposer: React.FC = () => {
   const shortcutPeekQuery = shortcutPeekState.query;
   const shortcutPeekMappings = shortcutPeekState.mappings;
   const hasLexicalSuggestions = lexicalSuggestions.length > 0 && activeBuffer.length > 1;
-  const isComposerCompareMode = comparisonOutputScript !== 'off';
   const composerCompareLayout = isComposerCompareMode ? 'stacked' : 'single';
   const primaryPreviewLabel =
     primaryOutputScript === 'roman'
@@ -624,7 +654,7 @@ export const StickyTopComposer: React.FC = () => {
     focusComposerAt(nextCaret);
   };
 
-  const handlePreviewContainerClick = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handlePrimaryPreviewClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) {
       return;
     }
@@ -716,6 +746,35 @@ export const StickyTopComposer: React.FC = () => {
 
     composerHighlightRef.current.style.transform = `translateY(-${composerRef.current.scrollTop}px)`;
   }, [currentChunkSource, composerSelectionStart, composerSelectionEnd]);
+
+  React.useLayoutEffect(() => {
+    const panel = itransPanelRef.current;
+    if (!panel || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    let rafId = 0;
+    const syncHeight = () => {
+      const nextHeight = Math.round(panel.getBoundingClientRect().height);
+      if (Math.abs(nextHeight - composerTypography.itransPanelHeight) <= 1) {
+        return;
+      }
+
+      setTypography('composer', { itransPanelHeight: nextHeight });
+    };
+
+    syncHeight();
+    const observer = new ResizeObserver(() => {
+      window.cancelAnimationFrame(rafId);
+      rafId = window.requestAnimationFrame(syncHeight);
+    });
+    observer.observe(panel);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      observer.disconnect();
+    };
+  }, [composerTypography.itransPanelHeight, setTypography]);
 
   React.useEffect(() => {
     if (!syncComposerScroll || document.activeElement !== composerRef.current) {
@@ -910,20 +969,12 @@ export const StickyTopComposer: React.FC = () => {
     }
   };
 
-  const handleCopyRendered = async () => {
-    const canonicalSource = viewMode === 'focus'
-      ? activeChunkGroup?.source || ''
-      : activeBlock?.source || '';
-    const textToCopy = formatSourceForScript(canonicalSource, primaryOutputScript, {
-      romanOutputStyle,
-      tamilOutputStyle,
-    });
-
-    await handleCopyText(textToCopy, 'preview');
-  };
-
   const handleCopySource = async () => {
     await handleCopyText(currentChunkSource, 'source');
+  };
+
+  const handleCopyPrimaryPreview = async () => {
+    await handleCopyText(primaryPreviewText, 'preview');
   };
 
   const handleCopyComparison = async () => {
@@ -1062,7 +1113,16 @@ export const StickyTopComposer: React.FC = () => {
     }
 
     return (
-      <span className="script-text-tamil script-text-wrap whitespace-pre-wrap text-slate-900" data-font-preset={tamilFontPreset} lang="ta" dir="ltr">
+      <span
+        className="script-text-tamil script-text-wrap whitespace-pre-wrap text-slate-900"
+        data-font-preset={tamilFontPreset}
+        lang="ta"
+        dir="ltr"
+        style={{
+          fontSize: `${composerTypography.tamilFontSize}px`,
+          lineHeight: composerTypography.tamilLineHeight,
+        }}
+      >
         {fragments}
       </span>
     );
@@ -1279,17 +1339,33 @@ export const StickyTopComposer: React.FC = () => {
 
           <div
             className={clsx(
-              'grid min-h-0 flex-1 gap-0 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70',
-              composerLayout === 'stacked'
-                ? 'grid-cols-1'
+              'grid min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70 shadow-[0_18px_42px_-30px_rgba(15,23,42,0.45)]',
+              isStackedComposer
+                ? 'grid-cols-1 gap-3 p-3'
                 : 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)]'
             )}
           >
-            <div ref={sourcePaneRef} className="group relative flex min-h-0 flex-1 flex-col gap-2 p-2.5">
-              <div className="flex items-center justify-between gap-3 px-1">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">ITRANS Input</p>
+            <div
+              ref={sourcePaneRef}
+              className={clsx(
+                'group relative flex min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white/95 p-3 shadow-sm',
+                isStackedComposer ? 'min-h-[15rem]' : 'min-h-0'
+              )}
+            >
+              <div className="flex items-start justify-between gap-3 px-1">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">ITRANS Input</p>
+                  <p className="mt-1 text-[11px] leading-5 text-slate-500">
+                    Type in ITRANS here. The live preview mirrors the active chunk.
+                  </p>
+                </div>
               </div>
-              <div className="relative min-h-[7rem] flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div
+                ref={itransPanelRef}
+                className="relative flex-none overflow-hidden rounded-[1.125rem] border border-blue-200 bg-gradient-to-b from-blue-50/90 to-white shadow-sm"
+                data-testid="sticky-itrans-panel"
+                style={{ height: `${composerInputHeight}px` }}
+              >
                 <div className="pointer-events-none absolute right-2 top-2 z-20 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                   <button
                     data-testid="copy-source-button"
@@ -1309,77 +1385,93 @@ export const StickyTopComposer: React.FC = () => {
                     {copyStates.source === 'copied' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </button>
                 </div>
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 overflow-hidden rounded-xl py-2.5 pl-3 pr-7 font-mono text-lg text-slate-900 md:pr-8"
-                  style={{
-                    fontSize: `${composerTypography.itransFontSize}px`,
-                    lineHeight: composerTypography.itransLineHeight,
-                  }}
-                >
-                  <div ref={composerHighlightRef} className="whitespace-pre-wrap break-words">
-                    {sourceMirrorFragments}
+                <div className="flex h-[calc(100%-1rem)] min-h-0 flex-col">
+                  <div className="relative flex-1 min-h-0">
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 overflow-hidden rounded-[1.125rem] py-2.5 pl-3 pr-7 font-mono text-lg text-slate-900 md:pr-8"
+                      style={{
+                        fontSize: `${composerTypography.itransFontSize}px`,
+                        lineHeight: composerTypography.itransLineHeight,
+                      }}
+                    >
+                      <div ref={composerHighlightRef} className="whitespace-pre-wrap break-words">
+                        {sourceMirrorFragments}
+                      </div>
+                    </div>
+                    <textarea
+                      key={textareaKey}
+                      ref={composerRef}
+                      autoFocus
+                      data-testid="sticky-itrans-input"
+                      className="relative z-10 h-full w-full overflow-y-auto rounded-[1.125rem] bg-transparent px-3 py-2.5 font-mono text-lg text-transparent caret-transparent outline-none selection:bg-blue-200/80 selection:text-transparent placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        fontSize: `${composerTypography.itransFontSize}px`,
+                        lineHeight: composerTypography.itransLineHeight,
+                      }}
+                      value={activeChunkGroup?.source || ''}
+                      onChange={(e) => updateChunkSource(e.target.value, e.target.selectionStart, e.target.selectionEnd, currentEditTarget)}
+                      onPaste={handlePaste}
+                      onKeyDown={handleKeyDown}
+                      onScroll={handleComposerScroll}
+                      onSelect={(e) => syncSelection(e.currentTarget)}
+                      onPointerDown={() => {
+                        isPointerSelectingRef.current = true;
+                      }}
+                      onPointerUp={(e) => finalizePointerSelection(e.currentTarget)}
+                      onPointerCancel={() => {
+                        isPointerSelectingRef.current = false;
+                      }}
+                      onClick={(e) => finalizePointerSelection(e.currentTarget)}
+                      onKeyUp={(e) => syncSelection(e.currentTarget)}
+                      onFocus={(e) => {
+                        if (!isPointerSelectingRef.current) {
+                          syncSelection(e.currentTarget);
+                        }
+                      }}
+                      rows={Math.min(6, Math.max(1, currentChunkSource.split('\n').length))}
+                      placeholder="Type ITRANS here..."
+                    />
                   </div>
                 </div>
-                <textarea
-                  key={textareaKey}
-                  ref={composerRef}
-                  autoFocus
-                  data-testid="sticky-itrans-input"
-                  className="relative z-10 min-h-[7rem] h-full w-full overflow-y-auto rounded-xl bg-transparent px-3 py-2.5 font-mono text-lg text-transparent caret-transparent shadow-sm outline-none selection:bg-blue-200/80 selection:text-transparent placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    fontSize: `${composerTypography.itransFontSize}px`,
-                    lineHeight: composerTypography.itransLineHeight,
-                  }}
-                  value={activeChunkGroup?.source || ''}
-                  onChange={(e) => updateChunkSource(e.target.value, e.target.selectionStart, e.target.selectionEnd, currentEditTarget)}
-                  onPaste={handlePaste}
-                  onKeyDown={handleKeyDown}
-                  onScroll={handleComposerScroll}
-                  onSelect={(e) => syncSelection(e.currentTarget)}
-                  onPointerDown={() => {
-                    isPointerSelectingRef.current = true;
-                  }}
-                  onPointerUp={(e) => finalizePointerSelection(e.currentTarget)}
-                  onPointerCancel={() => {
-                    isPointerSelectingRef.current = false;
-                  }}
-                  onClick={(e) => finalizePointerSelection(e.currentTarget)}
-                  onKeyUp={(e) => syncSelection(e.currentTarget)}
-                  onFocus={(e) => {
-                    if (!isPointerSelectingRef.current) {
-                      syncSelection(e.currentTarget);
-                    }
-                  }}
-                  rows={Math.min(6, Math.max(1, currentChunkSource.split('\n').length))}
-                  placeholder="Type ITRANS here..."
+                <VerticalResizeHandle
+                  height={composerInputHeight}
+                  minHeight={140}
+                  maxHeight={360}
+                  ariaLabel="Resize ITRANS input height"
+                  placement="corner"
                 />
               </div>
               {predictionLayout === 'inline' && <WordPredictionTray variant="inline" />}
               {predictionLayout === 'split' && <WordPredictionTray variant="split" />}
             </div>
 
-            {composerLayout !== 'stacked' && <div className="hidden bg-slate-200 lg:block" aria-hidden="true" />}
+            {!isStackedComposer && <div className="hidden bg-slate-200/80 lg:block" aria-hidden="true" />}
 
-            <div className="group flex min-h-0 flex-1 flex-col gap-2 border-t border-slate-200 p-2.5 text-blue-800 lg:border-t-0">
+            <div
+              className={clsx(
+                'group flex min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white/95 p-3 text-blue-800 shadow-sm',
+                isStackedComposer ? 'border-slate-200' : 'lg:border-l-0 lg:border-t-0 lg:rounded-l-none'
+              )}
+            >
               <div className="min-w-0 px-1">
                 <p className="truncate text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">
                   {isComposerCompareMode ? `${primaryPreviewLabel} / ${comparisonPreviewLabel}` : primaryPreviewLabel}
                 </p>
+                <p className="mt-1 text-[11px] leading-5 text-slate-500">
+                  {isComposerCompareMode
+                    ? 'Primary output sits above the comparison pane with matched widths and separate copy actions.'
+                    : 'Rendered output for the active chunk, tuned to the current Read As target.'}
+                </p>
               </div>
-              <div className="relative min-h-[7rem] flex-1">
+              <div
+                className="relative flex-none overflow-hidden rounded-[1.125rem] border border-blue-100 bg-gradient-to-b from-blue-50/90 to-white shadow-sm"
+                data-testid="sticky-preview-primary-wrapper"
+                style={{ height: `${composerPreviewStackHeight}px` }}
+              >
                 <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
                   <button
-                    onClick={handleDeleteBlock}
-                    className="pointer-events-auto rounded-md border border-rose-200 bg-white/95 p-1.5 text-rose-700 shadow-sm hover:bg-rose-100"
-                    type="button"
-                    aria-label="Delete active block"
-                    title="Delete block"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleCopyRendered}
+                    onClick={handleCopyPrimaryPreview}
                     className={clsx(
                       'pointer-events-auto rounded-md border bg-white/95 p-1.5 shadow-sm',
                       copyStates.preview === 'copied'
@@ -1394,67 +1486,52 @@ export const StickyTopComposer: React.FC = () => {
                   >
                     {copyStates.preview === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   </button>
-                  {isComposerCompareMode && (
-                    <button
-                      onClick={handleCopyComparison}
-                      className={clsx(
-                        'pointer-events-auto rounded-md border bg-white/95 p-1.5 shadow-sm',
-                        copyStates.compare === 'copied'
-                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                          : copyStates.compare === 'error'
-                            ? 'border-rose-200 bg-rose-50 text-rose-700'
-                            : 'border-slate-200 text-slate-700 hover:bg-slate-100'
-                      )}
-                      type="button"
-                      aria-label={`Copy ${comparisonPreviewLabel}`}
-                      title={copyStates.compare === 'copied' ? 'Copied' : copyStates.compare === 'error' ? 'Copy failed' : `Copy ${comparisonPreviewLabel}`}
-                    >
-                      {copyStates.compare === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    </button>
-                  )}
+                  <button
+                    onClick={handleDeleteBlock}
+                    className="pointer-events-auto rounded-md border border-rose-200 bg-white/95 p-1.5 text-rose-700 shadow-sm hover:bg-rose-100"
+                    type="button"
+                    aria-label="Delete active block"
+                    title="Delete block"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
                 <div
                   data-testid="sticky-preview-surface"
                   data-compare-mode={isComposerCompareMode ? 'compare' : 'single'}
                   data-compare-layout={composerCompareLayout}
-                  className={clsx(
-                    'grid min-h-[7rem] h-full items-stretch gap-3',
-                    'grid-cols-1'
-                  )}
+                  className="flex h-full flex-col"
                 >
                   <div
                     ref={previewRef}
-                    className="min-h-[7rem] h-full overflow-y-auto rounded-xl border border-blue-100 bg-white px-3 pb-3 pt-2.5 pr-14 shadow-sm"
+                    className="overflow-y-auto rounded-[1.125rem] border border-blue-100/80 bg-white/65 px-3 pb-3 pt-2.5 shadow-inner"
                     data-testid="sticky-preview-primary-pane"
                     onPointerDownCapture={primaryOutputScript === 'tamil' ? handleTamilPreviewMouseDown : undefined}
                     onScroll={handlePreviewScroll}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={
                       primaryOutputScript === 'devanagari' || primaryOutputScript === 'tamil'
-                        ? handlePreviewContainerClick
+                        ? handlePrimaryPreviewClick
                         : undefined
                     }
                     style={{
-                      fontSize: `${composerTypography.renderedFontSize}px`,
-                      lineHeight: getRenderedLineHeightForScript(primaryOutputScript, composerTypography.renderedLineHeight),
+                      height: `${composerPreviewHeight}px`,
+                      fontSize: `${getRenderedFontSizeForScript(primaryOutputScript)}px`,
+                      lineHeight: getRenderedLineHeightForScript(primaryOutputScript),
                     }}
                   >
-                    <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">
-                      {primaryPreviewLabel}
-                    </p>
-                    {primaryOutputScript === 'tamil' && (
-                      <p className="mb-2 text-[11px] text-amber-700">
-                        Tamil preview is read-only, but clicking a word moves the edit cursor back to the matching ITRANS position.
-                      </p>
-                    )}
                     {primaryOutputScript === 'devanagari' ? (
                       renderedPreviewChars.length === 0 ? (
                         'Devanagari preview'
                       ) : (
-                        <span
-                          className="script-text-devanagari whitespace-pre-wrap break-words text-slate-900"
-                          data-font-preset={sanskritFontPreset}
-                          lang="sa"
+                      <span
+                        className="script-text-devanagari whitespace-pre-wrap break-words text-slate-900"
+                        data-font-preset={sanskritFontPreset}
+                        lang="sa"
+                        style={{
+                          fontSize: `${composerTypography.devanagariFontSize}px`,
+                          lineHeight: composerTypography.devanagariLineHeight,
+                          }}
                         >
                           {renderedPreviewChars.map((char, index) => {
                             const isSelectionVisible =
@@ -1509,27 +1586,51 @@ export const StickyTopComposer: React.FC = () => {
                         tamilFontPreset={tamilFontPreset}
                         text={primaryPreviewText || 'Roman preview'}
                         className="text-slate-900"
+                        style={{
+                          fontSize: `${composerTypography.devanagariFontSize}px`,
+                          lineHeight: composerTypography.devanagariLineHeight,
+                        }}
                       />
                     )}
                   </div>
+                  <VerticalResizeHandle
+                    height={composerPreviewHeight}
+                    minHeight={140}
+                    maxHeight={360}
+                    ariaLabel="Resize primary preview height"
+                    onHeightChange={updateComposerPreviewHeight}
+                  />
 
                   {isComposerCompareMode && (
                     <div
-                      className="min-h-[7rem] h-full overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 px-3 pb-3 pt-2.5 text-slate-700 shadow-sm"
+                      className="relative overflow-y-auto rounded-[1.125rem] border border-blue-100/80 bg-white/60 px-3 pb-3 pt-2.5 text-slate-700 shadow-inner"
                       data-testid="sticky-preview-compare-pane"
                       onPointerDownCapture={activeComparisonScript === 'tamil' ? handleTamilPreviewMouseDown : undefined}
-                      onClick={activeComparisonScript === 'tamil' ? handlePreviewContainerClick : undefined}
+                      onClick={activeComparisonScript === 'tamil' ? handlePrimaryPreviewClick : undefined}
                       style={{
-                        fontSize: `${Math.max(composerTypography.renderedFontSize - 2, 14)}px`,
-                        lineHeight: getRenderedLineHeightForScript(
-                        activeComparisonScript ?? primaryOutputScript,
-                        composerTypography.renderedLineHeight
-                        ),
+                        height: `${composerPreviewHeight}px`,
+                        fontSize: `${Math.max(getRenderedFontSizeForScript(activeComparisonScript ?? primaryOutputScript) - 2, 14)}px`,
+                        lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
                       }}
                     >
-                      <p className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
-                        {comparisonPreviewLabel}
-                      </p>
+                      <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                        <button
+                          onClick={handleCopyComparison}
+                          className={clsx(
+                            'pointer-events-auto rounded-md border bg-white/95 p-1.5 shadow-sm',
+                            copyStates.compare === 'copied'
+                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                              : copyStates.compare === 'error'
+                                ? 'border-rose-200 bg-rose-50 text-rose-700'
+                                : 'border-blue-200 text-slate-700 hover:bg-blue-100'
+                          )}
+                          type="button"
+                          aria-label={`Copy ${comparisonPreviewLabel}`}
+                          title={copyStates.compare === 'copied' ? 'Copied' : copyStates.compare === 'error' ? 'Copy failed' : `Copy ${comparisonPreviewLabel}`}
+                        >
+                          {copyStates.compare === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </div>
                       {activeComparisonScript === 'tamil' ? (
                         renderTamilSurface() ?? 'Tamil compare'
                       ) : (
