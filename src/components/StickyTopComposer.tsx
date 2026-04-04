@@ -27,7 +27,7 @@ import type { ChunkEditTarget } from '@/store/types';
 
 export const StickyTopComposer: React.FC = () => {
   const { 
-    getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setNextBlock, setPrevBlock, setFocusSpan, toggleReferencePanel, addBlocks, deleteBlock, restoreDeletedBlock, dismissDeletedBlock, setDeletedBuffer, setComposerSelection, setLexicalSelectedSuggestionIndex, recordSessionLexicalText, recordSessionLexicalUse, setPrimaryOutputScript, setComparisonOutputScript, editorState,
+    getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setNextBlock, setPrevBlock, setFocusSpan, toggleReferencePanel, addBlocks, deleteBlock, mergeBlocks, splitBlock, restoreDeletedBlock, dismissDeletedBlock, setDeletedBuffer, setComposerSelection, setLexicalSelectedSuggestionIndex, recordSessionLexicalText, recordSessionLexicalUse, setPrimaryOutputScript, setComparisonOutputScript, editorState,
     activeBuffer, // Get activeBuffer for Backspace logic
     lexicalSuggestions,
     lexicalSelectedSuggestionIndex,
@@ -515,9 +515,18 @@ export const StickyTopComposer: React.FC = () => {
       return;
     }
 
-    if (!e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'Enter' && hasLexicalSuggestions) {
-      if (acceptLexicalSuggestion(lexicalSelectedSuggestionIndex)) {
+    if (!e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'Enter') {
+      if (hasLexicalSuggestions) {
+        if (acceptLexicalSuggestion(lexicalSelectedSuggestionIndex)) {
+          e.preventDefault();
+          return;
+        }
+      }
+      
+      // If no suggestion accepted and in document mode, split the block
+      if (editorState.viewMode === 'document' && activeBlock) {
         e.preventDefault();
+        splitBlock(activeBlock.id, composerSelectionStart);
         return;
       }
     }
@@ -569,20 +578,33 @@ export const StickyTopComposer: React.FC = () => {
     }
 
     if (e.key === 'Backspace') {
+      if (composerSelectionStart === 0 && composerSelectionEnd === 0 && activeBlock) {
+        e.preventDefault();
+        mergeBlocks(activeBlock.id, 'previous');
+        return;
+      }
+
       let charToDelete: string | null = null;
       if (activeBuffer.length > 0) {
         // If there's an active buffer, deleted char is its last char
         charToDelete = activeBuffer.slice(-1);
-      } else if (currentChunkSource.length > 0) {
+      } else if (composerSelectionStart > 0) {
         // If no active buffer, deleted char is from main source before cursor
-        // (Assuming cursor is at the end of currentChunkSource for simplicity here)
-        charToDelete = currentChunkSource.slice(-1);
+        charToDelete = currentChunkSource.slice(composerSelectionStart - 1, composerSelectionStart);
       }
 
       if (charToDelete) {
         setDeletedBuffer(charToDelete);
         setIsShortcutPeekVisible(true);
       }
+    } else if (e.key === 'Delete') {
+      if (composerSelectionStart === currentChunkSource.length && composerSelectionEnd === currentChunkSource.length && activeBlock) {
+        e.preventDefault();
+        mergeBlocks(activeBlock.id, 'next');
+        return;
+      }
+      setDeletedBuffer(null);
+      setIsShortcutPeekVisible(false);
     } else {
       setDeletedBuffer(null);
       setIsShortcutPeekVisible(false);
@@ -1271,7 +1293,7 @@ export const StickyTopComposer: React.FC = () => {
                       onChange={(e) => setAutoSwapVisargaSvarita(e.target.checked)}
                       className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="text-[10px] font-bold uppercase tracking-tight text-slate-600">Auto-swap :&apos; to &apos;:</span>
+                    <span className="text-[10px] font-bold uppercase tracking-tight text-slate-600">Auto-swap markers</span>
                   </label>
                 </div>
               </div>

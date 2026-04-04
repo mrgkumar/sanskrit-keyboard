@@ -7,6 +7,7 @@ import {
   ChunkEditTarget,
   DisplaySettings,
   EditorState,
+  ViewMode,
   LegacyTypographySettings,
   TypographySettings,
   SessionSnapshot,
@@ -222,6 +223,7 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   sanskritFontPreset: 'chandas',
   tamilFontPreset: 'anek',
   autoSwapVisargaSvarita: true,
+  showItransInDocument: false,
   typography: DEFAULT_TYPOGRAPHY,
 };
 const INITIAL_SESSION_ID = 'session-initial';
@@ -332,6 +334,8 @@ export const normalizeDisplaySettings = (
       tamilFontPreset: displaySettings.tamilFontPreset ?? DEFAULT_DISPLAY_SETTINGS.tamilFontPreset,
       autoSwapVisargaSvarita:
         displaySettings.autoSwapVisargaSvarita ?? DEFAULT_DISPLAY_SETTINGS.autoSwapVisargaSvarita,
+      showItransInDocument:
+        displaySettings.showItransInDocument ?? DEFAULT_DISPLAY_SETTINGS.showItransInDocument,
       typography: {
         composer: {
           ...DEFAULT_DISPLAY_SETTINGS.typography.composer,
@@ -483,7 +487,7 @@ export const canonicalizeCommittedEditorSource = (
   };
 };
 
-const normalizeViewMode = (mode: EditorState['viewMode']): EditorState['viewMode'] =>
+const normalizeViewMode = (mode: ViewMode): ViewMode =>
   mode === 'review' ? 'read' : mode;
 
 interface DeletedBlockSnapshot {
@@ -532,7 +536,7 @@ export interface SanskritKeyboardState {
   setNextChunk: () => void;
   setPrevChunk: () => void;
   setFocusSpan: (span: 'tight' | 'balanced' | 'wide') => void;
-  setViewMode: (mode: 'focus' | 'read' | 'review' | 'immersive') => void;
+  setViewMode: (mode: ViewMode) => void;
   activateBlockChunk: (blockId: string, segmentIndex?: number) => void;
   setActiveChunkIndex: (segmentIndex: number) => void;
   setNextBlock: () => void;
@@ -545,7 +549,10 @@ export interface SanskritKeyboardState {
   ) => void;
   toggleReferencePanel: () => void;
   addBlocks: (itransStrings: string[]) => void;
-  deleteBlock: (blockId?: string) => void;
+  mergeBlocks: (blockId: string, direction: 'previous' | 'next') => void;
+  splitBlock: (blockId: string, sourceOffset: number) => void;
+  deleteBlock: (id: string) => void;
+
   restoreDeletedBlock: () => void;
   dismissDeletedBlock: () => void;
   updateLexicalSuggestions: (prefix: string) => Promise<void>;
@@ -578,6 +585,7 @@ export interface SanskritKeyboardState {
   setSanskritFontPreset: (sanskritFontPreset: DisplaySettings['sanskritFontPreset']) => void;
   setTamilFontPreset: (tamilFontPreset: DisplaySettings['tamilFontPreset']) => void;
   setAutoSwapVisargaSvarita: (enabled: boolean) => void;
+  setShowItransInDocument: (enabled: boolean) => void;
   setOutputScheme: (outputScheme: OutputScheme) => void;
   setTypography: (
     scope: keyof TypographySettings,
@@ -824,13 +832,39 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       nextSelectionEnd = canonicalized.caret;
     }
 
-    // --- Auto-Swap Visarga/Svarita Logic ---
+    // --- Auto-Swap Visarga/Svarita/Markers Logic ---
     if (get().displaySettings.autoSwapVisargaSvarita && nextSelectionEnd >= 2) {
-      const lastTwo = newSource.slice(nextSelectionEnd - 2, nextSelectionEnd);
-      if (lastTwo === ":'") {
-        newSource =
-          newSource.slice(0, nextSelectionEnd - 2) + "':" + newSource.slice(nextSelectionEnd);
-        // Keep caret at the same relative position
+      const sourceBefore = newSource.slice(0, nextSelectionEnd);
+      const sourceAfter = newSource.slice(nextSelectionEnd);
+      
+      let swapped = false;
+      let swapLen = 0;
+      let nextPrefix = '';
+
+      // Check for 3-char patterns first
+      if (nextSelectionEnd >= 3) {
+        const lastThree = sourceBefore.slice(-3);
+        if (lastThree === ":''") {
+          nextPrefix = sourceBefore.slice(0, -3) + "'':";
+          swapLen = 3;
+          swapped = true;
+        }
+      }
+
+      // Check for 2-char patterns if not already swapped
+      if (!swapped) {
+        const lastTwo = sourceBefore.slice(-2);
+        if (lastTwo === ":'" || lastTwo === ":_" || lastTwo === ":\"") {
+          const char = lastTwo[1];
+          nextPrefix = sourceBefore.slice(0, -2) + char + ":";
+          swapLen = 2;
+          swapped = true;
+        }
+      }
+
+      if (swapped) {
+        newSource = nextPrefix + sourceAfter;
+        // Keep caret at the same relative position (at the end of prefix)
       }
     }
 
@@ -1041,6 +1075,104 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         ]),
       }));
     }
+  },
+  mergeBlocks: (blockId, direction) => {
+    const { blocks, setComposerSelection, activateBlockChunk, displaySettings } = get();
+    const currentIndex = blocks.findIndex((b) => b.id === blockId);
+    if (currentIndex === -1) return;
+
+    let targetIndex = -1;
+    if (direction === 'previous' && currentIndex > 0) {
+      targetIndex = currentIndex - 1;
+    } else if (direction === 'next' && currentIndex < blocks.length - 1) {
+      targetIndex = currentIndex + 1;
+    }
+
+    if (targetIndex === -1) return;
+
+    const currentBlock = blocks[currentIndex];
+    const targetBlock = blocks[targetIndex];
+
+    const isPrev = direction === 'previous';
+    const combinedSource = isPrev 
+      ? targetBlock.source + currentBlock.source 
+      : currentBlock.source + targetBlock.source;
+    
+    const caretPos = isPrev ? targetBlock.source.length : currentBlock.source.length;
+
+    const mergedBlock = createBlockFromSource(combinedSource, targetBlock.title || currentBlock.title || '', {
+      disableAutoSegmentation: true,
+    });
+    // Preserve ID of the one we are merging INTO
+    mergedBlock.id = isPrev ? targetBlock.id : currentBlock.id;
+
+    const nextBlocks = [...blocks];
+    if (isPrev) {
+      nextBlocks.splice(targetIndex, 2, mergedBlock);
+    } else {
+      nextBlocks.splice(currentIndex, 2, mergedBlock);
+    }
+
+    set({ 
+      blocks: nextBlocks,
+      sessionLexicalUsage: deriveSessionLexicalUsageFromBlocks(nextBlocks),
+      sessionExactFormUsage: deriveSessionExactFormUsageFromBlocks(nextBlocks),
+    });
+
+    // Activate the merged block and set caret
+    activateBlockChunk(mergedBlock.id, 0); // Activate first chunk
+    
+    // We need a small delay or use setComposerSelection directly if it's already active
+    setTimeout(() => {
+      setComposerSelection(caretPos, caretPos);
+      const composer = document.querySelector('[data-testid="sticky-itrans-input"]') as HTMLTextAreaElement | null;
+      if (composer) {
+        composer.focus();
+        composer.setSelectionRange(caretPos, caretPos);
+      }
+    }, 50);
+  },
+  splitBlock: (blockId, sourceOffset) => {
+    const { blocks, displaySettings, activateBlockChunk, setComposerSelection } = get();
+    const currentIndex = blocks.findIndex((b) => b.id === blockId);
+    if (currentIndex === -1) return;
+
+    const block = blocks[currentIndex];
+    const firstPart = block.source.slice(0, sourceOffset).trim();
+    const secondPart = block.source.slice(sourceOffset).trim();
+
+    if (!firstPart || !secondPart) {
+      // Don't split if one part is empty (basically just adding newlines)
+      return;
+    }
+
+    const block1 = createBlockFromSource(firstPart, block.title || 'Split Part 1', {
+      disableAutoSegmentation: true,
+    });
+    const block2 = createBlockFromSource(secondPart, block.title || 'Split Part 2', {
+      disableAutoSegmentation: true,
+    });
+
+    const nextBlocks = [...blocks];
+    nextBlocks.splice(currentIndex, 1, block1, block2);
+
+    set({ 
+      blocks: nextBlocks,
+      sessionLexicalUsage: deriveSessionLexicalUsageFromBlocks(nextBlocks),
+      sessionExactFormUsage: deriveSessionExactFormUsageFromBlocks(nextBlocks),
+    });
+
+    // Activate the second block and set caret to start
+    activateBlockChunk(block2.id, 0);
+    
+    setTimeout(() => {
+      setComposerSelection(0, 0);
+      const composer = document.querySelector('[data-testid="sticky-itrans-input"]') as HTMLTextAreaElement | null;
+      if (composer) {
+        composer.focus();
+        composer.setSelectionRange(0, 0);
+      }
+    }, 50);
   },
   deleteBlock: (blockId) => {
     const { blocks, editorState } = get();
@@ -1425,6 +1557,14 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       displaySettings: {
         ...state.displaySettings,
         autoSwapVisargaSvarita: enabled,
+      },
+    }));
+  },
+  setShowItransInDocument: (enabled) => {
+    set((state) => ({
+      displaySettings: {
+        ...state.displaySettings,
+        showItransInDocument: enabled,
       },
     }));
   },

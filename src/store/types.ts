@@ -8,6 +8,8 @@ import type {
   TamilOutputStyle,
 } from '@/lib/vedic/mapping';
 
+export type ViewMode = 'focus' | 'read' | 'review' | 'immersive' | 'document';
+
 /**
  * A CanonicalBlock is the primary storage and reading unit of the document.
  * It represents a semantically whole piece of text, like a mantra, a sentence, or a paragraph.
@@ -74,7 +76,7 @@ export interface EditorState {
   activeBlockId: string | null;
   activeAnchorSegmentIndex?: number;
   focusSpan: 'tight' | 'balanced' | 'wide';
-  viewMode: 'focus' | 'read' | 'review' | 'immersive';
+  viewMode: ViewMode;
   ghostAssistEnabled: boolean;
 }
 
@@ -130,6 +132,7 @@ export interface DisplaySettings {
   sanskritFontPreset: SanskritFontPreset;
   tamilFontPreset: TamilFontPreset;
   autoSwapVisargaSvarita: boolean;
+  showItransInDocument: boolean;
   typography: TypographySettings;
 }
 

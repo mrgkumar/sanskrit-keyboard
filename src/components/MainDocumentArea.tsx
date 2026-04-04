@@ -22,6 +22,7 @@ export const MainDocumentArea: React.FC = () => {
     tamilOutputStyle,
     sanskritFontPreset,
     tamilFontPreset,
+    showItransInDocument,
   } = displaySettings;
   const documentTypography = typography.document;
   const updateDocumentHeight = React.useCallback(
@@ -724,11 +725,85 @@ export const MainDocumentArea: React.FC = () => {
     return null; // Should not reach here
   };
 
+  const renderDocumentCanvas = () => {
+    return (
+      <div className="mx-auto w-full max-w-4xl rounded-[2.5rem] border border-slate-200 bg-white p-12 shadow-xl sm:p-16">
+        <div className="space-y-8">
+          {blocks.map((block) => {
+            const isActive = block.id === activeBlockId;
+            const formatted = formatSourceForScript(block.source, primaryOutputScript, {
+              romanOutputStyle,
+              tamilOutputStyle,
+            });
+
+            return (
+              <div
+                key={block.id}
+                onClick={() => activateBlock(block.id)}
+                className={clsx(
+                  'group relative cursor-pointer transition-all',
+                  isActive ? 'bg-blue-50/30 -mx-4 px-4 py-2 rounded-xl ring-1 ring-blue-100' : 'hover:bg-slate-50/50 -mx-4 px-4 py-2 rounded-xl'
+                )}
+              >
+                {isActive && (
+                  <div className="absolute -left-8 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-blue-500 rounded-full shadow-sm" />
+                )}
+                <div className="space-y-2">
+                  {showItransInDocument && (
+                    <p
+                      className="whitespace-pre-wrap break-words font-mono text-slate-400 mb-1 opacity-60 group-hover:opacity-100 transition-opacity"
+                      style={{
+                        fontSize: `${documentTypography.itransFontSize * 0.8}px`,
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {block.source}
+                    </p>
+                  )}
+                  <p
+                    className={clsx(
+                      primaryOutputScript === 'devanagari' ? 'script-text-devanagari' : '',
+                      'whitespace-pre-wrap break-words text-slate-900'
+                    )}
+                    data-font-preset={sanskritFontPreset}
+                    lang={primaryOutputScript === 'devanagari' ? 'sa' : undefined}
+                    style={{
+                      fontSize: `${getRenderedFontSizeForScript(primaryOutputScript)}px`,
+                      lineHeight: getRenderedLineHeightForScript(primaryOutputScript),
+                    }}
+                  >
+                    {primaryOutputScript === 'devanagari' ? (
+                      block.rendered
+                    ) : (
+                      <ScriptText
+                        script={primaryOutputScript}
+                        text={formatted}
+                        sanskritFontPreset={sanskritFontPreset}
+                        tamilFontPreset={tamilFontPreset}
+                      />
+                    )}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+          {blocks.length === 0 && (
+            <p className="text-center text-slate-300 font-medium py-20 italic">Start typing in the composer above to begin your document...</p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div ref={documentContainerRef} className="flex-1 overflow-y-auto py-8 px-4" data-testid="main-document-scroll-container">
-      <div className="max-w-5xl mx-auto space-y-8">
-        {blocks.map(renderBlock)}
-      </div>
+      {viewMode === 'document' ? (
+        renderDocumentCanvas()
+      ) : (
+        <div className="max-w-5xl mx-auto space-y-8">
+          {blocks.map(renderBlock)}
+        </div>
+      )}
     </div>
   );
 };

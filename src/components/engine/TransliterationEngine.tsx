@@ -133,6 +133,7 @@ export const TransliterationEngine: React.FC = () => {
     hydratePersistedLexicalLearning,
     clearSessionLexicalLearning,
     clearPersistedLexicalLearning,
+    setShowItransInDocument,
     exportSessionSnapshot,
     loadSessionSnapshot,
     resetSession,
@@ -154,6 +155,8 @@ export const TransliterationEngine: React.FC = () => {
     romanOutputStyle,
     sanskritFontPreset,
     tamilFontPreset,
+    autoSwapVisargaSvarita,
+    showItransInDocument,
   } = displaySettings;
   const sanskritFontOptions: Array<{ value: SanskritFontPreset; label: string; sample: string }> = [
     { value: 'chandas', label: 'Chandas', sample: 'नमस्ते रुद्राय' },
@@ -499,6 +502,18 @@ export const TransliterationEngine: React.FC = () => {
         <div className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white/95 p-1 shadow-sm backdrop-blur">
           <button
             type="button"
+            onClick={() => setViewMode('document')}
+            className={clsx(
+              'touch-manipulation inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
+              viewMode === 'document' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
+            )}
+            aria-label="Document mode"
+            title="Document mode"
+          >
+            <BookText className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
             onClick={() => setViewMode('read')}
             className={clsx(
               'touch-manipulation inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
@@ -812,6 +827,66 @@ export const TransliterationEngine: React.FC = () => {
           </section>
 
           <section className="space-y-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Font Resources</p>
+              <p className="mt-1 text-xs text-slate-500">Download the scholarly fonts used in this application for offline use.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <a
+                href="https://sanskritdocuments.org/hindi/chandas/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 hover:bg-slate-50"
+              >
+                <span className="text-xs font-bold text-slate-700">Chandas Devanagari</span>
+                <span className="text-[10px] font-black uppercase text-blue-600">Download</span>
+              </a>
+              <a
+                href="https://sanskritdocuments.org/projects/siddhanta/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 hover:bg-slate-50"
+              >
+                <span className="text-xs font-bold text-slate-700">Siddhanta</span>
+                <span className="text-[10px] font-black uppercase text-blue-600">Download</span>
+              </a>
+              <a
+                href="https://fonts.google.com/specimen/Anek+Tamil"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 hover:bg-slate-50"
+              >
+                <span className="text-xs font-bold text-slate-700">Anek Tamil</span>
+                <span className="text-[10px] font-black uppercase text-blue-600">Download</span>
+              </a>
+              <a
+                href="https://fonts.google.com/specimen/Noto+Serif+Tamil"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 hover:bg-slate-50"
+              >
+                <span className="text-xs font-bold text-slate-700">Noto Serif Tamil</span>
+                <span className="text-[10px] font-black uppercase text-blue-600">Download</span>
+              </a>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Feedback & Issues</p>
+              <p className="mt-1 text-xs text-slate-500">Report technical bugs or suggest improvements via GitHub.</p>
+            </div>
+            <a
+              href="https://github.com/mrgkumar/sanskrit-keyboard/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-3 text-xs font-bold uppercase text-blue-700 hover:bg-blue-100"
+            >
+              Report Issue on GitHub
+            </a>
+          </section>
+
+          <section className="space-y-3">
             <button
               onClick={() => setIsDisplayMenuOpen((open) => !open)}
               className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-100"
@@ -860,6 +935,15 @@ export const TransliterationEngine: React.FC = () => {
                             className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                           />
                           <span className="text-[10px] font-bold uppercase text-slate-700">Sync Scroll</span>
+                        </label>
+                        <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                          <input
+                            checked={showItransInDocument}
+                            onChange={(e) => setShowItransInDocument(e.target.checked)}
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-[10px] font-bold uppercase text-slate-700">Show ITRANS in Document</span>
                         </label>
                       </div>
 
