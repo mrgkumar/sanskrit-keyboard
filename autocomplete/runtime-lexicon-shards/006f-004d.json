@@ -2,9 +2,6 @@
   "version": 1,
   "prefix": "oM",
   "entries": [
-    {"itrans":"oM","devanagari":"ओं","count":16},
-    {"itrans":"oMbhuurbhavassva:","devanagari":"ओंभूर्भवस्स्वः","count":1},
-    {"itrans":"oMbhuurbhuvassva:","devanagari":"ओंभूर्भुवस्स्वः","count":2},
     {"itrans":"oMkaaraadiini","devanagari":"ओंकारादीनि","count":1},
     {"itrans":"oMkaaraadisamaayuktaM","devanagari":"ओंकारादिसमायुक्तं","count":1},
     {"itrans":"oMkaaraakR^itisusvara:","devanagari":"ओंकाराकृतिसुस्वरः","count":1},

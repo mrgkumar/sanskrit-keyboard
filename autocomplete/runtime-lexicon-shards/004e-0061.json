@@ -2,23 +2,11 @@
   "version": 1,
   "prefix": "Na",
   "entries": [
-    {"itrans":"Na","devanagari":"ण","count":11},
-    {"itrans":"Na:","devanagari":"णः","count":5},
-    {"itrans":"Naa","devanagari":"णा","count":4},
-    {"itrans":"Naa:","devanagari":"णाः","count":1},
-    {"itrans":"Naam","devanagari":"णाम्","count":2},
-    {"itrans":"Naamaani","devanagari":"णामानि","count":1},
-    {"itrans":"NaiSa:","devanagari":"णैषः","count":2},
-    {"itrans":"NankRRittikaashchaakRRintaM~","devanagari":"णन्कृत्तिकाश्चाकृन्त","count":1},
-    {"itrans":"NaskRRidhi","devanagari":"णस्कृधि","count":1},
-    {"itrans":"NaskRRidhiiti","devanagari":"णस्कृधीति","count":1},
-    {"itrans":"Nava:","devanagari":"णवः","count":1},
-    {"itrans":"Nayata:","devanagari":"णयतः","count":1},
-    {"itrans":"Nayati","devanagari":"णयति","count":4},
-    {"itrans":"Nayatibudhnavatii","devanagari":"णयतिबुध्नवती","count":1},
-    {"itrans":"NayatiiyaM","devanagari":"णयतीयं","count":1},
-    {"itrans":"NayatyaanuSuuko","devanagari":"णयत्यानुषूको","count":2},
-    {"itrans":"NayatyadiikhSita","devanagari":"णयत्यदीख्षित","count":1},
-    {"itrans":"Nayatyaskannahavirbhavati","devanagari":"णयत्यस्कन्नहविर्भवति","count":1}
+    {"itrans":"Na:_","devanagari":"णः॒","count":1},
+    {"itrans":"NaakaaragarbhiNii","devanagari":"णाकारगर्भिणी","count":1},
+    {"itrans":"NaakaararuupiNe","devanagari":"णाकाररूपिणे","count":1},
+    {"itrans":"NaakaaravaachyoyassuptaM","devanagari":"णाकारवाच्योयस्सुप्तं","count":1},
+    {"itrans":"Naalabdi","devanagari":"णालब्दि","count":1},
+    {"itrans":"Nalinavilochana","devanagari":"णलिनविलोचन","count":1}
   ]
 }

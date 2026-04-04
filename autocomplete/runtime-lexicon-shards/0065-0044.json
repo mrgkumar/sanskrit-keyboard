@@ -2,6 +2,7 @@
   "version": 1,
   "prefix": "eD",
   "entries": [
+    {"itrans":"eDa","devanagari":"एड","count":1},
     {"itrans":"eDakaa:","devanagari":"एडकाः","count":1},
     {"itrans":"eDakaakriiDitaa","devanagari":"एडकाक्रीडिता","count":1},
     {"itrans":"eDakaakriiDitaishchaiva","devanagari":"एडकाक्रीडितैश्चैव","count":1},

@@ -2,7 +2,7 @@
   "version": 1,
   "prefix": "Do",
   "entries": [
-    {"itrans":"Do","devanagari":"डो","count":3},
+    {"itrans":"Do","devanagari":"डो","count":1},
     {"itrans":"Do/iyaa","devanagari":"डोइया","count":1},
     {"itrans":"Do~Ngara","devanagari":"डोङ्गर","count":1},
     {"itrans":"Do~Ngaraa","devanagari":"डोङ्गरा","count":1},
@@ -28,6 +28,7 @@
     {"itrans":"Dolaasu","devanagari":"डोलासु","count":1},
     {"itrans":"Dolaavanaara","devanagari":"डोलावनार","count":1},
     {"itrans":"Dolaavihaaramayate","devanagari":"डोलाविहारमयते","count":1},
+    {"itrans":"Dolaayaa~nchala","devanagari":"डोलायाञ्चल","count":1},
     {"itrans":"Dolaayamaanamanasa:","devanagari":"डोलायमानमनसः","count":1},
     {"itrans":"Dolaayamaanasthitau","devanagari":"डोलायमानस्थितौ","count":1},
     {"itrans":"DolaayitamaanasaM","devanagari":"डोलायितमानसं","count":1},

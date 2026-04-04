@@ -2,7 +2,6 @@
   "version": 1,
   "prefix": "uD",
   "entries": [
-    {"itrans":"uDa","devanagari":"उड","count":1},
     {"itrans":"uDaaleM","devanagari":"उडालें","count":1},
     {"itrans":"uDaalyaavara","devanagari":"उडाल्यावर","count":1},
     {"itrans":"uDaila","devanagari":"उडैल","count":1},
@@ -25,6 +24,7 @@
     {"itrans":"uDiyaabhaaSaa","devanagari":"उडियाभाषा","count":1},
     {"itrans":"uDiyaabhaaSaasthaM","devanagari":"उडियाभाषास्थं","count":1},
     {"itrans":"uDubhR^inmaulaye","devanagari":"उडुभृन्मौलये","count":1},
+    {"itrans":"uDubhR^inmauliruDunaathakarapriya:","devanagari":"उडुभृन्मौलिरुडुनाथकरप्रियः","count":1},
     {"itrans":"uDudaayapradiipa","devanagari":"उडुदायप्रदीप","count":1},
     {"itrans":"uDudaayapradiipo","devanagari":"उडुदायप्रदीपो","count":1},
     {"itrans":"uDugana","devanagari":"उडुगन","count":1},
@@ -111,7 +111,7 @@
     {"itrans":"uDupopari","devanagari":"उडुपोपरि","count":1},
     {"itrans":"uDupotsava:","devanagari":"उडुपोत्सवः","count":1},
     {"itrans":"uDuprabha:","devanagari":"उडुप्रभः","count":1},
-    {"itrans":"uDuprabhaa","devanagari":"उडुप्रभा","count":1},
+    {"itrans":"uDuprabhaa","devanagari":"उडुप्रभा","count":2},
     {"itrans":"uDuprabhaaya","devanagari":"उडुप्रभाय","count":1},
     {"itrans":"uDuprabhaayai","devanagari":"उडुप्रभायै","count":1},
     {"itrans":"uDupyaa:","devanagari":"उडुप्याः","count":1},
@@ -120,6 +120,7 @@
     {"itrans":"uDuraajakR^itottaMsa","devanagari":"उडुराजकृतोत्तंस","count":1},
     {"itrans":"uDuraajamukhii","devanagari":"उडुराजमुखी","count":1},
     {"itrans":"uDuunaampatichakShuSe","devanagari":"उडूनाम्पतिचक्षुषे","count":1},
-    {"itrans":"uDuyanakaale","devanagari":"उडुयनकाले","count":1}
+    {"itrans":"uDuyanakaale","devanagari":"उडुयनकाले","count":1},
+    {"itrans":"uDyashaa:","devanagari":"उड्यशाः","count":1}
   ]
 }

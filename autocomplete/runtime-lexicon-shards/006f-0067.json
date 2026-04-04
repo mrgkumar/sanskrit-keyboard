@@ -2,6 +2,7 @@
   "version": 1,
   "prefix": "og",
   "entries": [
+    {"itrans":"og","devanagari":"ओग्","count":1},
     {"itrans":"ogaachcha","devanagari":"ओगाच्च","count":1},
     {"itrans":"ogaalaa:","devanagari":"ओगालाः","count":1},
     {"itrans":"ogajaDadabalakR^isaMyuktaan","devanagari":"ओगजडदबलकृसंयुक्तान्","count":1},
@@ -13,6 +14,7 @@
     {"itrans":"ogdhriiva","devanagari":"ओग्ध्रीव","count":1},
     {"itrans":"oge","devanagari":"ओगे","count":1},
     {"itrans":"ogegaan","devanagari":"ओगेगान्","count":1},
+    {"itrans":"ogg","devanagari":"ओग्ग्","count":1},
     {"itrans":"oggahaNamuttaratthaM","devanagari":"ओग्गहणमुत्तरत्थं","count":1},
     {"itrans":"ogha:","devanagari":"ओघः","count":1},
     {"itrans":"oghaa","devanagari":"ओघा","count":1},
@@ -88,6 +90,8 @@
     {"itrans":"ogho","devanagari":"ओघो","count":1},
     {"itrans":"oghu","devanagari":"ओघु","count":1},
     {"itrans":"ogkaararaavii","devanagari":"ओग्काररावी","count":1},
+    {"itrans":"ogM","devanagari":"ओग्ं","count":1},
+    {"itrans":"ogM_","devanagari":"ओग्ं॒","count":1},
     {"itrans":"oguNa:","devanagari":"ओगुणः","count":1},
     {"itrans":"ogya:","devanagari":"ओग्यः","count":1},
     {"itrans":"ogyasya","devanagari":"ओग्यस्य","count":1}

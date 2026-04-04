@@ -2,8 +2,8 @@
   "version": 1,
   "prefix": "Mv",
   "entries": [
+    {"itrans":"Mvaa","devanagari":"ंवा","count":1},
     {"itrans":"MvadbhaavagrahaNaM","devanagari":"ंवद्भावग्रहणं","count":1},
-    {"itrans":"Mvathsaramiti","devanagari":"ंवथ्सरमिति","count":1},
     {"itrans":"Mvidhaani","devanagari":"ंविधानि","count":1}
   ]
 }

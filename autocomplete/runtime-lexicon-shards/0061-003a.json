@@ -2,6 +2,7 @@
   "version": 1,
   "prefix": "a:",
   "entries": [
+    {"itrans":"a:","devanagari":"अः","count":1},
     {"itrans":"a:kaaramanuruupiNyai","devanagari":"अःकारमनुरूपिण्यै","count":1},
     {"itrans":"a:kaaramuditaa","devanagari":"अःकारमुदिता","count":1},
     {"itrans":"a:kaaravanitaayai","devanagari":"अःकारवनितायै","count":1},

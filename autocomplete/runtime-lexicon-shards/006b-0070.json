@@ -2,10 +2,12 @@
   "version": 1,
   "prefix": "kp",
   "entries": [
+    {"itrans":"kpaaNipaadapaayuupasthamanovikaaraa","devanagari":"क्पाणिपादपायूपस्थमनोविकारा","count":1},
     {"itrans":"kpaarshvaM","devanagari":"क्पार्श्वं","count":1},
     {"itrans":"kpaatraaNiiha","devanagari":"क्पात्राणीह","count":1},
     {"itrans":"kpaatreSu","devanagari":"क्पात्रेषु","count":1},
     {"itrans":"kparap","devanagari":"क्परप्","count":1},
+    {"itrans":"kpaTimal","devanagari":"क्पटिमल्","count":1},
     {"itrans":"kpiNDena","devanagari":"क्पिण्डेन","count":1},
     {"itrans":"kpini","devanagari":"क्पिनि","count":1},
     {"itrans":"kpishamiSTa:","devanagari":"क्पिशमिष्टः","count":1}

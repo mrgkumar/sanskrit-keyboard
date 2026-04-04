@@ -2,9 +2,6 @@
   "version": 1,
   "prefix": "nC",
   "entries": [
-    {"itrans":"nChaachiin","devanagari":"न्छाचीन्","count":1},
-    {"itrans":"nChandomai:","devanagari":"न्छन्दोमैः","count":1},
-    {"itrans":"nChariire","devanagari":"न्छरीरे","count":1},
-    {"itrans":"nChivaM","devanagari":"न्छिवं","count":1}
+    {"itrans":"nChariire","devanagari":"न्छरीरे","count":1}
   ]
 }

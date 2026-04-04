@@ -2,18 +2,9 @@
   "version": 1,
   "prefix": "Su",
   "entries": [
-    {"itrans":"Su","devanagari":"षु","count":18},
-    {"itrans":"Suka:","devanagari":"षुकः","count":6},
-    {"itrans":"Sukassyaaditi","devanagari":"षुकस्स्यादिति","count":1},
-    {"itrans":"Sukassyaat","devanagari":"षुकस्स्यात्","count":1},
-    {"itrans":"Suko","devanagari":"षुको","count":1},
-    {"itrans":"Sukona","devanagari":"षुकोन","count":1},
-    {"itrans":"SuNoti","devanagari":"षुणोति","count":1},
-    {"itrans":"SuNotyaSTaakhSaraa","devanagari":"षुणोत्यष्टाख्षरा","count":1},
-    {"itrans":"SuNuyaadyadaapyaayayati","devanagari":"षुणुयाद्यदाप्याययति","count":1},
-    {"itrans":"SuNvanti","devanagari":"षुण्वन्ति","count":1},
+    {"itrans":"Su","devanagari":"षु","count":1},
+    {"itrans":"Su'ko","devanagari":"षु॑को","count":1},
     {"itrans":"SuraasuranamaskR^itaayai","devanagari":"षुरासुरनमस्कृतायै","count":1},
-    {"itrans":"SuSTi:","devanagari":"षुष्टिः","count":1},
-    {"itrans":"Suu","devanagari":"षू","count":2}
+    {"itrans":"SuSTi:","devanagari":"षुष्टिः","count":1}
   ]
 }

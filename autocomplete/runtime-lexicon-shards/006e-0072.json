@@ -4,9 +4,11 @@
   "entries": [
     {"itrans":"nra","devanagari":"न्र","count":1},
     {"itrans":"nra:","devanagari":"न्रः","count":1},
+    {"itrans":"nra'kShatu","devanagari":"न्र॑क्षतु","count":1},
     {"itrans":"nraa","devanagari":"न्रा","count":1},
+    {"itrans":"nraa_jyo","devanagari":"न्रा॒ज्यो","count":1},
     {"itrans":"nraadheyaguptaansaha","devanagari":"न्राधेयगुप्तान्सह","count":1},
-    {"itrans":"nraajann","devanagari":"न्राजन्न्","count":1},
+    {"itrans":"nraajaana","devanagari":"न्राजान","count":1},
     {"itrans":"nraajendra","devanagari":"न्राजेन्द्र","count":1},
     {"itrans":"nraakShasa:","devanagari":"न्राक्षसः","count":1},
     {"itrans":"nraaM","devanagari":"न्रां","count":1},
@@ -16,8 +18,13 @@
     {"itrans":"nrasthimaalin","devanagari":"न्रस्थिमालिन्","count":1},
     {"itrans":"nrau","devanagari":"न्रौ","count":1},
     {"itrans":"nraudre","devanagari":"न्रौद्रे","count":1},
+    {"itrans":"nraudre_Naanii'kena","devanagari":"न्रौद्रे॒णानी॑केन","count":1},
     {"itrans":"nre","devanagari":"न्रे","count":1},
+    {"itrans":"nreta","devanagari":"न्रेत","count":1},
     {"itrans":"nro:","devanagari":"न्रोः","count":1},
-    {"itrans":"nrohati","devanagari":"न्रोहति","count":1}
+    {"itrans":"nrohati","devanagari":"न्रोहति","count":1},
+    {"itrans":"nrohi'taag","devanagari":"न्रोहि॑ताग्","count":1},
+    {"itrans":"nrudraa'","devanagari":"न्रुद्रा॑","count":1},
+    {"itrans":"nruupa","devanagari":"न्रूप","count":1}
   ]
 }

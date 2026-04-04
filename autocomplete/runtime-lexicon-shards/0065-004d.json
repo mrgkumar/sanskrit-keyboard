@@ -2,6 +2,7 @@
   "version": 1,
   "prefix": "eM",
   "entries": [
+    {"itrans":"eM","devanagari":"एं","count":1},
     {"itrans":"eMga","devanagari":"एंग","count":1},
     {"itrans":"eMgatii","devanagari":"एंगती","count":1},
     {"itrans":"eMgelsa","devanagari":"एंगेल्स","count":1},

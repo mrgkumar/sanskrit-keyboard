@@ -2,8 +2,9 @@
   "version": 1,
   "prefix": "Um",
   "entries": [
-    {"itrans":"Umaa","devanagari":"ऊमा","count":2},
-    {"itrans":"Umaa:","devanagari":"ऊमाः","count":4},
+    {"itrans":"Um","devanagari":"ऊम्","count":1},
+    {"itrans":"Umaa","devanagari":"ऊमा","count":1},
+    {"itrans":"Umaa:","devanagari":"ऊमाः","count":1},
     {"itrans":"Umaaso","devanagari":"ऊमासो","count":1},
     {"itrans":"Umaiturai","devanagari":"ऊमैतुरै","count":1},
     {"itrans":"UmaM","devanagari":"ऊमं","count":1},

@@ -2,6 +2,7 @@
   "version": 1,
   "prefix": "UM",
   "entries": [
+    {"itrans":"UM","devanagari":"ऊं","count":1},
     {"itrans":"UMsa","devanagari":"ऊंस","count":1},
     {"itrans":"UMsaa","devanagari":"ऊंसा","count":1},
     {"itrans":"UMsaacheM","devanagari":"ऊंसाचें","count":1},

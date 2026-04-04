@@ -2,23 +2,14 @@
   "version": 1,
   "prefix": "Sy",
   "entries": [
-    {"itrans":"Sya","devanagari":"ष्य","count":3},
-    {"itrans":"Syaa","devanagari":"ष्या","count":1},
-    {"itrans":"Syaama","devanagari":"ष्याम","count":2},
-    {"itrans":"Syaami","devanagari":"ष्यामि","count":2},
-    {"itrans":"SyaamyaayuSo","devanagari":"ष्याम्यायुषो","count":1},
-    {"itrans":"Syaasaadayedyaj~namukhaM","devanagari":"ष्यासादयेद्यज्ञमुखं","count":1},
-    {"itrans":"Syaaya","devanagari":"ष्याय","count":2},
-    {"itrans":"Syabhavann","devanagari":"ष्यभवन्न्","count":1},
-    {"itrans":"Syabhi","devanagari":"ष्यभि","count":2},
-    {"itrans":"Syabhighaarayati","devanagari":"ष्यभिघारयति","count":2},
-    {"itrans":"SyabhivyaahRRitya","devanagari":"ष्यभिव्याहृत्य","count":1},
-    {"itrans":"Syabhyabhuut","devanagari":"ष्यभ्यभूत्","count":1},
-    {"itrans":"Syagne:","devanagari":"ष्यग्नेः","count":2},
-    {"itrans":"Syanyaa","devanagari":"ष्यन्या","count":1},
-    {"itrans":"Syastave","devanagari":"ष्यस्तवे","count":1},
-    {"itrans":"Syatu","devanagari":"ष्यतु","count":3},
-    {"itrans":"Syayaatayaamamaajyamiti","devanagari":"ष्ययातयाममाज्यमिति","count":1},
-    {"itrans":"Syudaahareyu:","devanagari":"ष्युदाहरेयुः","count":1}
+    {"itrans":"Syaa_suu_ye","devanagari":"ष्या॒सू॒ये","count":1},
+    {"itrans":"Syaa'","devanagari":"ष्या॑","count":1},
+    {"itrans":"Syaa'ya","devanagari":"ष्या॑य","count":1},
+    {"itrans":"Syaapa:'","devanagari":"ष्यापः॑","count":1},
+    {"itrans":"Syaapo_","devanagari":"ष्यापो॒","count":1},
+    {"itrans":"Syaaya'","devanagari":"ष्याय॑","count":1},
+    {"itrans":"Syabhibhuuta_","devanagari":"ष्यभिभूत॒","count":1},
+    {"itrans":"Syasta've","devanagari":"ष्यस्त॑वे","count":1},
+    {"itrans":"Syu_shannu_shadbhi:'","devanagari":"ष्यु॒शन्नु॒शद्भिः॑","count":1}
   ]
 }

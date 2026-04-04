@@ -3,7 +3,11 @@
   "prefix": "lm",
   "entries": [
     {"itrans":"lma","devanagari":"ल्म","count":1},
+    {"itrans":"lma~nchini","devanagari":"ल्मञ्चिनि","count":1},
+    {"itrans":"lmadivela","devanagari":"ल्मदिवेल","count":1},
     {"itrans":"lmakena","devanagari":"ल्मकेन","count":1},
-    {"itrans":"lmine","devanagari":"ल्मिने","count":1}
+    {"itrans":"lmiikograjihvaadbhuta","devanagari":"ल्मीकोग्रजिह्वाद्भुत","count":1},
+    {"itrans":"lmine","devanagari":"ल्मिने","count":1},
+    {"itrans":"lmokShamii","devanagari":"ल्मोक्षमी","count":1}
   ]
 }

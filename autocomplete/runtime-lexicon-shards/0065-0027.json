@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "prefix": "e'",
+  "entries": [
+    {"itrans":"e'ka","devanagari":"ए॑क","count":1},
+    {"itrans":"e'kaada_sheSu'","devanagari":"ए॑काद॒शेषु॑","count":1},
+    {"itrans":"e'kaannatri_gM_sheSu'","devanagari":"ए॑कान्नत्रि॒ग्ं॒शेषु॑","count":1},
+    {"itrans":"e'kaannavi_gM_sheSu'","devanagari":"ए॑कान्नवि॒ग्ं॒शेषु॑","count":1},
+    {"itrans":"e'katri_gM_sheSu'","devanagari":"ए॑कत्रि॒ग्ं॒शेषु॑","count":1},
+    {"itrans":"e'kavi_gM_sheSu'","devanagari":"ए॑कवि॒ग्ं॒शेषु॑","count":1},
+    {"itrans":"e'na","devanagari":"ए॑न","count":1},
+    {"itrans":"e'nam","devanagari":"ए॑नम्","count":1},
+    {"itrans":"e'naM","devanagari":"ए॑नं","count":1},
+    {"itrans":"e'naM_","devanagari":"ए॑नं॒","count":1},
+    {"itrans":"e'Saa_","devanagari":"ए॑षा॒","count":1},
+    {"itrans":"e'ti","devanagari":"ए॑ति","count":1},
+    {"itrans":"e'tu","devanagari":"ए॑तु","count":1},
+    {"itrans":"e'tu_","devanagari":"ए॑तु॒","count":1},
+    {"itrans":"e'vaM","devanagari":"ए॑वं","count":1}
+  ]
+}

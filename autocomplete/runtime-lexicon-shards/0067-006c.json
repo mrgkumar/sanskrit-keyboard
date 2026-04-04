@@ -3,6 +3,7 @@
   "prefix": "gl",
   "entries": [
     {"itrans":"glaa","devanagari":"ग्ला","count":1},
+    {"itrans":"glaa_vam","devanagari":"ग्ला॒वम्","count":1},
     {"itrans":"glaa/iDars","devanagari":"ग्लाइडर्स्","count":1},
     {"itrans":"glaa/isemika","devanagari":"ग्लाइसेमिक","count":1},
     {"itrans":"glaagau","devanagari":"ग्लागौ","count":1},
@@ -111,7 +112,6 @@
     {"itrans":"glaatR^i","devanagari":"ग्लातृ","count":1},
     {"itrans":"glaava:","devanagari":"ग्लावः","count":1},
     {"itrans":"glaavaa","devanagari":"ग्लावा","count":1},
-    {"itrans":"glaavam","devanagari":"ग्लावम्","count":1},
     {"itrans":"glaavaM","devanagari":"ग्लावं","count":1},
     {"itrans":"glaavau","devanagari":"ग्लावौ","count":1},
     {"itrans":"glaave","devanagari":"ग्लावे","count":1},

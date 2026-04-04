@@ -2,11 +2,10 @@
   "version": 1,
   "prefix": "uM",
   "entries": [
+    {"itrans":"uM","devanagari":"उं","count":1},
     {"itrans":"uMbare","devanagari":"उंबरे","count":1},
     {"itrans":"uMbraa","devanagari":"उंब्रा","count":1},
     {"itrans":"uMchaavaliyaa","devanagari":"उंचावलिया","count":1},
-    {"itrans":"uMdaM","devanagari":"उंदं","count":1},
-    {"itrans":"uMdaMtu","devanagari":"उंदंतु","count":1},
     {"itrans":"uMnama:","devanagari":"उंनमः","count":1},
     {"itrans":"uMpuSTyainama:","devanagari":"उंपुष्ट्यैनमः","count":1},
     {"itrans":"uMsaamadhiila","devanagari":"उंसामधील","count":1},

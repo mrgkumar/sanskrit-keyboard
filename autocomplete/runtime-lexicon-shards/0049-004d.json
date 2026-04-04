@@ -2,11 +2,7 @@
   "version": 1,
   "prefix": "IM",
   "entries": [
-    {"itrans":"IM","devanagari":"ईं","count":4},
-    {"itrans":"IMkaaraaya","devanagari":"ईंकाराय","count":1},
-    {"itrans":"IMkaaraayetiiM","devanagari":"ईंकारायेतीं","count":1},
-    {"itrans":"IMkRRitaaya","devanagari":"ईंकृताय","count":1},
-    {"itrans":"IMkRRitaayetiiM","devanagari":"ईंकृतायेतीं","count":1},
+    {"itrans":"IM","devanagari":"ईं","count":1},
     {"itrans":"IMnama:","devanagari":"ईंनमः","count":1},
     {"itrans":"IMnamo","devanagari":"ईंनमो","count":1},
     {"itrans":"IMshaanaatmane","devanagari":"ईंशानात्मने","count":1},

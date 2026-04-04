@@ -2,7 +2,6 @@
   "version": 1,
   "prefix": "e.",
   "entries": [
-    {"itrans":"e.api","devanagari":"एऽपि","count":1},
-    {"itrans":"e.avaanumataM","devanagari":"एऽवानुमतं","count":1}
+    {"itrans":"e.api","devanagari":"एऽपि","count":1}
   ]
 }

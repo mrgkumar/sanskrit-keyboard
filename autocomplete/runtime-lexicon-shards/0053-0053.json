@@ -2,6 +2,18 @@
   "version": 1,
   "prefix": "SS",
   "entries": [
-    {"itrans":"SSoDashadhaa","devanagari":"ष्षोडशधा","count":1}
+    {"itrans":"SSa_STheSu'","devanagari":"ष्ष॒ष्ठेषु॑","count":1},
+    {"itrans":"SSa'Dvi_gM_sheSu'","devanagari":"ष्ष॑ड्वि॒ग्ं॒शेषु॑","count":1},
+    {"itrans":"SSaDa'shvai:","devanagari":"ष्षड॑श्वैः","count":1},
+    {"itrans":"SSaDDho'taa","devanagari":"ष्षड्ढो॑ता","count":1},
+    {"itrans":"SSaDR^itava:","devanagari":"ष्षडृतवः","count":1},
+    {"itrans":"SSaDrasaa","devanagari":"ष्षड्रसा","count":1},
+    {"itrans":"SSaDurviiru_ruNa:'","devanagari":"ष्षडुर्वीरु॒रुणः॑","count":1},
+    {"itrans":"SSaNmukha:","devanagari":"ष्षण्मुखः","count":1},
+    {"itrans":"SSaTcha'","devanagari":"ष्षट्च॑","count":1},
+    {"itrans":"SSo'Da_sheSu'","devanagari":"ष्षो॑ड॒शेषु॑","count":1},
+    {"itrans":"SSoDa_shii","devanagari":"ष्षोड॒शी","count":1},
+    {"itrans":"SSoDasha","devanagari":"ष्षोडश","count":1},
+    {"itrans":"SSoDashakalaa:","devanagari":"ष्षोडशकलाः","count":1}
   ]
 }

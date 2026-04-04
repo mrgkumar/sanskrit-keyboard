@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "prefix": "LL",
+  "entries": [
+    {"itrans":"LLim","devanagari":"ऌम्","count":1},
+    {"itrans":"LLiM","devanagari":"ऌं","count":1},
+    {"itrans":"LLIm","devanagari":"ॡम्","count":1},
+    {"itrans":"LLIM","devanagari":"ॡं","count":1}
+  ]
+}

@@ -2,6 +2,7 @@
   "version": 1,
   "prefix": "bj",
   "entries": [
-    {"itrans":"bjaa","devanagari":"ब्जा","count":1}
+    {"itrans":"bjaa","devanagari":"ब्जा","count":1},
+    {"itrans":"bjotda","devanagari":"ब्जोत्द","count":1}
   ]
 }

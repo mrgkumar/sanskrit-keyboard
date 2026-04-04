@@ -2,7 +2,6 @@
   "version": 1,
   "prefix": "rS",
   "entries": [
-    {"itrans":"rS","devanagari":"र्ष्","count":2},
     {"itrans":"rSa","devanagari":"र्ष","count":1},
     {"itrans":"rSabha","devanagari":"र्षभ","count":1},
     {"itrans":"rSabha:","devanagari":"र्षभः","count":1},
@@ -23,9 +22,7 @@
     {"itrans":"rSNaa","devanagari":"र्ष्णा","count":1},
     {"itrans":"rSNiiM","devanagari":"र्ष्णीं","count":1},
     {"itrans":"rSodayana","devanagari":"र्षोदयन","count":1},
-    {"itrans":"rSta","devanagari":"र्ष्त","count":1},
     {"itrans":"rSTa","devanagari":"र्ष्ट","count":1},
-    {"itrans":"rSta:","devanagari":"र्ष्तः","count":1},
     {"itrans":"rSTi","devanagari":"र्ष्टि","count":1},
     {"itrans":"rSva","devanagari":"र्ष्व","count":1},
     {"itrans":"rSya","devanagari":"र्ष्य","count":1},

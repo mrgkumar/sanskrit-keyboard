@@ -2,7 +2,7 @@
   "version": 1,
   "prefix": "Se",
   "entries": [
-    {"itrans":"Se:","devanagari":"षेः","count":1},
+    {"itrans":"Se","devanagari":"षे","count":1},
     {"itrans":"Sedathu:","devanagari":"षेदथुः","count":1},
     {"itrans":"Sedatu:","devanagari":"षेदतुः","count":1},
     {"itrans":"Sedaturyatra","devanagari":"षेदतुर्यत्र","count":1},
@@ -10,12 +10,10 @@
     {"itrans":"Sedu:","devanagari":"षेदुः","count":1},
     {"itrans":"Sedurdashasyanta","devanagari":"षेदुर्दशस्यन्त","count":1},
     {"itrans":"Sedurnamasyanta","devanagari":"षेदुर्नमस्यन्त","count":1},
+    {"itrans":"Sej","devanagari":"षेज्","count":1},
+    {"itrans":"Seka","devanagari":"षेक","count":1},
+    {"itrans":"SeNa","devanagari":"षेण","count":1},
     {"itrans":"Serbro/oke","devanagari":"षेर्ब्रोओके","count":1},
-    {"itrans":"Set","devanagari":"षेत्","count":4},
-    {"itrans":"Seti","devanagari":"षेति","count":2},
-    {"itrans":"Setpa~ncha","devanagari":"षेत्पञ्च","count":1},
-    {"itrans":"Setsi","devanagari":"षेत्सि","count":1},
-    {"itrans":"Setyapa","devanagari":"षेत्यप","count":1},
-    {"itrans":"Seyar","devanagari":"षेयर्","count":1}
+    {"itrans":"Setsi","devanagari":"षेत्सि","count":1}
   ]
 }

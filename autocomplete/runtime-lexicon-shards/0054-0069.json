@@ -2,13 +2,13 @@
   "version": 1,
   "prefix": "Ti",
   "entries": [
-    {"itrans":"Ti","devanagari":"टि","count":4},
+    {"itrans":"Ti","devanagari":"टि","count":1},
+    {"itrans":"Ti~nchuka","devanagari":"टिञ्चुक","count":1},
     {"itrans":"TibeTankuTumbe","devanagari":"टिबेटन्कुटुम्बे","count":1},
     {"itrans":"TibeTiiyamandiraaNi","devanagari":"टिबेटीयमन्दिराणि","count":1},
-    {"itrans":"Tii","devanagari":"टी","count":2},
     {"itrans":"TiichiMgsa","devanagari":"टीचिंग्स","count":1},
     {"itrans":"TiiDii/A/I/ela","devanagari":"टीडीआईएल","count":1},
-    {"itrans":"Tiika","devanagari":"टीक","count":1},
+    {"itrans":"Tiika","devanagari":"टीक","count":2},
     {"itrans":"Tiikaabhinavaguptena","devanagari":"टीकाभिनवगुप्तेन","count":1},
     {"itrans":"Tiikaabhiraabhi:","devanagari":"टीकाभिराभिः","count":1},
     {"itrans":"Tiikaadvayamadyaavadhi","devanagari":"टीकाद्वयमद्यावधि","count":1},
@@ -68,11 +68,13 @@
     {"itrans":"TikaTaॉka","devanagari":"टिकटॉक","count":1},
     {"itrans":"Tikavitaa","devanagari":"टिकविता","count":1},
     {"itrans":"TikeyaM","devanagari":"टिकेयं","count":1},
+    {"itrans":"Tikin","devanagari":"टिकिन्","count":1},
     {"itrans":"Tikino","devanagari":"टिकिनो","count":1},
     {"itrans":"Tikinomadhye","devanagari":"टिकिनोमध्ये","count":1},
     {"itrans":"Tikinonagare","devanagari":"टिकिनोनगरे","count":1},
     {"itrans":"Tikinota:","devanagari":"टिकिनोतः","count":1},
     {"itrans":"Tikkikaa","devanagari":"टिक्किका","count":1},
+    {"itrans":"Tiko","devanagari":"टिको","count":1},
     {"itrans":"Tiku","devanagari":"टिकु","count":1},
     {"itrans":"Tikulii","devanagari":"टिकुली","count":1},
     {"itrans":"Tikuuna","devanagari":"टिकून","count":1},
@@ -145,6 +147,7 @@
     {"itrans":"TiTTibhastaSTaye","devanagari":"टिट्टिभस्तष्टये","count":1},
     {"itrans":"TiTTibho","devanagari":"टिट्टिभो","count":1},
     {"itrans":"TiTTibhotpaadanaadeva","devanagari":"टिट्टिभोत्पादनादेव","count":1},
+    {"itrans":"Tivi","devanagari":"टिवि","count":1},
     {"itrans":"Tiyars","devanagari":"टियर्स्","count":1}
   ]
 }

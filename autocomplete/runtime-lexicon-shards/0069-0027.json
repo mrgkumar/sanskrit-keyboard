@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "prefix": "i'",
+  "entries": [
+    {"itrans":"i'hi","devanagari":"इ॑हि","count":1},
+    {"itrans":"i'me","devanagari":"इ॑मे","count":1},
+    {"itrans":"i'mi","devanagari":"इ॑मि","count":1},
+    {"itrans":"i'ndri_yaaya_","devanagari":"इ॑न्द्रि॒याय॒","count":1},
+    {"itrans":"i'Su_dhistavaa_re","devanagari":"इ॑षु॒धिस्तवा॒रे","count":1},
+    {"itrans":"i'taraa_Ni","devanagari":"इ॑तरा॒णि","count":1},
+    {"itrans":"i'ti","devanagari":"इ॑ति","count":1},
+    {"itrans":"i'tyaacha_kShate","devanagari":"इ॑त्याच॒क्षते","count":1},
+    {"itrans":"i'tyaachaa_ryaa:","devanagari":"इ॑त्याचा॒र्याः","count":1},
+    {"itrans":"i'tyekaa_dasha","devanagari":"इ॑त्येका॒दश","count":1},
+    {"itrans":"i'tyupa_sthe","devanagari":"इ॑त्युप॒स्थे","count":1},
+    {"itrans":"i'va","devanagari":"इ॑व","count":1},
+    {"itrans":"i'va_","devanagari":"इ॑व॒","count":1},
+    {"itrans":"i'vaaruja_tsaanu'","devanagari":"इ॑वारुज॒त्सानु॑","count":1}
+  ]
+}

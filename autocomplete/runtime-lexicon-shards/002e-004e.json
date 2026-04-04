@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "prefix": ".N",
+  "entries": [
+    {"itrans":".N|","devanagari":"ँ।","count":1},
+    {"itrans":".Nlo_kaa","devanagari":"ँलो॒का","count":1},
+    {"itrans":".Npa'shchaadi_ti","devanagari":"ँप॑श्चादि॒ति","count":1},
+    {"itrans":".Nvaata'","devanagari":"ँवात॑","count":1},
+    {"itrans":".Nye","devanagari":"ँये","count":1},
+    {"itrans":".Nyo","devanagari":"ँयो","count":1}
+  ]
+}

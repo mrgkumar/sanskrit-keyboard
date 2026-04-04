@@ -2,7 +2,7 @@
   "version": 1,
   "prefix": "pC",
   "entries": [
-    {"itrans":"pChaMda:","devanagari":"प्छंदः","count":1},
-    {"itrans":"pChandasaam","devanagari":"प्छन्दसाम्","count":1}
+    {"itrans":"pChanda:","devanagari":"प्छन्दः","count":1},
+    {"itrans":"pChandaaMsi","devanagari":"प्छन्दांसि","count":1}
   ]
 }

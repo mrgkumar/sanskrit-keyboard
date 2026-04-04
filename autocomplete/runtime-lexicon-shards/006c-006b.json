@@ -2,6 +2,7 @@
   "version": 1,
   "prefix": "lk",
   "entries": [
+    {"itrans":"lkalashabdhadhvanu","devanagari":"ल्कलशब्धध्वनु","count":1},
     {"itrans":"lkha","devanagari":"ल्ख","count":1},
     {"itrans":"lkShmyaa:","devanagari":"ल्क्ष्म्याः","count":1},
     {"itrans":"lkShyaa:","devanagari":"ल्क्ष्याः","count":1},

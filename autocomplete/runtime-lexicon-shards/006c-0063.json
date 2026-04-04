@@ -2,6 +2,9 @@
   "version": 1,
   "prefix": "lc",
   "entries": [
-    {"itrans":"lcha","devanagari":"ल्च","count":1}
+    {"itrans":"lcha","devanagari":"ल्च","count":1},
+    {"itrans":"lchaॆppa~Ngane","devanagari":"ल्चॆप्पङ्गने","count":1},
+    {"itrans":"lchi","devanagari":"ल्चि","count":1},
+    {"itrans":"lchina","devanagari":"ल्चिन","count":1}
   ]
 }

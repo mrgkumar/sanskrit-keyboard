@@ -2,22 +2,8 @@
   "version": 1,
   "prefix": "kL",
   "entries": [
-    {"itrans":"kLLiptaa","devanagari":"कॢप्ता","count":2},
-    {"itrans":"kLLiptaa:","devanagari":"कॢप्ताः","count":5},
-    {"itrans":"kLLiptaassamedhante","devanagari":"कॢप्तास्समेधन्ते","count":1},
-    {"itrans":"kLLiptam","devanagari":"कॢप्तम्","count":1},
-    {"itrans":"kLLiptaM","devanagari":"कॢप्तं","count":1},
-    {"itrans":"kLLiptayya.Nj~nametam","devanagari":"कॢप्तय्यँज्ञमेतम्","count":1},
-    {"itrans":"kLLiptiM","devanagari":"कॢप्तिं","count":2},
-    {"itrans":"kLLiptimanu","devanagari":"कॢप्तिमनु","count":1},
-    {"itrans":"kLLiptirasi","devanagari":"कॢप्तिरसि","count":1},
-    {"itrans":"kLLiptirdashahoturnidaana","devanagari":"कॢप्तिर्दशहोतुर्निदान","count":1},
-    {"itrans":"kLLiptirya","devanagari":"कॢप्तिर्य","count":1},
-    {"itrans":"kLLiptishcha","devanagari":"कॢप्तिश्च","count":1},
-    {"itrans":"kLLiptivve.Nda","devanagari":"कॢप्तिव्वेँद","count":1},
-    {"itrans":"kLLipto","devanagari":"कॢप्तो","count":2},
-    {"itrans":"kLLipto.amRRitenaahamasmi","devanagari":"कॢप्तोऽमृतेनाहमस्मि","count":1},
-    {"itrans":"kLLiptyaa","devanagari":"कॢप्त्या","count":2},
-    {"itrans":"kLLiptyai","devanagari":"कॢप्त्यै","count":8}
+    {"itrans":"kL^i_pta","devanagari":"कॢ॒प्त","count":1},
+    {"itrans":"kL^iptaasanastha:","devanagari":"कॢप्तासनस्थः","count":1},
+    {"itrans":"kL^ipti'shcha","devanagari":"कॢप्ति॑श्च","count":1}
   ]
 }

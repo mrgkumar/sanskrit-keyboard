@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "prefix": "u'",
+  "entries": [
+    {"itrans":"u'","devanagari":"उ॑","count":1},
+    {"itrans":"u'bhe","devanagari":"उ॑भे","count":1},
+    {"itrans":"u'chainame_vaM","devanagari":"उ॑चैनमे॒वं","count":1},
+    {"itrans":"u'daa_nassa'maa_na:","devanagari":"उ॑दा॒नस्स॑मा॒नः","count":1},
+    {"itrans":"u'dga_taa","devanagari":"उ॑द्ग॒ता","count":1},
+    {"itrans":"u'graa_","devanagari":"उ॑ग्रा॒","count":1},
+    {"itrans":"u'jjahaa_ra","devanagari":"उ॑ज्जहा॒र","count":1},
+    {"itrans":"u'paaM_shu","devanagari":"उ॑पां॒शु","count":1},
+    {"itrans":"u'pade_sha:","devanagari":"उ॑पदे॒शः","count":1},
+    {"itrans":"u'pari_","devanagari":"उ॑परि॒","count":1},
+    {"itrans":"u'pasa_rpanti'","devanagari":"उ॑पस॒र्पन्ति॑","count":1},
+    {"itrans":"u'pava_ktaa","devanagari":"उ॑पव॒क्ता","count":1},
+    {"itrans":"u'tta_ma","devanagari":"उ॑त्त॒म","count":1},
+    {"itrans":"u'ttara_ta","devanagari":"उ॑त्तर॒त","count":1}
+  ]
+}
