@@ -619,6 +619,29 @@ test("Tamil Precision display normalization moves Vedic accents before trailing 
   expect(normalizeTamilPrecisionDisplayText('ஹிர॑ண்யவர்ணாம்॒')).toBe('ஹிர॑ண்யவர்ணா॒ம்');
 });
 
+test('Tamil Precision display normalization renders medial na and dirgha svarita with reverse-safe forms', () => {
+  const raw = formatSourceForOutput("la_kShmiimana'pagaa_minii\"m", { outputScheme: 'sanskrit-tamil-precision' });
+  const rendered = normalizeTamilPrecisionDisplayText(raw);
+
+  expect(rendered).toBe('ல॒க்ஷ்மீமன॑பகா॒³மினீ᳚ம்');
+  expect(
+    reverseTamilInput(rendered, { inputMode: 'tamil-precision', outputMode: 'canonical' }),
+  ).toEqual({
+    status: 'success',
+    inputKind: 'tamil-precision',
+    canonicalRoman: "la_kShmImana'pagA_minI''M",
+  });
+});
+
+test('Tamil Precision display normalization removes stray chandrabindu marks from Tamil output', () => {
+  const rendered = renderTamilPrecisionText(formatSourceForOutput('vi.N_ndeya_', { outputScheme: 'sanskrit-tamil-precision' }));
+  expect(rendered).toHaveLength(1);
+
+  const akshara = rendered[0] as { props: { className: string; children: string } };
+  expect(akshara.props.className).toBe('tamil-precision-akshara');
+  expect(akshara.props.children).toBe('வி॒ந்தே³ய॒');
+});
+
 test('Tamil precision renderer keeps Vedic tone marks in the same text node as the akshara', () => {
   const rendered = renderTamilPrecisionText(formatSourceForOutput("ma'", { outputScheme: 'sanskrit-tamil-precision' }));
   expect(rendered).toHaveLength(1);

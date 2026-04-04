@@ -8,38 +8,50 @@ import { clsx } from 'clsx';
 import { Check, Copy, Trash2 } from 'lucide-react';
 import { formatSourceForScript, transliterate } from '@/lib/vedic/utils';
 import { ScriptText } from '@/components/ScriptText';
+import { VerticalResizeHandle } from '@/components/VerticalResizeHandle';
 
 export const MainDocumentArea: React.FC = () => {
-  const { blocks, editorState, setActiveBlockId, activateBlockChunk, deleteBlock, getActiveChunkGroup, displaySettings, setViewMode, setComposerSelection } = useFlowStore();
+  const { blocks, editorState, setActiveBlockId, activateBlockChunk, deleteBlock, getActiveChunkGroup, displaySettings, setViewMode, setComposerSelection, setTypography } = useFlowStore();
   const { activeBlockId, viewMode, focusSpan } = editorState;
   const activeChunkGroup = getActiveChunkGroup(); // Get active chunk group
   const {
     typography,
     inputScheme,
     primaryOutputScript,
-    comparisonOutputScript,
     romanOutputStyle,
     tamilOutputStyle,
     sanskritFontPreset,
     tamilFontPreset,
   } = displaySettings;
   const documentTypography = typography.document;
+  const updateDocumentHeight = React.useCallback(
+    (key: 'primaryPaneHeight' | 'comparePaneHeight') => (nextHeight: number) => {
+      setTypography('document', { [key]: nextHeight } as Partial<typeof documentTypography>);
+    },
+    [setTypography, documentTypography]
+  );
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
   const [selectedReadBlockId, setSelectedReadBlockId] = React.useState<string | null>(null);
   const documentContainerRef = React.useRef<HTMLDivElement | null>(null);
-  const isDocumentCompareMode = comparisonOutputScript !== 'off';
-  const activeComparisonScript = comparisonOutputScript === 'off' ? null : comparisonOutputScript;
-  const documentCompareLayout = isDocumentCompareMode ? 'stacked' : 'single';
+  const primaryPaneScrollRef = React.useRef<HTMLDivElement | null>(null);
   const readModeBlocks = React.useMemo(
     () => blocks.filter((block) => block.rendered.trim().length > 0),
     [blocks]
   );
   const getRenderedLineHeightForScript = React.useCallback(
-    (script: typeof primaryOutputScript, baseLineHeight: number) =>
-      script === 'tamil' ? Math.max(baseLineHeight, 1.95) : baseLineHeight,
-    []
+    (script: typeof primaryOutputScript) =>
+      script === 'tamil'
+        ? documentTypography.tamilLineHeight
+        : documentTypography.devanagariLineHeight,
+    [documentTypography.devanagariLineHeight, documentTypography.tamilLineHeight]
   );
-
+  const getRenderedFontSizeForScript = React.useCallback(
+    (script: typeof primaryOutputScript) =>
+      script === 'tamil'
+        ? documentTypography.tamilFontSize
+        : documentTypography.devanagariFontSize,
+    [documentTypography.devanagariFontSize, documentTypography.tamilFontSize]
+  );
   React.useEffect(() => {
     if (!copiedId) {
       return;
@@ -108,6 +120,29 @@ export const MainDocumentArea: React.FC = () => {
     return () => window.cancelAnimationFrame(rafId);
   }, [viewMode]);
 
+  React.useEffect(() => {
+    if (viewMode !== 'read' || !selectedReadBlockId) {
+      return;
+    }
+
+    const scrollSelectedReadLineIntoView = () => {
+      const container = documentContainerRef.current;
+      if (!container) {
+        return;
+      }
+
+      const target = container.querySelector<HTMLElement>(`[data-testid="document-read-block-${selectedReadBlockId}"]`);
+      if (!target) {
+        return;
+      }
+
+      target.scrollIntoView({ block: 'center', behavior: 'auto' });
+    };
+
+    const rafId = window.requestAnimationFrame(scrollSelectedReadLineIntoView);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [selectedReadBlockId, viewMode]);
+
   const handleCopyBlock = async (blockId: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -170,11 +205,12 @@ export const MainDocumentArea: React.FC = () => {
     }
   };
 
-  const handleReadBlockDoubleClick = (
+  const handleReadBlockClick = (
     block: CanonicalBlock,
     script: typeof primaryOutputScript,
     event: React.MouseEvent<HTMLElement>
   ) => {
+    selectReadLine(block.id);
     if (script !== 'devanagari') {
       jumpToEditPosition(block, 0);
       return;
@@ -238,48 +274,103 @@ export const MainDocumentArea: React.FC = () => {
     window.setTimeout(() => applyComposerSelection(0), 0);
   };
 
+  const handleImmersiveBlockClick = (block: CanonicalBlock) => {
+    selectReadLine(block.id);
+  };
+
+  const handleImmersiveBlockDoubleClick = (block: CanonicalBlock) => {
+    selectReadLine(block.id);
+    setViewMode('read');
+  };
+
   const renderScriptBlock = (
     block: CanonicalBlock,
     script: typeof primaryOutputScript,
     paneRole: 'primary' | 'compare',
     viewTestIdPrefix: 'document-read' | 'document-immersive',
+    lineNumber?: number,
   ) => {
-    if (script === 'devanagari') {
-    const renderedBlock = transliterate(block.source, { inputScheme });
-    const renderedChars = Array.from(renderedBlock.unicode);
     const isSelectedReadLine =
       (viewMode === 'read' || viewMode === 'immersive') && selectedReadBlockId === block.id;
-
-    return (
-      <p
-        key={`${block.id}-${paneRole}`}
-        data-testid={
-            paneRole === 'primary'
-              ? `${viewTestIdPrefix}-block-${block.id}`
-              : `${viewTestIdPrefix}-compare-block-${block.id}`
-          }
-        className={clsx(
-          'script-text-devanagari whitespace-pre-wrap break-words rounded-md px-1 py-1 transition-colors hover:bg-slate-50',
-          paneRole === 'compare' && 'text-slate-700',
-          isSelectedReadLine && 'bg-blue-50/80 ring-1 ring-blue-200'
-        )}
-        data-font-preset={sanskritFontPreset}
-        data-selected-read-line={isSelectedReadLine ? 'true' : undefined}
-        lang="sa"
-        title="Double-click to jump back into edit mode for this block"
-        onClick={() => selectReadLine(block.id)}
-        onDoubleClick={(event) => handleReadBlockDoubleClick(block, script, event)}
+    const isComparePane = paneRole === 'compare';
+    const isPrimaryPane = paneRole === 'primary';
+    const isImmersive = viewMode === 'immersive';
+    const wrapperClassName = clsx(
+      'grid items-start gap-3 rounded-md px-1 py-1 transition-colors',
+      (viewMode === 'read' || viewMode === 'immersive') && 'hover:bg-slate-50',
+      isSelectedReadLine && 'bg-blue-50/80 ring-1 ring-blue-200'
+    );
+    const lineGuide = lineNumber !== undefined ? (
+      <span
+        aria-hidden="true"
+        className="pointer-events-none mt-0.5 inline-flex h-6 min-w-6 select-none items-center justify-center rounded-full bg-slate-100 px-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500"
       >
-        {renderedChars.map((char, index) => (
-          <span
-              key={`${block.id}-${index}-${char}`}
-              data-target-index={index}
-              className="cursor-text"
-            >
-              {char}
-            </span>
-          ))}
-        </p>
+        {lineNumber}
+      </span>
+    ) : null;
+
+    if (script === 'devanagari') {
+      const renderedBlock = transliterate(block.source, { inputScheme });
+      const renderedChars = Array.from(renderedBlock.unicode);
+
+      return (
+        <div
+          key={`${block.id}-${paneRole}`}
+          className={wrapperClassName}
+          style={lineNumber !== undefined ? { gridTemplateColumns: '2.5rem minmax(0, 1fr)' } : undefined}
+        >
+          {lineGuide}
+          <p
+            data-testid={
+              paneRole === 'primary'
+                ? `${viewTestIdPrefix}-block-${block.id}`
+                : `${viewTestIdPrefix}-compare-block-${block.id}`
+            }
+            className={clsx(
+              'script-text-devanagari whitespace-pre-wrap break-words rounded-md px-1 py-1 transition-colors',
+              paneRole === 'compare' && 'text-slate-700'
+            )}
+            data-font-preset={sanskritFontPreset}
+            data-selected-read-line={isSelectedReadLine ? 'true' : undefined}
+            lang="sa"
+            title={
+              isComparePane
+                ? 'Reference view'
+                : isImmersive
+                  ? 'Click to select, double click to open read mode'
+                  : 'Click to jump back into edit mode for this block'
+            }
+            onClick={
+              isPrimaryPane
+                ? isImmersive
+                  ? () => handleImmersiveBlockClick(block)
+                  : (event) => handleReadBlockClick(block, script, event)
+                : undefined
+            }
+            onDoubleClick={
+              isPrimaryPane && isImmersive
+                ? (event) => {
+                    event.preventDefault();
+                    handleImmersiveBlockDoubleClick(block);
+                  }
+                : undefined
+            }
+            style={{
+              fontSize: `${getRenderedFontSizeForScript(script)}px`,
+              lineHeight: getRenderedLineHeightForScript(script),
+            }}
+          >
+            {renderedChars.map((char, index) => (
+              <span
+                key={`${block.id}-${index}-${char}`}
+                data-target-index={index}
+                className="cursor-text"
+              >
+                {char}
+              </span>
+            ))}
+          </p>
+        </div>
       );
     }
 
@@ -289,52 +380,65 @@ export const MainDocumentArea: React.FC = () => {
     });
 
     return (
-      <p
+      <div
         key={`${block.id}-${script}-${paneRole}`}
-        data-testid={`${viewTestIdPrefix}-${paneRole}-block-${block.id}`}
-        className={clsx(
-          'cursor-text rounded-md px-1 py-1 transition-colors',
-          (viewMode === 'read' || viewMode === 'immersive') &&
-            selectedReadBlockId === block.id &&
-            'bg-blue-50/80 ring-1 ring-blue-200'
-        )}
-        data-selected-read-line={
-          (viewMode === 'read' || viewMode === 'immersive') && selectedReadBlockId === block.id
-            ? 'true'
-            : undefined
-        }
-        style={{
-          fontSize: `${documentTypography.renderedFontSize}px`,
-          lineHeight: getRenderedLineHeightForScript(script, documentTypography.renderedLineHeight),
-        }}
-        title="Double-click to jump back into edit mode for this block"
-        onClick={() => selectReadLine(block.id)}
-        onDoubleClick={(event) => handleReadBlockDoubleClick(block, script, event)}
+        className={wrapperClassName}
+        style={lineNumber !== undefined ? { gridTemplateColumns: '2.5rem minmax(0, 1fr)' } : undefined}
       >
-        <ScriptText
-          script={script}
-          text={formatted}
-          sanskritFontPreset={sanskritFontPreset}
-          tamilFontPreset={tamilFontPreset}
-        />
-      </p>
+        {lineGuide}
+        <p
+          data-testid={`${viewTestIdPrefix}-${paneRole}-block-${block.id}`}
+          className="cursor-text rounded-md px-1 py-1 transition-colors"
+          data-selected-read-line={
+            (viewMode === 'read' || viewMode === 'immersive') && selectedReadBlockId === block.id
+              ? 'true'
+              : undefined
+          }
+          style={{
+            fontSize: `${getRenderedFontSizeForScript(script)}px`,
+            lineHeight: getRenderedLineHeightForScript(script),
+          }}
+          title={
+            isComparePane
+              ? 'Reference view'
+              : isImmersive
+                ? 'Click to select, double click to open read mode'
+                : 'Click to jump back into edit mode for this block'
+          }
+          onClick={
+            isPrimaryPane
+              ? isImmersive
+                ? () => handleImmersiveBlockClick(block)
+                : (event) => handleReadBlockClick(block, script, event)
+              : undefined
+          }
+          onDoubleClick={
+            isPrimaryPane && isImmersive
+              ? (event) => {
+                  event.preventDefault();
+                  handleImmersiveBlockDoubleClick(block);
+                }
+              : undefined
+          }
+        >
+          <ScriptText
+            script={script}
+            text={formatted}
+            sanskritFontPreset={sanskritFontPreset}
+            tamilFontPreset={tamilFontPreset}
+            style={{
+              fontSize: `${getRenderedFontSizeForScript(script)}px`,
+              lineHeight: getRenderedLineHeightForScript(script),
+            }}
+          />
+        </p>
+      </div>
     );
   };
 
   if (viewMode === 'read' || viewMode === 'immersive') {
     const viewTestIdPrefix = viewMode === 'immersive' ? 'document-immersive' : 'document-read';
-    const primaryPaneLabel =
-      primaryOutputScript === 'roman'
-        ? 'Roman'
-        : primaryOutputScript === 'tamil'
-          ? 'Tamil'
-          : 'Devanagari';
-    const comparePaneLabel =
-      comparisonOutputScript === 'roman'
-        ? 'Roman'
-        : comparisonOutputScript === 'tamil'
-          ? 'Tamil'
-          : 'Devanagari';
+    const isImmersive = viewMode === 'immersive';
 
     return (
       <div
@@ -342,9 +446,10 @@ export const MainDocumentArea: React.FC = () => {
         data-testid="main-document-scroll-container"
         tabIndex={0}
         className={clsx(
-          'flex-1 overflow-y-auto outline-none',
-          viewMode === 'immersive' ? 'px-4 py-6 sm:px-8 sm:py-8' : 'px-4 py-8'
+          'flex-1 outline-none',
+          isImmersive ? 'overflow-hidden px-4 py-6 sm:px-8 sm:py-8' : 'overflow-y-auto px-4 py-8'
         )}
+        style={isImmersive ? { height: 'calc(100dvh - 5rem)' } : undefined}
         onKeyDown={handleReadModeKeyDown}
         onMouseDown={() => {
           if (viewMode === 'read' || viewMode === 'immersive') {
@@ -355,54 +460,57 @@ export const MainDocumentArea: React.FC = () => {
         <div
           className={clsx(
             'mx-auto border border-slate-200 bg-white shadow-sm',
-            viewMode === 'immersive'
-              ? 'max-w-6xl rounded-[2.25rem] px-6 py-10 sm:px-12'
+            isImmersive
+              ? 'flex h-full max-w-6xl flex-col rounded-[2.25rem] px-6 py-10 sm:px-12'
               : 'max-w-4xl rounded-[2rem] px-6 py-8 sm:px-10'
           )}
         >
           <div
-            className="font-serif text-slate-900"
-            data-testid={viewMode === 'immersive' ? 'document-immersive-mode' : 'document-read-mode'}
-            data-compare-mode={isDocumentCompareMode ? 'compare' : 'single'}
-            data-compare-layout={documentCompareLayout}
+            className={clsx(
+              'font-serif text-slate-900',
+              isImmersive && 'flex h-full min-h-0 flex-col'
+            )}
+            data-testid={isImmersive ? 'document-immersive-mode' : 'document-read-mode'}
+            data-compare-mode="single"
+            data-compare-layout="single"
             style={{
-              fontSize: `${documentTypography.renderedFontSize}px`,
-              lineHeight: documentTypography.renderedLineHeight,
+              fontSize: `${documentTypography.devanagariFontSize}px`,
+              lineHeight: documentTypography.devanagariLineHeight,
             }}
           >
             <div
               className={clsx(
                 'grid gap-5',
-                'grid-cols-1'
+                'grid-cols-1',
+                isImmersive && 'h-full min-h-0'
               )}
             >
               <section
                 data-testid={`${viewTestIdPrefix}-primary-pane`}
-                className="space-y-3 rounded-2xl border border-blue-100 bg-white px-4 py-4 shadow-sm"
+                className={clsx(
+                  'group relative overflow-hidden rounded-2xl border border-blue-100 bg-blue-50/55 shadow-sm',
+                  isImmersive && 'flex min-h-0 flex-1 flex-col'
+                )}
+                style={isImmersive ? undefined : { height: `${documentTypography.primaryPaneHeight}px` }}
               >
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-700">
-                  {primaryPaneLabel}
-                </p>
-                {blocks
-                  .filter((block) => block.rendered.trim().length > 0)
-                  .map((block) => renderScriptBlock(block, primaryOutputScript, 'primary', viewTestIdPrefix))}
-              </section>
-
-              {activeComparisonScript && (
-                <section
-                  data-testid={`${viewTestIdPrefix}-compare-pane`}
-                  className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-slate-700"
+                <div
+                  ref={primaryPaneScrollRef}
+                  className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto px-4 py-4"
                 >
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-                    {comparePaneLabel}
-                  </p>
                   {blocks
                     .filter((block) => block.rendered.trim().length > 0)
-                    .map((block) =>
-                      renderScriptBlock(block, activeComparisonScript, 'compare', viewTestIdPrefix),
-                    )}
-                </section>
-              )}
+                    .map((block, index) => renderScriptBlock(block, primaryOutputScript, 'primary', viewTestIdPrefix, index + 1))}
+                </div>
+                {!isImmersive && (
+                  <VerticalResizeHandle
+                    height={documentTypography.primaryPaneHeight}
+                    minHeight={240}
+                    maxHeight={700}
+                    ariaLabel="Resize primary read pane height"
+                    onHeightChange={updateDocumentHeight('primaryPaneHeight')}
+                  />
+                )}
+              </section>
             </div>
           </div>
         </div>
@@ -465,8 +573,8 @@ export const MainDocumentArea: React.FC = () => {
           data-font-preset={sanskritFontPreset}
           lang="sa"
           style={{
-            fontSize: `${documentTypography.renderedFontSize}px`,
-            lineHeight: documentTypography.renderedLineHeight,
+            fontSize: `${documentTypography.devanagariFontSize}px`,
+            lineHeight: documentTypography.devanagariLineHeight,
           }}
         >
           {block.rendered}
@@ -598,8 +706,8 @@ export const MainDocumentArea: React.FC = () => {
                     <p
                       className="font-serif text-slate-800"
                       style={{
-                        fontSize: `${documentTypography.renderedFontSize}px`,
-                        lineHeight: documentTypography.renderedLineHeight,
+                        fontSize: `${documentTypography.devanagariFontSize}px`,
+                        lineHeight: documentTypography.devanagariLineHeight,
                       }}
                     >
                       {segment.rendered}

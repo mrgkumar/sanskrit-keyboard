@@ -10,14 +10,23 @@ interface ScriptTextProps {
   text: string;
   script: OutputScript;
   className?: string;
+  style?: React.CSSProperties;
   sanskritFontPreset?: SanskritFontPreset;
   tamilFontPreset?: TamilFontPreset;
 }
 
+export const getScriptDisplayText = (script: OutputScript, text: string) => {
+  if (script === 'tamil') {
+    return normalizeTamilPrecisionDisplayText(text);
+  }
+
+  return text;
+};
+
 export const renderTamilPrecisionText = (text: string) => {
   return [
     <span key="tamil-precision" className="tamil-precision-akshara" dir="ltr">
-      {normalizeTamilPrecisionDisplayText(text)}
+      {getScriptDisplayText('tamil', text)}
     </span>,
   ];
 };
@@ -26,12 +35,13 @@ export const ScriptText: React.FC<ScriptTextProps> = ({
   text,
   script,
   className,
+  style,
   sanskritFontPreset = 'chandas',
   tamilFontPreset = 'hybrid',
 }) => {
   if (script === 'roman') {
     return (
-      <span className={clsx('script-text-wrap whitespace-pre-wrap font-mono text-slate-800', className)}>
+      <span className={clsx('script-text-wrap whitespace-pre-wrap font-mono text-slate-800', className)} style={style}>
         {text}
       </span>
     );
@@ -44,6 +54,7 @@ export const ScriptText: React.FC<ScriptTextProps> = ({
         data-font-preset={tamilFontPreset}
         lang="ta"
         dir="ltr"
+        style={style}
       >
         {renderTamilPrecisionText(text)}
       </span>
@@ -55,6 +66,7 @@ export const ScriptText: React.FC<ScriptTextProps> = ({
       className={clsx('script-text-devanagari script-text-wrap whitespace-pre-wrap text-slate-900', className)}
       data-font-preset={sanskritFontPreset}
       lang="sa"
+      style={style}
     >
       {text}
     </span>

@@ -100,13 +100,28 @@ export const StickyTopComposer: React.FC = () => {
     composerPreviewHeight * (isComposerCompareMode ? 2 : 1) + previewResizeHandleHeight;
   const composerInputHeight = composerTypography.itransPanelHeight;
   const updateComposerPreviewHeight = React.useCallback(
-    (nextHeight: number) => {
+    (nextPreviewHeight: number) => {
+      const nextStackHeight = nextPreviewHeight * (isComposerCompareMode ? 2 : 1) + previewResizeHandleHeight;
       setTypography('composer', {
-        primaryPreviewHeight: nextHeight,
-        comparePreviewHeight: nextHeight,
+        primaryPreviewHeight: nextPreviewHeight,
+        comparePreviewHeight: nextPreviewHeight,
+        itransPanelHeight: nextStackHeight,
       } as Partial<typeof composerTypography>);
     },
-    [setTypography]
+    [isComposerCompareMode, setTypography, composerTypography, previewResizeHandleHeight]
+  );
+  const updateComposerInputHeight = React.useCallback(
+    (nextHeight: number) => {
+      const nextPreviewHeight = Math.round(
+        (nextHeight - previewResizeHandleHeight) / (isComposerCompareMode ? 2 : 1)
+      );
+      setTypography('composer', {
+        itransPanelHeight: nextHeight,
+        primaryPreviewHeight: nextPreviewHeight,
+        comparePreviewHeight: nextPreviewHeight,
+      } as Partial<typeof composerTypography>);
+    },
+    [isComposerCompareMode, setTypography, composerTypography, previewResizeHandleHeight]
   );
   const isPredictionListbox = predictionLayout === 'listbox';
   const isLongBlock = activeBlock?.type === 'long';
@@ -747,34 +762,13 @@ export const StickyTopComposer: React.FC = () => {
     composerHighlightRef.current.style.transform = `translateY(-${composerRef.current.scrollTop}px)`;
   }, [currentChunkSource, composerSelectionStart, composerSelectionEnd]);
 
-  React.useLayoutEffect(() => {
-    const panel = itransPanelRef.current;
-    if (!panel || typeof ResizeObserver === 'undefined') {
-      return;
-    }
-
-    let rafId = 0;
-    const syncHeight = () => {
-      const nextHeight = Math.round(panel.getBoundingClientRect().height);
-      if (Math.abs(nextHeight - composerTypography.itransPanelHeight) <= 1) {
-        return;
+  React.useEffect(() => {
+    if (composerLayout === 'side-by-side') {
+      if (Math.abs(composerInputHeight - composerPreviewStackHeight) > 2) {
+        setTypography('composer', { itransPanelHeight: composerPreviewStackHeight } as Partial<typeof composerTypography>);
       }
-
-      setTypography('composer', { itransPanelHeight: nextHeight });
-    };
-
-    syncHeight();
-    const observer = new ResizeObserver(() => {
-      window.cancelAnimationFrame(rafId);
-      rafId = window.requestAnimationFrame(syncHeight);
-    });
-    observer.observe(panel);
-
-    return () => {
-      window.cancelAnimationFrame(rafId);
-      observer.disconnect();
-    };
-  }, [composerTypography.itransPanelHeight, setTypography]);
+    }
+  }, [composerLayout, composerPreviewStackHeight, setTypography, composerInputHeight, composerTypography]);
 
   React.useEffect(() => {
     if (!syncComposerScroll || document.activeElement !== composerRef.current) {
@@ -1150,7 +1144,10 @@ export const StickyTopComposer: React.FC = () => {
         </div>
 
         <div
-          className="flex min-h-0 max-h-[52vh] flex-col gap-3 overflow-hidden md:max-h-[54vh]"
+          className={clsx(
+            'flex min-h-0 flex-col gap-3 overflow-hidden',
+            isStackedComposer ? 'max-h-[82vh]' : 'max-h-[52vh] md:max-h-[54vh]'
+          )}
           data-testid="sticky-composer-shell"
           data-layout={composerLayout}
         >
@@ -1348,8 +1345,8 @@ export const StickyTopComposer: React.FC = () => {
             <div
               ref={sourcePaneRef}
               className={clsx(
-                'group relative flex min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white/95 p-3 shadow-sm',
-                isStackedComposer ? 'min-h-[15rem]' : 'min-h-0'
+                'group relative flex min-h-0 flex-col gap-3 overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white/95 p-3 shadow-sm',
+                isStackedComposer ? 'flex-auto min-h-[12rem]' : 'flex-1 min-h-0'
               )}
             >
               <div className="flex items-start justify-between gap-3 px-1">
@@ -1439,6 +1436,7 @@ export const StickyTopComposer: React.FC = () => {
                   minHeight={140}
                   maxHeight={360}
                   ariaLabel="Resize ITRANS input height"
+                  onHeightChange={updateComposerInputHeight}
                   placement="corner"
                 />
               </div>
@@ -1450,8 +1448,8 @@ export const StickyTopComposer: React.FC = () => {
 
             <div
               className={clsx(
-                'group flex min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white/95 p-3 text-blue-800 shadow-sm',
-                isStackedComposer ? 'border-slate-200' : 'lg:border-l-0 lg:border-t-0 lg:rounded-l-none'
+                'group flex min-h-0 flex-col gap-3 overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white/95 p-3 text-blue-800 shadow-sm',
+                isStackedComposer ? 'flex-auto border-slate-200' : 'flex-1 lg:border-l-0 lg:border-t-0 lg:rounded-l-none'
               )}
             >
               <div className="min-w-0 px-1">

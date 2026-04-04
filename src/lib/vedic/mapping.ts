@@ -325,6 +325,7 @@ export const VEDIC_MAPPINGS: VedicMapping[] = [
   { itrans: "H_p", unicode: '\u1CF6', name: 'upadhmaniya', category: 'vedic' },
   { itrans: "H^", unicode: '\u1CF2', category: 'vedic' },
   { itrans: "''", unicode: '\uF176', name: 'dirgha svarita', category: 'vedic' },
+  { itrans: "''", unicode: '\u1CDA', name: 'double svarita', category: 'vedic' },
   { itrans: '"', unicode: '\uF176', name: 'dirgha svarita', category: 'vedic' },
   { itrans: "'''", unicode: '\u1CDB', name: 'triple svarita', category: 'vedic' },
   { itrans: "_M", unicode: '\u1CD4', category: 'vedic' },

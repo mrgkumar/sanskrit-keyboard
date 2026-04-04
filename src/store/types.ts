@@ -81,13 +81,26 @@ export interface EditorState {
 export interface TypographySettings {
   composer: {
     itransFontSize: number;
+    devanagariFontSize: number;
+    tamilFontSize: number;
     itransLineHeight: number;
+    devanagariLineHeight: number;
+    tamilLineHeight: number;
+    itransPanelHeight: number;
     renderedFontSize: number;
     renderedLineHeight: number;
+    primaryPreviewHeight: number;
+    comparePreviewHeight: number;
   };
   document: {
     itransFontSize: number;
+    devanagariFontSize: number;
+    tamilFontSize: number;
     itransLineHeight: number;
+    devanagariLineHeight: number;
+    tamilLineHeight: number;
+    primaryPaneHeight: number;
+    comparePaneHeight: number;
     renderedFontSize: number;
     renderedLineHeight: number;
   };

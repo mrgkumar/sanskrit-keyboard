@@ -16,15 +16,17 @@ const JOIN_CONTROL_SHORTCUTS = [
     label: 'ZWNJ',
     shortcut: '^z',
     name: 'Zero Width Non-Joiner',
-    description: 'Canonical shortcut for the literal zero-width non-joiner.',
-    example: 'अ‌क्ष',
+    description: 'Blocks the conjunct so the letters stay visually separate.',
+    example: 'क्‌ष',
+    exampleLabel: 'k + virama + ZWNJ + ṣa',
   },
   {
     label: 'ZWJ',
     shortcut: '^Z',
     name: 'Zero Width Joiner',
-    description: 'Canonical shortcut for the literal zero-width joiner.',
-    example: 'अ‍क्ष',
+    description: 'Encourages the conjunct when the font supports it.',
+    example: 'क्‍ष',
+    exampleLabel: 'k + virama + ZWJ + ṣa',
   },
 ] as const;
 
@@ -142,32 +144,6 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
         />
       </div>
 
-      {/* Join Control Shortcuts */}
-      <div className="border-b border-slate-100 bg-white/70 px-6 py-4">
-        <div className="flex flex-wrap items-center gap-3">
-          {JOIN_CONTROL_SHORTCUTS.map((shortcut) => (
-            <button
-              key={shortcut.label}
-              type="button"
-              onClick={() => handleInsert(shortcut.shortcut)}
-              className="group flex min-w-[14rem] flex-1 items-start justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-left transition-all hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-md active:scale-[0.99]"
-            >
-              <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">{shortcut.label}</p>
-                <p className="mt-1 text-sm font-semibold text-slate-900">{shortcut.name}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  {shortcut.description}
-                  <span className="ml-1 font-medium text-slate-700">Example: {shortcut.example}</span>
-                </p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs font-bold text-slate-700 transition-colors group-hover:border-blue-200 group-hover:text-blue-700">
-                {shortcut.shortcut}
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Mappings List */}
       <div ref={containerRef} className="flex-1 overflow-y-auto p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
         {categories.map(cat => {
@@ -206,6 +182,41 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
             </div>
           );
         })}
+      </div>
+
+      {/* Join Control Shortcuts */}
+      <div className="border-t border-slate-100 bg-white/70 px-6 py-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Zero-width joiners</p>
+            <p className="mt-1 text-xs text-slate-500">Use these when you need to force or suppress a conjunct.</p>
+          </div>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {JOIN_CONTROL_SHORTCUTS.map((shortcut) => (
+            <button
+              key={shortcut.label}
+              type="button"
+              onClick={() => handleInsert(shortcut.shortcut)}
+              className="group flex min-w-0 flex-1 items-start justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-left transition-all hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-md active:scale-[0.99]"
+            >
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-700">{shortcut.label}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">{shortcut.name}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  {shortcut.description}
+                </p>
+                <p className="mt-2 text-xs font-medium text-slate-600">
+                  Example: <span className="font-serif text-sm text-slate-900" dir="ltr">{shortcut.example}</span>
+                  <span className="ml-2 text-[10px] uppercase tracking-[0.12em] text-slate-400">({shortcut.exampleLabel})</span>
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 font-mono text-xs font-bold text-slate-700 transition-colors group-hover:border-blue-200 group-hover:text-blue-700">
+                {shortcut.shortcut}
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Footer */}

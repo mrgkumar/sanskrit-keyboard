@@ -37,15 +37,28 @@ const openDisplaySettings = async (page: Page) => {
 };
 
 const setRangeValue = async (page: Page, label: string, value: string) => {
-  const slider = page.locator('label', { hasText: label }).locator('input[type="range"]').first();
-  await slider.focus();
-  const currentValue = Number(await slider.inputValue());
-  const targetValue = Number(value);
-  const stepCount = Math.abs(targetValue - currentValue);
-  const key = targetValue >= currentValue ? 'ArrowRight' : 'ArrowLeft';
+  const control = page.locator('label', { hasText: label }).first();
+  const slider = control.locator('input[type="range"]').first();
+  if (await slider.count()) {
+    await slider.focus();
+    const currentValue = Number(await slider.inputValue());
+    const targetValue = Number(value);
+    const stepCount = Math.abs(targetValue - currentValue);
+    const key = targetValue >= currentValue ? 'ArrowRight' : 'ArrowLeft';
 
+    for (let index = 0; index < stepCount; index += 1) {
+      await slider.press(key);
+    }
+    return;
+  }
+
+  const targetValue = Number(value);
+  const currentText = (await control.textContent()) ?? '';
+  const currentValue = Number(currentText.match(/(\d+(?:\.\d+)?)/)?.[1] ?? '0');
+  const stepCount = Math.abs(targetValue - currentValue);
+  const buttonName = targetValue >= currentValue ? `Increase ${label}` : `Decrease ${label}`;
   for (let index = 0; index < stepCount; index += 1) {
-    await slider.press(key);
+    await page.getByRole('button', { name: buttonName }).click();
   }
 };
 
@@ -160,10 +173,38 @@ test('Tamil read-as word predictions render in Tamil and omit the selected badge
   const textarea = page.getByTestId('sticky-itrans-input');
   await textarea.fill('ga');
 
+  await expect(page.getByRole('button', { name: 'Peek quick selections' })).toBeVisible();
+  await page.getByRole('button', { name: 'Peek quick selections' }).click();
+
   const tray = page.getByTestId('word-predictions-footer');
   await expect(tray).toBeVisible({ timeout: 10000 });
   await expect(tray).toContainText('க³');
   await expect(tray).not.toContainText('Selected');
+});
+
+test('dragging the ITRANS resize handle persists the panel height across reloads', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  const panel = page.getByTestId('sticky-itrans-panel');
+  const initialHeight = await panel.evaluate((node) => Number.parseFloat(getComputedStyle(node).height));
+  const handle = page.getByLabel('Resize ITRANS input height');
+  const box = await handle.boundingBox();
+
+  if (!box) {
+    throw new Error('Expected resize handle to be visible');
+  }
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 48, { steps: 8 });
+  await page.mouse.up();
+
+  await expect.poll(async () => panel.evaluate((node) => Number.parseFloat(getComputedStyle(node).height))).toBeGreaterThan(initialHeight);
+
+  await page.waitForTimeout(800);
+  await page.reload();
+  await expect(page.getByTestId('sticky-itrans-input')).toBeVisible();
+  await expect.poll(async () => page.getByTestId('sticky-itrans-panel').evaluate((node) => Number.parseFloat(getComputedStyle(node).height))).toBeGreaterThan(initialHeight);
 });
 
 test('clicking Tamil preview text moves the edit cursor to the clicked chunk', async ({ page }) => {
@@ -183,7 +224,7 @@ test('clicking Tamil preview text moves the edit cursor to the clicked chunk', a
   await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeGreaterThan(0);
 });
 
-test('double-clicking read or immersive text jumps back into edit mode at the clicked word', async ({ page }) => {
+test('clicking read or immersive text jumps back into edit mode at the clicked word', async ({ page }) => {
   await loadDefaultSession(page);
   const textarea = page.getByTestId('sticky-itrans-input');
   const sample = 'agniM ile purohitaM yajnasya';
@@ -198,7 +239,7 @@ test('double-clicking read or immersive text jumps back into edit mode at the cl
   await page.getByRole('button', { name: 'Read mode' }).click();
   const readDocument = page.getByTestId('document-read-mode');
   await expect(readDocument).toBeVisible();
-  await readDocument.locator(`[data-target-index="${clickedWordTargetIndex}"]`).dblclick();
+  await readDocument.locator(`[data-target-index="${clickedWordTargetIndex}"]`).click();
 
   await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
   await expect(textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).resolves.toBe(expectedSourceWordStart);
@@ -206,7 +247,7 @@ test('double-clicking read or immersive text jumps back into edit mode at the cl
   await page.getByRole('button', { name: 'Immersive mode' }).click();
   const immersiveDocument = page.getByTestId('document-immersive-mode');
   await expect(immersiveDocument).toBeVisible();
-  await immersiveDocument.locator(`[data-target-index="${clickedWordTargetIndex}"]`).dblclick();
+  await immersiveDocument.locator(`[data-target-index="${clickedWordTargetIndex}"]`).click();
 
   await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
   await expect(textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).resolves.toBe(expectedSourceWordStart);
@@ -239,7 +280,7 @@ test('read mode arrow keys move the selected line and highlight it', async ({ pa
   await expect(selectedLine).toContainText(transliterate(lines[2]).unicode);
 });
 
-test('double-clicking read-mode compare panes jumps back into edit mode too', async ({ page }) => {
+test('clicking read-mode compare panes jumps back into edit mode too', async ({ page }) => {
   await loadDefaultSession(page);
 
   const textarea = page.getByTestId('sticky-itrans-input');
@@ -259,13 +300,13 @@ test('double-clicking read-mode compare panes jumps back into edit mode too', as
   await expect(readDocument).toBeVisible();
 
   const comparePane = readDocument.getByTestId('document-read-compare-pane');
-  await comparePane.locator(`[data-target-index="${clickedWordTargetIndex}"]`).dblclick();
+  await comparePane.locator(`[data-target-index="${clickedWordTargetIndex}"]`).click();
 
   await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
   await expect(textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).resolves.toBe(expectedSourceWordStart);
 });
 
-test('double-clicking deep read text reactivates editing on the targeted document region', async ({ page }) => {
+test('clicking deep read text reactivates editing on the targeted document region', async ({ page }) => {
   await page.setViewportSize({ width: 1024, height: 768 });
   await loadDefaultSession(page);
 
@@ -296,7 +337,7 @@ test('double-clicking deep read text reactivates editing on the targeted documen
   });
 
   const lastReadBlock = readDocument.locator('[data-testid^="document-read-block-"]').last();
-  await lastReadBlock.locator('[data-target-index]').nth(12).dblclick();
+  await lastReadBlock.locator('[data-target-index]').nth(12).click();
 
   await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
   await expect.poll(async () => {
@@ -501,8 +542,8 @@ test('display settings switch composer layout and keep composer and document typ
   const preview = page.getByTestId('sticky-preview-primary-pane');
 
   await setRangeValue(page, 'ITRANS Size', '26');
-  await setRangeValue(page, 'Preview Size', '42');
-  await setRangeValue(page, 'Document Preview Size', '22');
+  await setRangeValue(page, 'Devanagari Size', '42');
+  await setRangeValue(page, 'Document Devanagari Size', '22');
 
   await composerInput.fill('agniM ile purohitaM\naayaahi viitaye');
   await page.getByRole('button', { name: 'Read mode' }).click();

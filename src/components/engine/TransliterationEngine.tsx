@@ -8,7 +8,7 @@ import { ScriptText } from '@/components/ScriptText';
 import { useFlowStore } from '@/store/useFlowStore';
 import { BookText, Check, Copy, Eye, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide-react';
 import { clsx } from 'clsx';
-import { SessionSnapshot, SanskritFontPreset, TamilFontPreset } from '@/store/types';
+import { SessionSnapshot, SanskritFontPreset, TamilFontPreset, TypographySettings } from '@/store/types';
 import { formatSourceForPrimaryOutput, getCopySourceControlText, reverseTamilInput } from '@/lib/vedic/utils';
 import {
   OUTPUT_TARGET_CONTROL_LABELS,
@@ -172,6 +172,162 @@ export const TransliterationEngine: React.FC = () => {
     { value: 'noto-serif', label: 'Noto Serif Tamil', sample: 'நமஸ்தே ருத்³ராய' },
     { value: 'anek', label: 'Anek Tamil', sample: 'நமஸ்தே ருத்³ராய' },
   ];
+  const adjustTypographyValue = (
+    scope: 'composer' | 'document',
+    key: string,
+    delta: number,
+    min: number,
+    max: number
+  ) => {
+    const scopeTypography = typography[scope] as unknown as Record<string, number>;
+    const currentValue = Number(scopeTypography[key]);
+    const nextValue = Math.max(min, Math.min(max, currentValue + delta));
+    setTypography(scope, { [key]: nextValue } as Partial<TypographySettings['composer']>);
+  };
+  const renderTypographyControl = (
+    label: string,
+    scope: 'composer' | 'document',
+    key: string,
+    value: number,
+    options: { min: number; max: number; step: number; suffix?: string }
+  ) => {
+    const formattedValue = typeof value === 'number' && !Number.isInteger(value) ? value.toFixed(1) : value;
+    return (
+      <div className="py-2.5 first:pt-0 last:pb-0">
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] font-black uppercase tracking-[0.08em] text-slate-400">{label}</span>
+          <span className="text-[11px] font-black tabular-nums text-blue-700 bg-blue-50/80 px-2 py-0.5 rounded-md border border-blue-100">
+            {formattedValue}{options.suffix ?? 'px'}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => adjustTypographyValue(scope, key, -options.step, options.min, options.max)}
+            className="flex-1 h-7 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-xs font-black text-slate-600 shadow-sm hover:border-blue-200 hover:bg-slate-50 active:scale-[0.97] transition-all"
+            aria-label={`Decrease ${label}`}
+          >
+            -
+          </button>
+          <button
+            type="button"
+            onClick={() => adjustTypographyValue(scope, key, options.step, options.min, options.max)}
+            className="flex-1 h-7 flex items-center justify-center rounded-lg border border-slate-200 bg-white text-xs font-black text-slate-600 shadow-sm hover:border-blue-200 hover:bg-slate-50 active:scale-[0.97] transition-all"
+            aria-label={`Increase ${label}`}
+          >
+            +
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderScriptSettings = <T extends SanskritFontPreset | TamilFontPreset>(
+    title: string,
+    script: 'devanagari' | 'tamil' | 'itrans',
+    fontPreset?: T,
+    fontOptions?: Array<{ value: T; label: string; sample: string }>,
+    setFontPreset?: (preset: T) => void
+  ) => {
+    const isITRANS = script === 'itrans';
+    const isTamil = script === 'tamil';
+    
+    // Select correct keys based on script
+    const sizeKey = isITRANS ? 'itransFontSize' : isTamil ? 'tamilFontSize' : 'devanagariFontSize';
+    const lhKey = isITRANS ? 'itransLineHeight' : isTamil ? 'tamilLineHeight' : 'devanagariLineHeight';
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const composerSize = (typography.composer as any)[sizeKey] as number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const composerLH = (typography.composer as any)[lhKey] as number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const documentSize = (typography.document as any)[sizeKey] as number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const documentLH = (typography.document as any)[lhKey] as number;
+
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="mb-3">
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-900 border-b border-blue-50 pb-2">{title}</p>
+        </div>
+
+        {fontOptions && setFontPreset && (
+          <div className="mb-4 space-y-2">
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Font Selection</p>
+            <div className="flex flex-col gap-2">
+              {fontOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFontPreset(option.value)}
+                  className={clsx(
+                    'group relative w-full rounded-lg border px-3 py-2 text-left transition-all overflow-hidden',
+                    fontPreset === option.value
+                      ? 'border-blue-300 bg-blue-50/50 text-blue-950 shadow-sm'
+                      : 'border-slate-100 bg-slate-50/30 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                  )}
+                >
+                  {fontPreset === option.value && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500" />
+                  )}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.12em]">{option.label}</span>
+                    <span className="text-[9px] font-bold uppercase text-slate-300 group-hover:text-blue-300 transition-colors">Select</span>
+                  </div>
+                  <div className="mt-1.5 overflow-hidden text-ellipsis whitespace-nowrap">
+                    <ScriptText 
+                      script={script === 'itrans' ? 'roman' : script} 
+                      text={option.sample} 
+                      sanskritFontPreset={script === 'devanagari' ? (option.value as SanskritFontPreset) : undefined} 
+                      tamilFontPreset={script === 'tamil' ? (option.value as TamilFontPreset) : undefined} 
+                      className="text-lg"
+                    />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 divide-y divide-slate-100/50">
+          <div className="py-2.5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-300">Composer</span>
+              <div className="flex-1 h-px bg-slate-100/50" />
+            </div>
+            {renderTypographyControl('Size', 'composer', sizeKey, composerSize, {
+              min: 14,
+              max: 54,
+              step: 1,
+            })}
+            {renderTypographyControl('Line Height', 'composer', lhKey, composerLH, {
+              min: 1.0,
+              max: 2.8,
+              step: 0.1,
+              suffix: '',
+            })}
+          </div>
+          <div className="py-2.5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-300">Document</span>
+              <div className="flex-1 h-px bg-slate-100/50" />
+            </div>
+            {renderTypographyControl('Size', 'document', sizeKey, documentSize, {
+              min: 12,
+              max: 52,
+              step: 1,
+            })}
+            {renderTypographyControl('Line Height', 'document', lhKey, documentLH, {
+              min: 1.0,
+              max: 2.8,
+              step: 0.1,
+              suffix: '',
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
   const { viewMode } = editorState;
   const copySourceControlText = getCopySourceControlText({
     primaryOutputScript,
@@ -951,294 +1107,90 @@ export const TransliterationEngine: React.FC = () => {
             </button>
             {isDisplayMenuOpen && (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <div className="space-y-5">
+                <div className="space-y-6">
                   <section className="space-y-3">
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Composer Layout</p>
-                      <p className="mt-1 text-xs text-slate-500">Choose how the source and live preview sit inside the sticky typing lane.</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setComposerLayout('side-by-side')}
-                        className={clsx(
-                          'rounded-md border px-3 py-2 text-xs font-bold uppercase',
-                          composerLayout === 'side-by-side'
-                            ? 'border-blue-300 bg-blue-600 text-white'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                        )}
-                      >
-                        Side by Side
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setComposerLayout('stacked')}
-                        className={clsx(
-                          'rounded-md border px-3 py-2 text-xs font-bold uppercase',
-                          composerLayout === 'stacked'
-                            ? 'border-blue-300 bg-blue-600 text-white'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                        )}
-                      >
-                        Stacked
-                      </button>
-                    </div>
-                    <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3">
-                      <input
-                        checked={syncComposerScroll}
-                        onChange={(e) => setSyncComposerScroll(e.target.checked)}
-                        type="checkbox"
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span>
-                        <span className="block text-xs font-bold uppercase text-slate-700">Sync Source And Preview Scroll</span>
-                        <span className="mt-1 block text-xs text-slate-500">Keep the ITRANS and Devanagari panes aligned proportionally during long edits.</span>
-                      </span>
-                    </label>
-                  </section>
-
-                  <section className="space-y-3">
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Prediction Placement</p>
-                      <p className="mt-1 text-xs text-slate-500">Compare different positions for lexical word predictions while keeping the same underlying suggestions.</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setPredictionLayout('inline')}
-                        className={clsx(
-                          'rounded-md border px-3 py-2 text-xs font-bold uppercase',
-                          predictionLayout === 'inline'
-                            ? 'border-emerald-300 bg-emerald-600 text-white'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                        )}
-                      >
-                        Inline
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPredictionLayout('split')}
-                        className={clsx(
-                          'rounded-md border px-3 py-2 text-xs font-bold uppercase',
-                          predictionLayout === 'split'
-                            ? 'border-emerald-300 bg-emerald-600 text-white'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                        )}
-                      >
-                        Split
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPredictionLayout('footer')}
-                        className={clsx(
-                          'rounded-md border px-3 py-2 text-xs font-bold uppercase',
-                          predictionLayout === 'footer'
-                            ? 'border-emerald-300 bg-emerald-600 text-white'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                        )}
-                      >
-                        Footer
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPredictionLayout('listbox')}
-                        className={clsx(
-                          'rounded-md border px-3 py-2 text-xs font-bold uppercase',
-                          predictionLayout === 'listbox'
-                            ? 'border-emerald-300 bg-emerald-600 text-white'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                        )}
-                      >
-                        Listbox
-                      </button>
-                    </div>
-                    <label className="block text-xs font-semibold uppercase text-slate-600">
-                      Prediction Popup Timeout
-                      <input
-                        className="mt-2 w-full"
-                        type="range"
-                        min="3"
-                        max="20"
-                        step="1"
-                        value={Math.round(predictionPopupTimeoutMs / 1000)}
-                        onChange={(e) => setPredictionPopupTimeoutMs(Number(e.target.value) * 1000)}
-                      />
-                      <span className="mt-1 block text-[11px] normal-case tracking-normal text-slate-500">
-                        Floating listbox auto-hides after {Math.round(predictionPopupTimeoutMs / 1000)} seconds of inactivity.
-                      </span>
-                    </label>
-                  </section>
-
-                  <section className="space-y-3">
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Script Fonts</p>
-                      <p className="mt-1 text-xs text-slate-500">Switch the reading fonts for Sanskrit and Tamil preview surfaces.</p>
-                    </div>
-                    <div className="grid gap-3 lg:grid-cols-2">
-                      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
-                        <p className="text-xs font-semibold uppercase text-slate-600">Devanagari Font</p>
-                        <div className="grid gap-2">
-                          {sanskritFontOptions.map((option) => (
-                            <button
-                              key={option.value}
-                              type="button"
-                              onClick={() => setSanskritFontPreset(option.value)}
-                              className={clsx(
-                                'rounded-lg border px-3 py-2 text-left transition-all',
-                                sanskritFontPreset === option.value
-                                  ? 'border-blue-300 bg-blue-50 text-blue-950'
-                                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                              )}
-                            >
-                              <div className="flex items-center justify-between gap-3">
-                                <span className="text-[10px] font-black uppercase tracking-[0.14em]">{option.label}</span>
-                                <span className="text-[10px] text-slate-400">Preview</span>
-                              </div>
-                              <span className="mt-1 block text-lg text-slate-900">
-                                <ScriptText script="devanagari" text={option.sample} sanskritFontPreset={option.value} />
-                              </span>
-                            </button>
-                          ))}
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Workspace & Prediction</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-3">
+                        <div className="rounded-xl border border-slate-200 bg-white p-3">
+                           <p className="mb-2 text-[10px] font-bold uppercase text-slate-400">Layout</p>
+                           <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setComposerLayout('side-by-side')}
+                                className={clsx(
+                                  'flex-1 rounded-md border px-2 py-1.5 text-[10px] font-bold uppercase',
+                                  composerLayout === 'side-by-side' ? 'border-blue-300 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-700'
+                                )}
+                              >
+                                Side by Side
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setComposerLayout('stacked')}
+                                className={clsx(
+                                  'flex-1 rounded-md border px-2 py-1.5 text-[10px] font-bold uppercase',
+                                  composerLayout === 'stacked' ? 'border-blue-300 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-700'
+                                )}
+                              >
+                                Stacked
+                              </button>
+                           </div>
                         </div>
+                        <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                          <input
+                            checked={syncComposerScroll}
+                            onChange={(e) => setSyncComposerScroll(e.target.checked)}
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-[10px] font-bold uppercase text-slate-700">Sync Scroll</span>
+                        </label>
                       </div>
-                      <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-3">
-                        <p className="text-xs font-semibold uppercase text-slate-600">Tamil Font</p>
-                        <div className="grid gap-2">
-                          {tamilFontOptions.map((option) => (
-                            <button
-                              key={option.value}
-                              type="button"
-                              onClick={() => setTamilFontPreset(option.value)}
-                              className={clsx(
-                                'rounded-lg border px-3 py-2 text-left transition-all',
-                                tamilFontPreset === option.value
-                                  ? 'border-amber-300 bg-amber-50 text-amber-950'
-                                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                              )}
-                            >
-                              <div className="flex items-center justify-between gap-3">
-                                <span className="text-[10px] font-black uppercase tracking-[0.14em]">{option.label}</span>
-                                <span className="text-[10px] text-slate-400">Preview</span>
-                              </div>
-                              <span className="mt-1 block text-lg text-slate-900">
-                                <ScriptText script="tamil" text={option.sample} tamilFontPreset={option.value} />
-                              </span>
-                            </button>
-                          ))}
+
+                      <div className="space-y-3">
+                        <div className="rounded-xl border border-slate-200 bg-white p-3">
+                           <p className="mb-2 text-[10px] font-bold uppercase text-slate-400">Prediction</p>
+                           <div className="grid grid-cols-2 gap-2">
+                              {(['inline', 'split', 'footer', 'listbox'] as const).map(layout => (
+                                 <button
+                                   key={layout}
+                                   type="button"
+                                   onClick={() => setPredictionLayout(layout)}
+                                   className={clsx(
+                                     'rounded-md border px-1 py-1 text-[9px] font-bold uppercase',
+                                     predictionLayout === layout ? 'border-emerald-300 bg-emerald-600 text-white' : 'border-slate-200 bg-white text-slate-700'
+                                   )}
+                                 >
+                                   {layout}
+                                 </button>
+                              ))}
+                           </div>
+                        </div>
+                        <div className="rounded-xl border border-slate-200 bg-white p-3">
+                           <p className="mb-2 text-[10px] font-bold uppercase text-slate-400">Popup Timeout</p>
+                           <input
+                              className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                              type="range"
+                              min="3"
+                              max="20"
+                              step="1"
+                              value={Math.round(predictionPopupTimeoutMs / 1000)}
+                              onChange={(e) => setPredictionPopupTimeoutMs(Number(e.target.value) * 1000)}
+                            />
+                            <div className="mt-1 flex justify-between text-[9px] font-bold text-slate-400">
+                              <span>3s</span>
+                              <span>{Math.round(predictionPopupTimeoutMs / 1000)}s</span>
+                              <span>20s</span>
+                            </div>
                         </div>
                       </div>
                     </div>
                   </section>
 
-                  <section className="space-y-3">
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Composer Typography</p>
-                      <p className="mt-1 text-xs text-slate-500">These controls affect only the sticky typing lane.</p>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="block rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-semibold uppercase text-slate-600">
-                        ITRANS Size
-                        <input
-                          className="mt-2 w-full"
-                          type="range"
-                          min="14"
-                          max="28"
-                          value={typography.composer.itransFontSize}
-                          onChange={(e) => setTypography('composer', { itransFontSize: Number(e.target.value) })}
-                        />
-                      </label>
-                      <label className="block rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-semibold uppercase text-slate-600">
-                        ITRANS Line Height
-                        <input
-                          className="mt-2 w-full"
-                          type="range"
-                          min="1.2"
-                          max="2.4"
-                          step="0.1"
-                          value={typography.composer.itransLineHeight}
-                          onChange={(e) => setTypography('composer', { itransLineHeight: Number(e.target.value) })}
-                        />
-                      </label>
-                      <label className="block rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-semibold uppercase text-slate-600">
-                        Preview Size
-                        <input
-                          className="mt-2 w-full"
-                          type="range"
-                          min="18"
-                          max="56"
-                          value={typography.composer.renderedFontSize}
-                          onChange={(e) => setTypography('composer', { renderedFontSize: Number(e.target.value) })}
-                        />
-                      </label>
-                      <label className="block rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-semibold uppercase text-slate-600">
-                        Preview Line Height
-                        <input
-                          className="mt-2 w-full"
-                          type="range"
-                          min="1.2"
-                          max="2.4"
-                          step="0.1"
-                          value={typography.composer.renderedLineHeight}
-                          onChange={(e) => setTypography('composer', { renderedLineHeight: Number(e.target.value) })}
-                        />
-                      </label>
-                    </div>
-                  </section>
-
-                  <section className="space-y-3">
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Document Typography</p>
-                      <p className="mt-1 text-xs text-slate-500">These controls affect Read mode and the source/rendered text inside Review.</p>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="block rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-semibold uppercase text-slate-600">
-                        Document ITRANS Size
-                        <input
-                          className="mt-2 w-full"
-                          type="range"
-                          min="12"
-                          max="28"
-                          value={typography.document.itransFontSize}
-                          onChange={(e) => setTypography('document', { itransFontSize: Number(e.target.value) })}
-                        />
-                      </label>
-                      <label className="block rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-semibold uppercase text-slate-600">
-                        Document ITRANS Line Height
-                        <input
-                          className="mt-2 w-full"
-                          type="range"
-                          min="1.2"
-                          max="2.6"
-                          step="0.1"
-                          value={typography.document.itransLineHeight}
-                          onChange={(e) => setTypography('document', { itransLineHeight: Number(e.target.value) })}
-                        />
-                      </label>
-                      <label className="block rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-semibold uppercase text-slate-600">
-                        Document Preview Size
-                        <input
-                          className="mt-2 w-full"
-                          type="range"
-                          min="16"
-                          max="56"
-                          value={typography.document.renderedFontSize}
-                          onChange={(e) => setTypography('document', { renderedFontSize: Number(e.target.value) })}
-                        />
-                      </label>
-                      <label className="block rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-semibold uppercase text-slate-600">
-                        Document Preview Height
-                        <input
-                          className="mt-2 w-full"
-                          type="range"
-                          min="1.2"
-                          max="2.6"
-                          step="0.1"
-                          value={typography.document.renderedLineHeight}
-                          onChange={(e) => setTypography('document', { renderedLineHeight: Number(e.target.value) })}
-                        />
-                      </label>
-                    </div>
-                  </section>
+                  {renderScriptSettings('Sanskrit (Devanagari)', 'devanagari', sanskritFontPreset, sanskritFontOptions, setSanskritFontPreset)}
+                  {renderScriptSettings('Tamil', 'tamil', tamilFontPreset, tamilFontOptions, setTamilFontPreset)}
+                  {renderScriptSettings('ITRANS', 'itrans')}
                 </div>
               </div>
             )}

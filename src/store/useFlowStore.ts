@@ -188,10 +188,23 @@ const LEGACY_DEFAULT_TYPOGRAPHY: LegacyTypographySettings = {
 const DEFAULT_TYPOGRAPHY: TypographySettings = {
   composer: {
     ...LEGACY_DEFAULT_TYPOGRAPHY,
+    devanagariFontSize: 32,
+    tamilFontSize: 28,
+    devanagariLineHeight: 1.7,
+    tamilLineHeight: 1.95,
+    itransPanelHeight: 168,
+    primaryPreviewHeight: 224,
+    comparePreviewHeight: 224,
   },
   document: {
     itransFontSize: 16,
+    devanagariFontSize: 30,
+    tamilFontSize: 26,
+    devanagariLineHeight: 1.75,
+    tamilLineHeight: 1.95,
     itransLineHeight: 1.6,
+    primaryPaneHeight: 480,
+    comparePaneHeight: 480,
     renderedFontSize: 30,
     renderedLineHeight: 1.75,
   },
@@ -204,8 +217,8 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   inputScheme: 'canonical-vedic',
   outputScheme: 'canonical-vedic',
   ...DEFAULT_OUTPUT_TARGET_SETTINGS,
-  sanskritFontPreset: 'chandas',
-  tamilFontPreset: 'hybrid',
+  sanskritFontPreset: 'siddhanta',
+  tamilFontPreset: 'noto-serif',
   typography: DEFAULT_TYPOGRAPHY,
 };
 const INITIAL_SESSION_ID = 'session-initial';
@@ -279,14 +292,27 @@ const cloneTypographySettings = (settings: TypographySettings): TypographySettin
   document: { ...settings.document },
 });
 
+const clampTypographyHeights = (settings: TypographySettings): TypographySettings => ({
+  composer: {
+    ...settings.composer,
+    itransPanelHeight: Math.max(settings.composer.itransPanelHeight, 140),
+    primaryPreviewHeight: Math.max(settings.composer.primaryPreviewHeight, 220),
+    comparePreviewHeight: Math.max(settings.composer.comparePreviewHeight, 220),
+  },
+  document: {
+    ...settings.document,
+    primaryPaneHeight: Math.max(settings.document.primaryPaneHeight, 260),
+    comparePaneHeight: Math.max(settings.document.comparePaneHeight, 260),
+  },
+});
+
 export const normalizeDisplaySettings = (
   displaySettings?: DisplaySettings,
   legacyTypography?: LegacyTypographySettings
 ): DisplaySettings => {
   if (displaySettings) {
     const outputTargetSettings = normalizeOutputTargetSettings(displaySettings);
-
-    return {
+    const normalized: DisplaySettings = {
       composerLayout: displaySettings.composerLayout ?? DEFAULT_DISPLAY_SETTINGS.composerLayout,
       syncComposerScroll: displaySettings.syncComposerScroll ?? DEFAULT_DISPLAY_SETTINGS.syncComposerScroll,
       predictionLayout: displaySettings.predictionLayout ?? DEFAULT_DISPLAY_SETTINGS.predictionLayout,
@@ -305,34 +331,95 @@ export const normalizeDisplaySettings = (
         composer: {
           ...DEFAULT_DISPLAY_SETTINGS.typography.composer,
           ...displaySettings.typography?.composer,
+          devanagariFontSize:
+            displaySettings.typography?.composer?.devanagariFontSize ??
+            displaySettings.typography?.composer?.renderedFontSize ??
+            DEFAULT_DISPLAY_SETTINGS.typography.composer.devanagariFontSize,
+          tamilFontSize:
+            displaySettings.typography?.composer?.tamilFontSize ??
+            Math.max(
+              (displaySettings.typography?.composer?.renderedFontSize ??
+                DEFAULT_DISPLAY_SETTINGS.typography.composer.renderedFontSize) - 4,
+              18
+            ),
+          devanagariLineHeight:
+            displaySettings.typography?.composer?.devanagariLineHeight ??
+            displaySettings.typography?.composer?.renderedLineHeight ??
+            DEFAULT_DISPLAY_SETTINGS.typography.composer.devanagariLineHeight,
+          tamilLineHeight:
+            displaySettings.typography?.composer?.tamilLineHeight ??
+            Math.max(
+              displaySettings.typography?.composer?.renderedLineHeight ??
+                DEFAULT_DISPLAY_SETTINGS.typography.composer.renderedLineHeight,
+              DEFAULT_DISPLAY_SETTINGS.typography.composer.tamilLineHeight
+            ),
         },
         document: {
           ...DEFAULT_DISPLAY_SETTINGS.typography.document,
           ...displaySettings.typography?.document,
+          devanagariFontSize:
+            displaySettings.typography?.document?.devanagariFontSize ??
+            displaySettings.typography?.document?.renderedFontSize ??
+            DEFAULT_DISPLAY_SETTINGS.typography.document.devanagariFontSize,
+          tamilFontSize:
+            displaySettings.typography?.document?.tamilFontSize ??
+            Math.max(
+              (displaySettings.typography?.document?.renderedFontSize ??
+                DEFAULT_DISPLAY_SETTINGS.typography.document.renderedFontSize) - 4,
+              18
+            ),
+          devanagariLineHeight:
+            displaySettings.typography?.document?.devanagariLineHeight ??
+            displaySettings.typography?.document?.renderedLineHeight ??
+            DEFAULT_DISPLAY_SETTINGS.typography.document.devanagariLineHeight,
+          tamilLineHeight:
+            displaySettings.typography?.document?.tamilLineHeight ??
+            Math.max(
+              displaySettings.typography?.document?.renderedLineHeight ??
+                DEFAULT_DISPLAY_SETTINGS.typography.document.renderedLineHeight,
+              DEFAULT_DISPLAY_SETTINGS.typography.document.tamilLineHeight
+            ),
         },
       },
+    };
+    return {
+      ...normalized,
+      typography: clampTypographyHeights(normalized.typography),
     };
   }
 
   if (legacyTypography) {
-    return {
+    const legacyDisplaySettings: DisplaySettings = {
       ...DEFAULT_DISPLAY_SETTINGS,
       typography: {
         composer: {
           ...DEFAULT_DISPLAY_SETTINGS.typography.composer,
           ...legacyTypography,
+          devanagariFontSize: DEFAULT_DISPLAY_SETTINGS.typography.composer.devanagariFontSize,
+          tamilFontSize: Math.max(DEFAULT_DISPLAY_SETTINGS.typography.composer.renderedFontSize - 4, 18),
+          devanagariLineHeight: DEFAULT_DISPLAY_SETTINGS.typography.composer.renderedLineHeight,
+          tamilLineHeight: DEFAULT_DISPLAY_SETTINGS.typography.composer.renderedLineHeight,
         },
         document: {
           ...DEFAULT_DISPLAY_SETTINGS.typography.document,
           ...legacyTypography,
+          devanagariFontSize: DEFAULT_DISPLAY_SETTINGS.typography.document.devanagariFontSize,
+          tamilFontSize: Math.max(DEFAULT_DISPLAY_SETTINGS.typography.document.renderedFontSize - 4, 18),
+          devanagariLineHeight: DEFAULT_DISPLAY_SETTINGS.typography.document.renderedLineHeight,
+          tamilLineHeight: DEFAULT_DISPLAY_SETTINGS.typography.document.renderedLineHeight,
         },
       },
+    };
+
+    return {
+      ...legacyDisplaySettings,
+      typography: clampTypographyHeights(legacyDisplaySettings.typography),
     };
   }
 
   return {
     ...DEFAULT_DISPLAY_SETTINGS,
-    typography: cloneTypographySettings(DEFAULT_DISPLAY_SETTINGS.typography),
+    typography: clampTypographyHeights(cloneTypographySettings(DEFAULT_DISPLAY_SETTINGS.typography)),
   };
 };
 

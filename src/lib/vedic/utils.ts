@@ -230,6 +230,7 @@ const TAMIL_PRECISION_CONSONANTS_TO_CANONICAL: Record<string, string> = {
   'ர': 'r',
   'ல': 'l',
   'ள': 'L',
+  'ன': 'n',
   'வ': 'v',
   'ஶ': 'sh',
   'ஷ': 'Sh',
@@ -245,13 +246,13 @@ const TAMIL_PRECISION_ASCII_FALLBACKS: Array<[string, string]> = [
 const TAMIL_PRECISION_ASCII_SUPERSCRIPT_PATTERN = /([கசஜடதப])\^([234])/gu;
 const TAMIL_PRECISION_AMBIGUOUS_PLAIN_VOCALIC_PATTERN = /(^|[\s().,?!-])(ரு|ரூ|லு|லூ)(?=$|[\s().,?!-])/u;
 const TAMIL_SCRIPT_PATTERN = /\p{Script=Tamil}/u;
-const TAMIL_PRECISION_SIGNAL_PATTERN = /[¹²³⁴ஜஶஷஸஹஂஃ॒॑]/u;
+const TAMIL_PRECISION_SIGNAL_PATTERN = /[¹²³⁴ஜஶஷஸஹஂஃ॒॑᳚]/u;
 const TAMIL_REVERSE_STRUCTURAL_PRECISION_SIGNAL_PATTERN = /(?:[¹²³⁴]|\^2|\^3|\^4|<R>|<L>)/u;
 const TAMIL_REVERSE_BARAHA_SIGNAL_PATTERN = /(?:\^\^|~~|~#|~\$|Rs)/u;
 const TAMIL_REVERSE_MALFORMED_PRECISION_SIGNAL_PATTERN = /(?:\^(?![234])|<R(?!>)|<L(?!>))/u;
 const TAMIL_PRECISION_INDEPENDENT_TOKENS = Object.keys(TAMIL_PRECISION_INDEPENDENT_VOWELS_TO_CANONICAL)
   .sort((a, b) => b.length - a.length);
-const TAMIL_PRECISION_SPECIAL_TOKENS = ['ம்'];
+const TAMIL_PRECISION_SPECIAL_TOKENS = ['ம்', '॑', '॒', '᳚'];
 const TAMIL_PRECISION_DEPENDENT_VOCALIC_TOKENS = Object.keys(TAMIL_PRECISION_DEPENDENT_VOCALICS_TO_CANONICAL)
   .sort((a, b) => b.length - a.length);
 const TAMIL_PRECISION_CONSONANT_TOKENS = Object.keys(TAMIL_PRECISION_CONSONANTS_TO_CANONICAL)
@@ -260,6 +261,15 @@ const TAMIL_PRECISION_PUNCTUATION_PATTERN = /[().,?!-]/u;
 
 export const normalizeTamilPrecisionDisplayText = (text: string) => {
   let normalized = text.replaceAll('ஂ', 'ம்');
+  normalized = normalized.replaceAll('ँ', '');
+  normalized = normalized.replaceAll('', '᳚');
+
+  // A medial dental ந followed by a Vedic tone mark and then another Tamil letter
+  // should display as the more natural medial ன form in the Tamil precision view.
+  normalized = normalized.replace(
+    /([\p{Script=Tamil}])ந([॒॑᳚]+)/gu,
+    (_match, previous: string, marks: string) => `${previous}ன${marks}`,
+  );
 
   // Move Sanskrit nasalization onto the following cluster, matching the Vignanam-style Tamil pages.
   normalized = normalized.replace(
@@ -274,8 +284,14 @@ export const normalizeTamilPrecisionDisplayText = (text: string) => {
     '$1$3$2'
   );
 
-  normalized = normalized.replace(/([\p{Script=Tamil}]+)([²³⁴])(்)/gu, '$1்$2');
-  normalized = normalized.replace(/([\p{Script=Tamil}]+)([²³⁴])([ாிீுூேொோைௌ]+)/gu, '$1$3$2');
+  normalized = normalized.replace(
+    /([\p{Script=Tamil}])([¹²³⁴])([ாிீுூேொோைௌ]+)([॒॑᳚]+)/gu,
+    '$1$3$4$2',
+  );
+
+  normalized = normalized.replace(/([\p{Script=Tamil}]+)([¹²³⁴])(்)/gu, '$1்$2');
+  normalized = normalized.replace(/([\p{Script=Tamil}]+)([¹²³⁴])([ாிீுூேொோைௌ]+)/gu, '$1$3$2');
+  normalized = normalized.replace(/([\p{Script=Tamil}\p{Mark}]+)([¹²³⁴])([॒॑᳚]+)/gu, '$1$3$2');
 
   return normalized.replaceAll('ஞ்ஜ', 'ஜ');
 };
@@ -302,6 +318,11 @@ const normalizeTamilPrecisionInput = (value: string) => {
   );
 
   normalized = normalized.replace(/([\p{Script=Tamil}]+)்([²³⁴])/gu, '$1$2்');
+  normalized = normalized.replace(
+    /([\p{Script=Tamil}])([ாிீுூேொோைௌ]+)([॒॑᳚]+)([²³⁴]+)/gu,
+    '$1$4$2$3',
+  );
+  normalized = normalized.replace(/([\p{Script=Tamil}])([॒॑᳚]+)([²³⁴]+)/gu, '$1$3$2');
 
   if (precisionLike) {
     normalized = normalized.replaceAll('ம்', 'ஂ');
@@ -459,6 +480,10 @@ const formatTamilPrecisionSource = (itrans: string, asciiFallback: boolean) => {
       continue;
     }
 
+    if (current === '\u0901') {
+      continue;
+    }
+
     if (current === '\u0903') {
       formatted += 'ஃ';
       continue;
@@ -596,6 +621,24 @@ export const parseTamilPrecisionToCanonical = (value: string): string | null => 
 
   if (currentToken === 'ம்') {
     canonical += 'M';
+    index += 1;
+    continue;
+  }
+
+  if (currentToken === '॑') {
+    canonical += "'";
+    index += 1;
+    continue;
+  }
+
+  if (currentToken === '॒') {
+    canonical += '_';
+    index += 1;
+    continue;
+  }
+
+  if (currentToken === '᳚') {
+    canonical += "''";
     index += 1;
     continue;
   }
@@ -1138,6 +1181,7 @@ const overrides: Record<string, string> = {
   '\u0956': "MM",  // Vedic Anusvara
   '\uA8F3': "MM~", // Distinct Vedic anusvara variant used in corpus samples
   '\u1CD6': "''",  // Normalize extended double-svarita style to dirgha-svarita input
+  '\u1CDA': "''",  // Vedic double svarita
 };
 for (const [uni, itrans] of Object.entries(overrides)) {
   addReverse(uni, itrans, 'special', { force: true });
