@@ -997,6 +997,26 @@ export const StickyTopComposer: React.FC = () => {
     }
   };
 
+  const handleCopyWhole = async (script: 'devanagari' | 'itrans' | 'tamil') => {
+    const meaningfulBlocks = blocks.filter(b => b.source.trim().length > 0 || b.rendered.trim().length > 0);
+    if (meaningfulBlocks.length === 0) {
+      setCopyStates(current => ({ ...current, [`${script}Whole` as keyof CopyStateMap]: 'error' }));
+      return;
+    }
+
+    let text = '';
+    if (script === 'itrans') {
+      text = meaningfulBlocks.map(b => b.source).join('\n\n');
+    } else {
+      text = meaningfulBlocks.map(b => formatSourceForScript(b.source, script, {
+        romanOutputStyle,
+        tamilOutputStyle
+      })).join('\n\n');
+    }
+
+    await handleCopyText(text, `${script}Whole` as keyof CopyStateMap);
+  };
+
 
   const handleDeleteBlock = () => {
     if (!activeBlock) {
@@ -1244,6 +1264,59 @@ export const StickyTopComposer: React.FC = () => {
                     </div>
                   </div>
                 )}
+              </div>
+
+              <div className="flex items-center gap-1.5 border-l border-slate-200 pl-3">
+                <button
+                  onClick={() => handleCopyWhole('devanagari')}
+                  className={clsx(
+                    "inline-flex touch-manipulation items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] transition-all active:scale-[0.97]",
+                    copyStates.devanagariWhole === 'copied' 
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                      : copyStates.devanagariWhole === 'error'
+                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-blue-700 hover:border-blue-200"
+                  )}
+                  type="button"
+                  title="Copy whole document as Devanagari"
+                >
+                  {copyStates.devanagariWhole === 'copied' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  Devanagari All
+                </button>
+
+                <button
+                  onClick={() => handleCopyWhole('itrans')}
+                  className={clsx(
+                    "inline-flex touch-manipulation items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] transition-all active:scale-[0.97]",
+                    copyStates.itransWhole === 'copied' 
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                      : copyStates.itransWhole === 'error'
+                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-blue-700 hover:border-blue-200"
+                  )}
+                  type="button"
+                  title="Copy whole document as ITRANS"
+                >
+                  {copyStates.itransWhole === 'copied' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  ITRANS All
+                </button>
+
+                <button
+                  onClick={() => handleCopyWhole('tamil')}
+                  className={clsx(
+                    "inline-flex touch-manipulation items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] transition-all active:scale-[0.97]",
+                    copyStates.tamilWhole === 'copied' 
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                      : copyStates.tamilWhole === 'error'
+                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:text-blue-700 hover:border-blue-200"
+                  )}
+                  type="button"
+                  title="Copy whole document as Tamil"
+                >
+                  {copyStates.tamilWhole === 'copied' ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  Tamil All
+                </button>
               </div>
 
               <button
