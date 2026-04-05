@@ -47,6 +47,7 @@ export const StickyTopComposer: React.FC = () => {
   const composerHighlightRef = React.useRef<HTMLDivElement>(null);
   const sourcePaneRef = React.useRef<HTMLDivElement>(null);
   const previewRef = React.useRef<HTMLDivElement>(null);
+  const comparePreviewRef = React.useRef<HTMLDivElement>(null);
   const itransPanelRef = React.useRef<HTMLDivElement>(null);
   const isPointerSelectingRef = React.useRef(false);
   const scrollSyncSourceRef = React.useRef<'source' | 'preview' | null>(null);
@@ -404,26 +405,33 @@ export const StickyTopComposer: React.FC = () => {
   })();
 
   const syncPaneScroll = React.useCallback(
-    (source: HTMLElement, target: HTMLElement | null) => {
-      if (!syncComposerScroll || !target) {
+    (source: HTMLElement, targets: (HTMLElement | null)[]) => {
+      if (!syncComposerScroll) {
         return;
       }
 
       const sourceRange = Math.max(0, source.scrollHeight - source.clientHeight);
-      const targetRange = Math.max(0, target.scrollHeight - target.clientHeight);
       const progress = sourceRange <= 0 ? 0 : source.scrollTop / sourceRange;
-      const nextScrollTop = targetRange * progress;
 
-      if (Math.abs(target.scrollTop - nextScrollTop) < 1) {
-        return;
-      }
-
-      programmaticScrollTargetRef.current = target;
-      target.scrollTop = nextScrollTop;
-      window.requestAnimationFrame(() => {
-        if (programmaticScrollTargetRef.current === target) {
-          programmaticScrollTargetRef.current = null;
+      targets.forEach((target) => {
+        if (!target) {
+          return;
         }
+
+        const targetRange = Math.max(0, target.scrollHeight - target.clientHeight);
+        const nextScrollTop = targetRange * progress;
+
+        if (Math.abs(target.scrollTop - nextScrollTop) < 1) {
+          return;
+        }
+
+        programmaticScrollTargetRef.current = target;
+        target.scrollTop = nextScrollTop;
+        window.requestAnimationFrame(() => {
+          if (programmaticScrollTargetRef.current === target) {
+            programmaticScrollTargetRef.current = null;
+          }
+        });
       });
     },
     [syncComposerScroll]
@@ -734,7 +742,7 @@ export const StickyTopComposer: React.FC = () => {
     if (composerHighlightRef.current) {
       composerHighlightRef.current.style.transform = `translateY(-${event.currentTarget.scrollTop}px)`;
     }
-    syncPaneScroll(event.currentTarget, previewRef.current);
+    syncPaneScroll(event.currentTarget, [previewRef.current, comparePreviewRef.current]);
     window.requestAnimationFrame(() => {
       const preview = previewRef.current;
       if (!preview) {
@@ -768,7 +776,16 @@ export const StickyTopComposer: React.FC = () => {
     }
 
     scrollSyncSourceRef.current = 'preview';
-    syncPaneScroll(event.currentTarget, composerRef.current);
+    syncPaneScroll(event.currentTarget, [composerRef.current, comparePreviewRef.current]);
+  };
+
+  const handleComparePreviewScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    if (programmaticScrollTargetRef.current === event.currentTarget) {
+      return;
+    }
+
+    scrollSyncSourceRef.current = 'preview'; // Treating compare pane as a 'preview' source
+    syncPaneScroll(event.currentTarget, [composerRef.current, previewRef.current]);
   };
 
   React.useLayoutEffect(() => {
@@ -792,12 +809,12 @@ export const StickyTopComposer: React.FC = () => {
     }
 
     if (scrollSyncSourceRef.current === 'source' && composerRef.current) {
-      syncPaneScroll(composerRef.current, previewRef.current);
+      syncPaneScroll(composerRef.current, [previewRef.current, comparePreviewRef.current]);
       return;
     }
 
     if (scrollSyncSourceRef.current === 'preview' && previewRef.current) {
-      syncPaneScroll(previewRef.current, composerRef.current);
+      syncPaneScroll(previewRef.current, [composerRef.current, comparePreviewRef.current]);
     }
   }, [currentChunkSource, activeChunkGroup?.rendered, syncComposerScroll, syncPaneScroll]);
 
@@ -1636,9 +1653,11 @@ export const StickyTopComposer: React.FC = () => {
 
                   {isComposerCompareMode && (
                     <div
+                      ref={comparePreviewRef}
                       className="relative overflow-y-auto rounded-[1.125rem] border border-blue-100/80 bg-white/60 px-3 pb-3 pt-2.5 text-slate-700 shadow-inner"
                       data-testid="sticky-preview-compare-pane"
                       onPointerDownCapture={activeComparisonScript === 'tamil' ? handleTamilPreviewMouseDown : undefined}
+                      onScroll={handleComparePreviewScroll}
                       onClick={activeComparisonScript === 'tamil' ? handlePrimaryPreviewClick : undefined}
                       style={{
                         height: `${composerPreviewHeight}px`,
