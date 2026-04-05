@@ -54,7 +54,8 @@ The live app has two major regions:
 
 `StickyTopComposer` is the sticky editing surface. It contains:
 
-- the ITRANS input
+- the ITRANS input (**supports multiline and paragraphs**)
+- `Enter` for newline, `Shift+Enter` to split blocks (includes educational hints)
 - live preview panes for the selected output script (side-by-side or stacked)
 - compare mode in the top half only
 - copy buttons for the active outputs
@@ -133,6 +134,9 @@ The document/read area has independent controls for:
 
 `app/src/lib/vedic/mapping.ts` is the canonical mapping table and output-target definition layer.
 
+- **Automated ZWNJ:** Inserted for Vedic visarga + accent combinations (e.g., `nai":`) to ensure font compatibility.
+- **Font Optimization:** Uses specific PUA characters for `Chandas` font accuracy.
+
 It defines:
 
 - input schemes: `canonical-vedic`, `baraha-compatible`
@@ -146,7 +150,7 @@ It defines:
 
 `app/src/lib/vedic/utils.ts` contains the runtime transliteration helpers, including:
 
-- forward transliteration (using `MAPPING_TRIE` and `MAPPING_TRIE_TAMIL`)
+- forward transliteration (automatically calls `normalizeMarkerSequences`)
 - reverse transliteration
 - Tamil precision display normalization
 - output formatting helpers
@@ -212,6 +216,7 @@ The most important files for agent work are:
 
 - `app/src/components/engine/TransliterationEngine.tsx`
 - `app/src/components/StickyTopComposer.tsx`
+- `app/src/components/MobileOptimizationNotice.tsx` (handles desktop-only warnings)
 - `app/src/components/MainDocumentArea.tsx`
 - `app/src/components/ReferenceSidePanel.tsx`
 - `app/src/components/reference/ReferenceLibrary.tsx`
@@ -244,6 +249,8 @@ Useful commands from `app/`:
 
 - Treat `mapping.ts` as the transliteration contract.
 - Treat `useFlowStore.ts` as the source of truth for editor state and persistence.
+- **Input Convention:** `Enter` is for newlines; `Shift+Enter` is for splitting blocks (available in `read` and `document` modes).
+- **Rendering:** Vedic accents following a visarga are automatically separated by a ZWNJ in the engine for correct rendering.
 - Treat `StickyTopComposer.tsx` as the top-half composer layout and output-target control surface.
 - Treat `MainDocumentArea.tsx` as the lower read/review/immersive document surface.
 - Compare mode in the lower area is intentionally disabled.
