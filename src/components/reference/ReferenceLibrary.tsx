@@ -162,7 +162,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
       </div>
 
       {/* Mappings List */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-8 flex flex-col gap-8">
         {categories.map(cat => {
           const catMappings = filteredMappings
             .filter(m => m.category === cat)
@@ -201,7 +201,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
         })}
       </div>
 
-      <div className="md:col-span-2 border-t border-slate-100 bg-white/70 px-6 py-4 -mx-8">
+      <div className="border-t border-slate-100 bg-white/70 px-6 py-4">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Zero-width joiners</p>
