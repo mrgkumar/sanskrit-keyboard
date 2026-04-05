@@ -455,7 +455,7 @@ export const StickyTopComposer: React.FC = () => {
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    let pastedText = e.clipboardData.getData('text');
+    const pastedText = e.clipboardData.getData('text');
     setIsPredictionPopupSuppressed(false);
     
     const isDevanagari = /[\u0900-\u097F]/.test(pastedText);
