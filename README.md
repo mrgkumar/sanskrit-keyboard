@@ -6,6 +6,12 @@ Built with **Next.js 15**, **React 19**, and **Tailwind CSS 4**, it prioritizes 
 
 ---
 
+## 🚀 Try It Now
+
+Experience the application live: **[https://mrgkumar.github.io/sanskrit-keyboard/](https://mrgkumar.github.io/sanskrit-keyboard/)**
+
+---
+
 ## ✨ Key Features
 
 - **🚀 Live Transliteration:** Real-time conversion from ITRANS to Devanagari, Roman, or Tamil.
