@@ -265,7 +265,7 @@ const TAMIL_REVERSE_BARAHA_SIGNAL_PATTERN = /(?:\^\^|~~|~#|~\$|Rs)/u;
 const TAMIL_REVERSE_MALFORMED_PRECISION_SIGNAL_PATTERN = /(?:\^(?![234])|<R(?!>)|<L(?!>))/u;
 const TAMIL_PRECISION_INDEPENDENT_TOKENS = Object.keys(TAMIL_PRECISION_INDEPENDENT_VOWELS_TO_CANONICAL)
   .sort((a, b) => b.length - a.length);
-const TAMIL_PRECISION_SPECIAL_TOKENS = ['॑', '॒', '᳚'];
+const TAMIL_PRECISION_SPECIAL_TOKENS = ['॑', '॒', '᳚', '[M^~]'];
 const TAMIL_PRECISION_DEPENDENT_VOCALIC_TOKENS = Object.keys(TAMIL_PRECISION_DEPENDENT_VOCALICS_TO_CANONICAL)
   .sort((a, b) => b.length - a.length);
 const TAMIL_PRECISION_CONSONANT_TOKENS = Object.keys(TAMIL_PRECISION_CONSONANTS_TO_CANONICAL)
@@ -494,6 +494,11 @@ const formatTamilPrecisionSource = (itrans: string, asciiFallback: boolean) => {
       continue;
     }
 
+    if (current === '\uA8F4') {
+      formatted += '[M^~]';
+      continue;
+    }
+
     if (current === '\u0950') {
       formatted += 'ஓம்';
       continue;
@@ -642,7 +647,14 @@ export const parseTamilPrecisionToCanonical = (value: string): string | null => 
     continue;
   }
 
+  if (currentToken === '[M^~]') {
+    canonical += 'M^~';
+    index += 1;
+    continue;
+  }
+
   if (currentToken === 'ऽ') {
+
     const nextToken = tokens[index + 1]?.token ?? '';
     if (nextToken === 'ऽ') {
       canonical += '..a';
@@ -884,8 +896,9 @@ export const transliterate = (
   itrans: string,
   options?: TransliterationOptions
 ): TransliterationResult => {
+  const normalizedItrans = normalizeMarkerSequences(itrans);
   const inputScheme = options?.inputScheme ?? 'canonical-vedic';
-  const cacheKey = `${inputScheme}::${itrans}`;
+  const cacheKey = `${inputScheme}::${normalizedItrans}`;
   if (TRANSLITERATION_CACHE.has(cacheKey)) {
     return TRANSLITERATION_CACHE.get(cacheKey)!;
   }
@@ -893,10 +906,11 @@ export const transliterate = (
 
   let unicode = '';
   const confidences: CharConfidence[] = [];
-  const sourceToTargetMap: number[] = new Array(itrans.length).fill(0);
+  const sourceToTargetMap: number[] = new Array(normalizedItrans.length).fill(0);
   const targetToSourceMap: number[] = [];
   
   let i = 0;
+  const itransBuffer = normalizedItrans;
   let pendingNasalRemap: '~N' | '~n' | null = null;
   
   const matraMap: Record<string, string> = {
@@ -906,15 +920,15 @@ export const transliterate = (
     '\u090E': 'ॆ', '\u090f': 'े', '\u0910': 'ै', '\u0912': 'ॊ', '\u0913': 'ो', '\u0914': 'ौ'
   };
 
-  while (i < itrans.length) {
-    if (itrans[i] === '/') {
+  while (i < itransBuffer.length) {
+    if (itransBuffer[i] === '/') {
       i++;
       continue;
     }
 
     let match: VedicMapping | null = null;
     for (const entry of mappingTrie) {
-      if (matchesInputEntryAt(itrans, i, entry)) {
+      if (matchesInputEntryAt(itransBuffer, i, entry)) {
         match = entry;
         break;
       }
@@ -931,8 +945,8 @@ export const transliterate = (
         pendingNasalRemap = null;
       }
 
-      const nextChar = itrans[i + match.itrans.length] ?? '';
-      const prevInputChar = itrans[i - 1] ?? '';
+      const nextChar = itransBuffer[i + match.itrans.length] ?? '';
+      const prevInputChar = itransBuffer[i - 1] ?? '';
 
       if ((match.itrans === 'LLi' || match.itrans === 'LLI') && i > 0) {
         const consonantalL = mappingTrie.find(
@@ -965,14 +979,14 @@ export const transliterate = (
 
       if (
         match.itrans === 'M~' &&
-        /^(~N|~n|n|N|Ch|ch)/.test(itrans.slice(i + match.itrans.length))
+        /^(~N|~n|n|N|Ch|ch)/.test(itransBuffer.slice(i + match.itrans.length))
       ) {
-        if (itrans.startsWith('N', i + match.itrans.length)) {
+        if (itransBuffer.startsWith('N', i + match.itrans.length)) {
           pendingNasalRemap = '~N';
         } else if (
-          itrans.startsWith('n', i + match.itrans.length) ||
-          itrans.startsWith('Ch', i + match.itrans.length) ||
-          itrans.startsWith('ch', i + match.itrans.length)
+          itransBuffer.startsWith('n', i + match.itrans.length) ||
+          itransBuffer.startsWith('Ch', i + match.itrans.length) ||
+          itransBuffer.startsWith('ch', i + match.itrans.length)
         ) {
           pendingNasalRemap = '~n';
         }
@@ -1058,7 +1072,7 @@ export const transliterate = (
       } else if (
         (isVowel || startsWithMatra) &&
         unicode.endsWith('्') &&
-        itrans[i - 1] !== '\u094D'
+        itransBuffer[i - 1] !== '\u094D'
       ) {
         const matra = matraMap[resolvedMatch.unicode] !== undefined ? matraMap[resolvedMatch.unicode] : resolvedMatch.unicode;
         unicode = unicode.slice(0, -1) + matra;
@@ -1103,8 +1117,8 @@ export const transliterate = (
         unicode += replacement;
       }
       i += resolvedMatch.itrans.length;
-    } else if (itrans[i] === '\\' && i + 1 < itrans.length) {
-      const literalChar = itrans[i + 1];
+    } else if (itransBuffer[i] === '\\' && i + 1 < itransBuffer.length) {
+      const literalChar = itransBuffer[i + 1];
       sourceToTargetMap[i] = unicode.length;
       sourceToTargetMap[i + 1] = unicode.length;
       targetToSourceMap.push(i);
@@ -1114,14 +1128,14 @@ export const transliterate = (
     } else {
       sourceToTargetMap[i] = unicode.length;
       targetToSourceMap.push(i);
-      unicode += itrans[i];
-      confidences.push({ char: itrans[i], confidence: 0.5, rationale: 'Raw fallback' });
+      unicode += itransBuffer[i];
+      confidences.push({ char: itransBuffer[i], confidence: 0.5, rationale: 'Raw fallback' });
       i++;
     }
   }
 
   const result = { unicode, confidences, sourceToTargetMap, targetToSourceMap };
-  if (itrans.length > 0 && itrans.length < 50) {
+  if (normalizedItrans.length > 0 && normalizedItrans.length < 50) {
     if (TRANSLITERATION_CACHE.size >= TRANSLITERATION_CACHE_MAX) {
       TRANSLITERATION_CACHE.clear();
     }
