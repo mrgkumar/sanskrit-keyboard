@@ -16,7 +16,7 @@ test('harvest upanishad links', async ({ page }) => {
 
     // Upanishads header is "उपनिषदः (34)"
     const upaHeaderIdx = allLinks.findIndex(l => l.text.includes('उपनिषदः'));
-    let upaLinks: any[] = [];
+    let upaLinks: typeof allLinks = [];
     if (upaHeaderIdx !== -1) {
         console.log(`Found Upanishad header at index ${upaHeaderIdx}: ${allLinks[upaHeaderIdx].text}`);
         upaLinks = allLinks.slice(upaHeaderIdx + 1, upaHeaderIdx + 36);

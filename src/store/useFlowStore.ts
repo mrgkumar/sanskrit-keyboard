@@ -838,7 +838,6 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       const sourceAfter = newSource.slice(nextSelectionEnd);
       
       let swapped = false;
-      let swapLen = 0;
       let nextPrefix = '';
 
       // Check for 3-char patterns first
@@ -846,7 +845,6 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         const lastThree = sourceBefore.slice(-3);
         if (lastThree === ":''") {
           nextPrefix = sourceBefore.slice(0, -3) + "'':";
-          swapLen = 3;
           swapped = true;
         }
       }
@@ -857,7 +855,6 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         if (lastTwo === ":'" || lastTwo === ":_" || lastTwo === ":\"") {
           const char = lastTwo[1];
           nextPrefix = sourceBefore.slice(0, -2) + char + ":";
-          swapLen = 2;
           swapped = true;
         }
       }
@@ -1077,7 +1074,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     }
   },
   mergeBlocks: (blockId, direction) => {
-    const { blocks, setComposerSelection, activateBlockChunk, displaySettings } = get();
+    const { blocks, setComposerSelection, activateBlockChunk } = get();
     const currentIndex = blocks.findIndex((b) => b.id === blockId);
     if (currentIndex === -1) return;
 
@@ -1133,7 +1130,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     }, 50);
   },
   splitBlock: (blockId, sourceOffset) => {
-    const { blocks, displaySettings, activateBlockChunk, setComposerSelection } = get();
+    const { blocks, activateBlockChunk, setComposerSelection } = get();
     const currentIndex = blocks.findIndex((b) => b.id === blockId);
     if (currentIndex === -1) return;
 

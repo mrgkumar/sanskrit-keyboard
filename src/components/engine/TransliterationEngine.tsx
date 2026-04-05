@@ -155,7 +155,6 @@ export const TransliterationEngine: React.FC = () => {
     romanOutputStyle,
     sanskritFontPreset,
     tamilFontPreset,
-    autoSwapVisargaSvarita,
     showItransInDocument,
   } = displaySettings;
   const sanskritFontOptions: Array<{ value: SanskritFontPreset; label: string; sample: string }> = [

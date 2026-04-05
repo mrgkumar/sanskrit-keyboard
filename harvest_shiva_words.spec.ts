@@ -1,6 +1,5 @@
 import { test } from '@playwright/test';
 import fs from 'fs';
-import path from 'path';
 
 test('harvest words and frequencies from shiva stotrams', async ({ browser }) => {
     const links = JSON.parse(fs.readFileSync('shiva_stotrams.json', 'utf8'));

@@ -6,9 +6,6 @@ const isProduction = process.env.NODE_ENV === 'production';
 const nextConfig = {
   output: 'export',
   trailingSlash: true,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   images: {
     unoptimized: true,
   },

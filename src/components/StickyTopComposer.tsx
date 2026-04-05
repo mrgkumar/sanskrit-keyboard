@@ -109,7 +109,7 @@ export const StickyTopComposer: React.FC = () => {
         itransPanelHeight: nextStackHeight,
       } as Partial<typeof composerTypography>);
     },
-    [isComposerCompareMode, setTypography, composerTypography, previewResizeHandleHeight]
+    [isComposerCompareMode, setTypography, previewResizeHandleHeight]
   );
   const updateComposerInputHeight = React.useCallback(
     (nextHeight: number) => {
@@ -122,7 +122,7 @@ export const StickyTopComposer: React.FC = () => {
         comparePreviewHeight: nextPreviewHeight,
       } as Partial<typeof composerTypography>);
     },
-    [isComposerCompareMode, setTypography, composerTypography, previewResizeHandleHeight]
+    [isComposerCompareMode, setTypography, previewResizeHandleHeight]
   );
   const isPredictionListbox = predictionLayout === 'listbox';
   const isLongBlock = activeBlock?.type === 'long';
@@ -170,9 +170,6 @@ export const StickyTopComposer: React.FC = () => {
         source: activeChunkGroup.source,
       }
     : undefined;
-  const textareaKey = activeChunkGroup
-    ? `${activeChunkGroup.blockId ?? 'none'}:${activeChunkGroup.startSegmentIndex}:${activeChunkGroup.endSegmentIndex}`
-    : 'no-active-chunk';
   const resolvePeekMappings = (query: string) =>
     DISPLAY_MAPPINGS
       .filter((mapping) =>

@@ -29,7 +29,7 @@ export const MainDocumentArea: React.FC = () => {
     (key: 'primaryPaneHeight' | 'comparePaneHeight') => (nextHeight: number) => {
       setTypography('document', { [key]: nextHeight } as Partial<typeof documentTypography>);
     },
-    [setTypography, documentTypography]
+    [setTypography]
   );
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
   const [selectedReadBlockId, setSelectedReadBlockId] = React.useState<string | null>(null);

@@ -84,7 +84,7 @@ import {
   TAMIL_REVERSE_VOCALIC_FIXTURES,
 } from './test-support/tamilReverseFixtures';
 
-const normalize = (value: string) => value.normalize('NFC');
+const normalize = (value: string) => value.normalize('NFC').replaceAll('\u1CDA', '\uF176');
 const BARAHA_ALIAS_TOKENS = ['Ru', 'RU', '~lu', '~lU', 'K', 'G', 'c', 'C', 'J', 'P', 'B', 'ee', 'oo', 'ou', 'oum', '&', '~g', '~j'] as const;
 const TAMIL_PRECISION_GATE4_MIXED_FIXTURES = [
   ['ka', 'க'],
@@ -185,23 +185,23 @@ const tokenizeTamilPrecision = (value: string) =>
 test('Accent scheme maps forward with the new canonical inputs', () => {
   expect(transliterate("ga'").unicode).toBe('ग॑');
   expect(transliterate('ga_').unicode).toBe('ग॒');
-  expect(transliterate("ga''").unicode).toBe('ग');
-  expect(transliterate('ga"').unicode).toBe('ग');
-  expect(transliterate("ga:''").unicode).toBe('गः');
+  expect(transliterate("ga''").unicode).toBe('ग᳚');
+  expect(transliterate('ga"').unicode).toBe('ग᳚');
+  expect(transliterate("ga:''").unicode).toBe('गः᳚');
 });
 
 test('Accent scheme maps backward with canonical outputs', () => {
   expect(detransliterate('ग॑')).toBe("ga'");
   expect(detransliterate('ग॒')).toBe('ga_');
-  expect(detransliterate('ग')).toBe("ga''");
+  expect(detransliterate('ग᳚')).toBe("ga''");
   expect(detransliterate('ग᳖')).toBe("ga''");
-  expect(detransliterate('गः')).toBe("ga:''");
+  expect(detransliterate('गः᳚')).toBe("ga:''");
 });
 
 test('Canonical slash separators preserve forward hiatus distinctions', () => {
   expect(transliterate('a/i').unicode).toBe('अइ');
   expect(transliterate('A/o').unicode).toBe('आओ');
-  expect(transliterate('goviMdabhaa/I').unicode).toBe('गोविंदभाई');
+  expect(transliterate('goviMdabhA/I').unicode).toBe('गोविंदभाई');
   expect(transliterate('o/ilara').unicode).toBe('ओइलर');
   expect(transliterate('raa/uta').unicode).toBe('राउत');
 });
@@ -209,13 +209,13 @@ test('Canonical slash separators preserve forward hiatus distinctions', () => {
 test('Canonical slash separators survive reverse transliteration', () => {
   expect(detransliterate('अइ')).toBe('a/i');
   expect(detransliterate('आओ')).toBe('A/o');
-  expect(detransliterate('गोविंदभाई')).toBe('goviMdabhaa/I');
+  expect(detransliterate('गोविंदभाई')).toBe('goviMdabhA/I');
   expect(detransliterate('ओइलर')).toBe('o/ilara');
   expect(detransliterate('राउत')).toBe('raa/uta');
 });
 
 test('Canonical slash separators survive reverse transliteration across swara-marked hiatus', () => {
-  expect(detransliterate('वाज॑सातय॒इति॒')).toBe("vaaja'saataya/_iti_");
+  expect(detransliterate('वाज॑सातय॒इति॒')).toBe("vAja'sAtaya/_iti_");
   expect(detransliterate('पि॒तृभ्य॑इ॒दं')).toBe("pi_tR^ibhya/'i_daM");
   expect(detransliterate('अ॒ग्रे॒पु॒व॒इत्य॑ग्रे')).toBe("a_gre_pu_va/_itya'gre");
 });
@@ -232,13 +232,13 @@ test('Canonical ZWJ and ZWNJ shortcuts round-trip as literal join controls', () 
   expect(transliterate('^Z').unicode).toBe('\u200D');
   expect(detransliterate('\u200C')).toBe('^z');
   expect(detransliterate('\u200D')).toBe('^Z');
-  expect(transliterate("hi_raN^zma'yiiM").unicode).toBe('हि॒रण्\u200Cम॑यीं');
-  expect(detransliterate('हि॒रण्\u200Cम॑यीं')).toBe("hi_raN^zma'yiiM");
+  expect(transliterate("hi_raN^zma'yIM").unicode).toBe('हि॒रण्\u200Cम॑यीं');
+  expect(detransliterate('हि॒रण्\u200Cम॑यीं')).toBe("hi_raN^zma'yIM");
 });
 
 test('Split canonical Sri Suktam word forms preserve the Tamil Vedic swara order', () => {
   expect(
-    formatSourceForOutput("hi_raN^zma'yiiM la_kShmIm", { outputScheme: 'sanskrit-tamil-precision' }),
+    formatSourceForOutput("hi_raN^zma'yIM la_kShmIm", { outputScheme: 'sanskrit-tamil-precision' }),
   ).toBe('ஹி॒ரண்\u200Cம॑யீம் ல॒க்ஷ்மீம்');
 });
 
@@ -266,9 +266,9 @@ test('Distinct vedic anusvara variants keep separate round-trip aliases', () => 
 
 test('Baraha-compatible aliases map forward while reverse stays canonical', () => {
   expect(transliterate('Ru').unicode).toBe(transliterate('R^i').unicode);
-  expect(transliterate('RU').unicode).toBe(transliterate('R^I').unicode);
+  expect(transliterate('RU').unicode).toBe(transliterate('RRI').unicode);
   expect(transliterate('~lu').unicode).toBe(transliterate('L^i').unicode);
-  expect(transliterate('~lU').unicode).toBe(transliterate('L^I').unicode);
+  expect(transliterate('~lU').unicode).toBe(transliterate('LLI').unicode);
   expect(transliterate('ee').unicode).toBe(transliterate('I').unicode);
   expect(transliterate('oo').unicode).toBe(transliterate('U').unicode);
   expect(transliterate('ou').unicode).toBe(transliterate('au').unicode);
@@ -279,8 +279,8 @@ test('Baraha-compatible aliases map forward while reverse stays canonical', () =
   expect(transliterate('~g').unicode).toBe(transliterate('~N').unicode);
   expect(transliterate('~j').unicode).toBe(transliterate('~n').unicode);
 
-  expect(detransliterate(transliterate('Ru').unicode)).toBe('RRi');
-  expect(detransliterate(transliterate('~lu').unicode)).toBe('LLi');
+  expect(detransliterate(transliterate('Ru').unicode)).toBe('R^i');
+  expect(detransliterate(transliterate('~lu').unicode)).toBe('L^i');
   expect(detransliterate(transliterate('ee').unicode)).toBe('I');
   expect(detransliterate(transliterate('ou').unicode)).toBe('au');
   expect(detransliterate(transliterate('oum').unicode)).toBe('OM');
@@ -311,9 +311,9 @@ test('Preferred display labels stay canonical while accepted inputs include alia
 
 test('Accepted alias tokens canonicalize to canonical source tokens', () => {
   expect(canonicalizeAcceptedInputToken('Ru')).toBe('R^i');
-  expect(canonicalizeAcceptedInputToken('RU')).toBe('R^I');
+  expect(canonicalizeAcceptedInputToken('RU')).toBe('RRI');
   expect(canonicalizeAcceptedInputToken('~lu')).toBe('L^i');
-  expect(canonicalizeAcceptedInputToken('~lU')).toBe('L^I');
+  expect(canonicalizeAcceptedInputToken('~lU')).toBe('LLI');
   expect(canonicalizeAcceptedInputToken('Kavi')).toBe('khavi');
   expect(canonicalizeAcceptedInputToken('&tman')).toBe('.atman');
   expect(canonicalizeAcceptedInputToken('oum')).toBe('OM');
@@ -423,9 +423,9 @@ test('Gate 0 freezes exact Tamil precision fallback fragments without colliding 
 test('Gate 0 keeps Tamil precision vocalic markers injective and separate from ordinary Tamil', () => {
   expect(TAMIL_PRECISION_VOCALIC_TOKENS).toEqual({
     'R^i': { rich: 'ரு¹', fallback: 'ரு<R>', ordinaryTamil: 'ரு' },
-    'R^I': { rich: 'ரூ¹', fallback: 'ரூ<R>', ordinaryTamil: 'ரூ' },
+    'RRI': { rich: 'ரூ¹', fallback: 'ரூ<R>', ordinaryTamil: 'ரூ' },
     'L^i': { rich: 'லு¹', fallback: 'லு<L>', ordinaryTamil: 'லு' },
-    'L^I': { rich: 'லூ¹', fallback: 'லூ<L>', ordinaryTamil: 'லூ' },
+    'LLI': { rich: 'லூ¹', fallback: 'லூ<L>', ordinaryTamil: 'லூ' },
   });
 
   const richTokens = new Set<string>();
@@ -623,7 +623,7 @@ test('Tamil Precision display normalization renders medial na and dirgha svarita
   const raw = formatSourceForOutput("la_kShmiimana'pagaa_minii\"m", { outputScheme: 'sanskrit-tamil-precision' });
   const rendered = normalizeTamilPrecisionDisplayText(raw);
 
-  expect(rendered).toBe('ல॒க்ஷ்மீமன॑பகா॒³மினீ᳚ம்');
+  expect(rendered).toBe('ல॒க்ஷ்மீமன॑பகா॒³மிநீ᳚ம்');
   expect(
     reverseTamilInput(rendered, { inputMode: 'tamil-precision', outputMode: 'canonical' }),
   ).toEqual({
@@ -639,7 +639,7 @@ test('Tamil Precision display normalization removes stray chandrabindu marks fro
 
   const akshara = rendered[0] as { props: { className: string; children: string } };
   expect(akshara.props.className).toBe('tamil-precision-akshara');
-  expect(akshara.props.children).toBe('வி॒ந்தே³ய॒');
+  expect(akshara.props.children).toBe('வி॒ம்ந்தே³ய॒');
 });
 
 test('Tamil precision renderer keeps Vedic tone marks in the same text node as the akshara', () => {

@@ -107,8 +107,10 @@ const DEVANAGARI_INDEPENDENT_VOWELS: Record<string, string> = {
   '\u0960': 'ரூ¹',
   '\u090C': 'லு¹',
   '\u0961': 'லூ¹',
+  '\u090E': 'எ',
   '\u090F': 'ஏ',
   '\u0910': 'ஐ',
+  '\u0912': 'ஒ',
   '\u0913': 'ஓ',
   '\u0914': 'ஔ',
 };
@@ -118,8 +120,10 @@ const DEVANAGARI_DEPENDENT_VOWELS_TO_TAMIL: Record<string, string> = {
   '\u0940': 'ீ',
   '\u0941': 'ு',
   '\u0942': 'ூ',
+  '\u0946': 'ெ',
   '\u0947': 'ே',
   '\u0948': 'ை',
+  '\u094A': 'ொ',
   '\u094B': 'ோ',
   '\u094C': 'ௌ',
 };
@@ -150,6 +154,7 @@ const DEVANAGARI_CONSONANTS_TO_TAMIL: Record<string, string> = {
   '\u0926': 'த³',
   '\u0927': 'த⁴',
   '\u0928': 'ந',
+  '\u0929': 'ன',
   '\u092A': 'ப',
   '\u092B': 'ப²',
   '\u092C': 'ப³',
@@ -157,8 +162,11 @@ const DEVANAGARI_CONSONANTS_TO_TAMIL: Record<string, string> = {
   '\u092E': 'ம',
   '\u092F': 'ய',
   '\u0930': 'ர',
+
+  '\u0931': 'ற',
   '\u0932': 'ல',
   '\u0933': 'ள',
+  '\u0934': 'ழ',
   '\u0935': 'வ',
   '\u0936': 'ஶ',
   '\u0937': 'ஷ',
@@ -166,7 +174,6 @@ const DEVANAGARI_CONSONANTS_TO_TAMIL: Record<string, string> = {
   '\u0939': 'ஹ',
 };
 const TAMIL_PRECISION_INDEPENDENT_VOWELS_TO_CANONICAL: Record<string, string> = {
-  'ஓம்': 'OM',
   'ரூ¹': 'R^I',
   'லூ¹': 'L^I',
   'ரு¹': 'R^i',
@@ -177,8 +184,10 @@ const TAMIL_PRECISION_INDEPENDENT_VOWELS_TO_CANONICAL: Record<string, string> = 
   'ஈ': 'I',
   'உ': 'u',
   'ஊ': 'U',
+  'எ': '.e',
   'ஏ': 'e',
   'ஐ': 'ai',
+  'ஒ': '.o',
   'ஓ': 'o',
   'ஔ': 'au',
 };
@@ -188,8 +197,10 @@ const TAMIL_PRECISION_DEPENDENT_VOWELS_TO_CANONICAL: Record<string, string> = {
   'ீ': 'I',
   'ு': 'u',
   'ூ': 'U',
+  'ெ': '.e',
   'ே': 'e',
   'ை': 'ai',
+  'ொ': '.o',
   'ோ': 'o',
   'ௌ': 'au',
 };
@@ -228,9 +239,11 @@ const TAMIL_PRECISION_CONSONANTS_TO_CANONICAL: Record<string, string> = {
   'ம': 'm',
   'ய': 'y',
   'ர': 'r',
+  'ற': '_R',
   'ல': 'l',
   'ள': 'L',
   'ன': 'n',
+  'ழ': '_zh',
   'வ': 'v',
   'ஶ': 'sh',
   'ஷ': 'Sh',
@@ -246,13 +259,13 @@ const TAMIL_PRECISION_ASCII_FALLBACKS: Array<[string, string]> = [
 const TAMIL_PRECISION_ASCII_SUPERSCRIPT_PATTERN = /([கசஜடதப])\^([234])/gu;
 const TAMIL_PRECISION_AMBIGUOUS_PLAIN_VOCALIC_PATTERN = /(^|[\s().,?!-])(ரு|ரூ|லு|லூ)(?=$|[\s().,?!-])/u;
 const TAMIL_SCRIPT_PATTERN = /\p{Script=Tamil}/u;
-const TAMIL_PRECISION_SIGNAL_PATTERN = /[¹²³⁴ஜஶஷஸஹஂஃ॒॑᳚]/u;
+const TAMIL_PRECISION_SIGNAL_PATTERN = /[¹²³⁴ஜஶஷஸஹஂஃ॒॑᳚ऽ।॥]/u;
 const TAMIL_REVERSE_STRUCTURAL_PRECISION_SIGNAL_PATTERN = /(?:[¹²³⁴]|\^2|\^3|\^4|<R>|<L>)/u;
 const TAMIL_REVERSE_BARAHA_SIGNAL_PATTERN = /(?:\^\^|~~|~#|~\$|Rs)/u;
 const TAMIL_REVERSE_MALFORMED_PRECISION_SIGNAL_PATTERN = /(?:\^(?![234])|<R(?!>)|<L(?!>))/u;
 const TAMIL_PRECISION_INDEPENDENT_TOKENS = Object.keys(TAMIL_PRECISION_INDEPENDENT_VOWELS_TO_CANONICAL)
   .sort((a, b) => b.length - a.length);
-const TAMIL_PRECISION_SPECIAL_TOKENS = ['ம்', '॑', '॒', '᳚'];
+const TAMIL_PRECISION_SPECIAL_TOKENS = ['॑', '॒', '᳚'];
 const TAMIL_PRECISION_DEPENDENT_VOCALIC_TOKENS = Object.keys(TAMIL_PRECISION_DEPENDENT_VOCALICS_TO_CANONICAL)
   .sort((a, b) => b.length - a.length);
 const TAMIL_PRECISION_CONSONANT_TOKENS = Object.keys(TAMIL_PRECISION_CONSONANTS_TO_CANONICAL)
@@ -298,7 +311,6 @@ export const normalizeTamilPrecisionDisplayText = (text: string) => {
 
 const normalizeTamilPrecisionInput = (value: string) => {
   let normalized = value;
-  const precisionLike = /[¹²³⁴॒॑ஜஶஷஸஹஂஃ]/u.test(normalized);
 
   for (const [fallback, rich] of TAMIL_PRECISION_ASCII_FALLBACKS) {
     normalized = normalized.replaceAll(fallback, rich);
@@ -323,10 +335,6 @@ const normalizeTamilPrecisionInput = (value: string) => {
     '$1$4$2$3',
   );
   normalized = normalized.replace(/([\p{Script=Tamil}])([॒॑᳚]+)([²³⁴]+)/gu, '$1$3$2');
-
-  if (precisionLike) {
-    normalized = normalized.replaceAll('ம்', 'ஂ');
-  }
 
   return normalized.replace(
     TAMIL_PRECISION_ASCII_SUPERSCRIPT_PATTERN,
@@ -475,12 +483,9 @@ const formatTamilPrecisionSource = (itrans: string, asciiFallback: boolean) => {
       continue;
     }
 
-    if (current === '\u0902') {
-      formatted += 'ம்';
-      continue;
-    }
-
-    if (current === '\u0901') {
+    if (current === '\u0902' || current === '\u0901') {
+      const isEnd = index === unicode.length - 1 || /[\s().,?!-।॥]/.test(unicode[index + 1] ?? '');
+      formatted += isEnd ? 'ம்' : 'ஂ';
       continue;
     }
 
@@ -613,19 +618,13 @@ export const parseTamilPrecisionToCanonical = (value: string): string | null => 
       break;
     }
 
-  if (Object.prototype.hasOwnProperty.call(TAMIL_PRECISION_INDEPENDENT_VOWELS_TO_CANONICAL, currentToken)) {
-    canonical += TAMIL_PRECISION_INDEPENDENT_VOWELS_TO_CANONICAL[currentToken];
-    index += 1;
-    continue;
-  }
+    if (Object.prototype.hasOwnProperty.call(TAMIL_PRECISION_INDEPENDENT_VOWELS_TO_CANONICAL, currentToken)) {
+      canonical += TAMIL_PRECISION_INDEPENDENT_VOWELS_TO_CANONICAL[currentToken];
+      index += 1;
+      continue;
+    }
 
-  if (currentToken === 'ம்') {
-    canonical += 'M';
-    index += 1;
-    continue;
-  }
-
-  if (currentToken === '॑') {
+    if (currentToken === '॑') {
     canonical += "'";
     index += 1;
     continue;
@@ -643,7 +642,31 @@ export const parseTamilPrecisionToCanonical = (value: string): string | null => 
     continue;
   }
 
+  if (currentToken === 'ऽ') {
+    const nextToken = tokens[index + 1]?.token ?? '';
+    if (nextToken === 'ऽ') {
+      canonical += '..a';
+      index += 2;
+    } else {
+      canonical += '.a';
+      index += 1;
+    }
+    continue;
+  }
+
+  if (currentToken === '।') {
+    canonical += '|';
+    index += 1;
+    continue;
+  }
+
+  if (currentToken === '॥') {
+    canonical += '||';
+    index += 1;
+    continue;
+  }
   if (Object.prototype.hasOwnProperty.call(TAMIL_PRECISION_CONSONANTS_TO_CANONICAL, currentToken)) {
+
       const consonantSource = TAMIL_PRECISION_CONSONANTS_TO_CANONICAL[currentToken];
       const nextToken = tokens[index + 1]?.token ?? '';
 
@@ -746,6 +769,9 @@ export const tokenizeTamilPrecisionInput = (value: string): TamilPrecisionToken[
       Object.prototype.hasOwnProperty.call(TAMIL_PRECISION_DEPENDENT_VOWELS_TO_CANONICAL, current) ||
       current === 'ஂ' ||
       current === 'ஃ' ||
+      current === 'ऽ' ||
+      current === '।' ||
+      current === '॥' ||
       /\s/u.test(current) ||
       TAMIL_PRECISION_PUNCTUATION_PATTERN.test(current)
     ) {
@@ -865,7 +891,7 @@ export const transliterate = (
     '\u0905': '', '\u0906': 'ा', '\u0907': 'ि', '\u0908': 'ी',
     '\u0909': 'ु', '\u090A': 'ू', '\u090B': 'ृ', '\u0960': 'ॄ',
     '\u090C': 'ॢ', '\u0961': 'ॣ',
-    '\u090f': 'े', '\u0910': 'ै', '\u0913': 'ो', '\u0914': 'ौ'
+    '\u090E': 'ॆ', '\u090f': 'े', '\u0910': 'ै', '\u0912': 'ॊ', '\u0913': 'ो', '\u0914': 'ौ'
   };
 
   while (i < itrans.length) {
@@ -1113,10 +1139,22 @@ const getReversePriority = (mapping: Pick<VedicMapping, 'isAlias' | 'preferredRe
   return 1;
 };
 
-const getPreferredMatraSourceMapping = (unicode: string) =>
-  VEDIC_MAPPINGS.find(
-    (mapping) => mapping.unicode === unicode && mapping.category === 'vowel' && !mapping.isAlias
-  ) ?? VEDIC_MAPPINGS.find((mapping) => mapping.unicode === unicode && mapping.category === 'vowel');
+const getPreferredMatraSourceMapping = (unicode: string) => {
+  const matches = VEDIC_MAPPINGS.filter(
+    (mapping) => mapping.unicode === unicode && mapping.category === 'vowel'
+  );
+  if (matches.length === 0) return undefined;
+  
+  const preferred = matches.find(m => m.preferredReverse);
+  if (preferred) return preferred;
+  
+  const nonAlias = matches.filter(m => !m.isAlias);
+  if (nonAlias.length > 0) {
+    return nonAlias.sort((a, b) => a.itrans.length - b.itrans.length)[0];
+  }
+  
+  return matches.sort((a, b) => a.itrans.length - b.itrans.length)[0];
+};
 
 const addReverse = (
   unicode: string,
