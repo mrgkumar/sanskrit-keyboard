@@ -566,15 +566,15 @@ export const StickyTopComposer: React.FC = () => {
         }
       }
       
-      // Shift+Enter to split the block in document mode
-      if (e.shiftKey && editorState.viewMode === 'document' && activeBlock) {
+      // Shift+Enter to split the block
+      if (e.shiftKey && (editorState.viewMode === 'document' || editorState.viewMode === 'read') && activeBlock) {
         e.preventDefault();
         splitBlock(activeBlock.id, composerSelectionStart);
         return;
       }
 
       // Standard Enter behavior (newline) - trigger hint
-      if (!e.shiftKey && editorState.viewMode === 'document') {
+      if (!e.shiftKey && (editorState.viewMode === 'document' || editorState.viewMode === 'read')) {
         triggerShiftEnterHint();
       }
 
