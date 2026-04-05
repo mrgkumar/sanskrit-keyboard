@@ -10,6 +10,7 @@ import { BookText, Copy, Check, Eye, Menu, RefreshCw, Save, SlidersHorizontal, X
 import { clsx } from 'clsx';
 import { SessionSnapshot, SanskritFontPreset, TamilFontPreset, TypographySettings } from '@/store/types';
 import { formatSourceForScript } from '@/lib/vedic/utils';
+import { BUILD_VERSION, BUILD_TIME } from '@/lib/version';
 import {
   OUTPUT_TARGET_CONTROL_LABELS,
   OUTPUT_TARGET_VALUE_LABELS,
@@ -1107,6 +1108,16 @@ export const TransliterationEngine: React.FC = () => {
                   {renderScriptSettings('Sanskrit (Devanagari)', 'devanagari', sanskritFontPreset, sanskritFontOptions, setSanskritFontPreset)}
                   {renderScriptSettings('Tamil', 'tamil', tamilFontPreset, tamilFontOptions, setTamilFontPreset)}
                   {renderScriptSettings('ITRANS', 'itrans')}
+
+                  <div className="pt-2 mt-4 border-t border-slate-200/60">
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Build Version</span>
+                      <span className="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{BUILD_VERSION}</span>
+                    </div>
+                    <p className="mt-1 px-1 text-[8px] font-medium text-right text-slate-400 uppercase tracking-tighter">
+                      Released: {new Date(BUILD_TIME).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

@@ -7,7 +7,7 @@
     "predev": "node scripts/copyAutocompleteAssets.mjs",
     "dev": "next dev",
     "dev:turbo": "next dev --turbo",
-    "prebuild": "node scripts/copyAutocompleteAssets.mjs",
+    "prebuild": "node scripts/generateVersion.mjs && node scripts/copyAutocompleteAssets.mjs",
     "build": "next build",
     "start": "node scripts/serve-static-export.mjs",
     "predeploy": "npm run build",
