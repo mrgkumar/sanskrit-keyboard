@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';
+import { MobileOptimizationNotice } from '@/components/MobileOptimizationNotice';
 
 const chandas = localFont({
   src: '../../public/fonts/chandas.ttf',
@@ -47,7 +48,10 @@ export default function RootLayout({
       lang="en"
       className={`h-full antialiased ${chandas.variable} ${siddhanta.variable} ${sampradaya.variable} ${notoSerifTamil.variable} ${anekTamil.variable}`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <MobileOptimizationNotice />
+        {children}
+      </body>
     </html>
   );
 }

@@ -50,6 +50,17 @@ export const StickyTopComposer: React.FC = () => {
   const comparePreviewRef = React.useRef<HTMLDivElement>(null);
   const itransPanelRef = React.useRef<HTMLDivElement>(null);
   const isPointerSelectingRef = React.useRef(false);
+
+  const [showShiftEnterHint, setShowShiftEnterHint] = React.useState(false);
+  const hintTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const triggerShiftEnterHint = React.useCallback(() => {
+    setShowShiftEnterHint(true);
+    if (hintTimeoutRef.current) {
+      clearTimeout(hintTimeoutRef.current);
+    }
+    hintTimeoutRef.current = setTimeout(() => setShowShiftEnterHint(false), 3000);
+  }, []);
   const scrollSyncSourceRef = React.useRef<'source' | 'preview' | null>(null);
   const programmaticScrollTargetRef = React.useRef<HTMLElement | null>(null);
   type CopyState = 'idle' | 'copied' | 'error';
@@ -547,7 +558,7 @@ export const StickyTopComposer: React.FC = () => {
       return;
     }
 
-    if (!e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'Enter') {
+    if (!e.altKey && !e.ctrlKey && !e.metaKey && e.key === 'Enter') {
       if (hasLexicalSuggestions) {
         if (acceptLexicalSuggestion(lexicalSelectedSuggestionIndex)) {
           e.preventDefault();
@@ -555,12 +566,21 @@ export const StickyTopComposer: React.FC = () => {
         }
       }
       
-      // If no suggestion accepted and in document mode, split the block
-      if (editorState.viewMode === 'document' && activeBlock) {
+      // Shift+Enter to split the block in document mode
+      if (e.shiftKey && editorState.viewMode === 'document' && activeBlock) {
         e.preventDefault();
         splitBlock(activeBlock.id, composerSelectionStart);
         return;
       }
+
+      // Standard Enter behavior (newline) - trigger hint
+      if (!e.shiftKey && editorState.viewMode === 'document') {
+        triggerShiftEnterHint();
+      }
+
+      // Standard Enter behavior (newline) if not splitting
+      // We don't preventDefault here to allow the textarea to handle the newline naturally,
+      // UNLESS it was already handled by suggestions above.
     }
 
     if (e.altKey && e.key === 'ArrowDown') {
@@ -1394,11 +1414,19 @@ export const StickyTopComposer: React.FC = () => {
             >
               <div className="flex items-start justify-between gap-3 px-1">
                 <div className="flex flex-1 flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">ITRANS Input</p>
-                    <p className="mt-1 text-[11px] leading-5 text-slate-500">
-                      Type in ITRANS here. The live preview mirrors the active chunk.
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">ITRANS Input</p>
+                      <p className="mt-1 text-[11px] leading-5 text-slate-500">
+                        Type in ITRANS here. The live preview mirrors the active chunk.
+                      </p>
+                    </div>
+                    {showShiftEnterHint && (
+                      <div className="flex animate-in fade-in slide-in-from-left-2 duration-300 items-center gap-1.5 rounded-full bg-blue-600 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-white shadow-sm ring-1 ring-blue-500/50">
+                        <div className="h-1 w-1 animate-pulse rounded-full bg-blue-200" />
+                        Tip: Shift+Enter to split block
+                      </div>
+                    )}
                   </div>
                   <label className="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/50 px-2 py-1.5 transition-colors hover:bg-slate-100">
                     <input

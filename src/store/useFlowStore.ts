@@ -951,54 +951,38 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         composerSelectionEnd: nextSelectionEnd,
       }));
     } else { // It's a long block (either was long, or just converted to long)
-      if (!activeBlock.segments) return; // segments are guaranteed for long blocks
+      if (!activeBlock.segments) return;
 
-      const newBlocks = get().blocks.map((block) => {
-        if (block.id === activeBlock!.id) { // activeBlock is guaranteed here
-          const currentActiveBlock = activeBlock as CanonicalBlock & { segments: Segment[] };
-          const beforeSegments = currentActiveBlock.segments.slice(0, activeChunkGroup.startSegmentIndex);
-          const afterSegments = currentActiveBlock.segments.slice(activeChunkGroup.endSegmentIndex + 1);
-          const mergedSegments: Segment[] = [
-            ...beforeSegments,
-            {
-              id: `seg-${Date.now()}-active`,
-              source: newSource,
-              rendered: transliterate(newSource, { inputScheme }).unicode,
-              startOffset: 0,
-              endOffset: 0,
-            },
-            ...afterSegments,
-          ];
+      const currentActiveBlock = activeBlock as CanonicalBlock & { segments: Segment[] };
+      
+      // 1. Reconstruct the full source by replacing the active chunk's range
+      const beforeSegments = currentActiveBlock.segments.slice(0, activeChunkGroup.startSegmentIndex);
+      const afterSegments = currentActiveBlock.segments.slice(activeChunkGroup.endSegmentIndex + 1);
+      
+      const beforeSource = beforeSegments.map(s => s.source).join('');
+      const afterSource = afterSegments.map(s => s.source).join('');
+      
+      // newSource IS the entire content of the active chunk group
+      const nextFullSource = beforeSource + newSource + afterSource;
+      
+      // 2. Re-segment and transliterate
+      const nextSegments = createSegments(nextFullSource);
+      const nextFullRendered = transliterate(nextFullSource, { inputScheme }).unicode;
 
-          let offset = 0;
-          const updatedSegments = mergedSegments.map((segment) => {
-            const updatedSegment = {
-              ...segment,
-              startOffset: offset,
-              endOffset: offset + segment.source.length,
-            };
-            offset = updatedSegment.endOffset;
-            return updatedSegment;
-          });
+      const nextBlocks = get().blocks.map(block => 
+        block.id === activeBlock!.id 
+          ? { ...block, source: nextFullSource, rendered: nextFullRendered, segments: nextSegments }
+          : block
+      );
 
-          const newFullSource = updatedSegments.map((segment) => segment.source).join('');
-          const newFullRendered = transliterate(newFullSource, { inputScheme }).unicode;
-
-          return { ...block, source: newFullSource, rendered: newFullRendered, segments: updatedSegments };
-        }
-        return block;
-      });
-      const newAnchorSegmentIndex = activeChunkGroup.startSegmentIndex;
-
-      set((state) => ({
-        blocks: newBlocks,
-        editorState: {
-          ...state.editorState,
-          activeAnchorSegmentIndex: newAnchorSegmentIndex,
-        },
+      // 3. Update state
+      set({
+        blocks: nextBlocks,
         composerSelectionStart: nextSelectionStart,
         composerSelectionEnd: nextSelectionEnd,
-      }));
+        // We stay on the same anchor index, or adjust if needed.
+        // For now, keeping the same start index is safest.
+      });
     }
 
     // After updating the block (or after initial short block update), process suggestions for the new source
@@ -1170,18 +1154,16 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     if (currentIndex === -1) return;
 
     const block = blocks[currentIndex];
-    const firstPart = block.source.slice(0, sourceOffset).trim();
-    const secondPart = block.source.slice(sourceOffset).trim();
+    const firstPart = block.source.slice(0, sourceOffset);
+    const secondPart = block.source.slice(sourceOffset);
 
-    if (!firstPart || !secondPart) {
-      // Don't split if one part is empty (basically just adding newlines)
-      return;
-    }
-
+    // If secondPart is empty, it means we are splitting at the very end
+    // which effectively just creates a new block after the current one.
+    
     const block1 = createBlockFromSource(firstPart, block.title || 'Split Part 1', {
       disableAutoSegmentation: true,
     });
-    const block2 = createBlockFromSource(secondPart, block.title || 'Split Part 2', {
+    const block2 = createBlockFromSource(secondPart, 'Untitled Block', {
       disableAutoSegmentation: true,
     });
 
