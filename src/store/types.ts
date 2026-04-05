@@ -145,3 +145,9 @@ export interface SessionSnapshot {
   typography?: LegacyTypographySettings;
   updatedAt: string;
 }
+
+export interface SessionListItem {
+  sessionId: string;
+  sessionName: string;
+  updatedAt: string;
+}

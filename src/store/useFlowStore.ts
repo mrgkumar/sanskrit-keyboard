@@ -11,6 +11,7 @@ import {
   LegacyTypographySettings,
   TypographySettings,
   SessionSnapshot,
+  SessionListItem,
 } from './types';
 import { transliterate } from '@/lib/vedic/utils';
 import {
@@ -226,6 +227,32 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   showItransInDocument: false,
   typography: DEFAULT_TYPOGRAPHY,
 };
+
+const SESSION_INDEX_KEY = 'sanskrit-keyboard.session-index.v2';
+const SESSION_SNAPSHOT_PREFIX = 'sanskrit-keyboard.session.v2.';
+const getSessionStorageKey = (sessionId: string) => `${SESSION_SNAPSHOT_PREFIX}${sessionId}`;
+
+const sortSessionList = (sessions: SessionListItem[]) =>
+  [...sessions].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+const readSessionIndex = (): SessionListItem[] => {
+  if (typeof window === 'undefined') return [];
+  const raw = window.localStorage.getItem(SESSION_INDEX_KEY);
+  if (!raw) return [];
+  try {
+    return sortSessionList(JSON.parse(raw) as SessionListItem[]);
+  } catch {
+    return [];
+  }
+};
+
+const writeSessionIndex = (items: SessionListItem[]) => {
+  if (typeof window === 'undefined') return items;
+  const nextItems = sortSessionList(items).slice(0, 25);
+  window.localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(nextItems));
+  return nextItems;
+};
+
 const INITIAL_SESSION_ID = 'session-initial';
 const INITIAL_SESSION_NAME = 'Current Session';
 const createSessionId = () => `session-${Date.now()}`;
@@ -528,6 +555,8 @@ export interface SanskritKeyboardState {
   displaySettings: DisplaySettings;
   sessionId: string;
   sessionName: string;
+  sessionSearchQuery: string;
+  savedSessions: SessionListItem[];
   lastSavedAt: string | null;
   recentlyDeletedBlock: DeletedBlockSnapshot | null;
 
@@ -592,6 +621,10 @@ export interface SanskritKeyboardState {
     patch: Partial<TypographySettings[keyof TypographySettings]>
   ) => void;
   setSessionName: (name: string) => void;
+  setSessionSearchQuery: (query: string) => void;
+  setSavedSessions: (sessions: SessionListItem[]) => void;
+  deleteSession: (sessionId: string) => void;
+  renameSession: (sessionId: string, newName: string) => void;
   markSessionSaved: (savedAt?: string) => void;
   exportSessionSnapshot: () => SessionSnapshot;
   loadSessionSnapshot: (snapshot: SessionSnapshot) => void;
@@ -638,6 +671,8 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   },
   sessionId: INITIAL_SESSION_ID,
   sessionName: INITIAL_SESSION_NAME,
+  sessionSearchQuery: '',
+  savedSessions: readSessionIndex(),
   lastSavedAt: null,
   recentlyDeletedBlock: null,
 
@@ -1591,9 +1626,85 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   },
   setSessionName: (name) => {
     set({ sessionName: name });
+    // Also update the index if it exists
+    const index = readSessionIndex();
+    const sessionId = get().sessionId;
+    const itemIndex = index.findIndex(item => item.sessionId === sessionId);
+    if (itemIndex !== -1) {
+      index[itemIndex].sessionName = name;
+      const nextIndex = writeSessionIndex(index);
+      set({ savedSessions: nextIndex });
+    }
+  },
+  setSessionSearchQuery: (query) => {
+    set({ sessionSearchQuery: query });
+  },
+  setSavedSessions: (sessions) => {
+    set({ savedSessions: sessions });
+  },
+  deleteSession: (sessionId) => {
+    const { sessionId: currentSessionId, resetSession } = get();
+    
+    // 1. Remove from index
+    const index = readSessionIndex();
+    const nextIndex = writeSessionIndex(index.filter(item => item.sessionId !== sessionId));
+    set({ savedSessions: nextIndex });
+
+    // 2. Remove data
+    window.localStorage.removeItem(getSessionStorageKey(sessionId));
+
+    // 3. If it was the current session, reset
+    if (sessionId === currentSessionId) {
+      resetSession();
+    }
+  },
+  renameSession: (sessionId, newName) => {
+    const { sessionId: currentSessionId } = get();
+    
+    // 1. Update index
+    const index = readSessionIndex();
+    const itemIndex = index.findIndex(item => item.sessionId === sessionId);
+    if (itemIndex !== -1) {
+      index[itemIndex].sessionName = newName;
+      index[itemIndex].updatedAt = new Date().toISOString();
+      const nextIndex = writeSessionIndex(index);
+      set({ savedSessions: nextIndex });
+    }
+
+    // 2. If it is current session, update state
+    if (sessionId === currentSessionId) {
+      set({ sessionName: newName });
+    }
+
+    // 3. Update the stored snapshot as well to keep it consistent
+    const snapshotRaw = window.localStorage.getItem(getSessionStorageKey(sessionId));
+    if (snapshotRaw) {
+      try {
+        const snapshot = JSON.parse(snapshotRaw) as SessionSnapshot;
+        snapshot.sessionName = newName;
+        snapshot.updatedAt = new Date().toISOString();
+        window.localStorage.setItem(getSessionStorageKey(sessionId), JSON.stringify(snapshot));
+      } catch {
+        // Ignore parse errors for renaming
+      }
+    }
   },
   markSessionSaved: (savedAt) => {
-    set({ lastSavedAt: savedAt ?? new Date().toISOString() });
+    const nextSavedAt = savedAt ?? new Date().toISOString();
+    set({ lastSavedAt: nextSavedAt });
+    // When marked as saved, ensure the index is also updated to reflect current session info
+    const { sessionId, sessionName } = get();
+    const index = readSessionIndex();
+    const existingIndex = index.findIndex(item => item.sessionId === sessionId);
+    
+    if (existingIndex !== -1) {
+      index[existingIndex].updatedAt = nextSavedAt;
+      index[existingIndex].sessionName = sessionName;
+    } else {
+      index.push({ sessionId, sessionName, updatedAt: nextSavedAt });
+    }
+    const nextIndex = writeSessionIndex(index);
+    set({ savedSessions: nextIndex });
   },
   exportSessionSnapshot: () => {
     const {

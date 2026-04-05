@@ -6,9 +6,9 @@ import { MainDocumentArea } from '@/components/MainDocumentArea';
 import { ReferenceSidePanel } from '@/components/ReferenceSidePanel'; // Import the side panel
 import { ScriptText } from '@/components/ScriptText';
 import { useFlowStore } from '@/store/useFlowStore';
-import { BookText, Copy, Check, Eye, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide-react';
+import { BookText, Copy, Check, Edit2, Eye, Menu, RefreshCw, Save, Search, SlidersHorizontal, Trash2, X } from 'lucide-react';
 import { clsx } from 'clsx';
-import { SessionSnapshot, SanskritFontPreset, TamilFontPreset, TypographySettings } from '@/store/types';
+import { SessionSnapshot, SanskritFontPreset, TamilFontPreset, TypographySettings, SessionListItem } from '@/store/types';
 import { formatSourceForScript } from '@/lib/vedic/utils';
 import { BUILD_VERSION, BUILD_TIME } from '@/lib/version';
 import {
@@ -17,16 +17,8 @@ import {
 } from '@/lib/vedic/mapping';
 
 const LEGACY_STORAGE_KEY = 'sanskrit-keyboard.sessions.v1';
-const SESSION_INDEX_KEY = 'sanskrit-keyboard.session-index.v2';
-const SESSION_SNAPSHOT_PREFIX = 'sanskrit-keyboard.session.v2.';
 const LEXICAL_HISTORY_KEY = 'sanskrit-keyboard.lexical-history.v1';
 const LEGACY_AUTOLOAD_BYTES_LIMIT = 1_000_000;
-
-interface SessionListItem {
-  sessionId: string;
-  sessionName: string;
-  updatedAt: string;
-}
 
 interface PersistedLexicalLearningSnapshot {
   version: 1;
@@ -35,29 +27,7 @@ interface PersistedLexicalLearningSnapshot {
   userExactFormUsage: Record<string, Record<string, number>>;
 }
 
-const sortSessionList = (sessions: SessionListItem[]) =>
-  [...sessions].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-
-const getSessionStorageKey = (sessionId: string) => `${SESSION_SNAPSHOT_PREFIX}${sessionId}`;
-
-const readSessionIndex = () => {
-  const raw = window.localStorage.getItem(SESSION_INDEX_KEY);
-  if (!raw) {
-    return [] as SessionListItem[];
-  }
-
-  try {
-    return sortSessionList(JSON.parse(raw) as SessionListItem[]);
-  } catch {
-    return [] as SessionListItem[];
-  }
-};
-
-const writeSessionIndex = (items: SessionListItem[]) => {
-  const nextItems = sortSessionList(items).slice(0, 25);
-  window.localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(nextItems));
-  return nextItems;
-};
+const getSessionStorageKey = (sessionId: string) => `sanskrit-keyboard.session.v2.${sessionId}`;
 
 const readStoredSessionSnapshot = (sessionId: string) => {
   const raw = window.localStorage.getItem(getSessionStorageKey(sessionId));
@@ -73,7 +43,7 @@ const readStoredSessionSnapshot = (sessionId: string) => {
 };
 
 const migrateLegacySessionsIfNeeded = () => {
-  if (window.localStorage.getItem(SESSION_INDEX_KEY)) {
+  if (window.localStorage.getItem('sanskrit-keyboard.session-index.v2')) {
     return null;
   }
 
@@ -88,13 +58,14 @@ const migrateLegacySessionsIfNeeded = () => {
 
   try {
     const parsed = JSON.parse(legacyRaw) as SessionSnapshot[];
-    const nextIndex = writeSessionIndex(
-      parsed.map((snapshot) => ({
-        sessionId: snapshot.sessionId,
-        sessionName: snapshot.sessionName,
-        updatedAt: snapshot.updatedAt,
-      }))
-    );
+    const nextIndex: SessionListItem[] = parsed.map((snapshot) => ({
+      sessionId: snapshot.sessionId,
+      sessionName: snapshot.sessionName,
+      updatedAt: snapshot.updatedAt,
+    }));
+    
+    window.localStorage.setItem('sanskrit-keyboard.session-index.v2', JSON.stringify(nextIndex));
+
     for (const snapshot of parsed) {
       window.localStorage.setItem(getSessionStorageKey(snapshot.sessionId), JSON.stringify(snapshot));
     }
@@ -112,7 +83,8 @@ export const TransliterationEngine: React.FC = () => {
     displaySettings,
     sessionId,
     sessionName,
-    lastSavedAt,
+    savedSessions,
+    sessionSearchQuery,
     swaraPredictionEnabled,
     userLexicalUsage,
     userExactFormUsage,
@@ -130,19 +102,24 @@ export const TransliterationEngine: React.FC = () => {
     setTypography,
     setViewMode,
     setSessionName,
+    setSessionSearchQuery,
+    setSavedSessions,
+    deleteSession,
+    renameSession,
     setSwaraPredictionEnabled,
     markSessionSaved,
     hydratePersistedLexicalLearning,
     clearSessionLexicalLearning,
     clearPersistedLexicalLearning,
     setShowItransInDocument,
-    exportSessionSnapshot,
+    setAutoSwapVisargaSvarita,
     loadSessionSnapshot,
     resetSession,
   } = useFlowStore();
-  const [savedSessions, setSavedSessions] = React.useState<SessionListItem[]>([]);
   const [isDisplayMenuOpen, setIsDisplayMenuOpen] = React.useState(false);
   const [isWorkspacePanelOpen, setIsWorkspacePanelOpen] = React.useState(false);
+  const [editingSessionId, setEditingSessionId] = React.useState<string | null>(null);
+  const [editingName, setEditingName] = React.useState('');
   const hasLoadedSessions = React.useRef(false);
   const hasLoadedLexicalLearning = React.useRef(false);
   const {
@@ -159,6 +136,7 @@ export const TransliterationEngine: React.FC = () => {
     sanskritFontPreset,
     tamilFontPreset,
     showItransInDocument,
+    autoSwapVisargaSvarita,
   } = displaySettings;
   const sanskritFontOptions: Array<{ value: SanskritFontPreset; label: string; sample: string }> = [
     { value: 'chandas', label: 'Chandas', sample: 'नमस्ते रुद्राय' },
@@ -332,20 +310,6 @@ export const TransliterationEngine: React.FC = () => {
     [blocks]
   );
 
-  const persistSnapshot = React.useCallback((snapshot: SessionSnapshot) => {
-    window.localStorage.setItem(getSessionStorageKey(snapshot.sessionId), JSON.stringify(snapshot));
-    const nextSessions = writeSessionIndex([
-      {
-        sessionId: snapshot.sessionId,
-        sessionName: snapshot.sessionName,
-        updatedAt: snapshot.updatedAt,
-      },
-      ...readSessionIndex().filter((item) => item.sessionId !== snapshot.sessionId),
-    ]);
-    setSavedSessions(nextSessions);
-    markSessionSaved(snapshot.updatedAt);
-  }, [markSessionSaved]);
-
   type CopyState = 'idle' | 'copied' | 'error';
   const [copyStates, setCopyStates] = React.useState<Record<string, CopyState>>({
     devanagari: 'idle',
@@ -427,17 +391,19 @@ export const TransliterationEngine: React.FC = () => {
 
   React.useEffect(() => {
     const migrationResult = migrateLegacySessionsIfNeeded();
-    const indexedSessions =
-      migrationResult?.sessions ?? readSessionIndex();
-    setSavedSessions(indexedSessions);
+    if (migrationResult) {
+      setSavedSessions(migrationResult.sessions);
+    }
 
-    const latestSession = indexedSessions[0];
-    if (latestSession) {
+    const currentSavedSessions = useFlowStore.getState().savedSessions;
+    const latestSession = currentSavedSessions[0];
+    if (latestSession && !hasLoadedSessions.current) {
       const runRestore = () => {
         const snapshot = readStoredSessionSnapshot(latestSession.sessionId);
         if (snapshot) {
           loadSessionSnapshot(snapshot);
         }
+        hasLoadedSessions.current = true;
       };
 
       const idleWindow = window as Window & {
@@ -457,7 +423,7 @@ export const TransliterationEngine: React.FC = () => {
     }
 
     hasLoadedSessions.current = true;
-  }, [loadSessionSnapshot]);
+  }, [loadSessionSnapshot, setSavedSessions]);
 
   React.useEffect(() => {
     if (!hasLoadedSessions.current) {
@@ -465,13 +431,11 @@ export const TransliterationEngine: React.FC = () => {
     }
 
     const timeoutId = window.setTimeout(() => {
-      const snapshot = exportSessionSnapshot();
-      snapshot.updatedAt = new Date().toISOString();
-      persistSnapshot(snapshot);
+      markSessionSaved();
     }, 500);
 
     return () => window.clearTimeout(timeoutId);
-  }, [blocks, displaySettings, editorState, sessionId, sessionName, exportSessionSnapshot, persistSnapshot]);
+  }, [blocks, displaySettings, editorState, sessionId, sessionName, markSessionSaved]);
 
   React.useEffect(() => {
     if (!hasLoadedLexicalLearning.current) {
@@ -503,16 +467,7 @@ export const TransliterationEngine: React.FC = () => {
   }, [preloadLexicalAssets, swaraPredictionEnabled]);
 
   const handleSaveNow = () => {
-    const snapshot = exportSessionSnapshot();
-    snapshot.updatedAt = new Date().toISOString();
-    persistSnapshot(snapshot);
-  };
-
-  const handleLoadSession = (nextSessionId: string) => {
-    const nextSession = readStoredSessionSnapshot(nextSessionId);
-    if (nextSession) {
-      loadSessionSnapshot(nextSession);
-    }
+    markSessionSaved();
   };
 
   const handleResetSession = () => {
@@ -548,6 +503,7 @@ export const TransliterationEngine: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-slate-50 font-sans relative">
       <div className="fixed left-4 top-4 z-[140] flex items-center gap-2 pointer-events-none">
         <button
+          data-testid="workspace-toggle"
           type="button"
           onClick={() => setIsWorkspacePanelOpen((open) => !open)}
           className="pointer-events-auto touch-manipulation inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-xs font-bold uppercase text-slate-700 shadow-sm backdrop-blur hover:bg-white"
@@ -615,35 +571,125 @@ export const TransliterationEngine: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
+        <div 
+          data-testid="workspace-sidebar"
+          className="flex-1 space-y-5 overflow-y-auto px-5 py-5"
+        >
           <section className="space-y-3">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Session</p>
-              <p className="mt-1 text-xs text-slate-500">{lastSavedAt ? `Autosaved ${new Date(lastSavedAt).toLocaleString()}` : 'Autosave pending'}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Current Session</p>
+              <p className="mt-1 text-xs text-slate-500">Name your current workspace to find it later.</p>
             </div>
             <input
               value={sessionName}
               onChange={(e) => setSessionName(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800"
-              placeholder="Session name"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+              placeholder="Active session name..."
             />
-            <select
-              value=""
-              onChange={(e) => {
-                handleLoadSession(e.target.value);
-                e.currentTarget.value = '';
-                setIsWorkspacePanelOpen(false);
-              }}
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
-            >
-              <option value="" disabled>Load session</option>
-              {savedSessions.map((session) => (
-                <option key={session.sessionId} value={session.sessionId}>
-                  {session.sessionName} · {new Date(session.updatedAt).toLocaleString()}
-                </option>
+          </section>
+
+          <section className="space-y-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Saved Sessions</p>
+              <p className="mt-1 text-xs text-slate-500">Manage and switch between your workspace sessions.</p>
+            </div>
+            
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+              <input
+                value={sessionSearchQuery}
+                onChange={(e) => setSessionSearchQuery(e.target.value)}
+                className="w-full rounded-md border border-slate-300 bg-white pl-9 pr-3 py-2 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                placeholder="Search sessions..."
+              />
+            </div>
+
+            <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50/50 p-1">
+              {savedSessions
+                .filter(s => s.sessionName.toLowerCase().includes(sessionSearchQuery.toLowerCase()))
+                .map((session) => (
+                <div 
+                  key={session.sessionId}
+                  className={clsx(
+                    "group flex flex-col gap-1 rounded-md border p-2 transition-all",
+                    sessionId === session.sessionId 
+                      ? "border-blue-200 bg-blue-50/50 ring-1 ring-blue-100" 
+                      : "border-transparent bg-white hover:border-slate-200 hover:shadow-sm"
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    {editingSessionId === session.sessionId ? (
+                      <input
+                        data-testid="session-rename-input"
+                        autoFocus
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            renameSession(session.sessionId, editingName);
+                            setEditingSessionId(null);
+                          } else if (e.key === 'Escape') {
+                            setEditingSessionId(null);
+                          }
+                        }}
+                        onBlur={() => {
+                          renameSession(session.sessionId, editingName);
+                          setEditingSessionId(null);
+                        }}
+                        className="flex-1 rounded border border-blue-300 px-1 py-0.5 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                      />
+                    ) : (
+                      <div className="flex-1 min-w-0">
+                        <button
+                          onClick={() => {
+                            const snapshot = readStoredSessionSnapshot(session.sessionId);
+                            if (snapshot) loadSessionSnapshot(snapshot);
+                            setIsWorkspacePanelOpen(false);
+                          }}
+                          className="w-full text-left"
+                        >
+                          <p className="truncate text-sm font-bold text-slate-800 group-hover:text-blue-700">
+                            {session.sessionName}
+                          </p>
+                          <p className="text-[10px] text-slate-400">
+                            {new Date(session.updatedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                          </p>
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        onClick={() => {
+                          setEditingSessionId(session.sessionId);
+                          setEditingName(session.sessionName);
+                        }}
+                        className="rounded p-1 text-slate-400 hover:bg-blue-50 hover:text-blue-600"
+                        title="Rename session"
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to delete "${session.sessionName}"?`)) {
+                            deleteSession(session.sessionId);
+                          }
+                        }}
+                        className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                        title="Delete session"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </select>
-            <div className="grid grid-cols-2 gap-2">
+              {savedSessions.length === 0 && (
+                <p className="py-4 text-center text-xs text-slate-400 italic">No saved sessions found.</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
               <button
                 onClick={handleSaveNow}
                 className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-200"
@@ -944,6 +990,7 @@ export const TransliterationEngine: React.FC = () => {
 
           <section className="space-y-3">
             <button
+              data-testid="display-settings-toggle"
               onClick={() => setIsDisplayMenuOpen((open) => !open)}
               className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-100"
               type="button"
@@ -1062,6 +1109,15 @@ export const TransliterationEngine: React.FC = () => {
                             className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                           />
                           <span className="text-[10px] font-bold uppercase text-slate-700">Show ITRANS in Document</span>
+                        </label>
+                        <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3">
+                          <input
+                            checked={autoSwapVisargaSvarita}
+                            onChange={(e) => setAutoSwapVisargaSvarita(e.target.checked)}
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-[10px] font-bold uppercase text-slate-700">Auto-Swap Markers</span>
                         </label>
                       </div>
 
