@@ -868,6 +868,18 @@ export const reverseTamilInput = (
   };
 };
 
+/**
+ * Normalizes marker sequences for scholarly consistency.
+ * Specifically, it ensures that Vedic markers (', _, '', ") appear BEFORE 
+ * the visarga (:) even if typed or pasted in the reverse order.
+ */
+export const normalizeMarkerSequences = (itrans: string): string => {
+  // Pattern: Visarga (:) followed by one or more Vedic markers (', _, '', ")
+  // Match : followed by one or more of these markers and swap them.
+  // Note: we handle double markers like '' or "" too.
+  return itrans.replace(/:(['"_=]+)/g, '$1:');
+};
+
 export const transliterate = (
   itrans: string,
   options?: TransliterationOptions

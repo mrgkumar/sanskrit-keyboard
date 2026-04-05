@@ -13,6 +13,7 @@ import { VerticalResizeHandle } from '@/components/VerticalResizeHandle';
 import {
   canonicalizeDevanagariPaste,
   formatSourceForScript,
+  normalizeMarkerSequences,
   transliterate,
 } from '@/lib/vedic/utils';
 import {
@@ -454,7 +455,7 @@ export const StickyTopComposer: React.FC = () => {
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    const pastedText = e.clipboardData.getData('text');
+    let pastedText = e.clipboardData.getData('text');
     setIsPredictionPopupSuppressed(false);
     
     const isDevanagari = /[\u0900-\u097F]/.test(pastedText);
@@ -462,7 +463,11 @@ export const StickyTopComposer: React.FC = () => {
 
     if (isDevanagari) {
       e.preventDefault();
-      const itransText = canonicalizeDevanagariPaste(pastedText);
+      let itransText = canonicalizeDevanagariPaste(pastedText);
+
+      if (displaySettings.autoSwapVisargaSvarita) {
+        itransText = normalizeMarkerSequences(itransText);
+      }
 
       if (isMultiLine) {
         const itransLines = itransText.split(/\r?\n/).filter(line => line.trim().length > 0);
@@ -482,6 +487,26 @@ export const StickyTopComposer: React.FC = () => {
 
       updateChunkSource(newSource, nextCaret, nextCaret, currentEditTarget);
       recordSessionLexicalText(itransText);
+    } else {
+      // For non-devanagari (ITRANS) paste, we still want to apply the swap if enabled
+      if (displaySettings.autoSwapVisargaSvarita) {
+        const normalized = normalizeMarkerSequences(pastedText);
+        if (normalized !== pastedText) {
+          e.preventDefault();
+          const target = e.currentTarget;
+          const selectionStart = target.selectionStart;
+          const selectionEnd = target.selectionEnd;
+          const currentSource = activeChunkGroup?.source || '';
+          const newSource =
+            currentSource.slice(0, selectionStart) +
+            normalized +
+            currentSource.slice(selectionEnd);
+          const nextCaret = selectionStart + normalized.length;
+
+          updateChunkSource(newSource, nextCaret, nextCaret, currentEditTarget);
+          recordSessionLexicalText(normalized);
+        }
+      }
     }
   };
 
