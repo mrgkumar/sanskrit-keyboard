@@ -331,7 +331,7 @@ export const MainDocumentArea: React.FC = () => {
     const isPrimaryPane = paneRole === 'primary';
     const isImmersive = viewMode === 'immersive';
     const wrapperClassName = clsx(
-      'grid items-start gap-3 rounded-md px-1 py-1 transition-colors',
+      'group relative grid items-start gap-3 rounded-md px-1 py-1 transition-colors',
       (viewMode === 'read' || viewMode === 'immersive') && 'hover:bg-slate-50',
       isSelectedReadLine && 'bg-blue-50/80 ring-1 ring-blue-200'
     );
@@ -421,6 +421,25 @@ export const MainDocumentArea: React.FC = () => {
         style={lineNumber !== undefined ? { gridTemplateColumns: '2.5rem minmax(0, 1fr)' } : undefined}
       >
         {lineGuide}
+        <div className="pointer-events-none absolute right-1 top-1 z-10 opacity-0 transition-opacity group-hover:opacity-100">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              void handleCopyBlock(block.id, formatted);
+            }}
+            className={clsx(
+              'pointer-events-auto rounded-md border p-1 shadow-sm',
+              copiedId === block.id
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : 'bg-white/90 text-slate-400 border-slate-200 hover:text-blue-600 hover:border-blue-200'
+            )}
+            type="button"
+            aria-label="Copy block text"
+            title={copiedId === block.id ? 'Copied' : 'Copy block'}
+          >
+            {copiedId === block.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+          </button>
+        </div>
         <p
           data-testid={`${viewTestIdPrefix}-${paneRole}-block-${block.id}`}
           className="cursor-text rounded-md px-1 py-1 transition-colors whitespace-pre-wrap break-words"
@@ -585,7 +604,11 @@ export const MainDocumentArea: React.FC = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                void handleCopyBlock(block.id, block.rendered);
+                const formatted = formatSourceForScript(block.source, primaryOutputScript, {
+                  romanOutputStyle,
+                  tamilOutputStyle,
+                });
+                void handleCopyBlock(block.id, formatted);
               }}
               className={clsx(
                 'rounded-md border p-2',
@@ -787,6 +810,25 @@ export const MainDocumentArea: React.FC = () => {
                 {isActive && (
                   <div className="absolute -left-8 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-blue-500 rounded-full shadow-sm" />
                 )}
+                <div className="pointer-events-none absolute right-0 top-0 z-10 opacity-0 transition-opacity group-hover:opacity-100">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleCopyBlock(block.id, formatted);
+                    }}
+                    className={clsx(
+                      'pointer-events-auto rounded-md border p-1.5 shadow-sm',
+                      copiedId === block.id
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : 'bg-white/90 text-slate-400 border-slate-200 hover:text-blue-600 hover:border-blue-200'
+                    )}
+                    type="button"
+                    aria-label="Copy block text"
+                    title={copiedId === block.id ? 'Copied' : 'Copy block'}
+                  >
+                    {copiedId === block.id ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
                 <div className="space-y-2">
                   {showItransInDocument && (
                     <p

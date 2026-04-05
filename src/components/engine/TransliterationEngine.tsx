@@ -6,7 +6,7 @@ import { MainDocumentArea } from '@/components/MainDocumentArea';
 import { ReferenceSidePanel } from '@/components/ReferenceSidePanel'; // Import the side panel
 import { ScriptText } from '@/components/ScriptText';
 import { useFlowStore } from '@/store/useFlowStore';
-import { BookText, Eye, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide-react';
+import { BookText, Copy, Check, Eye, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { SessionSnapshot, SanskritFontPreset, TamilFontPreset, TypographySettings } from '@/store/types';
 import {
@@ -342,6 +342,60 @@ export const TransliterationEngine: React.FC = () => {
     setSavedSessions(nextSessions);
     markSessionSaved(snapshot.updatedAt);
   }, [markSessionSaved]);
+
+  type CopyState = 'idle' | 'copied' | 'error';
+  const [copyStates, setCopyStates] = React.useState<Record<string, CopyState>>({
+    devanagari: 'idle',
+    tamil: 'idle',
+    itrans: 'idle',
+  });
+
+  React.useEffect(() => {
+    const hasFeedback = Object.values(copyStates).some((state) => state !== 'idle');
+    if (!hasFeedback) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setCopyStates({
+        devanagari: 'idle',
+        tamil: 'idle',
+        itrans: 'idle',
+      });
+    }, 1500);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [copyStates]);
+
+  const handleCopyWholeDocument = async (script: 'devanagari' | 'tamil' | 'itrans') => {
+    const meaningfulBlocks = blocks.filter(
+      (block) => block.source.trim().length > 0 || block.rendered.trim().length > 0
+    );
+
+    if (meaningfulBlocks.length === 0) {
+      setCopyStates((prev) => ({ ...prev, [script]: 'error' }));
+      return;
+    }
+
+    let text = '';
+    if (script === 'itrans') {
+      text = meaningfulBlocks.map((b) => b.source).join('\n\n');
+    } else {
+      text = meaningfulBlocks
+        .map((b) =>
+          formatSourceForScript(b.source, script, {
+            romanOutputStyle,
+            tamilOutputStyle,
+          })
+        )
+        .join('\n\n');
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyStates((prev) => ({ ...prev, [script]: 'copied' }));
+    } catch {
+      setCopyStates((prev) => ({ ...prev, [script]: 'error' }));
+    }
+  };
 
   React.useEffect(() => {
     const raw = window.localStorage.getItem(LEXICAL_HISTORY_KEY);
@@ -897,6 +951,68 @@ export const TransliterationEngine: React.FC = () => {
             {isDisplayMenuOpen && (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                 <div className="space-y-6">
+                  <section className="space-y-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Whole Document Actions</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      <button
+                        onClick={() => handleCopyWholeDocument('devanagari')}
+                        className={clsx(
+                          'flex items-center justify-between gap-3 rounded-xl border px-4 py-2.5 transition-all active:scale-[0.98]',
+                          copyStates.devanagari === 'copied'
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : copyStates.devanagari === 'error'
+                              ? 'border-rose-200 bg-rose-50 text-rose-700'
+                              : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50/30'
+                        )}
+                        type="button"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Copy className="h-3.5 w-3.5 opacity-60" />
+                          <span className="text-[11px] font-bold uppercase tracking-wider">Copy Devanagari</span>
+                        </div>
+                        {copyStates.devanagari === 'copied' && <Check className="h-3.5 w-3.5" />}
+                      </button>
+
+                      <button
+                        onClick={() => handleCopyWholeDocument('itrans')}
+                        className={clsx(
+                          'flex items-center justify-between gap-3 rounded-xl border px-4 py-2.5 transition-all active:scale-[0.98]',
+                          copyStates.itrans === 'copied'
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : copyStates.itrans === 'error'
+                              ? 'border-rose-200 bg-rose-50 text-rose-700'
+                              : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50/30'
+                        )}
+                        type="button"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Copy className="h-3.5 w-3.5 opacity-60" />
+                          <span className="text-[11px] font-bold uppercase tracking-wider">Copy ITRANS</span>
+                        </div>
+                        {copyStates.itrans === 'copied' && <Check className="h-3.5 w-3.5" />}
+                      </button>
+
+                      <button
+                        onClick={() => handleCopyWholeDocument('tamil')}
+                        className={clsx(
+                          'flex items-center justify-between gap-3 rounded-xl border px-4 py-2.5 transition-all active:scale-[0.98]',
+                          copyStates.tamil === 'copied'
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                            : copyStates.tamil === 'error'
+                              ? 'border-rose-200 bg-rose-50 text-rose-700'
+                              : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50/30'
+                        )}
+                        type="button"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Copy className="h-3.5 w-3.5 opacity-60" />
+                          <span className="text-[11px] font-bold uppercase tracking-wider">Copy Tamil</span>
+                        </div>
+                        {copyStates.tamil === 'copied' && <Check className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                  </section>
+
                   <section className="space-y-3">
                     <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Workspace & Prediction</p>
                     <div className="grid gap-3 sm:grid-cols-2">
