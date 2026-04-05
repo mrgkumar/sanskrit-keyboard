@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sanskrit Keyboard 🕉️
 
-## Getting Started
+**Sanskrit Keyboard** is a high-performance, scholarly transliteration workspace designed for researchers, students, and practitioners of Sanskrit and Vedic texts. It provides a seamless "invisible" typing experience, converting ITRANS input into 100% accurate Unicode output in Devanagari, Roman (IAST/Baraha), and Tamil scripts.
 
-First, run the development server:
+Built with **Next.js 15**, **React 19**, and **Tailwind CSS 4**, it prioritizes flow-state typing and cryptographic precision for complex Vedic swaras and marks.
+
+---
+
+## ✨ Key Features
+
+- **🚀 Live Transliteration:** Real-time conversion from ITRANS to Devanagari, Roman, or Tamil.
+- **🎼 Vedic Support:** Full support for Vedic accents (svaritas, anudattas) and rare marks (jihvamuliya, upadhmaniya).
+- **🎭 Multi-Script Preview:** Side-by-side or stacked "Compare Mode" to view multiple scripts simultaneously.
+- **🧠 Intelligent Predictions:** Context-aware word suggestions that learn from your typing patterns.
+- **🛠️ Normalization & Cleanup:** Dedicated "OCR Fix" mode for correcting and normalizing digitized Sanskrit texts.
+- **📜 Document Workspace:** Immersive read/edit split optimized for long-form passages and mantras.
+- **📂 Session Persistence:** Automatic saving and management of your workspaces using LocalStorage.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework:** [Next.js 15](https://nextjs.org/) (App Router)
+- **Library:** [React 19](https://react.dev/)
+- **Styling:** [Tailwind CSS 4](https://tailwindcss.com/)
+- **State Management:** [Zustand](https://zustand-demo.pmnd.rs/)
+- **Persistence:** [Dexie.js](https://dexie.org/) (IndexedDB)
+- **Testing:** [Playwright](https://playwright.dev/) (E2E) & custom algorithmic audit scripts.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js (Latest LTS)
+- npm or pnpm
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/mrgkumar/sanskrit_keyboard.git
+cd sanskrit_keyboard/app
+
+# Install dependencies
+npm install
+```
+
+### Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the application in action.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🏗️ Architecture Overview
 
-## Learn More
+- **`src/app/`**: Next.js 15 routes and page layouts.
+- **`src/components/`**: UI components organized by functional area (Engine, Audit, Reference, etc.).
+- **`src/lib/vedic/`**: The core transliteration engine.
+  - `mapping.ts`: The definitive scholarly mapping table (Source of Truth).
+  - `utils.ts`: Transliteration logic and script normalization.
+- **`src/store/`**: Global state management via Zustand (`useFlowStore`).
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🧪 Testing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+We take precision seriously. All changes to the engine or UI must be validated.
 
-## Deploy on Vercel
+```bash
+# Run transliteration accuracy tests
+npm run test:transliteration
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Run full UI regression suite (requires Playwright)
+npx playwright test
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Whether you're fixing a typo in the mapping, improving the UI, or adding support for a new script.
+
+1.  **Fork the repo** and create your branch from `main`.
+2.  **Check the mapping**: If you're adding characters, update `src/lib/vedic/mapping.ts`.
+3.  **Run tests**: Ensure `npm run test:transliteration` passes.
+4.  **Style**: We use Tailwind CSS 4 and follow a clean, "scholarly" aesthetic.
+5.  **Submit a PR**: Provide a clear description of your changes and any relevant screenshots.
+
+---
+
+## 📜 License
+
+This project is open-source. Please check the LICENSE file in the root for details.
+
+---
+
+## 🙏 Credits
+
+- Fonts provided by the [Siddhanta](http://www.sanskritweb.net/fonts/) and [Chandas](http://www.sanskritweb.net/fonts/) projects.
+- Transliteration schemes based on the ITRANS standard.
+
+---
+*Built for the preservation and propagation of Sanskrit scholarship.*
