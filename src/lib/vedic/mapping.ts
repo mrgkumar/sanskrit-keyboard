@@ -444,6 +444,10 @@ export const TAMIL_MAPPINGS: VedicMapping[] = [
   { itrans: ':', unicode: '\u0B83', preferredReverse: true, name: 'visarga', category: 'mark' },
   { itrans: '^z', unicode: '\u200C', preferredReverse: true, name: 'zwnj', category: 'special' },
   { itrans: '^Z', unicode: '\u200D', preferredReverse: true, name: 'zwj', category: 'special' },
+  { itrans: "'", unicode: "[']", preferredReverse: true, name: 'svarita', category: 'vedic' },
+  { itrans: "_", unicode: "[_]", preferredReverse: true, name: 'anudatta', category: 'vedic' },
+  { itrans: "''", unicode: "['']", preferredReverse: true, name: 'double svarita', category: 'vedic' },
+  { itrans: "'''", unicode: "[''']", preferredReverse: true, name: 'triple svarita', category: 'vedic' },
   
   // Punctuation & Numbers
   { itrans: "||", unicode: '\u0BEF', preferredReverse: true, category: 'special' },
