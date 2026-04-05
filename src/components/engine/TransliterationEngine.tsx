@@ -9,6 +9,7 @@ import { useFlowStore } from '@/store/useFlowStore';
 import { BookText, Copy, Check, Eye, Menu, RefreshCw, Save, SlidersHorizontal, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { SessionSnapshot, SanskritFontPreset, TamilFontPreset, TypographySettings } from '@/store/types';
+import { formatSourceForScript } from '@/lib/vedic/utils';
 import {
   OUTPUT_TARGET_CONTROL_LABELS,
   OUTPUT_TARGET_VALUE_LABELS,
@@ -153,6 +154,7 @@ export const TransliterationEngine: React.FC = () => {
     primaryOutputScript,
     comparisonOutputScript,
     romanOutputStyle,
+    tamilOutputStyle,
     sanskritFontPreset,
     tamilFontPreset,
     showItransInDocument,

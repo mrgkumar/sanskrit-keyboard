@@ -27,6 +27,7 @@ import type { ChunkEditTarget } from '@/store/types';
 
 export const StickyTopComposer: React.FC = () => {
   const { 
+    blocks,
     getActiveBlock, getActiveChunkGroup, updateChunkSource, setNextChunk, setPrevChunk, setNextBlock, setPrevBlock, setFocusSpan, toggleReferencePanel, addBlocks, deleteBlock, mergeBlocks, splitBlock, restoreDeletedBlock, dismissDeletedBlock, setDeletedBuffer, setComposerSelection, setLexicalSelectedSuggestionIndex, recordSessionLexicalText, recordSessionLexicalUse, setPrimaryOutputScript, setComparisonOutputScript, editorState,
     activeBuffer, // Get activeBuffer for Backspace logic
     lexicalSuggestions,
