@@ -142,7 +142,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
             <div className="mt-4 p-3 bg-blue-50/50 rounded-lg border border-blue-100 text-blue-800">
               <p className="text-xs font-bold uppercase tracking-wide">Vedic Swara Representation (Tamil)</p>
               <p className="mt-1 text-sm">
-                Vedic accents (Svaras) like {'\''} (udatta), {'_'} (anudatta), {'\'\''} (double svarita) are represented by their ITRANS codes in square brackets (e.g., <span className="font-mono">[']</span> for udatta) in Tamil script, as direct equivalents are not available.
+                Vedic accents (Svaras) like {'&apos;'} (udatta), {'_'} (anudatta), {'&apos;&apos;'} (double svarita) are represented by their ITRANS codes in square brackets (e.g., <span className="font-mono">[&apos;]</span> for udatta) in Tamil script, as direct equivalents are not available.
               </p>
             </div>
           )}
