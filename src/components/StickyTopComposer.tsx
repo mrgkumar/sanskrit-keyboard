@@ -1479,7 +1479,7 @@ export const StickyTopComposer: React.FC = () => {
                         }
                       }}
                       rows={Math.min(6, Math.max(1, currentChunkSource.split('\n').length))}
-                      placeholder="Type ITRANS here..."
+                      placeholder="... start typing or paste devanagari text."
                     />
                   </div>
                 </div>

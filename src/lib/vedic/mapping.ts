@@ -57,8 +57,8 @@ export const OUTPUT_TARGET_STYLE_OPTIONS = {
 };
 
 export const DEFAULT_OUTPUT_TARGET_SETTINGS: OutputTargetSettings = {
-  primaryOutputScript: 'roman',
-  comparisonOutputScript: 'off',
+  primaryOutputScript: 'devanagari',
+  comparisonOutputScript: 'tamil',
   romanOutputStyle: 'canonical',
   tamilOutputStyle: 'precision',
 };
