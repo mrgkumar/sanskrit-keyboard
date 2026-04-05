@@ -1,5 +1,7 @@
 # Sanskrit Keyboard 🕉️
 
+![Sanskrit Keyboard Screenshot](docs/images/screenshot.png)
+
 **Sanskrit Keyboard** is a high-performance, scholarly transliteration workspace designed for researchers, students, and practitioners of Sanskrit and Vedic texts. It provides a seamless "invisible" typing experience, converting ITRANS input into 100% accurate Unicode output in Devanagari, Roman (IAST/Baraha), and Tamil scripts.
 
 Built with **Next.js 15**, **React 19**, and **Tailwind CSS 4**, it prioritizes flow-state typing and cryptographic precision for complex Vedic swaras and marks.
