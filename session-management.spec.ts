@@ -1,7 +1,23 @@
 import { test, expect } from '@playwright/test';
 
+const STORAGE_KEYS_TO_CLEAR = [
+  'sanskrit-keyboard.sessions.v1',
+  'sanskrit-keyboard.session-index.v2',
+  'sanskrit-keyboard.lexical-history.v1',
+];
+
 test.describe('Session Management', () => {
   test.beforeEach(async ({ page }) => {
+    await page.addInitScript((keys) => {
+      window.localStorage.clear();
+      for (const key of keys) {
+        window.localStorage.removeItem(key);
+      }
+      Object.keys(window.localStorage)
+        .filter((key) => key.startsWith('sanskrit-keyboard.session.v2.'))
+        .forEach((key) => window.localStorage.removeItem(key));
+    }, STORAGE_KEYS_TO_CLEAR);
+
     await page.goto('/');
     await page.waitForSelector('[data-testid="sticky-itrans-input"]');
   });
@@ -60,6 +76,26 @@ test.describe('Session Management', () => {
     await page.waitForTimeout(500);
     await expect(page.locator(`button:has-text("${newName}")`)).toBeVisible();
     await expect(page.locator(`button:has-text("${initialName}")`)).not.toBeVisible();
+  });
+
+  test('should persist a saved session across reloads', async ({ page }) => {
+    await page.click('[data-testid="workspace-toggle"]');
+    await page.waitForSelector('[data-testid="workspace-sidebar"]', { state: 'visible' });
+
+    const sessionInput = page.locator('input[placeholder="Active session name..."]');
+    const persistedName = `Persisted-${Date.now()}`;
+    await sessionInput.fill(persistedName);
+    await page.click('button:has-text("Save")');
+    await page.waitForTimeout(500);
+
+    await page.reload();
+    await page.waitForSelector('[data-testid="sticky-itrans-input"]');
+
+    await page.click('[data-testid="workspace-toggle"]');
+    await page.waitForSelector('[data-testid="workspace-sidebar"]', { state: 'visible' });
+
+    await expect(page.locator('input[placeholder="Active session name..."]')).toHaveValue(persistedName);
+    await expect(page.locator(`button:has-text("${persistedName}")`)).toBeVisible();
   });
 
   test('should be able to delete a session', async ({ page }) => {

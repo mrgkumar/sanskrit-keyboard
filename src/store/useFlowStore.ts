@@ -1692,16 +1692,21 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   markSessionSaved: (savedAt) => {
     const nextSavedAt = savedAt ?? new Date().toISOString();
     set({ lastSavedAt: nextSavedAt });
-    // When marked as saved, ensure the index is also updated to reflect current session info
-    const { sessionId, sessionName } = get();
+    const { sessionId, exportSessionSnapshot } = get();
+    const snapshot = exportSessionSnapshot();
+    snapshot.updatedAt = nextSavedAt;
+
+    // Keep the durable snapshot and the session index in sync.
+    window.localStorage.setItem(getSessionStorageKey(sessionId), JSON.stringify(snapshot));
+
     const index = readSessionIndex();
     const existingIndex = index.findIndex(item => item.sessionId === sessionId);
     
     if (existingIndex !== -1) {
       index[existingIndex].updatedAt = nextSavedAt;
-      index[existingIndex].sessionName = sessionName;
+      index[existingIndex].sessionName = snapshot.sessionName;
     } else {
-      index.push({ sessionId, sessionName, updatedAt: nextSavedAt });
+      index.push({ sessionId, sessionName: snapshot.sessionName, updatedAt: nextSavedAt });
     }
     const nextIndex = writeSessionIndex(index);
     set({ savedSessions: nextIndex });
