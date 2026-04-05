@@ -307,9 +307,9 @@ export const VEDIC_MAPPINGS: VedicMapping[] = [
 
 
   // Vedic Marks
-  { itrans: "\\'", unicode: '\u0951', name: 'svarita', category: 'vedic' },
+  { itrans: "'", unicode: '\u0951', name: 'svarita', category: 'vedic' },
   { itrans: "'", unicode: '\u0951', preferredReverse: true, name: 'svarita', category: 'vedic' },
-  { itrans: "\\_", unicode: '\u0952', name: 'anudatta', category: 'vedic' },
+  { itrans: "\_", unicode: '\u0952', name: 'anudatta', category: 'vedic' },
   { itrans: "_", unicode: '\u0952', preferredReverse: true, name: 'anudatta', category: 'vedic' },
   { itrans: "_M~_", unicode: '\u0952\uF156\u0952', category: 'vedic' },
   { itrans: "_M~M_", unicode: '\u0952\uF156\u0902\u0952', category: 'vedic' },
@@ -327,7 +327,7 @@ export const VEDIC_MAPPINGS: VedicMapping[] = [
   { itrans: ":'", unicode: '\u0903\u0951', category: 'mark' },
   { itrans: ":_", unicode: '\u0903\u0952', category: 'mark' },
   { itrans: ":''", unicode: '\u0903\u1CDA', preferredReverse: true, category: 'mark' },
-  { itrans: ':\"', unicode: '\u0903\u1CDA', category: 'mark' },
+  { itrans: ':"', unicode: '\u0903\u1CDA', category: 'mark' },
   { itrans: '^z', unicode: '\u200C', preferredReverse: true, name: 'zwnj', category: 'special' },
   { itrans: '^Z', unicode: '\u200D', preferredReverse: true, name: 'zwj', category: 'special' },
   { itrans: "H_k", unicode: '\u1CF5', name: 'jihvamuliya', category: 'vedic' },
@@ -373,6 +373,92 @@ export const VEDIC_MAPPINGS: VedicMapping[] = [
   { itrans: '9', unicode: '\u096f', category: 'number' },
 ];
 
+export const TAMIL_MAPPINGS: VedicMapping[] = [
+  // Vowels
+  { itrans: 'a', unicode: '\u0B85', preferredReverse: true, category: 'vowel' },
+  { itrans: 'A', unicode: '\u0B86', preferredReverse: true, category: 'vowel' },
+  { itrans: 'i', unicode: '\u0B87', preferredReverse: true, category: 'vowel' },
+  { itrans: 'I', unicode: '\u0B88', preferredReverse: true, category: 'vowel' },
+  { itrans: 'u', unicode: '\u0B89', preferredReverse: true, category: 'vowel' },
+  { itrans: 'U', unicode: '\u0B8A', preferredReverse: true, category: 'vowel' },
+  { itrans: 'e', unicode: '\u0B8E', preferredReverse: true, category: 'vowel' },
+  { itrans: 'E', unicode: '\u0B8F', preferredReverse: true, category: 'vowel' },
+  { itrans: 'ai', unicode: '\u0B90', preferredReverse: true, category: 'vowel' },
+  { itrans: 'o', unicode: '\u0B92', preferredReverse: true, category: 'vowel' },
+  { itrans: 'O', unicode: '\u0B93', preferredReverse: true, category: 'vowel' },
+  { itrans: 'au', unicode: '\u0B94', preferredReverse: true, category: 'vowel' },
+  
+  // Consonants
+  { itrans: 'k', unicode: '\u0B95\u0BCD', category: 'consonant' },
+  { itrans: 'g', unicode: '\u0B95\u0BCD', canonicalItrans: 'k', isAlias: true, category: 'consonant' },
+  { itrans: 'kh', unicode: '\u0B95\u0BCD', canonicalItrans: 'k', isAlias: true, category: 'consonant' },
+  { itrans: 'gh', unicode: '\u0B95\u0BCD', canonicalItrans: 'k', isAlias: true, category: 'consonant' },
+  
+  { itrans: 'c', unicode: '\u0B9A\u0BCD', category: 'consonant' },
+  { itrans: 'ch', unicode: '\u0B9A\u0BCD', canonicalItrans: 'c', isAlias: true, category: 'consonant' },
+  { itrans: 'j', unicode: '\u0B9C\u0BCD', category: 'consonant' },
+  { itrans: 'jh', unicode: '\u0B9C\u0BCD', canonicalItrans: 'j', isAlias: true, category: 'consonant' },
+  
+  { itrans: 'T', unicode: '\u0B9F\u0BCD', category: 'consonant' },
+  { itrans: 'D', unicode: '\u0B9F\u0BCD', canonicalItrans: 'T', isAlias: true, category: 'consonant' },
+  { itrans: 'Th', unicode: '\u0B9F\u0BCD', canonicalItrans: 'T', isAlias: true, category: 'consonant' },
+  { itrans: 'Dh', unicode: '\u0B9F\u0BCD', canonicalItrans: 'T', isAlias: true, category: 'consonant' },
+  
+  { itrans: 't', unicode: '\u0BA4\u0BCD', category: 'consonant' },
+  { itrans: 'd', unicode: '\u0BA4\u0BCD', canonicalItrans: 't', isAlias: true, category: 'consonant' },
+  { itrans: 'th', unicode: '\u0BA4\u0BCD', canonicalItrans: 't', isAlias: true, category: 'consonant' },
+  { itrans: 'dh', unicode: '\u0BA4\u0BCD', canonicalItrans: 't', isAlias: true, category: 'consonant' },
+  
+  { itrans: 'p', unicode: '\u0BAA\u0BCD', category: 'consonant' },
+  { itrans: 'b', unicode: '\u0BAA\u0BCD', canonicalItrans: 'p', isAlias: true, category: 'consonant' },
+  { itrans: 'ph', unicode: '\u0BAA\u0BCD', canonicalItrans: 'p', isAlias: true, category: 'consonant' },
+  { itrans: 'bh', unicode: '\u0BAA\u0BCD', canonicalItrans: 'p', isAlias: true, category: 'consonant' },
+  
+  { itrans: 'n', unicode: '\u0BA8\u0BCD', name: 'dental n', category: 'consonant' },
+  { itrans: 'N', unicode: '\u0BA3\u0BCD', name: 'retroflex N', category: 'consonant' },
+  { itrans: '~n', unicode: '\u0B9E\u0BCD', name: 'palatal n', category: 'consonant' },
+  { itrans: '~N', unicode: '\u0B99\u0BCD', name: 'velar n', category: 'consonant' },
+  { itrans: 'm', unicode: '\u0BAE\u0BCD', category: 'consonant' },
+  
+  { itrans: 'y', unicode: '\u0BAF\u0BCD', category: 'consonant' },
+  { itrans: 'r', unicode: '\u0BB0\u0BCD', category: 'consonant' },
+  { itrans: 'R', unicode: '\u0BB1\u0BCD', category: 'consonant' }, // Retroflex R (ற)
+  { itrans: 'l', unicode: '\u0BB2\u0BCD', category: 'consonant' },
+  { itrans: 'L', unicode: '\u0BB3\u0BCD', category: 'consonant' }, // Retroflex L (ள)
+  { itrans: 'v', unicode: '\u0BB5\u0BCD', category: 'consonant' },
+  
+  { itrans: 's', unicode: '\u0BB8\u0BCD', category: 'consonant' },
+  { itrans: 'S', unicode: '\u0BB7\u0BCD', category: 'consonant' },
+  { itrans: 'sh', unicode: '\u0BB7\u0BCD', canonicalItrans: 'S', isAlias: true, category: 'consonant' },
+  { itrans: 'h', unicode: '\u0BB9\u0BCD', category: 'consonant' },
+  
+  // Special Tamil letters for Sanskrit transliteration (Grantha)
+  { itrans: 'ks', unicode: '\u0B95\u0BCD\u0BB7\u0BCD', name: 'ksha', category: 'special' },
+  { itrans: 'j~n', unicode: '\u0B9C\u0BCD\u0B9E\u0BCD', name: 'jna', category: 'special' },
+
+  // Marks
+  { itrans: 'M', unicode: '\u0B82', preferredReverse: true, name: 'anusvara', category: 'mark' },
+  { itrans: ':', unicode: '\u0B83', preferredReverse: true, name: 'visarga', category: 'mark' },
+  { itrans: '^z', unicode: '\u200C', preferredReverse: true, name: 'zwnj', category: 'special' },
+  { itrans: '^Z', unicode: '\u200D', preferredReverse: true, name: 'zwj', category: 'special' },
+  
+  // Punctuation & Numbers
+  { itrans: "||", unicode: '\u0BEF', preferredReverse: true, category: 'special' },
+  { itrans: "|", unicode: '\u0BE9', preferredReverse: true, category: 'special' },
+  { itrans: '0', unicode: '\u0BE6', category: 'number' },
+  { itrans: '1', unicode: '\u0BE7', category: 'number' },
+  { itrans: '2', unicode: '\u0BE8', category: 'number' },
+  { itrans: '3', unicode: '\u0BE9', category: 'number' },
+  { itrans: '4', unicode: '\u0BEA', category: 'number' },
+  { itrans: '5', unicode: '\u0BEB', category: 'number' },
+  { itrans: '6', unicode: '\u0BEC', category: 'number' },
+  { itrans: '7', unicode: '\u0BED', category: 'number' },
+  { itrans: '8', unicode: '\u0BEE', category: 'number' },
+  { itrans: '9', unicode: '\u0BEF', category: 'number' },
+];
+
+export const MAPPING_TRIE_TAMIL = sortMappingTrie(TAMIL_MAPPINGS);
+
 const BARAHA_CONFLICT_MAPPINGS: VedicMapping[] = [
   { itrans: 'c', unicode: '\u091A\u094D', canonicalItrans: 'ch', isAlias: true, category: 'consonant' },
 ];
@@ -385,13 +471,22 @@ const BARAHA_COMPATIBLE_MAPPING_TRIE = sortMappingTrie([
   ...VEDIC_MAPPINGS,
   ...BARAHA_CONFLICT_MAPPINGS,
 ]);
+export const MAPPING_TRIE_TAMIL = sortMappingTrie(TAMIL_MAPPINGS);
+
+export const getDisplayMappingsForScheme = (outputScript: OutputScript) => {
+  if (outputScript === 'tamil') {
+    return TAMIL_MAPPINGS;
+  }
+  return VEDIC_MAPPINGS;
+};
+
+const DISPLAY_MAPPINGS_VEDIC = VEDIC_MAPPINGS.filter((mapping) => !mapping.isAlias);
+const DISPLAY_MAPPINGS_TAMIL = TAMIL_MAPPINGS.filter((mapping) => !mapping.isAlias);
 
 export const getInputMappings = (inputScheme: InputScheme = 'canonical-vedic') =>
   inputScheme === 'baraha-compatible'
     ? BARAHA_COMPATIBLE_MAPPING_TRIE
     : MAPPING_TRIE;
-
-export const DISPLAY_MAPPINGS = VEDIC_MAPPINGS.filter((mapping) => !mapping.isAlias);
 
 const buildAcceptedInputsMap = (mappings: VedicMapping[]) => {
   const acceptedInputsByDisplayItrans = new Map<string, string[]>();
@@ -424,12 +519,13 @@ export const getAlternateAcceptedInputs = (
   inputScheme: InputScheme = 'canonical-vedic'
 ) => getAcceptedInputs(displayItrans, inputScheme).filter((input) => input !== displayItrans);
 
-export const getPreferredDisplayItrans = (itrans: string) =>
-  VEDIC_MAPPINGS.find((mapping) => mapping.itrans === itrans)?.canonicalItrans ?? itrans;
+export const getPreferredDisplayItrans = (itrans: string, mappings: VedicMapping[]) =>
+  mappings.find((mapping) => mapping.itrans === itrans)?.canonicalItrans ?? itrans;
 
-export const getDisplayMapping = (itrans: string) => {
-  const displayItrans = getPreferredDisplayItrans(itrans);
-  return DISPLAY_MAPPINGS.find((mapping) => mapping.itrans === displayItrans);
+export const getDisplayMapping = (itrans: string, outputScript: OutputScript) => {
+  const mappings = getDisplayMappingsForScheme(outputScript);
+  const displayItrans = getPreferredDisplayItrans(itrans, mappings);
+  return mappings.find((mapping) => mapping.itrans === displayItrans);
 };
 
 export const canonicalizeAcceptedInputToken = (

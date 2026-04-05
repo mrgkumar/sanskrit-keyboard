@@ -1,7 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { DISPLAY_MAPPINGS, getAcceptedInputs, getAlternateAcceptedInputs, getInputMappings } from '@/lib/vedic/mapping';
+import {
+  getDisplayMappingsForScheme,
+  getAcceptedInputs,
+  getAlternateAcceptedInputs,
+  getInputMappings,
+  OutputScript,
+} from '@/lib/vedic/mapping';
 import { Search } from 'lucide-react';
 import { useFlowStore } from '@/store/useFlowStore';
 import type { ChunkEditTarget } from '@/store/types';
@@ -41,8 +47,9 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
     composerSelectionEnd,
     displaySettings,
   } = useFlowStore();
-  const { inputScheme } = displaySettings;
+  const { inputScheme, primaryOutputScript } = displaySettings;
   const activeMappings = getInputMappings(inputScheme);
+  const displayMappings = getDisplayMappingsForScheme(primaryOutputScript);
 
   const handleInsert = (itrans: string) => {
     const activeChunkGroup = getActiveChunkGroup();
@@ -83,7 +90,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
 
   const categories = ['vowel', 'consonant', 'vedic', 'mark', 'special'];
   
-  const filteredMappings = DISPLAY_MAPPINGS.filter((m) => {
+  const filteredMappings = displayMappings.filter((m) => {
     const acceptedInputs = getAcceptedInputs(m.itrans, inputScheme).join(' ');
     return (
       fuzzySearch(search, m.itrans) ||
@@ -91,6 +98,9 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
       fuzzySearch(search, m.name || '')
     );
   });
+
+  const title = primaryOutputScript === 'tamil' ? 'Tamil Transliteration Reference' : 'ITRANS Mapping Reference';
+  const description = primaryOutputScript === 'tamil' ? 'A guide for scholars to type Sanskrit in Tamil script with precision.' : 'A guide for scholars to type Vedic Sanskrit with precision.';
 
   useEffect(() => {
     let targetItrans: string | null = null;
@@ -120,15 +130,15 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
-  }, [deletedBuffer, activeBuffer, activeMappings]); // Depend on deletedBuffer and activeBuffer
+  }, [deletedBuffer, activeBuffer, activeMappings, primaryOutputScript]); // Added primaryOutputScript to dependencies
 
   return (
     <div className="w-full h-full flex flex-col">
       {/* Header */}
       <div className="p-8 border-b border-slate-100 bg-slate-50/50">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">ITRANS Mapping Reference</h2>
-          <p className="text-slate-500 text-sm mt-1">A guide for scholars to type Vedic Sanskrit with precision.</p>
+          <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
+          <p className="text-slate-500 text-sm mt-1">{description}</p>
         </div>
       </div>
 
@@ -184,7 +194,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
         })}
       </div>
 
-      {/* Join Control Shortcuts */}
+      {/* Footer */}
       <div className="border-t border-slate-100 bg-white/70 px-6 py-4">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
@@ -218,8 +228,6 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
           ))}
         </div>
       </div>
-
-      {/* Footer */}
       <div className="p-6 bg-slate-50 text-center border-t border-slate-100">
         <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
           Scholarly Standard • Optimized for Flow State
