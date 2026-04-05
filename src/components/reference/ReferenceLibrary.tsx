@@ -193,8 +193,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
         })}
       </div>
 
-      {/* Footer */}
-      <div className="border-t border-slate-100 bg-white/70 px-6 py-4">
+      <div className="md:col-span-2 border-t border-slate-100 bg-white/70 px-6 py-4 -mx-8">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Zero-width joiners</p>
@@ -227,6 +226,10 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
           ))}
         </div>
       </div>
+
+
+
+
       <div className="p-6 bg-slate-50 text-center border-t border-slate-100">
         <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
           Scholarly Standard • Optimized for Flow State
