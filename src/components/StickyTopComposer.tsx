@@ -17,11 +17,12 @@ import {
   transliterate,
 } from '@/lib/vedic/utils';
 import {
-  DISPLAY_MAPPINGS,
+  getDisplayMappingsForScheme,
   getAcceptedInputs,
   getOutputTargetQuickLabels,
   OUTPUT_TARGET_CONTROL_LABELS,
   OUTPUT_TARGET_VALUE_LABELS,
+  VedicMapping, // Added VedicMapping import
 } from '@/lib/vedic/mapping';
 import { applyShortcutPeekCorrection } from '@/lib/vedic/correction';
 import type { ChunkEditTarget } from '@/store/types';
@@ -173,15 +174,15 @@ export const StickyTopComposer: React.FC = () => {
       }
     : undefined;
   const resolvePeekMappings = (query: string) =>
-    DISPLAY_MAPPINGS
+    getDisplayMappingsForScheme(primaryOutputScript) // Use getDisplayMappingsForScheme
       .filter((mapping) =>
         mapping.itrans.toLowerCase().startsWith(query.toLowerCase()) ||
-        getAcceptedInputs(mapping.itrans).some((input) => input.toLowerCase().startsWith(query.toLowerCase())) ||
+        getAcceptedInputs(mapping.itrans, inputScheme).some((input) => input.toLowerCase().startsWith(query.toLowerCase())) ||
         (mapping.name || '').toLowerCase().includes(query.toLowerCase())
       )
       .slice(0, 6);
 
-  let shortcutPeekState: { query: string; mappings: typeof DISPLAY_MAPPINGS } = {
+  let shortcutPeekState: { query: string; mappings: VedicMapping[] } = {
     query: deletedBuffer || activeBuffer,
     mappings: [],
   };

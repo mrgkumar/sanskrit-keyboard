@@ -1,6 +1,6 @@
 import React from 'react';
 import { useFlowStore } from '@/store/useFlowStore';
-import { DISPLAY_MAPPINGS, MAPPING_TRIE } from '@/lib/vedic/mapping';
+import { getDisplayMappingsForScheme, MAPPING_TRIE } from '@/lib/vedic/mapping';
 import { clsx } from 'clsx';
 import type { ChunkEditTarget } from '@/store/types';
 import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
@@ -119,9 +119,10 @@ export const ShortcutHUD: React.FC = () => {
     }
     
     if (group) {
+      const displayMappings = getDisplayMappingsForScheme(displaySettings.primaryOutputScript);
       completions = group
         .map((itrans: string) => {
-          const mapping = DISPLAY_MAPPINGS.find(m => m.itrans === itrans);
+          const mapping = displayMappings.find(m => m.itrans === itrans);
           return mapping ? { ...mapping, tail: longestItransSuffix } : null;
         })
         .filter(Boolean) as { itrans: string; unicode: string; tail: string; }[];

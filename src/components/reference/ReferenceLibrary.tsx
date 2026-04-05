@@ -6,7 +6,6 @@ import {
   getAcceptedInputs,
   getAlternateAcceptedInputs,
   getInputMappings,
-  OutputScript,
 } from '@/lib/vedic/mapping';
 import { Search } from 'lucide-react';
 import { useFlowStore } from '@/store/useFlowStore';

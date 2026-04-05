@@ -1,15 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { DISPLAY_MAPPINGS, getAcceptedInputs, getAlternateAcceptedInputs } from '@/lib/vedic/mapping';
+import { getDisplayMappingsForScheme, getAcceptedInputs, getAlternateAcceptedInputs } from '@/lib/vedic/mapping';
 import { Search, Edit3, Command } from 'lucide-react';
 import { useFlowStore } from '@/store/useFlowStore';
 
 export const MappingManager: React.FC = () => {
   const [search, setSearch] = useState('');
-  const inputScheme = useFlowStore((state) => state.displaySettings.inputScheme);
+  const { displaySettings } = useFlowStore();
+  const { inputScheme, primaryOutputScript } = displaySettings;
   
-  const filteredMappings = DISPLAY_MAPPINGS.filter((m) =>
+  const allMappings = getDisplayMappingsForScheme(primaryOutputScript);
+  const filteredMappings = allMappings.filter((m) =>
     m.itrans.toLowerCase().includes(search.toLowerCase()) ||
     getAcceptedInputs(m.itrans, inputScheme).some((input) => input.toLowerCase().includes(search.toLowerCase())) ||
     m.unicode.includes(search)

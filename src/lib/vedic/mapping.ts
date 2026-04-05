@@ -9,6 +9,9 @@ export interface VedicMapping {
   category: 'consonant' | 'vowel' | 'mark' | 'vedic' | 'number' | 'special';
 }
 
+const sortMappingTrie = (mappings: VedicMapping[]) =>
+  [...mappings].sort((a, b) => b.itrans.length - a.itrans.length);
+
 export type InputScheme = 'canonical-vedic' | 'baraha-compatible';
 export type OutputScheme = 'canonical-vedic' | 'baraha-compatible' | 'sanskrit-tamil-precision';
 export type OutputScript = 'roman' | 'devanagari' | 'tamil';
@@ -463,15 +466,12 @@ const BARAHA_CONFLICT_MAPPINGS: VedicMapping[] = [
   { itrans: 'c', unicode: '\u091A\u094D', canonicalItrans: 'ch', isAlias: true, category: 'consonant' },
 ];
 
-const sortMappingTrie = (mappings: VedicMapping[]) =>
-  [...mappings].sort((a, b) => b.itrans.length - a.itrans.length);
-
 export const MAPPING_TRIE = sortMappingTrie(VEDIC_MAPPINGS);
 const BARAHA_COMPATIBLE_MAPPING_TRIE = sortMappingTrie([
   ...VEDIC_MAPPINGS,
   ...BARAHA_CONFLICT_MAPPINGS,
 ]);
-export const MAPPING_TRIE_TAMIL = sortMappingTrie(TAMIL_MAPPINGS);
+
 
 export const getDisplayMappingsForScheme = (outputScript: OutputScript) => {
   if (outputScript === 'tamil') {
@@ -479,9 +479,6 @@ export const getDisplayMappingsForScheme = (outputScript: OutputScript) => {
   }
   return VEDIC_MAPPINGS;
 };
-
-const DISPLAY_MAPPINGS_VEDIC = VEDIC_MAPPINGS.filter((mapping) => !mapping.isAlias);
-const DISPLAY_MAPPINGS_TAMIL = TAMIL_MAPPINGS.filter((mapping) => !mapping.isAlias);
 
 export const getInputMappings = (inputScheme: InputScheme = 'canonical-vedic') =>
   inputScheme === 'baraha-compatible'
@@ -523,7 +520,7 @@ export const getPreferredDisplayItrans = (itrans: string, mappings: VedicMapping
   mappings.find((mapping) => mapping.itrans === itrans)?.canonicalItrans ?? itrans;
 
 export const getDisplayMapping = (itrans: string, outputScript: OutputScript) => {
-  const mappings = getDisplayMappingsForScheme(outputScript);
+  const mappings = getDisplayMappingsForScheme(outputScript).filter((mapping) => !mapping.isAlias);
   const displayItrans = getPreferredDisplayItrans(itrans, mappings);
   return mappings.find((mapping) => mapping.itrans === displayItrans);
 };

@@ -1021,7 +1021,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         ? completionMatches
         : activeMappings.filter(m => m.itrans.startsWith(activeBuffer) && activeBuffer.length > 0)
     )
-      .map((mapping) => getDisplayMapping(mapping.itrans) ?? mapping)
+      .map((mapping) => getDisplayMapping(mapping.itrans, get().displaySettings.primaryOutputScript) ?? mapping)
       .filter((mapping, index, list) => list.findIndex((entry) => entry.itrans === mapping.itrans) === index)
       .slice(0, 5)
       .map(({ itrans, unicode }) => ({ itrans, unicode }));
@@ -1035,7 +1035,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       }
     };
     
-    const getMapping = (itrans: string) => getDisplayMapping(itrans) ?? activeMappings.find(m => m.itrans === itrans);
+    const getMapping = (itrans: string) => getDisplayMapping(itrans, get().displaySettings.primaryOutputScript) ?? activeMappings.find(m => m.itrans === itrans);
 
     activeMappings.filter(m => m.itrans === activeBuffer).forEach(addSuggestion);
 
