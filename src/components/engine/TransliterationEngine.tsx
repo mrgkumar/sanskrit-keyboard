@@ -365,6 +365,20 @@ export const TransliterationEngine: React.FC = () => {
   };
 
   React.useEffect(() => {
+    // If it's the static default (168 from our store constants),
+    // let's try to set a more dynamic default based on browser height (33%)
+    if (typeof window !== 'undefined' && typography.composer.itransPanelHeight === 168) {
+      const dynamicHeight = Math.round(window.innerHeight * 0.33);
+      // Ensure it stays within reasonable bounds [140, 500]
+      const boundedHeight = Math.max(140, Math.min(500, dynamicHeight));
+      
+      setTypography('composer', {
+        itransPanelHeight: boundedHeight
+      } as Partial<TypographySettings['composer']>);
+    }
+  }, [setTypography, typography.composer.itransPanelHeight]);
+
+  React.useEffect(() => {
     const raw = window.localStorage.getItem(LEXICAL_HISTORY_KEY);
     if (!raw) {
       hasLoadedLexicalLearning.current = true;
