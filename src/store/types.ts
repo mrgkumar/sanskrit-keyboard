@@ -133,6 +133,8 @@ export interface DisplaySettings {
   tamilFontPreset: TamilFontPreset;
   autoSwapVisargaSvarita: boolean;
   showItransInDocument: boolean;
+  referenceUsage: Record<string, number>;
+  expandedCategories: string[];
   typography: TypographySettings;
 }
 

@@ -7,7 +7,7 @@ import {
   getAlternateAcceptedInputs,
   getInputMappings,
 } from '@/lib/vedic/mapping';
-import { Search } from 'lucide-react';
+import { Search, ChevronRight, ChevronDown, Sparkles } from 'lucide-react';
 import { useFlowStore } from '@/store/useFlowStore';
 import type { ChunkEditTarget } from '@/store/types';
 
@@ -45,12 +45,15 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
     composerSelectionStart,
     composerSelectionEnd,
     displaySettings,
+    incrementReferenceUsage,
+    toggleReferenceCategory,
   } = useFlowStore();
-  const { inputScheme, primaryOutputScript } = displaySettings;
+  const { inputScheme, primaryOutputScript, referenceUsage, expandedCategories } = displaySettings;
   const activeMappings = getInputMappings(inputScheme);
   const displayMappings = getDisplayMappingsForScheme(primaryOutputScript);
 
   const handleInsert = (itrans: string) => {
+    incrementReferenceUsage(itrans);
     const activeChunkGroup = getActiveChunkGroup();
     if (activeChunkGroup) {
       const editTarget: ChunkEditTarget | undefined = activeChunkGroup.blockId
@@ -87,7 +90,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
     return termIndex === termChars.length;
   };
 
-  const categories = ['vowel', 'consonant', 'vedic', 'mark', 'special'];
+  const categories = ['vowel', 'consonant', 'number', 'vedic', 'mark', 'special'];
   
   const filteredMappings = displayMappings.filter((m) => {
     const acceptedInputs = getAcceptedInputs(m.itrans, inputScheme).join(' ');
@@ -131,6 +134,12 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
     }
   }, [deletedBuffer, activeBuffer, activeMappings, primaryOutputScript]); // Added primaryOutputScript to dependencies
 
+  const bestGuessMappings = Object.entries(referenceUsage)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 8)
+    .map(([itrans]) => displayMappings.find((m) => m.itrans === itrans))
+    .filter((m): m is NonNullable<typeof m> => !!m);
+
   return (
     <div className="w-full h-full flex flex-col">
       {/* Header */}
@@ -162,44 +171,93 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
       </div>
 
       {/* Mappings List */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto p-8 flex flex-col gap-8">
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-8 flex flex-col gap-6">
+        {/* Best Guess Section */}
+        {bestGuessMappings.length > 0 && !search && (
+          <div className="space-y-4 mb-2">
+            <h3 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 pl-2 bg-amber-50/50 py-1 rounded w-fit px-3">
+              <Sparkles className="w-3 h-3" /> Quick Access
+            </h3>
+            <div className="grid grid-cols-4 gap-2">
+              {bestGuessMappings.map((m, i) => (
+                <div
+                  key={`best-${i}`}
+                  onClick={() => handleInsert(m.itrans)}
+                  className="flex flex-col items-center justify-center p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md hover:border-amber-200 hover:bg-amber-50/30 transition-all group cursor-pointer active:scale-95"
+                >
+                  <span className="text-2xl font-serif text-slate-900 group-hover:scale-110 transition-transform">{m.unicode}</span>
+                  <kbd className="mt-1 px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded text-[10px] text-amber-700 font-mono font-bold">{m.itrans}</kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {categories.map(cat => {
-          const catMappings = filteredMappings
-            .filter(m => m.category === cat)
-            .sort((a, b) => {
-              if (a.unicode !== b.unicode) return a.unicode.localeCompare(b.unicode);
-              return a.itrans.length - b.itrans.length;
-            });
-            
+          const catMappings = filteredMappings.filter(m => m.category === cat);
           if (catMappings.length === 0) return null;
+
+          const isExpanded = expandedCategories.includes(cat) || search.length > 0;
           
+          // Group by subCategory
+          const subGroups: Record<string, typeof catMappings> = {};
+          catMappings.forEach(m => {
+            const sub = m.subCategory || 'Standard';
+            if (!subGroups[sub]) subGroups[sub] = [];
+            subGroups[sub].push(m);
+          });
+
           return (
-            <div key={cat} className="space-y-4">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 pl-2 bg-blue-50/50 py-1 rounded w-fit px-3">{cat}s</h3>
-              <div className="space-y-1">
-                {catMappings.map((m, i) => (
-                  <div
-                    key={i}
-                    onClick={() => handleInsert(m.itrans)}
-                    data-itrans={m.itrans}
-                    className="flex items-center justify-between gap-4 p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md hover:border-blue-200 hover:bg-blue-50/30 transition-all group cursor-pointer active:scale-95"
-                  >
-                    <span className="text-3xl font-serif text-slate-900 group-hover:scale-110 transition-transform">{m.unicode}</span>
-                    <div className="min-w-0 text-right">
-                      <kbd className="inline-flex px-2 py-1 bg-slate-50 border border-slate-200 rounded text-blue-600 font-mono font-bold text-sm tracking-tight">{m.itrans}</kbd>
-                      {getAlternateAcceptedInputs(m.itrans, inputScheme).length > 0 && (
-                        <p className="mt-1 text-[10px] font-medium text-slate-400">
-                          Also accepts {getAlternateAcceptedInputs(m.itrans, inputScheme).join(', ')}
-                        </p>
+            <div key={cat} className="space-y-3">
+              <button 
+                onClick={() => toggleReferenceCategory(cat)}
+                className="w-full flex items-center justify-between gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 pl-2 bg-blue-50/50 py-2 rounded-lg px-3 group hover:bg-blue-100/50 transition-colors"
+              >
+                <span className="capitalize">{cat}s</span>
+                {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+              </button>
+              
+              {isExpanded && (
+                <div className="space-y-6 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                  {Object.entries(subGroups).sort(([a], [b]) => {
+                    if (a === 'Standard') return -1;
+                    if (b === 'Standard') return 1;
+                    return a.localeCompare(b);
+                  }).map(([subName, items]) => (
+                    <div key={subName} className="space-y-3">
+                      {subName !== 'Standard' && (
+                        <h4 className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">{subName}</h4>
                       )}
+                      <div className="grid grid-cols-1 gap-1">
+                        {items.sort((a, b) => {
+                          if (a.unicode !== b.unicode) return a.unicode.localeCompare(b.unicode);
+                          return a.itrans.length - b.itrans.length;
+                        }).map((m, i) => (
+                          <div
+                            key={i}
+                            onClick={() => handleInsert(m.itrans)}
+                            data-itrans={m.itrans}
+                            className="flex items-center justify-between gap-4 p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md hover:border-blue-200 hover:bg-blue-50/30 transition-all group cursor-pointer active:scale-95"
+                          >
+                            <span className="text-3xl font-serif text-slate-900 group-hover:scale-110 transition-transform">{m.unicode}</span>
+                            <div className="min-w-0 text-right">
+                              <kbd className="inline-flex px-2 py-1 bg-slate-50 border border-slate-200 rounded text-blue-600 font-mono font-bold text-sm tracking-tight">{m.itrans}</kbd>
+                              {getAlternateAcceptedInputs(m.itrans, inputScheme).length > 0 && (
+                                <p className="mt-1 text-[10px] font-medium text-slate-400">
+                                  Also {getAlternateAcceptedInputs(m.itrans, inputScheme).join(', ')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
-
         {/* Zero-width joiners - Now inside scrollable area */}
         <div className="mt-4 border-t border-slate-100 pt-8 pb-4">
           <div className="mb-4 flex items-center justify-between gap-3">

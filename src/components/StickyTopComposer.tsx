@@ -477,9 +477,34 @@ export const StickyTopComposer: React.FC = () => {
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     const pastedText = e.clipboardData.getData('text');
     setIsPredictionPopupSuppressed(false);
-    
+
     const isDevanagari = /[\u0900-\u097F]/.test(pastedText);
     const isMultiLine = pastedText.includes('\n') || pastedText.includes('\r');
+
+    if (isMultiLine) {
+      e.preventDefault();
+      let processedText = pastedText;
+
+      if (isDevanagari) {
+        processedText = canonicalizeDevanagariPaste(pastedText);
+      }
+
+      if (displaySettings.autoSwapVisargaSvarita) {
+        processedText = normalizeMarkerSequences(processedText);
+      }
+
+      // Split into blocks by lines, but keep structure
+      const lines = processedText.split(/\r?\n/).map(line => line.trim());
+      // We only split into blocks if there's actual content to avoid creating empty blocks at end of paste
+      const nonBufferLines = lines.filter(l => l.length > 0);
+
+      if (nonBufferLines.length > 1) {
+        addBlocks(nonBufferLines);
+        return;
+      }
+      // If it was multiline but effectively one line (e.g. trailing newlines), fall through to inline
+      processedText = nonBufferLines[0] || '';
+    }
 
     if (isDevanagari) {
       e.preventDefault();
@@ -487,12 +512,6 @@ export const StickyTopComposer: React.FC = () => {
 
       if (displaySettings.autoSwapVisargaSvarita) {
         itransText = normalizeMarkerSequences(itransText);
-      }
-
-      if (isMultiLine) {
-        const itransLines = itransText.split(/\r?\n/).filter(line => line.trim().length > 0);
-        addBlocks(itransLines);
-        return;
       }
 
       const target = e.currentTarget;
@@ -529,7 +548,6 @@ export const StickyTopComposer: React.FC = () => {
       }
     }
   };
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (!e.altKey && !e.ctrlKey && !e.metaKey) {
       const isInputKey = e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete';

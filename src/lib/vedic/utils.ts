@@ -896,9 +896,8 @@ export const transliterate = (
   itrans: string,
   options?: TransliterationOptions
 ): TransliterationResult => {
-  const normalizedItrans = normalizeMarkerSequences(itrans);
   const inputScheme = options?.inputScheme ?? 'canonical-vedic';
-  const cacheKey = `${inputScheme}::${normalizedItrans}`;
+  const cacheKey = `${inputScheme}::${itrans}`;
   if (TRANSLITERATION_CACHE.has(cacheKey)) {
     return TRANSLITERATION_CACHE.get(cacheKey)!;
   }
@@ -906,11 +905,11 @@ export const transliterate = (
 
   let unicode = '';
   const confidences: CharConfidence[] = [];
-  const sourceToTargetMap: number[] = new Array(normalizedItrans.length).fill(0);
+  const sourceToTargetMap: number[] = new Array(itrans.length).fill(0);
   const targetToSourceMap: number[] = [];
   
   let i = 0;
-  const itransBuffer = normalizedItrans;
+  const itransBuffer = itrans;
   let pendingNasalRemap: '~N' | '~n' | null = null;
   
   const matraMap: Record<string, string> = {
@@ -1135,7 +1134,7 @@ export const transliterate = (
   }
 
   const result = { unicode, confidences, sourceToTargetMap, targetToSourceMap };
-  if (normalizedItrans.length > 0 && normalizedItrans.length < 50) {
+  if (itrans.length > 0 && itrans.length < 50) {
     if (TRANSLITERATION_CACHE.size >= TRANSLITERATION_CACHE_MAX) {
       TRANSLITERATION_CACHE.clear();
     }

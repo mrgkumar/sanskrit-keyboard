@@ -3,7 +3,7 @@ export const TAMIL_PRECISION_RICH_GOLDENS = [
   ['R^I', 'ரூ¹'],
   ['L^i', 'லு¹'],
   ['L^I', 'லூ¹'],
-  ['M', 'ஂ'],
+  ['M', 'ம்'],
   [':', 'ஃ'],
   ['ka', 'க'],
   ['kha', 'க²'],
@@ -39,7 +39,7 @@ export const TAMIL_PRECISION_RICH_GOLDENS = [
   ['amR^ita', 'அம்ரு¹த'],
   ['kR^ita', 'க்ரு¹த'],
   ['kL^ipta', 'க்லு¹ப்த'],
-  ['saMskR^ita', 'ஸஂஸ்க்ரு¹த'],
+  ['saMskR^ita', 'ஸம்ஸ்க்ரு¹த'],
   ['guru:', 'க³ுருஃ'],
   ['shrI', 'ஶ்ரீ'],
 ] as const;

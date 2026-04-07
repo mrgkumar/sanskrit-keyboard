@@ -225,6 +225,8 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   tamilFontPreset: 'anek',
   autoSwapVisargaSvarita: true,
   showItransInDocument: false,
+  referenceUsage: {},
+  expandedCategories: ['Vowel', 'Consonant'],
   typography: DEFAULT_TYPOGRAPHY,
 };
 
@@ -363,6 +365,8 @@ export const normalizeDisplaySettings = (
         displaySettings.autoSwapVisargaSvarita ?? DEFAULT_DISPLAY_SETTINGS.autoSwapVisargaSvarita,
       showItransInDocument:
         displaySettings.showItransInDocument ?? DEFAULT_DISPLAY_SETTINGS.showItransInDocument,
+      referenceUsage: displaySettings.referenceUsage ?? DEFAULT_DISPLAY_SETTINGS.referenceUsage,
+      expandedCategories: displaySettings.expandedCategories ?? DEFAULT_DISPLAY_SETTINGS.expandedCategories,
       typography: {
         composer: {
           ...DEFAULT_DISPLAY_SETTINGS.typography.composer,
@@ -604,6 +608,8 @@ export interface SanskritKeyboardState {
   setSyncComposerScroll: (enabled: boolean) => void;
   setPredictionLayout: (layout: DisplaySettings['predictionLayout']) => void;
   setPredictionPopupTimeoutMs: (timeoutMs: number) => void;
+  incrementReferenceUsage: (itrans: string) => void;
+  toggleReferenceCategory: (category: string) => void;
   setInputScheme: (inputScheme: InputScheme) => void;
   setPrimaryOutputScript: (primaryOutputScript: DisplaySettings['primaryOutputScript']) => void;
   setComparisonOutputScript: (
@@ -1456,6 +1462,32 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         predictionPopupTimeoutMs,
       },
     }));
+  },
+  incrementReferenceUsage: (itrans) => {
+    set((state) => ({
+      displaySettings: {
+        ...state.displaySettings,
+        referenceUsage: {
+          ...state.displaySettings.referenceUsage,
+          [itrans]: (state.displaySettings.referenceUsage[itrans] ?? 0) + 1,
+        },
+      },
+    }));
+  },
+  toggleReferenceCategory: (category) => {
+    set((state) => {
+      const isExpanded = state.displaySettings.expandedCategories.includes(category);
+      const nextExpanded = isExpanded
+        ? state.displaySettings.expandedCategories.filter((c) => c !== category)
+        : [...state.displaySettings.expandedCategories, category];
+
+      return {
+        displaySettings: {
+          ...state.displaySettings,
+          expandedCategories: nextExpanded,
+        },
+      };
+    });
   },
   setInputScheme: (inputScheme) => {
     set((state) => ({

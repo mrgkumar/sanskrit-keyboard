@@ -17,7 +17,7 @@ export const TAMIL_PRECISION_VOCALIC_TOKENS = {
 } as const;
 
 export const TAMIL_PRECISION_MARK_TOKENS = {
-  M: 'ஂ',
+  M: 'ம்',
   ':': 'ஃ',
 } as const;
 

@@ -51,7 +51,7 @@ export const TAMIL_REVERSE_VOCALIC_FIXTURES = [
 ] as const;
 
 export const TAMIL_REVERSE_SPECIAL_MARK_FIXTURES = [
-  ['ஂ', 'M'],
+  ['ம்', 'M'],
   ['ஃ', ':'],
 ] as const;
 
@@ -64,7 +64,7 @@ export const TAMIL_REVERSE_CLUSTER_FIXTURES = [
   ['அம்ரு¹த', 'amR^ita'],
   ['க்ரு¹த', 'kR^ita'],
   ['க்லு¹ப்த', 'kL^ipta'],
-  ['ஸஂஸ்க்ரு¹த', 'saMskR^ita'],
+  ['ஸம்ஸ்க்ரு¹த', 'saMskR^ita'],
   ['க³ுருஃ', 'guru:'],
   ['ஶ்ரீ', 'shrI'],
 ] as const;

@@ -6,7 +6,9 @@ export interface VedicMapping {
   isAlias?: boolean;
   preferredReverse?: boolean;
   requiresTokenBoundary?: boolean;
-  category: 'consonant' | 'vowel' | 'mark' | 'vedic' | 'number' | 'special';
+  category: 'consonant' | 'vowel' | 'mark' | 'vedic' | 'special' | 'number';
+  subCategory?: string;
+  isScholarly?: boolean;
 }
 
 const sortMappingTrie = (mappings: VedicMapping[]) =>
@@ -374,7 +376,70 @@ export const VEDIC_MAPPINGS: VedicMapping[] = [
   { itrans: '7', unicode: '\u096d', category: 'number' },
   { itrans: '8', unicode: '\u096e', category: 'number' },
   { itrans: '9', unicode: '\u096f', category: 'number' },
-];
+
+  { itrans: '.N^', unicode: '\u0900', category: 'mark', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '.a-', unicode: '\u0904', category: 'vowel', isScholarly: true, subCategory: 'Short' },
+  { itrans: '~e', unicode: '\u090D', category: 'vowel', isScholarly: true, subCategory: 'Candra' },
+  { itrans: '~o', unicode: '\u0911', category: 'vowel', isScholarly: true, subCategory: 'Candra' },
+  { itrans: '^oe', unicode: '\u093A', category: 'mark', isScholarly: true, subCategory: 'Regional' },
+  { itrans: '^ooe', unicode: '\u093B', category: 'mark', isScholarly: true, subCategory: 'Regional' },
+  { itrans: '.#', unicode: '\u093C', category: 'mark', isScholarly: true, subCategory: 'Nukta' },
+  { itrans: '~e=', unicode: '\u0945', category: 'mark', isScholarly: true, subCategory: 'Candra' },
+  { itrans: '~o=', unicode: '\u0949', category: 'mark', isScholarly: true, subCategory: 'Candra' },
+  { itrans: '^pm', unicode: '\u094E', category: 'mark', isScholarly: true, subCategory: 'Archaic' },
+  { itrans: '^aw', unicode: '\u094F', category: 'mark', isScholarly: true, subCategory: 'Regional' },
+  { itrans: '\u0060', unicode: '\u0953', category: 'mark', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: "''", unicode: '\u0954', category: 'mark', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '~E=', unicode: '\u0955', category: 'mark', isScholarly: true, subCategory: 'Candra' },
+  { itrans: '^uue', unicode: '\u0957', category: 'mark', isScholarly: true, subCategory: 'Regional' },
+  { itrans: 'q', unicode: '\u0958', category: 'consonant', isScholarly: false, subCategory: 'Nukta' },
+  { itrans: 'khh', unicode: '\u0959', category: 'consonant', isScholarly: false, subCategory: 'Nukta' },
+  { itrans: 'ghh', unicode: '\u095A', category: 'consonant', isScholarly: false, subCategory: 'Nukta' },
+  { itrans: 'z', unicode: '\u095B', category: 'consonant', isScholarly: false, subCategory: 'Nukta' },
+  { itrans: '.D', unicode: '\u095C', category: 'consonant', isScholarly: false, subCategory: 'Regional' },
+  { itrans: '.rh', unicode: '\u095D', category: 'consonant', isScholarly: false, subCategory: 'Regional' },
+  { itrans: 'f', unicode: '\u095E', category: 'consonant', isScholarly: false, subCategory: 'Nukta' },
+  { itrans: 'Y', unicode: '\u095F', category: 'consonant', isScholarly: false, subCategory: 'Regional' },
+  { itrans: '..', unicode: '\u0971', category: 'special', isScholarly: true, subCategory: 'Extended' },
+  { itrans: '~A', unicode: '\u0972', category: 'vowel', isScholarly: true, subCategory: 'Candra' },
+  { itrans: '^oe=', unicode: '\u0973', category: 'vowel', isScholarly: true, subCategory: 'Regional' },
+  { itrans: '^ooe=', unicode: '\u0974', category: 'vowel', isScholarly: true, subCategory: 'Regional' },
+  { itrans: '^aw=', unicode: '\u0975', category: 'vowel', isScholarly: true, subCategory: 'Regional' },
+  { itrans: '^ue', unicode: '\u0976', category: 'vowel', isScholarly: true, subCategory: 'Regional' },
+  { itrans: '^uue=', unicode: '\u0977', category: 'vowel', isScholarly: true, subCategory: 'Regional' },
+  { itrans: '..jj', unicode: '\u0978', category: 'consonant', isScholarly: true, subCategory: 'Regional' },
+  { itrans: 'z=', unicode: '\u0979', category: 'consonant', isScholarly: true, subCategory: 'Regional' },
+  { itrans: '..g', unicode: '\u097A', category: 'consonant', isScholarly: true, subCategory: 'Sindhi' },
+  { itrans: '..j', unicode: '\u097B', category: 'consonant', isScholarly: true, subCategory: 'Sindhi' },
+  { itrans: '..D', unicode: '\u097C', category: 'consonant', isScholarly: true, subCategory: 'Sindhi' },
+  { itrans: '..?', unicode: '\u097D', category: 'special', isScholarly: true, subCategory: 'Extended' },
+  { itrans: '..b', unicode: '\u097E', category: 'consonant', isScholarly: true, subCategory: 'Sindhi' },
+  { itrans: '..p', unicode: '\u097F', category: 'consonant', isScholarly: true, subCategory: 'Sindhi' },
+  { itrans: '6=', unicode: '\uA8E6', category: 'vedic', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '8=', unicode: '\uA8E8', category: 'vedic', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '9=', unicode: '\uA8E9', category: 'vedic', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '^a=', unicode: '\uA8EA', category: 'vedic', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '^u=', unicode: '\uA8EB', category: 'vedic', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '^ka=', unicode: '\uA8EC', category: 'vedic', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '^na=', unicode: '\uA8ED', category: 'vedic', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '^pa=', unicode: '\uA8EE', category: 'vedic', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '^ra=', unicode: '\uA8EF', category: 'vedic', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '^vi=', unicode: '\uA8F0', category: 'vedic', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '^va=', unicode: '\uA8F1', category: 'vedic', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '._', unicode: '\uA8F2', category: 'mark', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '.v', unicode: '\uA8F3', category: 'mark', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '.m^', unicode: '\uA8F4', category: 'mark', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '.N3', unicode: '\uA8F5', category: 'mark', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '.N4', unicode: '\uA8F6', category: 'mark', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '.Na', unicode: '\uA8F7', category: 'mark', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '++', unicode: '\uA8F8', category: 'special', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '==', unicode: '\uA8F9', category: 'special', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '^^', unicode: '\uA8FA', category: 'special', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '--', unicode: '\uA8FB', category: 'special', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '..sid', unicode: '\uA8FC', category: 'special', isScholarly: true, subCategory: 'Vedic' },
+  { itrans: '..jom', unicode: '\uA8FD', category: 'special', isScholarly: true, subCategory: 'Jain' },
+  { itrans: '^ay', unicode: '\uA8FE', category: 'vowel', isScholarly: true, subCategory: 'Regional' },
+  { itrans: '^ay=', unicode: '\uA8FF', category: 'mark', isScholarly: true, subCategory: 'Regional' },];
 
 export const TAMIL_MAPPINGS: VedicMapping[] = [
   // Vowels
@@ -520,7 +585,7 @@ export const getAlternateAcceptedInputs = (
   inputScheme: InputScheme = 'canonical-vedic'
 ) => getAcceptedInputs(displayItrans, inputScheme).filter((input) => input !== displayItrans);
 
-export const getPreferredDisplayItrans = (itrans: string, mappings: VedicMapping[]) =>
+export const getPreferredDisplayItrans = (itrans: string, mappings: VedicMapping[] = []) =>
   mappings.find((mapping) => mapping.itrans === itrans)?.canonicalItrans ?? itrans;
 
 export const getDisplayMapping = (itrans: string, outputScript: OutputScript) => {
@@ -566,21 +631,31 @@ export const canonicalizeAcceptedInputToken = (
 
   return canonical;
 };
-
 export const DEPENDENT_VOWELS: Record<string, string> = {
-  '\u0906': '\u093E',
-  '\u0907': '\u093F',
+  '\u0905': '',
+  '\u0906': '\u093e',
+  '\u0907': '\u093f',
   '\u0908': '\u0940',
   '\u0909': '\u0941',
-  '\u090A': '\u0942',
-  '\u090B': '\u0943',
+  '\u090a': '\u0942',
+  '\u090b': '\u0943',
   '\u0960': '\u0944',
-  '\u090C': '\u0962',
+  '\u090c': '\u0962',
   '\u0961': '\u0963',
-  '\u090E': '\u0946',
+  '\u090e': '\u0946',
   '\u090f': '\u0947',
   '\u0910': '\u0948',
-  '\u0912': '\u094A',
-  '\u0913': '\u094B',
-  '\u0914': '\u094C',
+  '\u0912': '\u094a',
+  '\u0913': '\u094b',
+  '\u0914': '\u094c',
+  '\u0904': '\u093a',
+  '\u090d': '\u0945',
+  '\u0911': '\u0949',
+  '\u0972': '\u0945',
+  '\u0973': '\u093a',
+  '\u0974': '\u093b',
+  '\u0975': '\u094f',
+  '\u0976': '\u0956',
+  '\u0977': '\u0957',
+  '\ua8fe': '\ua8ff',
 };
