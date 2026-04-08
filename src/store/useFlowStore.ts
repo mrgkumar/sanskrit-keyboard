@@ -98,6 +98,23 @@ const splitIntoBlockSources = (source: string): string[] =>
     .map((part) => part.trim())
     .filter((part) => part.length > 0);
 
+export const getSessionStorageKey = (sessionId: string) => `sanskrit-keyboard.session.v2.${sessionId}`;
+
+export const readStoredSessionSnapshot = (sessionId: string): SessionSnapshot | null => {
+  if (typeof window === 'undefined') return null;
+  const raw = window.localStorage.getItem(getSessionStorageKey(sessionId));
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as SessionSnapshot;
+  } catch (e) {
+    console.error(`Failed to parse session ${sessionId}:`, e);
+    return null;
+  }
+};
+
 const createBlockFromSource = (
   source: string,
   title: string,
@@ -231,8 +248,6 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
 };
 
 const SESSION_INDEX_KEY = 'sanskrit-keyboard.session-index.v2';
-const SESSION_SNAPSHOT_PREFIX = 'sanskrit-keyboard.session.v2.';
-const getSessionStorageKey = (sessionId: string) => `${SESSION_SNAPSHOT_PREFIX}${sessionId}`;
 
 const sortSessionList = (sessions: SessionListItem[]) =>
   [...sessions].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());

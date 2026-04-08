@@ -5,7 +5,11 @@ import { StickyTopComposer } from '@/components/StickyTopComposer';
 import { MainDocumentArea } from '@/components/MainDocumentArea';
 import { ReferenceSidePanel } from '@/components/ReferenceSidePanel'; // Import the side panel
 import { ScriptText } from '@/components/ScriptText';
-import { useFlowStore } from '@/store/useFlowStore';
+import { 
+  useFlowStore, 
+  readStoredSessionSnapshot, 
+  getSessionStorageKey 
+} from '@/store/useFlowStore';
 import { BookText, Copy, Check, Edit2, Eye, Menu, RefreshCw, Save, Search, SlidersHorizontal, Trash2, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { SessionSnapshot, SanskritFontPreset, TamilFontPreset, TypographySettings, SessionListItem } from '@/store/types';
@@ -26,21 +30,6 @@ interface PersistedLexicalLearningSnapshot {
   userLexicalUsage: Record<string, number>;
   userExactFormUsage: Record<string, Record<string, number>>;
 }
-
-const getSessionStorageKey = (sessionId: string) => `sanskrit-keyboard.session.v2.${sessionId}`;
-
-const readStoredSessionSnapshot = (sessionId: string) => {
-  const raw = window.localStorage.getItem(getSessionStorageKey(sessionId));
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(raw) as SessionSnapshot;
-  } catch {
-    return null;
-  }
-};
 
 const migrateLegacySessionsIfNeeded = () => {
   if (window.localStorage.getItem('sanskrit-keyboard.session-index.v2')) {
@@ -120,7 +109,7 @@ export const TransliterationEngine: React.FC = () => {
   const [isWorkspacePanelOpen, setIsWorkspacePanelOpen] = React.useState(false);
   const [editingSessionId, setEditingSessionId] = React.useState<string | null>(null);
   const [editingName, setEditingName] = React.useState('');
-  const hasLoadedSessions = React.useRef(false);
+  const hasLoadedSessions = React.useRef(true); // Disable auto-load here
   const hasLoadedLexicalLearning = React.useRef(false);
   const {
     composerLayout,
