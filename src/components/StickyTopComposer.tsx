@@ -45,6 +45,7 @@ export const StickyTopComposer: React.FC = () => {
   const previewRef = React.useRef<HTMLDivElement>(null);
   const comparePreviewRef = React.useRef<HTMLDivElement>(null);
   const itransPanelRef = React.useRef<HTMLDivElement>(null);
+  const mirrorCaretRef = React.useRef<HTMLSpanElement>(null);
   const isPointerSelectingRef = React.useRef(false);
 
   const [showShiftEnterHint, setShowShiftEnterHint] = React.useState(false);
@@ -326,6 +327,7 @@ export const StickyTopComposer: React.FC = () => {
         fragments.push(
           <span
             key={`itrans-caret-${start}`}
+            ref={mirrorCaretRef}
             aria-hidden="true"
             className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-slate-900 align-middle motion-safe:animate-caret"
             data-testid="itrans-mirror-caret"
@@ -366,6 +368,7 @@ export const StickyTopComposer: React.FC = () => {
       fragments.push(
         <span
           key="itrans-caret-end"
+          ref={mirrorCaretRef}
           aria-hidden="true"
           className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-slate-900 align-middle motion-safe:animate-caret"
           data-testid="itrans-mirror-caret"
@@ -516,7 +519,16 @@ export const StickyTopComposer: React.FC = () => {
       }
     }
 
-    if (!e.altKey && !e.ctrlKey && !e.metaKey && hasLexicalSuggestions && isPredictionListbox) {
+    if (!e.altKey && !e.ctrlKey && !e.metaKey && hasLexicalSuggestions && isPredictionListbox && isPredictionPopupVisible) {
+      if (/^[1-7]$/.test(e.key)) {
+        const index = parseInt(e.key, 10) - 1;
+        if (index < lexicalSuggestions.length) {
+          e.preventDefault();
+          acceptLexicalSuggestion(index);
+          return;
+        }
+      }
+
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
         const direction = e.key === 'ArrowDown' ? 1 : -1;
@@ -912,11 +924,41 @@ export const StickyTopComposer: React.FC = () => {
       }
 
       const paneRect = sourcePaneRef.current.getBoundingClientRect();
-      setPredictionPopupPortalStyle({
-        left: paneRect.left + 10,
-        top: paneRect.bottom + 6,
-        width: Math.min(512, Math.max(300, paneRect.width - 20)),
-      });
+      const popupWidth = Math.min(512, Math.max(300, paneRect.width - 20));
+      
+      // Attempt to position near caret if possible
+      if (mirrorCaretRef.current) {
+        const caretRect = mirrorCaretRef.current.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        let left = caretRect.left;
+        let top = caretRect.bottom + 8;
+
+        // Horizontal overflow check
+        if (left + popupWidth > viewportWidth - 16) {
+          left = Math.max(16, viewportWidth - popupWidth - 16);
+        }
+
+        // Vertical overflow check (if too close to bottom, show above caret)
+        const estimatedPopupHeight = 220; // WordPredictionTray approx height
+        if (top + estimatedPopupHeight > viewportHeight - 16) {
+          top = Math.max(16, caretRect.top - estimatedPopupHeight - 8);
+        }
+
+        setPredictionPopupPortalStyle({
+          left,
+          top,
+          width: popupWidth,
+        });
+      } else {
+        // Fallback to pane-relative positioning if caret not found
+        setPredictionPopupPortalStyle({
+          left: paneRect.left + 10,
+          top: paneRect.bottom + 6,
+          width: popupWidth,
+        });
+      }
     };
 
     updatePopupPosition();

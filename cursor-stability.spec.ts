@@ -9,6 +9,21 @@ const setReadAs = async (page: Page, script: 'devanagari' | 'roman' | 'tamil') =
 
 test('Adversarial Cursor Stability Test', async ({ page }) => {
   await page.goto(APP_URL);
+  
+  // Bypass onboarding
+  await page.evaluate(() => {
+    localStorage.setItem('sanskirt-keyboard-visited', 'true');
+  });
+  await page.reload();
+
+  // Handle Session Landing if it appears
+  const newSessionBtn = page.getByRole('button', { name: /New Session/i });
+  if (await newSessionBtn.isVisible()) {
+    await newSessionBtn.click();
+  }
+
+  // Wait for engine to load
+  await page.waitForTimeout(2000);
 
   const input = page.getByTestId('sticky-itrans-input');
   await setReadAs(page, 'devanagari');

@@ -79,40 +79,42 @@ export const WordPredictionTray: React.FC<WordPredictionTrayProps> = ({
     <section
       data-testid={`word-predictions-${variant}`}
       className={clsx(
-        'border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-emerald-50/70',
+        'border border-slate-200 bg-white/95 backdrop-blur-md',
         isInline
-          ? 'rounded-lg border-dashed px-2 py-1.5 shadow-sm'
+          ? 'rounded-lg border-dashed px-2 py-1.5 shadow-sm bg-gradient-to-r from-blue-50 via-white to-blue-50/70'
           : isListbox
-            ? 'rounded-xl px-2.5 py-2 shadow-xl ring-1 ring-emerald-100'
+            ? 'rounded-xl shadow-2xl ring-1 ring-slate-200/50 overflow-hidden'
           : isSplit
-            ? 'rounded-xl px-3 py-2.5 shadow-sm'
-            : 'rounded-2xl px-3 py-2.5 shadow-sm',
+            ? 'rounded-xl px-3 py-2.5 shadow-sm bg-gradient-to-r from-blue-50 via-white to-blue-50/70'
+            : 'rounded-2xl px-3 py-2.5 shadow-sm bg-gradient-to-r from-blue-50 via-white to-blue-50/70',
         className
       )}
       style={style}
     >
-      <div className={clsx('flex items-center justify-between gap-2', (isInline || isListbox) && 'mb-1')}>
-        <div className="min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
-            Word Predictions{isLexicalSuggestionsLoading ? '…' : ''}
-          </p>
-          {!(isInline || isListbox) && (
-            <p className="mt-1 text-xs text-emerald-900/80">
-              Complete <span className="font-mono font-semibold">{activeBuffer}</span> with a full lexical form
-              {swaraPredictionEnabled ? ' or a learned swara-marked variant' : ''}.
+      {!(isListbox) && (
+        <div className={clsx('flex items-center justify-between gap-2', isInline && 'mb-1')}>
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+              Word Predictions{isLexicalSuggestionsLoading ? '…' : ''}
             </p>
-          )}
+            {!isInline && (
+              <p className="mt-1 text-xs text-slate-600">
+                Complete <span className="font-mono font-semibold">{activeBuffer}</span> with a full lexical form
+                {swaraPredictionEnabled ? ' or a learned swara-marked variant' : ''}.
+              </p>
+            )}
+          </div>
+          <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-slate-200 bg-white px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-slate-500">
+            <kbd className="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 font-mono text-[9px]">Tab</kbd>
+            Cycle
+            <kbd className="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 font-mono text-[9px]">Enter</kbd>
+            Accept
+          </div>
         </div>
-        <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-200 bg-white px-2 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-emerald-700">
-          <kbd className="rounded border border-emerald-200 bg-emerald-50 px-1 py-0.5 font-mono text-[9px]">Tab</kbd>
-          Cycle
-          <kbd className="rounded border border-emerald-200 bg-emerald-50 px-1 py-0.5 font-mono text-[9px]">Enter</kbd>
-          Accept
-        </div>
-      </div>
+      )}
 
-      {isLexicalSuggestionsLoading && (
-        <p className="mt-2 text-xs font-medium text-emerald-700/80">Loading word predictions for this prefix…</p>
+      {isLexicalSuggestionsLoading && !isListbox && (
+        <p className="mt-2 text-xs font-medium text-slate-500">Loading word predictions for this prefix…</p>
       )}
 
       <div
@@ -120,7 +122,7 @@ export const WordPredictionTray: React.FC<WordPredictionTrayProps> = ({
           isInline
             ? 'flex gap-2 overflow-x-auto pb-2'
             : isListbox
-              ? 'max-h-[15rem] min-h-[12.5rem] space-y-1 overflow-y-auto pr-1'
+              ? 'max-h-[15rem] overflow-y-auto'
             : isSplit
               ? 'mt-2 flex max-h-[8.5rem] flex-wrap gap-2 overflow-y-auto pr-1'
               : 'mt-2 flex flex-wrap gap-2 overflow-y-auto pr-1'
@@ -140,36 +142,57 @@ export const WordPredictionTray: React.FC<WordPredictionTrayProps> = ({
               data-testid={`lexical-suggestion-${variant}-${index}`}
               onClick={() => handleLexicalInsert(entry.itrans, index)}
               className={clsx(
-                'rounded-xl border px-3 py-2 text-left transition-all active:scale-[0.99]',
+                'text-left transition-all active:scale-[0.99]',
                 isInline
-                  ? 'min-w-[9.5rem] shrink-0'
+                  ? 'min-w-[9.5rem] shrink-0 rounded-xl border px-3 py-2'
                   : isListbox
-                    ? 'flex w-full items-center justify-between gap-3'
-                    : 'min-w-[8.5rem]',
+                    ? 'flex w-full items-center justify-between gap-3 px-3 py-2.5 border-b last:border-b-0 border-slate-50'
+                    : 'min-w-[8.5rem] rounded-xl border px-3 py-2',
                 index === lexicalSelectedSuggestionIndex
-                  ? 'border-emerald-400 bg-emerald-100 shadow-sm hover:bg-emerald-200'
-                  : 'border-emerald-200 bg-white hover:border-emerald-300 hover:bg-emerald-50'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : isListbox 
+                    ? 'bg-white hover:bg-blue-50 text-slate-900'
+                    : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50'
               )}
               aria-label={`Use word prediction ${entry.itrans}`}
               role={isListbox ? 'option' : undefined}
               aria-selected={isListbox ? index === lexicalSelectedSuggestionIndex : undefined}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className={clsx('truncate text-slate-900', isInline ? 'text-sm' : 'text-lg')}>
-                    <ScriptText
-                      script={primaryOutputScript}
-                      text={suggestionText}
-                      tamilFontPreset={displaySettings.tamilFontPreset}
-                      sanskritFontPreset={displaySettings.sanskritFontPreset}
-                    />
+              <div className="flex items-center justify-between gap-4 w-full">
+                <div className="flex items-baseline gap-3 min-w-0">
+                  {isListbox && (
+                    <span className={clsx(
+                      "text-[10px] font-black w-4 h-4 flex items-center justify-center rounded-md border",
+                      index === lexicalSelectedSuggestionIndex 
+                        ? "bg-blue-500 border-blue-400 text-white" 
+                        : "bg-slate-50 border-slate-200 text-slate-400"
+                    )}>
+                      {index + 1}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <div className={clsx('truncate', isInline ? 'text-sm font-medium' : 'text-base font-bold')}>
+                      <ScriptText
+                        script={primaryOutputScript}
+                        text={suggestionText}
+                        tamilFontPreset={displaySettings.tamilFontPreset}
+                        sanskritFontPreset={displaySettings.sanskritFontPreset}
+                      />
+                    </div>
                   </div>
-                  <kbd className="mt-1 inline-block max-w-full truncate text-[11px] font-mono font-bold tracking-tight text-emerald-800">
+                </div>
+                
+                <div className="flex items-center gap-3 shrink-0">
+                  <kbd className={clsx(
+                    "font-mono text-[10px] font-bold tracking-tight",
+                    index === lexicalSelectedSuggestionIndex ? "text-blue-100" : "text-slate-500"
+                  )}>
                     {entry.itrans}
                   </kbd>
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">
+                  <span className={clsx(
+                    "rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em]",
+                    index === lexicalSelectedSuggestionIndex ? "bg-blue-500 text-white" : "bg-slate-100 text-slate-600"
+                  )}>
                     {entry.count}
                   </span>
                 </div>

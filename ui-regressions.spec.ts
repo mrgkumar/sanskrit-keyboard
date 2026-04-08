@@ -17,13 +17,21 @@ const loadDefaultSession = async (page: Page) => {
     Object.keys(window.localStorage)
       .filter((key) => key.startsWith('sanskrit-keyboard.session.v2.'))
       .forEach((key) => window.localStorage.removeItem(key));
+    
+    // Bypass onboarding
+    window.localStorage.setItem('sanskirt-keyboard-visited', 'true');
   }, STORAGE_KEYS_TO_CLEAR);
   await page.goto(APP_URL);
-  await expect(page.getByTestId('sticky-itrans-input')).toBeVisible();
+
+  // Handle Session Landing if it appears
+  const newSessionBtn = page.getByRole('button', { name: /New Session/i });
+  if (await newSessionBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+    await newSessionBtn.click();
+  }
+
+  await expect(page.getByTestId('sticky-itrans-input')).toBeVisible({ timeout: 15000 });
   page.on('dialog', (dialog) => dialog.accept());
-  await page.getByRole('button', { name: 'Workspace' }).click();
-  await page.getByRole('button', { name: 'New' }).click();
-  await expect(page.getByTestId('sticky-itrans-input')).toHaveValue('');
+  // Removed old workspace navigation that was meant for an older UI version
 };
 
 const setReadAs = async (page: Page, script: 'devanagari' | 'roman' | 'tamil') => {
@@ -582,6 +590,24 @@ test('prediction layout options render the suggestion tray in different position
   await page.getByRole('button', { name: 'Listbox' }).click();
   await expect(page.getByTestId('word-predictions-listbox')).toBeVisible({ timeout: 10000 });
   await expect(page.getByTestId('word-predictions-footer')).toHaveCount(0);
+});
+
+test('listbox prediction mode supports number key shortcuts (1-7)', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  await openDisplaySettings(page);
+  await page.getByRole('button', { name: 'Listbox' }).click();
+
+  const textarea = page.getByTestId('sticky-itrans-input');
+  await textarea.fill('ga');
+  await expect(page.getByTestId('word-predictions-listbox')).toBeVisible({ timeout: 10000 });
+
+  await textarea.press('1');
+
+  const value = await textarea.inputValue();
+  expect(value.length).toBeGreaterThan(2);
+  expect(value.startsWith('ga')).toBeTruthy();
+  await expect(page.getByTestId('word-predictions-listbox')).toHaveCount(0);
 });
 
 test('listbox prediction mode supports arrow navigation and enter accept', async ({ page }) => {
