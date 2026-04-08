@@ -30,7 +30,7 @@ import {
   OUTPUT_SCHEME_LABELS,
   OUTPUT_SCHEME_UI_METADATA,
   getPreferredDisplayItrans,
-  MAPPING_TRIE,
+  getMappingTrie,
 } from './src/lib/vedic/mapping';
 import {
   canonicalizeCommittedEditorSource,
@@ -1555,7 +1555,7 @@ test('Forward mapping preserves every direct mapping entry', () => {
   const failures: string[] = [];
   const seen = new Set<string>();
 
-  for (const mapping of MAPPING_TRIE) {
+  for (const mapping of getMappingTrie()) {
     if (seen.has(mapping.itrans)) {
       continue;
     }

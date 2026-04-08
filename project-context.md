@@ -11,7 +11,6 @@ Sanskrit Keyboard is a transliteration workspace for scholarly Sanskrit and Vedi
 - edit chunk-by-chunk for longer passages
 - keep a reference drawer available for mappings and shortcuts
 - copy source or rendered output in several formats
-- perform normalization and cleanup of OCR/digitized text
 
 The app is not a generic editor. It is a transliteration-focused tool with a strong read/edit split and session persistence.
 
@@ -30,10 +29,6 @@ The app is not a generic editor. It is a transliteration-focused tool with a str
 ### Primary route
 
 `app/src/app/page.tsx` renders `TransliterationEngine`, which composes the main workspace.
-
-### OCR Normalization
-
-`app/src/app/ocr-fix/page.tsx` provides a specialized "Normalization & Cleanup" workspace for correcting digitized Sanskrit texts.
 
 ### Other routes
 
@@ -185,12 +180,10 @@ Word predictions are driven by the `runtimeLexicon` and appear in the composer. 
 - insertion into the current composer chunk
 - ZWNJ / ZWJ reference shortcuts
 
-### Audit and Correction
+### Audit and Inspection
 
 Specialized components for text integrity:
 - `UnicodeInspector`: Deep inspection of character codes
-- `SourceViewer`: Side-by-side comparison for normalization
-- `JumpToolbar`: Navigation through detected ambiguities in OCR cleanup
 
 ## 10. Session And Persistence
 
@@ -224,7 +217,6 @@ The most important files for agent work are:
 - `app/src/components/engine/ShortcutHUD.tsx`
 - `app/src/components/ScriptText.tsx`
 - `app/src/components/audit/UnicodeInspector.tsx`
-- `app/src/components/correction/SourceViewer.tsx`
 - `app/src/lib/vedic/mapping.ts`
 - `app/src/lib/vedic/utils.ts`
 - `app/src/store/useFlowStore.ts`

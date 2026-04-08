@@ -1263,9 +1263,15 @@ addReverse('\u0952\uF156\u0902\u0952', '_M~M_', 'special', { force: true });
 addReverse('\u0952\uA8F3\u0952', '_MM~_', 'special', { force: true });
 
 // Convert Map to sorted array for greedy matching
-const REVERSE_MAPPING_TRIE: ReverseMappingEntry[] = Array.from(REVERSE_TRIE_MAP.entries())
-  .map(([unicode, { itrans, category }]) => ({ unicode, itrans, category }))
-  .sort((a, b) => b.unicode.length - a.unicode.length);
+let _REVERSE_MAPPING_TRIE: ReverseMappingEntry[] | null = null;
+const getReverseMappingTrie = () => {
+  if (!_REVERSE_MAPPING_TRIE) {
+    _REVERSE_MAPPING_TRIE = Array.from(REVERSE_TRIE_MAP.entries())
+      .map(([unicode, { itrans, category }]) => ({ unicode, itrans, category }))
+      .sort((a, b) => b.unicode.length - a.unicode.length);
+  }
+  return _REVERSE_MAPPING_TRIE;
+};
 
 const DEPENDENT_VOWEL_SET = new Set(Object.values(DEPENDENT_VOWELS));
 const INDEPENDENT_VOWEL_UNICODE_SET = new Set(
@@ -1306,12 +1312,13 @@ export const detransliterate = (
   let i = 0;
   const unicodeChars = Array.from(unicode); // Handle surrogate pairs correctly
   let lastExplicitConsonantToken: string | null = null;
+  const reverseTrie = getReverseMappingTrie();
 
   while (i < unicodeChars.length) {
     let match: ReverseMappingEntry | null = null;
     
     // Try to match longest Unicode sequence first
-    for (const entry of REVERSE_MAPPING_TRIE) {
+    for (const entry of reverseTrie) {
       const entryChars = Array.from(entry.unicode);
       if (i + entryChars.length <= unicodeChars.length) {
         const sub = unicodeChars.slice(i, i + entryChars.length).join('');
@@ -1332,7 +1339,7 @@ export const detransliterate = (
         
         if (nextIdx < unicodeChars.length) {
           // Look ahead for virama or matra
-          for (const entry of REVERSE_MAPPING_TRIE) {
+          for (const entry of reverseTrie) {
             if (entry.unicode === '\u094D' || (entry.category === 'mark' && Object.values(DEPENDENT_VOWELS).includes(entry.unicode))) {
                const entryChars = Array.from(entry.unicode);
                const sub = unicodeChars.slice(nextIdx, nextIdx + entryChars.length).join('');

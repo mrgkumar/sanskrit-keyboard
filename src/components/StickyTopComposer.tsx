@@ -17,14 +17,10 @@ import {
   transliterate,
 } from '@/lib/vedic/utils';
 import {
-  getDisplayMappingsForScheme,
-  getAcceptedInputs,
   getOutputTargetQuickLabels,
   OUTPUT_TARGET_CONTROL_LABELS,
   OUTPUT_TARGET_VALUE_LABELS,
-  VedicMapping, // Added VedicMapping import
 } from '@/lib/vedic/mapping';
-import { applyShortcutPeekCorrection } from '@/lib/vedic/correction';
 import type { ChunkEditTarget } from '@/store/types';
 
 export const StickyTopComposer: React.FC = () => {
@@ -34,7 +30,6 @@ export const StickyTopComposer: React.FC = () => {
     activeBuffer, // Get activeBuffer for Backspace logic
     lexicalSuggestions,
     lexicalSelectedSuggestionIndex,
-    deletedBuffer,
     isReferencePanelOpen, // To check if panel is open
     composerSelectionStart,
     composerSelectionEnd,
@@ -80,7 +75,6 @@ export const StickyTopComposer: React.FC = () => {
     itransWhole: 'idle',
     tamilWhole: 'idle',
   });
-  const [isShortcutPeekVisible, setIsShortcutPeekVisible] = React.useState(false);
   const [deleteToastProgress, setDeleteToastProgress] = React.useState(1);
   const [isPredictionPopupVisible, setIsPredictionPopupVisible] = React.useState(false);
   const [isPredictionPopupSuppressed, setIsPredictionPopupSuppressed] = React.useState(false);
@@ -185,40 +179,6 @@ export const StickyTopComposer: React.FC = () => {
         source: activeChunkGroup.source,
       }
     : undefined;
-  const resolvePeekMappings = (query: string) =>
-    getDisplayMappingsForScheme(primaryOutputScript) // Use getDisplayMappingsForScheme
-      .filter((mapping) =>
-        mapping.itrans.toLowerCase().startsWith(query.toLowerCase()) ||
-        getAcceptedInputs(mapping.itrans, inputScheme).some((input) => input.toLowerCase().startsWith(query.toLowerCase())) ||
-        (mapping.name || '').toLowerCase().includes(query.toLowerCase())
-      )
-      .slice(0, 6);
-
-  let shortcutPeekState: { query: string; mappings: VedicMapping[] } = {
-    query: deletedBuffer || activeBuffer,
-    mappings: [],
-  };
-
-  if (deletedBuffer) {
-    const deletedMatches = resolvePeekMappings(deletedBuffer);
-    if (deletedMatches.length > 0) {
-      shortcutPeekState = { query: deletedBuffer, mappings: deletedMatches };
-    }
-  }
-
-  if (shortcutPeekState.mappings.length === 0) {
-    for (let index = 0; index < activeBuffer.length; index++) {
-      const suffix = activeBuffer.slice(index);
-      const suffixMatches = resolvePeekMappings(suffix);
-      if (suffixMatches.length > 0) {
-        shortcutPeekState = { query: suffix, mappings: suffixMatches };
-        break;
-      }
-    }
-  }
-
-  const shortcutPeekQuery = shortcutPeekState.query;
-  const shortcutPeekMappings = shortcutPeekState.mappings;
   const hasLexicalSuggestions = lexicalSuggestions.length > 0 && activeBuffer.length > 1;
   const composerCompareLayout = isComposerCompareMode ? 'stacked' : 'single';
   const primaryPreviewLabel =
@@ -466,7 +426,6 @@ export const StickyTopComposer: React.FC = () => {
     setLexicalSelectedSuggestionIndex(0);
     recordSessionLexicalUse(suggestion.itrans);
     setDeletedBuffer(null);
-    setIsShortcutPeekVisible(false);
     if (isPredictionListbox) {
       setIsPredictionPopupVisible(false);
       setIsPredictionPopupSuppressed(true);
@@ -626,13 +585,6 @@ export const StickyTopComposer: React.FC = () => {
     }
 
     if (e.key === 'Escape') {
-      if (isShortcutPeekVisible) {
-        e.preventDefault();
-        setIsShortcutPeekVisible(false);
-        setDeletedBuffer(null);
-        return;
-      }
-
       if (isReferencePanelOpen) {
         e.preventDefault();
         toggleReferencePanel();
@@ -665,7 +617,6 @@ export const StickyTopComposer: React.FC = () => {
 
       if (charToDelete) {
         setDeletedBuffer(charToDelete);
-        setIsShortcutPeekVisible(true);
       }
     } else if (e.key === 'Delete') {
       if (composerSelectionStart === currentChunkSource.length && composerSelectionEnd === currentChunkSource.length && activeBlock) {
@@ -674,10 +625,8 @@ export const StickyTopComposer: React.FC = () => {
         return;
       }
       setDeletedBuffer(null);
-      setIsShortcutPeekVisible(false);
     } else {
       setDeletedBuffer(null);
-      setIsShortcutPeekVisible(false);
     }
   };
 
@@ -1107,25 +1056,6 @@ export const StickyTopComposer: React.FC = () => {
 
     deleteBlock(activeBlock.id);
     setDeletedBuffer(null);
-    setIsShortcutPeekVisible(false);
-  };
-
-  const handlePeekInsert = (itrans: string) => {
-    const { nextSource, nextCaret } = applyShortcutPeekCorrection({
-      currentSource: currentChunkSource,
-      selectionStart: composerSelectionStart,
-      selectionEnd: composerSelectionEnd,
-      replacement: itrans,
-      deletedBuffer,
-      shortcutPeekQuery,
-    });
-    updateChunkSource(nextSource, nextCaret, nextCaret, currentEditTarget);
-    setIsShortcutPeekVisible(false);
-    setDeletedBuffer(null);
-    requestAnimationFrame(() => {
-      composerRef.current?.focus();
-      composerRef.current?.setSelectionRange(nextCaret, nextCaret);
-    });
   };
 
   const renderTamilSurface = () => {
@@ -1773,40 +1703,6 @@ export const StickyTopComposer: React.FC = () => {
                 <Undo2 className="h-4 w-4" />
                 Undo
               </button>
-            </div>
-          )}
-
-          {isShortcutPeekVisible && shortcutPeekMappings.length > 0 && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-2">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Correction Help</p>
-                  <p className="mt-1 text-xs text-amber-800">
-                    Backspace opened a compact shortcut peek for <span className="font-mono font-semibold">{shortcutPeekQuery}</span>.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsShortcutPeekVisible(false)}
-                  className="text-xs font-bold uppercase text-amber-700 hover:text-amber-900"
-                >
-                  Dismiss
-                </button>
-              </div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {shortcutPeekMappings.map((mapping) => (
-                  <button
-                    key={`${mapping.itrans}-${mapping.unicode}`}
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => handlePeekInsert(mapping.itrans)}
-                    className="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-left hover:border-amber-300 hover:bg-amber-100"
-                  >
-                    <span className="text-lg font-serif text-slate-900">{mapping.unicode}</span>
-                    <kbd className="text-[10px] font-mono font-bold text-amber-700">{mapping.itrans}</kbd>
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 

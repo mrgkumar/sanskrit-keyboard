@@ -45,19 +45,11 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
             </div>
-            
-            <div className="lg:col-span-1 space-y-8">
-              
 
-              <div className="p-6 bg-slate-900 rounded-3xl text-white shadow-xl flex flex-col gap-4">
-                <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400">Normalization</h3>
-                <p className="text-xs text-slate-400 leading-relaxed font-medium">Clean up AI/OCR errors and add missing swaras using the dual-pane workspace.</p>
-                <Link href="/ocr-fix" className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-center transition-colors active:scale-95">
-                  Launch OCR Cleanup
-                </Link>
-              </div>
+            <div className="lg:col-span-1 space-y-8">
             </div>
           </div>
+
         </div>
       </main>
 

@@ -529,18 +529,17 @@ export const TAMIL_MAPPINGS: VedicMapping[] = [
   { itrans: '9', unicode: '\u0BEF', category: 'number' },
 ];
 
-export const MAPPING_TRIE_TAMIL = sortMappingTrie(TAMIL_MAPPINGS);
+let _MAPPING_TRIE_TAMIL: VedicMapping[] | null = null;
+export const getMappingTrieTamil = () => {
+  if (!_MAPPING_TRIE_TAMIL) {
+    _MAPPING_TRIE_TAMIL = sortMappingTrie(TAMIL_MAPPINGS);
+  }
+  return _MAPPING_TRIE_TAMIL;
+};
 
 const BARAHA_CONFLICT_MAPPINGS: VedicMapping[] = [
   { itrans: 'c', unicode: '\u091A\u094D', canonicalItrans: 'ch', isAlias: true, category: 'consonant' },
 ];
-
-export const MAPPING_TRIE = sortMappingTrie(VEDIC_MAPPINGS);
-const BARAHA_COMPATIBLE_MAPPING_TRIE = sortMappingTrie([
-  ...VEDIC_MAPPINGS,
-  ...BARAHA_CONFLICT_MAPPINGS,
-]);
-
 
 export const getDisplayMappingsForScheme = (outputScript: OutputScript) => {
   if (outputScript === 'tamil') {
@@ -549,10 +548,29 @@ export const getDisplayMappingsForScheme = (outputScript: OutputScript) => {
   return VEDIC_MAPPINGS;
 };
 
+let _MAPPING_TRIE: VedicMapping[] | null = null;
+export const getMappingTrie = () => {
+  if (!_MAPPING_TRIE) {
+    _MAPPING_TRIE = sortMappingTrie(VEDIC_MAPPINGS);
+  }
+  return _MAPPING_TRIE;
+};
+
+let _BARAHA_COMPATIBLE_MAPPING_TRIE: VedicMapping[] | null = null;
+export const getBarahaMappingTrie = () => {
+  if (!_BARAHA_COMPATIBLE_MAPPING_TRIE) {
+    _BARAHA_COMPATIBLE_MAPPING_TRIE = sortMappingTrie([
+      ...VEDIC_MAPPINGS,
+      ...BARAHA_CONFLICT_MAPPINGS,
+    ]);
+  }
+  return _BARAHA_COMPATIBLE_MAPPING_TRIE;
+};
+
 export const getInputMappings = (inputScheme: InputScheme = 'canonical-vedic') =>
   inputScheme === 'baraha-compatible'
-    ? BARAHA_COMPATIBLE_MAPPING_TRIE
-    : MAPPING_TRIE;
+    ? getBarahaMappingTrie()
+    : getMappingTrie();
 
 const buildAcceptedInputsMap = (mappings: VedicMapping[]) => {
   const acceptedInputsByDisplayItrans = new Map<string, string[]>();

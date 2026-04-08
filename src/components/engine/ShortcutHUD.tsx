@@ -1,6 +1,6 @@
 import React from 'react';
 import { useFlowStore } from '@/store/useFlowStore';
-import { getDisplayMappingsForScheme, MAPPING_TRIE } from '@/lib/vedic/mapping';
+import { getDisplayMappingsForScheme, getMappingTrie } from '@/lib/vedic/mapping';
 import { clsx } from 'clsx';
 import type { ChunkEditTarget } from '@/store/types';
 import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
@@ -101,7 +101,7 @@ export const ShortcutHUD: React.FC = () => {
   // Find the longest valid ITRANS code that is a suffix of activeBuffer
   for (let len = activeBuffer.length; len > 0; len--) {
     const suffix = activeBuffer.slice(-len);
-    if (MAPPING_TRIE.some(m => m.itrans === suffix)) { // Check if it's a known ITRANS code
+    if (getMappingTrie().some(m => m.itrans === suffix)) { // Check if it's a known ITRANS code
       longestItransSuffix = suffix;
       break;
     }
