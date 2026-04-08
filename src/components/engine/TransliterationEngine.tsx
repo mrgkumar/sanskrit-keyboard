@@ -10,7 +10,24 @@ import {
   readStoredSessionSnapshot, 
   getSessionStorageKey 
 } from '@/store/useFlowStore';
-import { BookText, Copy, Check, Edit2, Eye, Menu, RefreshCw, Save, Search, SlidersHorizontal, Trash2, X } from 'lucide-react';
+import { 
+  BookText, 
+  Copy, 
+  Check, 
+  Edit2, 
+  Eye, 
+  Menu, 
+  RefreshCw, 
+  Save, 
+  Search, 
+  SlidersHorizontal, 
+  Trash2, 
+  X,
+  History,
+  Zap,
+  Info,
+  Download
+} from 'lucide-react';
 import { clsx } from 'clsx';
 import { SessionSnapshot, SanskritFontPreset, TamilFontPreset, TypographySettings, SessionListItem } from '@/store/types';
 import { formatSourceForScript } from '@/lib/vedic/utils';
@@ -105,12 +122,14 @@ export const TransliterationEngine: React.FC = () => {
     loadSessionSnapshot,
     resetSession,
   } = useFlowStore();
-  const [isDisplayMenuOpen, setIsDisplayMenuOpen] = React.useState(false);
+  
   const [isWorkspacePanelOpen, setIsWorkspacePanelOpen] = React.useState(false);
+  const [activeTab, setActiveTab] = React.useState<'sessions' | 'display' | 'intelligence' | 'info'>('sessions');
   const [editingSessionId, setEditingSessionId] = React.useState<string | null>(null);
   const [editingName, setEditingName] = React.useState('');
   const hasLoadedSessions = React.useRef(true); // Disable auto-load here
   const hasLoadedLexicalLearning = React.useRef(false);
+  
   const {
     composerLayout,
     predictionLayout,
@@ -127,6 +146,7 @@ export const TransliterationEngine: React.FC = () => {
     showItransInDocument,
     autoSwapVisargaSvarita,
   } = displaySettings;
+
   const sanskritFontOptions: Array<{ value: SanskritFontPreset; label: string; sample: string }> = [
     { value: 'chandas', label: 'Chandas', sample: 'नमस्ते रुद्राय' },
     { value: 'siddhanta', label: 'Siddhanta', sample: 'नमस्ते रुद्राय' },
@@ -137,6 +157,7 @@ export const TransliterationEngine: React.FC = () => {
     { value: 'noto-serif', label: 'Noto Serif Tamil', sample: 'நமஸ்தே ருத்³ராய' },
     { value: 'anek', label: 'Anek Tamil', sample: 'நமஸ்தே ருத்³ராய' },
   ];
+
   const adjustTypographyValue = (
     scope: 'composer' | 'document',
     key: string,
@@ -149,6 +170,7 @@ export const TransliterationEngine: React.FC = () => {
     const nextValue = Math.max(min, Math.min(max, currentValue + delta));
     setTypography(scope, { [key]: nextValue } as Partial<TypographySettings['composer']>);
   };
+
   const renderTypographyControl = (
     label: string,
     scope: 'composer' | 'document',
@@ -211,13 +233,13 @@ export const TransliterationEngine: React.FC = () => {
     const documentLH = (typography.document as any)[lhKey] as number;
 
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-        <div className="mb-3">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-4">
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-900 border-b border-blue-50 pb-2">{title}</p>
         </div>
 
         {fontOptions && setFontPreset && (
-          <div className="mb-4 space-y-2">
+          <div className="mb-6 space-y-2">
             <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Font Selection</p>
             <div className="flex flex-col gap-2">
               {fontOptions.map((option) => (
@@ -226,7 +248,7 @@ export const TransliterationEngine: React.FC = () => {
                   type="button"
                   onClick={() => setFontPreset(option.value)}
                   className={clsx(
-                    'group relative w-full rounded-lg border px-3 py-2 text-left transition-all overflow-hidden',
+                    'group relative w-full rounded-xl border px-3 py-3 text-left transition-all overflow-hidden',
                     fontPreset === option.value
                       ? 'border-blue-300 bg-blue-50/50 text-blue-950 shadow-sm'
                       : 'border-slate-100 bg-slate-50/30 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
@@ -245,7 +267,7 @@ export const TransliterationEngine: React.FC = () => {
                       text={option.sample} 
                       sanskritFontPreset={script === 'devanagari' ? (option.value as SanskritFontPreset) : undefined} 
                       tamilFontPreset={script === 'tamil' ? (option.value as TamilFontPreset) : undefined} 
-                      className="text-lg"
+                      className="text-lg font-medium"
                     />
                   </div>
                 </button>
@@ -257,7 +279,7 @@ export const TransliterationEngine: React.FC = () => {
         <div className="grid grid-cols-1 divide-y divide-slate-100/50">
           <div className="py-2.5">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-300">Composer</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-300">Composer Tuning</span>
               <div className="flex-1 h-px bg-slate-100/50" />
             </div>
             {renderTypographyControl('Size', 'composer', sizeKey, composerSize, {
@@ -274,7 +296,7 @@ export const TransliterationEngine: React.FC = () => {
           </div>
           <div className="py-2.5">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-300">Document</span>
+              <span className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-300">Document Tuning</span>
               <div className="flex-1 h-px bg-slate-100/50" />
             </div>
             {renderTypographyControl('Size', 'document', sizeKey, documentSize, {
@@ -293,6 +315,7 @@ export const TransliterationEngine: React.FC = () => {
       </div>
     );
   };
+
   const { viewMode } = editorState;
   const hasMeaningfulContent = React.useMemo(
     () => blocks.some((block) => block.source.trim().length > 0 || block.rendered.trim().length > 0),
@@ -354,11 +377,8 @@ export const TransliterationEngine: React.FC = () => {
   };
 
   React.useEffect(() => {
-    // If it's the static default (168 from our store constants),
-    // let's try to set a more dynamic default based on browser height (33%)
     if (typeof window !== 'undefined' && typography.composer.itransPanelHeight === 168) {
       const dynamicHeight = Math.round(window.innerHeight * 0.33);
-      // Ensure it stays within reasonable bounds [140, 500]
       const boundedHeight = Math.max(140, Math.min(500, dynamicHeight));
       
       setTypography('composer', {
@@ -509,7 +529,7 @@ export const TransliterationEngine: React.FC = () => {
           data-testid="workspace-toggle"
           type="button"
           onClick={() => setIsWorkspacePanelOpen((open) => !open)}
-          className="pointer-events-auto touch-manipulation inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-xs font-bold uppercase text-slate-700 shadow-sm backdrop-blur hover:bg-white"
+          className="pointer-events-auto touch-manipulation inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-xs font-bold uppercase text-slate-700 shadow-sm backdrop-blur hover:bg-white transition-all active:scale-95"
         >
           {isWorkspacePanelOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           Workspace
@@ -519,8 +539,8 @@ export const TransliterationEngine: React.FC = () => {
             type="button"
             onClick={() => setViewMode('document')}
             className={clsx(
-              'touch-manipulation inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
-              viewMode === 'document' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
+              'touch-manipulation inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition-all',
+              viewMode === 'document' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'hover:bg-slate-100'
             )}
             aria-label="Document mode"
             title="Document mode"
@@ -531,8 +551,8 @@ export const TransliterationEngine: React.FC = () => {
             type="button"
             onClick={() => setViewMode('read')}
             className={clsx(
-              'touch-manipulation inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
-              viewMode === 'read' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
+              'touch-manipulation inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition-all',
+              viewMode === 'read' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'hover:bg-slate-100'
             )}
             aria-label="Read mode"
             title="Read mode"
@@ -543,8 +563,8 @@ export const TransliterationEngine: React.FC = () => {
             type="button"
             onClick={() => setViewMode('immersive')}
             className={clsx(
-              'touch-manipulation inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600',
-              viewMode === 'immersive' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100'
+              'touch-manipulation inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition-all',
+              viewMode === 'immersive' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'hover:bg-slate-100'
             )}
             aria-label="Immersive mode"
             title="Immersive mode"
@@ -556,633 +576,606 @@ export const TransliterationEngine: React.FC = () => {
 
       <div
         className={clsx(
-          'fixed left-0 top-0 z-[75] flex h-full w-80 flex-col border-r border-slate-200 bg-white shadow-xl transition-transform duration-300 ease-in-out',
+          'fixed left-0 top-0 z-[75] flex h-full w-[32rem] max-w-[90vw] overflow-hidden border-r border-slate-200 bg-white shadow-2xl transition-transform duration-500 ease-in-out',
           isWorkspacePanelOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Workspace</p>
-            <p className="mt-1 text-sm text-slate-500">Session and document-level controls.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsWorkspacePanelOpen(false)}
-            className="rounded-md border border-slate-200 p-2 text-slate-500 hover:bg-slate-100"
+        {/* Sidebar Tabs */}
+        <aside className="w-16 bg-slate-900 flex flex-col items-center py-8 gap-6 border-r border-slate-800 shrink-0">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xl mb-4 shadow-lg shadow-blue-900/20">S</div>
+          
+          <button 
+            onClick={() => setActiveTab('sessions')}
+            className={clsx(
+              "p-3 rounded-xl transition-all duration-300",
+              activeTab === 'sessions' ? "bg-white/10 text-white shadow-inner" : "text-slate-500 hover:text-slate-300"
+            )}
+            title="Sessions"
           >
-            <X className="h-4 w-4" />
+            <History className="w-5 h-5" />
           </button>
-        </div>
 
-        <div 
-          data-testid="workspace-sidebar"
-          className="flex-1 space-y-5 overflow-y-auto px-5 py-5"
-        >
-          <section className="space-y-3">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Current Session</p>
-              <p className="mt-1 text-xs text-slate-500">Name your current workspace to find it later.</p>
-            </div>
-            <input
-              value={sessionName}
-              onChange={(e) => setSessionName(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-              placeholder="Active session name..."
-            />
-          </section>
+          <button 
+            onClick={() => setActiveTab('display')}
+            className={clsx(
+              "p-3 rounded-xl transition-all duration-300",
+              activeTab === 'display' ? "bg-white/10 text-white shadow-inner" : "text-slate-500 hover:text-slate-300"
+            )}
+            title="Display & Scripts"
+          >
+            <SlidersHorizontal className="w-5 h-5" />
+          </button>
 
-          <section className="space-y-3">
+          <button 
+            onClick={() => setActiveTab('intelligence')}
+            className={clsx(
+              "p-3 rounded-xl transition-all duration-300",
+              activeTab === 'intelligence' ? "bg-white/10 text-white shadow-inner" : "text-slate-500 hover:text-slate-300"
+            )}
+            title="Intelligence"
+          >
+            <Zap className="w-5 h-5" />
+          </button>
+
+          <div className="flex-1" />
+
+          <button 
+            onClick={() => setActiveTab('info')}
+            className={clsx(
+              "p-3 rounded-xl transition-all duration-300",
+              activeTab === 'info' ? "bg-white/10 text-white shadow-inner" : "text-slate-500 hover:text-slate-300"
+            )}
+            title="Resources & Info"
+          >
+            <Info className="w-5 h-5" />
+          </button>
+        </aside>
+
+        {/* Tab Content Area */}
+        <div className="flex-1 flex flex-col min-w-0 bg-white">
+          <header className="flex items-center justify-between px-8 py-6 border-b border-slate-100 shrink-0">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Saved Sessions</p>
-              <p className="mt-1 text-xs text-slate-500">Manage and switch between your workspace sessions.</p>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                {activeTab === 'sessions' && 'Workspaces'}
+                {activeTab === 'display' && 'Display & Scripts'}
+                {activeTab === 'intelligence' && 'Intelligence'}
+                {activeTab === 'info' && 'Resources'}
+              </h2>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">
+                {activeTab === 'sessions' && 'Manage your scholarly sessions'}
+                {activeTab === 'display' && 'Configure rendering and typography'}
+                {activeTab === 'intelligence' && 'Lexical learning and predictions'}
+                {activeTab === 'info' && 'Version and scholarly resources'}
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsWorkspacePanelOpen(false)}
+              className="w-10 h-10 rounded-full border border-slate-100 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+
+          <main className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar bg-slate-50/30">
             
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-              <input
-                value={sessionSearchQuery}
-                onChange={(e) => setSessionSearchQuery(e.target.value)}
-                className="w-full rounded-md border border-slate-300 bg-white pl-9 pr-3 py-2 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-                placeholder="Search sessions..."
-              />
-            </div>
+            {/* SESSIONS TAB */}
+            {activeTab === 'sessions' && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <section className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Session</p>
+                    <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Active</span>
+                  </div>
+                  <input
+                    value={sessionName}
+                    onChange={(e) => setSessionName(e.target.value)}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none shadow-sm"
+                    placeholder="Active session name..."
+                  />
+                </section>
 
-            <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50/50 p-1">
-              {savedSessions
-                .filter(s => s.sessionName.toLowerCase().includes(sessionSearchQuery.toLowerCase()))
-                .map((session) => (
-                <div 
-                  key={session.sessionId}
-                  className={clsx(
-                    "group flex flex-col gap-1 rounded-md border p-2 transition-all",
-                    sessionId === session.sessionId 
-                      ? "border-blue-200 bg-blue-50/50 ring-1 ring-blue-100" 
-                      : "border-transparent bg-white hover:border-slate-200 hover:shadow-sm"
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    {editingSessionId === session.sessionId ? (
-                      <input
-                        data-testid="session-rename-input"
-                        autoFocus
-                        value={editingName}
-                        onChange={(e) => setEditingName(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            renameSession(session.sessionId, editingName);
-                            setEditingSessionId(null);
-                          } else if (e.key === 'Escape') {
-                            setEditingSessionId(null);
-                          }
-                        }}
-                        onBlur={() => {
-                          renameSession(session.sessionId, editingName);
-                          setEditingSessionId(null);
-                        }}
-                        className="flex-1 rounded border border-blue-300 px-1 py-0.5 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                      />
-                    ) : (
-                      <div className="flex-1 min-w-0">
-                        <button
-                          onClick={() => {
-                            const snapshot = readStoredSessionSnapshot(session.sessionId);
-                            if (snapshot) loadSessionSnapshot(snapshot);
-                            setIsWorkspacePanelOpen(false);
-                          }}
-                          className="w-full text-left"
-                        >
-                          <p className="truncate text-sm font-bold text-slate-800 group-hover:text-blue-700">
-                            {session.sessionName}
-                          </p>
-                          <p className="text-[10px] text-slate-400">
-                            {new Date(session.updatedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-                          </p>
-                        </button>
+                <section className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Library</p>
+                  
+                  <div className="relative group">
+                    <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                    <input
+                      value={sessionSearchQuery}
+                      onChange={(e) => setSessionSearchQuery(e.target.value)}
+                      className="w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 py-3 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none shadow-sm"
+                      placeholder="Search saved work..."
+                    />
+                  </div>
+
+                  <div className="space-y-2 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+                    {savedSessions
+                      .filter(s => s.sessionName.toLowerCase().includes(sessionSearchQuery.toLowerCase()))
+                      .map((session) => (
+                      <div 
+                        key={session.sessionId}
+                        className={clsx(
+                          "group relative flex flex-col gap-1 rounded-2xl border p-4 transition-all duration-300",
+                          sessionId === session.sessionId 
+                            ? "border-blue-200 bg-blue-50/50 ring-1 ring-blue-100" 
+                            : "border-slate-100 bg-white hover:border-blue-200 hover:shadow-md"
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          {editingSessionId === session.sessionId ? (
+                            <form 
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                renameSession(session.sessionId, editingName);
+                                setEditingSessionId(null);
+                              }}
+                              className="flex-1"
+                            >
+                              <input
+                                autoFocus
+                                value={editingName}
+                                onChange={(e) => setEditingName(e.target.value)}
+                                onBlur={() => {
+                                  renameSession(session.sessionId, editingName);
+                                  setEditingSessionId(null);
+                                }}
+                                className="w-full rounded-lg border border-blue-300 px-2 py-1 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                              />
+                            </form>
+                          ) : (
+                            <div className="flex-1 min-w-0">
+                              <button
+                                onClick={() => {
+                                  const snapshot = readStoredSessionSnapshot(session.sessionId);
+                                  if (snapshot) loadSessionSnapshot(snapshot);
+                                  setIsWorkspacePanelOpen(false);
+                                }}
+                                className="w-full text-left"
+                              >
+                                <p className="truncate text-sm font-bold text-slate-800 group-hover:text-blue-700 transition-colors">
+                                  {session.sessionName}
+                                </p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">
+                                  {new Date(session.updatedAt).toLocaleDateString()} • {new Date(session.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </button>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <button
+                              onClick={() => {
+                                setEditingSessionId(session.sessionId);
+                                setEditingName(session.sessionName);
+                              }}
+                              className="rounded-lg p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                              title="Rename"
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (confirm(`Delete "${session.sessionName}" permanently?`)) {
+                                  deleteSession(session.sessionId);
+                                }
+                              }}
+                              className="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {savedSessions.length === 0 && (
+                      <div className="py-12 text-center space-y-2 bg-white rounded-3xl border border-slate-100">
+                        <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-200">
+                          <History className="w-6 h-6" />
+                        </div>
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">No Library Entries</p>
                       </div>
                     )}
-
-                    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                      <button
-                        onClick={() => {
-                          setEditingSessionId(session.sessionId);
-                          setEditingName(session.sessionName);
-                        }}
-                        className="rounded p-1 text-slate-400 hover:bg-blue-50 hover:text-blue-600"
-                        title="Rename session"
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`Are you sure you want to delete "${session.sessionName}"?`)) {
-                            deleteSession(session.sessionId);
-                          }
-                        }}
-                        className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
-                        title="Delete session"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
                   </div>
-                </div>
-              ))}
-              {savedSessions.length === 0 && (
-                <p className="py-4 text-center text-xs text-slate-400 italic">No saved sessions found.</p>
-              )}
-            </div>
+                </section>
 
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                onClick={handleSaveNow}
-                className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-200"
-                type="button"
-              >
-                <Save className="h-4 w-4" />
-                Save
-              </button>
-              <button
-                onClick={handleResetSession}
-                className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-100"
-                type="button"
-              >
-                <RefreshCw className="h-4 w-4" />
-                New
-              </button>
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Input Scheme</p>
-              <p className="mt-1 text-xs text-slate-500">Canonical Vedic remains the default. Baraha-compatible mode only enables deferred conflict aliases behind an explicit opt-in.</p>
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                type="button"
-                data-testid="input-scheme-canonical"
-                onClick={() => setInputScheme('canonical-vedic')}
-                className={clsx(
-                  'rounded-xl border px-3 py-3 text-left',
-                  inputScheme === 'canonical-vedic'
-                    ? 'border-blue-300 bg-blue-50 text-blue-900'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                )}
-              >
-                <span className="block text-xs font-bold uppercase">Canonical Vedic</span>
-                <span className="mt-1 block text-xs">Uses the current canonical conflict semantics and keeps `c` literal.</span>
-              </button>
-              <button
-                type="button"
-                data-testid="input-scheme-baraha"
-                onClick={() => setInputScheme('baraha-compatible')}
-                className={clsx(
-                  'rounded-xl border px-3 py-3 text-left',
-                  inputScheme === 'baraha-compatible'
-                    ? 'border-blue-300 bg-blue-50 text-blue-900'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                )}
-              >
-                <span className="block text-xs font-bold uppercase">Baraha Compatible</span>
-                <span className="mt-1 block text-xs">Enables conflict aliases intentionally. Current scoped addition: `c` is accepted as `ch` and canonicalizes on commit.</span>
-              </button>
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-                {OUTPUT_TARGET_CONTROL_LABELS.primaryScript}
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                Read As changes the main reading target and default source copy target. Stored source and canonical paste remain unchanged.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                type="button"
-                data-testid="workspace-primary-script-devanagari"
-                aria-pressed={primaryOutputScript === 'devanagari'}
-                onClick={() => setPrimaryOutputScript('devanagari')}
-                className={clsx(
-                  'rounded-xl border px-3 py-3 text-left',
-                  primaryOutputScript === 'devanagari'
-                    ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                )}
-              >
-                <span className="block text-xs font-bold uppercase">{OUTPUT_TARGET_VALUE_LABELS.devanagari}</span>
-                <span className="mt-1 block text-xs">Keep the primary reading surface in Devanagari while source copy targets Devanagari.</span>
-              </button>
-              <button
-                type="button"
-                data-testid="workspace-primary-script-tamil"
-                aria-pressed={primaryOutputScript === 'tamil'}
-                onClick={() => setPrimaryOutputScript('tamil')}
-                className={clsx(
-                  'rounded-xl border px-3 py-3 text-left',
-                  primaryOutputScript === 'tamil'
-                    ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                )}
-              >
-                <span className="block text-xs font-bold uppercase">{OUTPUT_TARGET_VALUE_LABELS.tamil}</span>
-                <span className="mt-1 block text-xs">Use the reversible Tamil precision reading mode for Sanskrit-in-Tamil verification.</span>
-              </button>
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-                {OUTPUT_TARGET_CONTROL_LABELS.compareWith}
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                Comparison stays off by default and never changes the current Read As target.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {(['off', 'roman', 'devanagari', 'tamil'] as const).map((script) => (
-                <button
-                  key={script}
-                  type="button"
-                  data-testid={`workspace-compare-script-${script}`}
-                  aria-pressed={comparisonOutputScript === script}
-                  onClick={() => setComparisonOutputScript(script)}
-                  className={clsx(
-                    'rounded-md border px-3 py-2 text-xs font-bold uppercase',
-                    comparisonOutputScript === script
-                      ? 'border-blue-300 bg-blue-50 text-blue-900'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                  )}
-                >
-                  {OUTPUT_TARGET_VALUE_LABELS[script]}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {(primaryOutputScript === 'roman' || comparisonOutputScript === 'roman') && (
-            <section className="space-y-3" data-testid="workspace-roman-style">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-                  {OUTPUT_TARGET_CONTROL_LABELS.romanStyle}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  Roman style applies anywhere Roman is active, whether it is primary or only used for comparison.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 gap-2">
-                <button
-                  type="button"
-                  data-testid="workspace-roman-style-canonical"
-                  aria-pressed={romanOutputStyle === 'canonical'}
-                  onClick={() => setRomanOutputStyle('canonical')}
-                  className={clsx(
-                    'rounded-xl border px-3 py-3 text-left',
-                    romanOutputStyle === 'canonical'
-                      ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                  )}
-                >
-                  <span className="block text-xs font-bold uppercase">{OUTPUT_TARGET_VALUE_LABELS.canonical}</span>
-                  <span className="mt-1 block text-xs">Use canonical Vedic Roman output for display and source copy.</span>
-                </button>
-                <button
-                  type="button"
-                  data-testid="workspace-roman-style-baraha"
-                  aria-pressed={romanOutputStyle === 'baraha'}
-                  onClick={() => setRomanOutputStyle('baraha')}
-                  className={clsx(
-                    'rounded-xl border px-3 py-3 text-left',
-                    romanOutputStyle === 'baraha'
-                      ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100'
-                  )}
-                >
-                  <span className="block text-xs font-bold uppercase">{OUTPUT_TARGET_VALUE_LABELS.baraha}</span>
-                  <span className="mt-1 block text-xs">Keep Baraha-compatible Roman aliases for source copy without changing stored canonical input.</span>
-                </button>
-              </div>
-            </section>
-          )}
-
-          {(primaryOutputScript === 'tamil' || comparisonOutputScript === 'tamil') && (
-            <section className="space-y-3" data-testid="workspace-tamil-mode">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-                  {OUTPUT_TARGET_CONTROL_LABELS.tamilMode}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  Phase 1 keeps Tamil in the reversible precision mode. Additional Tamil reading styles are intentionally out of scope.
-                </p>
-              </div>
-              <div
-                data-testid="workspace-tamil-mode-precision"
-                className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-left text-slate-700"
-              >
-                <span className="block text-xs font-bold uppercase text-amber-900">
-                  {OUTPUT_TARGET_VALUE_LABELS.precision}
-                </span>
-                <span className="mt-1 block text-xs">
-                  Tamil output stays in the scholarly precision notation so the Sanskrit contrasts remain reversible.
-                </span>
-              </div>
-            </section>
-          )}
-
-          <section className="space-y-3">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Autocomplete</p>
-              <p className="mt-1 text-xs text-slate-500">Word prediction can prefer learned swara-marked forms from corpus and personal history.</p>
-            </div>
-            <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
-              <input
-                checked={swaraPredictionEnabled}
-                data-testid="swara-prediction-toggle"
-                onChange={(e) => setSwaraPredictionEnabled(e.target.checked)}
-                type="checkbox"
-                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-              />
-              <span>
-                <span className="block text-xs font-bold uppercase text-slate-700">Show Learned Swara Forms</span>
-                <span className="mt-1 block text-xs text-slate-500">Enabled suggestions can surface accented Vedic forms like <span className="font-mono">bha_draM</span> instead of only plain lexical stems.</span>
-              </span>
-            </label>
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                data-testid="clear-session-learning"
-                onClick={handleClearSessionLearning}
-                className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-100"
-                type="button"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Clear Session Learning
-              </button>
-              <button
-                data-testid="purge-saved-learning"
-                onClick={handlePurgeSavedLearning}
-                className="inline-flex items-center justify-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold uppercase text-rose-700 hover:bg-rose-100"
-                type="button"
-              >
-                <X className="h-4 w-4" />
-                Purge Saved Learning
-              </button>
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Font Resources</p>
-              <p className="mt-1 text-xs text-slate-500">Download the scholarly fonts used in this application for offline use.</p>
-            </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <a
-                href="https://sanskritdocuments.org/hindi/chandas/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 hover:bg-slate-50"
-              >
-                <span className="text-xs font-bold text-slate-700">Chandas Devanagari</span>
-                <span className="text-[10px] font-black uppercase text-blue-600">Download</span>
-              </a>
-              <a
-                href="https://sanskritdocuments.org/projects/siddhanta/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 hover:bg-slate-50"
-              >
-                <span className="text-xs font-bold text-slate-700">Siddhanta</span>
-                <span className="text-[10px] font-black uppercase text-blue-600">Download</span>
-              </a>
-              <a
-                href="https://fonts.google.com/specimen/Anek+Tamil"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 hover:bg-slate-50"
-              >
-                <span className="text-xs font-bold text-slate-700">Anek Tamil</span>
-                <span className="text-[10px] font-black uppercase text-blue-600">Download</span>
-              </a>
-              <a
-                href="https://fonts.google.com/specimen/Noto+Serif+Tamil"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 hover:bg-slate-50"
-              >
-                <span className="text-xs font-bold text-slate-700">Noto Serif Tamil</span>
-                <span className="text-[10px] font-black uppercase text-blue-600">Download</span>
-              </a>
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Feedback & Issues</p>
-              <p className="mt-1 text-xs text-slate-500">Report technical bugs or suggest improvements via GitHub.</p>
-            </div>
-            <a
-              href="https://github.com/mrgkumar/sanskrit-keyboard/issues"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-3 text-xs font-bold uppercase text-blue-700 hover:bg-blue-100"
-            >
-              Report Issue on GitHub
-            </a>
-          </section>
-
-          <section className="space-y-3">
-            <button
-              data-testid="display-settings-toggle"
-              onClick={() => setIsDisplayMenuOpen((open) => !open)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold uppercase text-slate-700 hover:bg-slate-100"
-              type="button"
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              Display
-            </button>
-            {isDisplayMenuOpen && (
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <div className="space-y-6">
-                  <section className="space-y-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Whole Document Actions</p>
-                    <div className="grid grid-cols-1 gap-2">
-                      <button
-                        onClick={() => handleCopyWholeDocument('devanagari')}
-                        className={clsx(
-                          'flex items-center justify-between gap-3 rounded-xl border px-4 py-2.5 transition-all active:scale-[0.98]',
-                          copyStates.devanagari === 'copied'
-                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                            : copyStates.devanagari === 'error'
-                              ? 'border-rose-200 bg-rose-50 text-rose-700'
-                              : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50/30'
-                        )}
-                        type="button"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Copy className="h-3.5 w-3.5 opacity-60" />
-                          <span className="text-[11px] font-bold uppercase tracking-wider">Copy Devanagari</span>
-                        </div>
-                        {copyStates.devanagari === 'copied' && <Check className="h-3.5 w-3.5" />}
-                      </button>
-
-                      <button
-                        onClick={() => handleCopyWholeDocument('itrans')}
-                        className={clsx(
-                          'flex items-center justify-between gap-3 rounded-xl border px-4 py-2.5 transition-all active:scale-[0.98]',
-                          copyStates.itrans === 'copied'
-                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                            : copyStates.itrans === 'error'
-                              ? 'border-rose-200 bg-rose-50 text-rose-700'
-                              : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50/30'
-                        )}
-                        type="button"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Copy className="h-3.5 w-3.5 opacity-60" />
-                          <span className="text-[11px] font-bold uppercase tracking-wider">Copy ITRANS</span>
-                        </div>
-                        {copyStates.itrans === 'copied' && <Check className="h-3.5 w-3.5" />}
-                      </button>
-
-                      <button
-                        onClick={() => handleCopyWholeDocument('tamil')}
-                        className={clsx(
-                          'flex items-center justify-between gap-3 rounded-xl border px-4 py-2.5 transition-all active:scale-[0.98]',
-                          copyStates.tamil === 'copied'
-                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                            : copyStates.tamil === 'error'
-                              ? 'border-rose-200 bg-rose-50 text-rose-700'
-                              : 'border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50/30'
-                        )}
-                        type="button"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Copy className="h-3.5 w-3.5 opacity-60" />
-                          <span className="text-[11px] font-bold uppercase tracking-wider">Copy Tamil</span>
-                        </div>
-                        {copyStates.tamil === 'copied' && <Check className="h-3.5 w-3.5" />}
-                      </button>
-                    </div>
-                  </section>
-
-                  <section className="space-y-3">
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Workspace & Prediction</p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-3">
-                        <div className="rounded-xl border border-slate-200 bg-white p-3">
-                           <p className="mb-2 text-[10px] font-bold uppercase text-slate-400">Layout</p>
-                           <div className="flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setComposerLayout('side-by-side')}
-                                className={clsx(
-                                  'flex-1 rounded-md border px-2 py-1.5 text-[10px] font-bold uppercase',
-                                  composerLayout === 'side-by-side' ? 'border-blue-300 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-700'
-                                )}
-                              >
-                                Side by Side
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setComposerLayout('stacked')}
-                                className={clsx(
-                                  'flex-1 rounded-md border px-2 py-1.5 text-[10px] font-bold uppercase',
-                                  composerLayout === 'stacked' ? 'border-blue-300 bg-blue-600 text-white' : 'border-slate-200 bg-white text-slate-700'
-                                )}
-                              >
-                                Stacked
-                              </button>
-                           </div>
-                        </div>
-                        <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3">
-                          <input
-                            checked={syncComposerScroll}
-                            onChange={(e) => setSyncComposerScroll(e.target.checked)}
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <span className="text-[10px] font-bold uppercase text-slate-700">Sync Scroll</span>
-                        </label>
-                        <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3">
-                          <input
-                            checked={showItransInDocument}
-                            onChange={(e) => setShowItransInDocument(e.target.checked)}
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <span className="text-[10px] font-bold uppercase text-slate-700">Show ITRANS in Document</span>
-                        </label>
-                        <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3">
-                          <input
-                            checked={autoSwapVisargaSvarita}
-                            onChange={(e) => setAutoSwapVisargaSvarita(e.target.checked)}
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <span className="text-[10px] font-bold uppercase text-slate-700">Auto-Swap Markers</span>
-                        </label>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="rounded-xl border border-slate-200 bg-white p-3">
-                           <p className="mb-2 text-[10px] font-bold uppercase text-slate-400">Prediction</p>
-                           <div className="grid grid-cols-2 gap-2">
-                              {(['inline', 'split', 'footer', 'listbox'] as const).map(layout => (
-                                 <button
-                                   key={layout}
-                                   type="button"
-                                   onClick={() => setPredictionLayout(layout)}
-                                   className={clsx(
-                                     'rounded-md border px-1 py-1 text-[9px] font-bold uppercase',
-                                     predictionLayout === layout ? 'border-emerald-300 bg-emerald-600 text-white' : 'border-slate-200 bg-white text-slate-700'
-                                   )}
-                                 >
-                                   {layout}
-                                 </button>
-                              ))}
-                           </div>
-                        </div>
-                        <div className="rounded-xl border border-slate-200 bg-white p-3">
-                           <p className="mb-2 text-[10px] font-bold uppercase text-slate-400">Popup Timeout</p>
-                           <input
-                              className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
-                              type="range"
-                              min="3"
-                              max="20"
-                              step="1"
-                              value={Math.round(predictionPopupTimeoutMs / 1000)}
-                              onChange={(e) => setPredictionPopupTimeoutMs(Number(e.target.value) * 1000)}
-                            />
-                            <div className="mt-1 flex justify-between text-[9px] font-bold text-slate-400">
-                              <span>3s</span>
-                              <span>{Math.round(predictionPopupTimeoutMs / 1000)}s</span>
-                              <span>20s</span>
-                            </div>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-
-                  {renderScriptSettings('Sanskrit (Devanagari)', 'devanagari', sanskritFontPreset, sanskritFontOptions, setSanskritFontPreset)}
-                  {renderScriptSettings('Tamil', 'tamil', tamilFontPreset, tamilFontOptions, setTamilFontPreset)}
-                  {renderScriptSettings('ITRANS', 'itrans')}
-
-                  <div className="pt-2 mt-4 border-t border-slate-200/60">
-                    <div className="flex items-center justify-between px-1">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Build Version</span>
-                      <span className="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{BUILD_VERSION}</span>
-                    </div>
-                    <p className="mt-1 px-1 text-[8px] font-medium text-right text-slate-400 uppercase tracking-tighter">
-                      Released: {new Date(BUILD_TIME).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-                    </p>
-                  </div>
+                <div className="grid grid-cols-2 gap-4 pt-4">
+                  <button
+                    onClick={handleSaveNow}
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-4 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-[0.97]"
+                    type="button"
+                  >
+                    <Save className="h-4 w-4" />
+                    Save Now
+                  </button>
+                  <button
+                    onClick={handleResetSession}
+                    className="flex items-center justify-center gap-2 rounded-2xl border-2 border-slate-100 bg-white px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 hover:border-slate-200 transition-all active:scale-[0.97]"
+                    type="button"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    New Blank
+                  </button>
                 </div>
               </div>
             )}
-          </section>
+
+            {/* DISPLAY TAB */}
+            {activeTab === 'display' && (
+              <div className="space-y-10 pb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <section className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Input Scheme</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setInputScheme('canonical-vedic')}
+                      className={clsx(
+                        'rounded-2xl border-2 p-4 text-left transition-all duration-300',
+                        inputScheme === 'canonical-vedic'
+                          ? 'border-blue-500 bg-blue-50/50 text-blue-900 shadow-md ring-4 ring-blue-500/5'
+                          : 'border-slate-100 bg-white text-slate-600 hover:border-slate-300 shadow-sm'
+                      )}
+                    >
+                      <span className="block text-xs font-black uppercase tracking-wider">Canonical Vedic</span>
+                      <span className="mt-1 block text-[11px] leading-relaxed opacity-70">Strict scholarly transliteration. Default mode.</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInputScheme('baraha-compatible')}
+                      className={clsx(
+                        'rounded-2xl border-2 p-4 text-left transition-all duration-300',
+                        inputScheme === 'baraha-compatible'
+                          ? 'border-blue-500 bg-blue-50/50 text-blue-900 shadow-md ring-4 ring-blue-500/5'
+                          : 'border-slate-100 bg-white text-slate-600 hover:border-slate-300 shadow-sm'
+                      )}
+                    >
+                      <span className="block text-xs font-black uppercase tracking-wider">Baraha Compatible</span>
+                      <span className="mt-1 block text-[11px] leading-relaxed opacity-70">Enables legacy aliases (e.g., `c` for `ch`).</span>
+                    </button>
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Primary Script</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPrimaryOutputScript('devanagari')}
+                      className={clsx(
+                        'rounded-2xl border-2 px-4 py-4 text-center transition-all shadow-sm',
+                        primaryOutputScript === 'devanagari'
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-900 shadow-md'
+                          : 'border-slate-100 bg-white text-slate-600 hover:border-slate-300'
+                      )}
+                    >
+                      <span className="block text-xs font-black uppercase tracking-widest">Devanagari</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPrimaryOutputScript('tamil')}
+                      className={clsx(
+                        'rounded-2xl border-2 px-4 py-4 text-center transition-all shadow-sm',
+                        primaryOutputScript === 'tamil'
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-900 shadow-md'
+                          : 'border-slate-100 bg-white text-slate-600 hover:border-slate-300'
+                      )}
+                    >
+                      <span className="block text-xs font-black uppercase tracking-widest">Tamil</span>
+                    </button>
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Comparison Output</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['off', 'roman', 'devanagari', 'tamil'] as const).map((script) => (
+                      <button
+                        key={script}
+                        type="button"
+                        onClick={() => setComparisonOutputScript(script)}
+                        className={clsx(
+                          'rounded-xl border px-3 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all shadow-sm',
+                          comparisonOutputScript === script
+                            ? 'border-blue-400 bg-blue-600 text-white shadow-md'
+                            : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'
+                        )}
+                      >
+                        {OUTPUT_TARGET_VALUE_LABELS[script]}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Typography Tuning</p>
+                  <div className="space-y-4">
+                    {renderScriptSettings('Sanskrit (Devanagari)', 'devanagari', sanskritFontPreset, sanskritFontOptions, setSanskritFontPreset)}
+                    {renderScriptSettings('Tamil', 'tamil', tamilFontPreset, tamilFontOptions, setTamilFontPreset)}
+                    {renderScriptSettings('ITRANS', 'itrans')}
+                  </div>
+                </section>
+
+                {(primaryOutputScript === 'roman' || comparisonOutputScript === 'roman') && (
+                  <section className="space-y-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                      {OUTPUT_TARGET_CONTROL_LABELS.romanStyle}
+                    </p>
+                    <div className="grid grid-cols-1 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setRomanOutputStyle('canonical')}
+                        className={clsx(
+                          'rounded-xl border-2 px-4 py-3 text-left transition-all',
+                          romanOutputStyle === 'canonical'
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-900 shadow-md'
+                            : 'border-slate-100 bg-white text-slate-700 hover:border-slate-200'
+                        )}
+                      >
+                        <span className="block text-xs font-black uppercase tracking-wider">{OUTPUT_TARGET_VALUE_LABELS.canonical}</span>
+                        <span className="mt-1 block text-[10px] opacity-70">Scholarly Vedic Roman output.</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRomanOutputStyle('baraha')}
+                        className={clsx(
+                          'rounded-xl border-2 px-4 py-3 text-left transition-all',
+                          romanOutputStyle === 'baraha'
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-900 shadow-md'
+                            : 'border-slate-100 bg-white text-slate-700 hover:border-slate-200'
+                        )}
+                      >
+                        <span className="block text-xs font-black uppercase tracking-wider">{OUTPUT_TARGET_VALUE_LABELS.baraha}</span>
+                        <span className="mt-1 block text-[10px] opacity-70">Legacy Baraha-compatible Roman.</span>
+                      </button>
+                    </div>
+                  </section>
+                )}
+
+                <section className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Document Actions</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    <button
+                      onClick={() => handleCopyWholeDocument('devanagari')}
+                      className={clsx(
+                        'flex items-center justify-between gap-3 rounded-2xl border-2 px-5 py-4 transition-all active:scale-[0.98] shadow-sm',
+                        copyStates.devanagari === 'copied'
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                          : 'border-slate-100 bg-white text-slate-700 hover:border-blue-200'
+                      )}
+                      type="button"
+                    >
+                      <span className="text-[11px] font-black uppercase tracking-widest">Copy Whole Devanagari</span>
+                      {copyStates.devanagari === 'copied' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4 opacity-40" />}
+                    </button>
+                    <button
+                      onClick={() => handleCopyWholeDocument('itrans')}
+                      className={clsx(
+                        'flex items-center justify-between gap-3 rounded-2xl border-2 px-5 py-4 transition-all active:scale-[0.98] shadow-sm',
+                        copyStates.itrans === 'copied'
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                          : 'border-slate-100 bg-white text-slate-700 hover:border-blue-200'
+                      )}
+                      type="button"
+                    >
+                      <span className="text-[11px] font-black uppercase tracking-widest">Copy Whole ITRANS</span>
+                      {copyStates.itrans === 'copied' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4 opacity-40" />}
+                    </button>
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {/* INTELLIGENCE TAB */}
+            {activeTab === 'intelligence' && (
+              <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <section className="space-y-6">
+                  <div className="p-8 bg-white rounded-[3rem] border border-slate-100 shadow-sm">
+                    <div className="flex items-start gap-5">
+                      <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border border-emerald-100">
+                        <Zap className="w-7 h-7 text-emerald-600" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-base font-black uppercase tracking-widest text-slate-900">Learning Engine</h3>
+                        <p className="text-xs text-slate-500 leading-relaxed font-medium">
+                          The engine automatically surfaces Vedic accented forms based on corpus patterns and your history.
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-8 pt-6 border-t border-slate-50">
+                      <label className="flex items-center justify-between cursor-pointer group p-2 hover:bg-slate-50 rounded-xl transition-colors">
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-700 group-hover:text-blue-600 transition-colors">Adaptive Prediction</span>
+                        <div className="relative">
+                          <input
+                            checked={swaraPredictionEnabled}
+                            onChange={(e) => setSwaraPredictionEnabled(e.target.checked)}
+                            type="checkbox"
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    <button
+                      onClick={handleClearSessionLearning}
+                      className="flex items-center justify-center gap-2 rounded-2xl border-2 border-slate-100 bg-white px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 transition-all active:scale-[0.97]"
+                      type="button"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Reset Session Learning
+                    </button>
+                    <button
+                      onClick={handlePurgeSavedLearning}
+                      className="flex items-center justify-center gap-2 rounded-2xl border-2 border-rose-50 bg-rose-50/50 px-4 py-4 text-xs font-black uppercase tracking-widest text-rose-700 hover:bg-rose-100 transition-all active:scale-[0.97]"
+                      type="button"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Purge Global History
+                    </button>
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Workspace & Sync</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm space-y-3">
+                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Layout</p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setComposerLayout('side-by-side')}
+                          className={clsx(
+                            'flex-1 rounded-xl border px-2 py-2 text-[10px] font-black uppercase transition-all',
+                            composerLayout === 'side-by-side' ? 'border-blue-500 bg-blue-600 text-white shadow-md' : 'border-slate-100 bg-slate-50 text-slate-600 hover:bg-white'
+                          )}
+                        >
+                          Side by Side
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setComposerLayout('stacked')}
+                          className={clsx(
+                            'flex-1 rounded-xl border px-2 py-2 text-[10px] font-black uppercase transition-all',
+                            composerLayout === 'stacked' ? 'border-blue-500 bg-blue-600 text-white shadow-md' : 'border-slate-100 bg-slate-50 text-slate-600 hover:bg-white'
+                          )}
+                        >
+                          Stacked
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      {[
+                        { label: 'Sync Scroll', checked: syncComposerScroll, onChange: setSyncComposerScroll },
+                        { label: 'Show ITRANS in Doc', checked: showItransInDocument, onChange: setShowItransInDocument },
+                        { label: 'Auto-Swap Markers', checked: autoSwapVisargaSvarita, onChange: setAutoSwapVisargaSvarita }
+                      ].map(toggle => (
+                        <label key={toggle.label} className="flex items-center justify-between p-3 bg-white rounded-xl border border-slate-100 shadow-sm cursor-pointer hover:bg-slate-50 transition-colors">
+                          <span className="text-[10px] font-black uppercase text-slate-700 tracking-wider">{toggle.label}</span>
+                          <div className="relative">
+                            <input
+                              checked={toggle.checked}
+                              onChange={(e) => toggle.onChange(e.target.checked)}
+                              type="checkbox"
+                              className="sr-only peer"
+                            />
+                            <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Prediction Display</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {(['inline', 'split', 'footer', 'listbox'] as const).map(layout => (
+                      <button
+                        key={layout}
+                        type="button"
+                        onClick={() => setPredictionLayout(layout)}
+                        className={clsx(
+                          'rounded-2xl border-2 px-4 py-4 text-center transition-all shadow-sm',
+                          predictionLayout === layout
+                            ? 'border-blue-500 bg-blue-600 text-white shadow-md'
+                            : 'border-slate-100 bg-white text-slate-600 hover:border-slate-300'
+                        )}
+                      >
+                        <span className="block text-[10px] font-black uppercase tracking-widest">{layout}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Popup Timeout</p>
+                  <div className="p-6 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm">
+                    <input
+                      className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      type="range"
+                      min="3"
+                      max="20"
+                      step="1"
+                      value={Math.round(predictionPopupTimeoutMs / 1000)}
+                      onChange={(e) => setPredictionPopupTimeoutMs(Number(e.target.value) * 1000)}
+                    />
+                    <div className="mt-4 flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      <span>3 Seconds</span>
+                      <span className="text-blue-600 px-2 py-1 bg-blue-50 rounded-lg">{Math.round(predictionPopupTimeoutMs / 1000)}s</span>
+                      <span>20 Seconds</span>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {/* INFO TAB */}
+            {activeTab === 'info' && (
+              <div className="space-y-10 pb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <section className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Scholarly Fonts</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    {[
+                      { name: 'Chandas Devanagari', desc: 'High-Precision Vedic Glyphs', url: 'https://sanskritdocuments.org/hindi/chandas/' },
+                      { name: 'Siddhanta', desc: 'Modern Digital Standard', url: 'https://sanskritdocuments.org/projects/siddhanta/' },
+                      { name: 'Anek Tamil', desc: 'Versatile Tamil Display', url: 'https://fonts.google.com/specimen/Anek+Tamil' },
+                      { name: 'Noto Serif Tamil', desc: 'Scholarly Tamil Standard', url: 'https://fonts.google.com/specimen/Noto+Serif+Tamil' }
+                    ].map(font => (
+                      <a
+                        key={font.name}
+                        href={font.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between rounded-2xl border border-slate-100 bg-white p-5 hover:border-blue-200 hover:shadow-md transition-all group shadow-sm"
+                      >
+                        <div>
+                          <p className="text-sm font-bold text-slate-800">{font.name}</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight mt-1">{font.desc}</p>
+                        </div>
+                        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+                          <Download className="w-4 h-4 text-slate-300 group-hover:text-blue-500" />
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Scholarly Contribution</p>
+                  <a
+                    href="https://github.com/mrgkumar/sanskrit-keyboard/issues"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-3 rounded-2xl bg-slate-900 px-5 py-5 text-xs font-black uppercase tracking-widest text-white shadow-xl shadow-slate-300 hover:bg-slate-800 transition-all active:scale-[0.97]"
+                  >
+                    <Info className="h-4 w-4" />
+                    Collaborate on GitHub
+                  </a>
+                </section>
+
+                <section className="pt-10 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Software Artifact</p>
+                    <span className="text-[10px] font-mono font-black text-slate-400 px-2 py-1 bg-slate-50 rounded-lg">v{BUILD_VERSION}</span>
+                  </div>
+                  <p className="mt-4 text-[10px] font-bold text-slate-400 leading-relaxed px-1">
+                    Released on {new Date(BUILD_TIME).toLocaleDateString('en-IN', { dateStyle: 'long' })}
+                  </p>
+                  <p className="mt-12 text-center text-[10px] font-black uppercase tracking-[0.4em] text-slate-200 select-none">
+                    Sanskirt Keyboard
+                  </p>
+                </section>
+              </div>
+            )}
+
+          </main>
         </div>
       </div>
+
       {viewMode !== 'immersive' && <StickyTopComposer />}
       <MainDocumentArea />
       <ReferenceSidePanel /> {/* Add the side panel here */}
