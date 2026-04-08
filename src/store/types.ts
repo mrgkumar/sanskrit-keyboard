@@ -108,7 +108,7 @@ export interface TypographySettings {
   };
 }
 
-export type SanskritFontPreset = 'chandas' | 'siddhanta' | 'sampradaya';
+export type SanskritFontPreset = 'chandas' | 'sampradaya';
 export type TamilFontPreset = 'hybrid' | 'noto-serif' | 'anek';
 
 export interface LegacyTypographySettings {

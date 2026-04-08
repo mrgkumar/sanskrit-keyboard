@@ -149,7 +149,6 @@ export const TransliterationEngine: React.FC = () => {
 
   const sanskritFontOptions: Array<{ value: SanskritFontPreset; label: string; sample: string }> = [
     { value: 'chandas', label: 'Chandas', sample: 'नमस्ते रुद्राय' },
-    { value: 'siddhanta', label: 'Siddhanta', sample: 'नमस्ते रुद्राय' },
     { value: 'sampradaya', label: 'Sampradaya', sample: 'नमस्ते रुद्राय' },
   ];
   const tamilFontOptions: Array<{ value: TamilFontPreset; label: string; sample: string }> = [

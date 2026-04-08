@@ -9,12 +9,6 @@ const chandas = localFont({
   display: 'swap',
 });
 
-const siddhanta = localFont({
-  src: '../../public/fonts/siddhanta.ttf',
-  variable: '--font-siddhanta',
-  display: 'swap',
-});
-
 const sampradaya = localFont({
   src: '../../public/fonts/sampradaya.ttf',
   variable: '--font-sampradaya',
@@ -46,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`h-full antialiased ${chandas.variable} ${siddhanta.variable} ${sampradaya.variable} ${notoSerifTamil.variable} ${anekTamil.variable}`}
+      className={`h-full antialiased ${chandas.variable} ${sampradaya.variable} ${notoSerifTamil.variable} ${anekTamil.variable}`}
     >
       <body className="min-h-full flex flex-col font-sans">
         <MobileOptimizationNotice />
