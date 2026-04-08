@@ -1334,7 +1334,7 @@ export const StickyTopComposer: React.FC = () => {
 
               <div className="flex items-center gap-2">
                 <Link
-                  href="/welcome"
+                  href="/help"
                   className="inline-flex touch-manipulation items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 hover:bg-slate-100"
                 >
                   <HelpCircle className="h-3.5 w-3.5" />

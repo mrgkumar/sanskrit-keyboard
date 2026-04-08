@@ -173,10 +173,16 @@ export default function WelcomePage() {
       </main>
 
       {/* Help Link Footer */}
-      <footer className="px-8 py-12 border-t border-slate-100 text-center relative z-10 bg-white/50 backdrop-blur-sm">
+      <footer className="px-8 py-12 border-t border-slate-100 text-center relative z-10 bg-white/50 backdrop-blur-sm space-y-4">
         <p className="text-slate-400 text-xs font-medium uppercase tracking-[0.2em]">
           Scholarly Standard • Sanskrit Keyboard
         </p>
+        <div className="flex justify-center gap-6">
+          <Link href="/help" className="text-blue-600 font-bold text-xs uppercase tracking-widest hover:underline flex items-center gap-1.5">
+            <BookOpen className="w-3.5 h-3.5" />
+            Full Documentation
+          </Link>
+        </div>
       </footer>
     </div>
   );
