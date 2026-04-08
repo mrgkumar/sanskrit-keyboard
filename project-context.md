@@ -28,18 +28,14 @@ The app is not a generic editor. It is a transliteration-focused tool with a str
 
 ### Primary route
 
-`app/src/app/page.tsx` renders `TransliterationEngine`, which composes the main workspace.
+`app/src/app/page.tsx` renders `TransliterationEngine`, which composes the main workspace. 
+- **Onboarding:** First-time users are automatically redirected to `/welcome`.
 
 ### Other routes
 
-These routes exist for auxiliary or specialized workflows:
-
-- `app/src/app/reference/page.tsx`
-- `app/src/app/welcome/page.tsx`
-- `app/src/app/dashboard/page.tsx`
-- `app/src/app/settings/mappings/page.tsx`
-- `app/src/app/groundtruth-label/page.tsx`
-- `app/src/app/mock-output-target/page.tsx`
+- `app/src/app/reference/page.tsx`: Full-page reference guide.
+- `app/src/app/welcome/page.tsx`: Redesigned educational walkthrough for new users.
+- `app/src/app/settings/mappings/page.tsx`: Input scheme configuration.
 
 ## 4. Current Workspace Layout
 
@@ -54,7 +50,7 @@ The live app has two major regions:
 - live preview panes for the selected output script (side-by-side or stacked)
 - compare mode in the top half only
 - copy buttons for the active outputs
-- reference and display controls
+- reference and help controls (**Help link leads back to the Welcome walkthrough**)
 - word prediction UI (footer, inline, split, or listbox)
 
 ### Lower document area

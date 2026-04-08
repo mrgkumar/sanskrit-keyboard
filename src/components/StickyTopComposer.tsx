@@ -4,8 +4,9 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { useFlowStore } from '@/store/useFlowStore';
-import { BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, Trash2, Undo2 } from 'lucide-react';
+import { BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, Trash2, Undo2, HelpCircle } from 'lucide-react';
 import { clsx } from 'clsx';
+import Link from 'next/link';
 import { ShortcutHUD } from '@/components/engine/ShortcutHUD';
 import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
 import { getScriptDisplayText, ScriptText } from '@/components/ScriptText';
@@ -1331,17 +1332,27 @@ export const StickyTopComposer: React.FC = () => {
                 </button>
               </div>
 
-              <button
-                onClick={() => {
-                  setActiveQuickSwitchMenu(null);
-                  toggleReferencePanel();
-                }}
-                className="inline-flex touch-manipulation items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 hover:bg-slate-100"
-                type="button"
-              >
-                <BookOpen className="h-3.5 w-3.5" />
-                Reference
-              </button>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/welcome"
+                  className="inline-flex touch-manipulation items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 hover:bg-slate-100"
+                >
+                  <HelpCircle className="h-3.5 w-3.5" />
+                  Help
+                </Link>
+
+                <button
+                  onClick={() => {
+                    setActiveQuickSwitchMenu(null);
+                    toggleReferencePanel();
+                  }}
+                  className="inline-flex touch-manipulation items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-700 hover:bg-slate-100"
+                  type="button"
+                >
+                  <BookOpen className="h-3.5 w-3.5" />
+                  Reference
+                </button>
+              </div>
             </div>
           </div>
 
