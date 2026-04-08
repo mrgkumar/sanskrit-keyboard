@@ -175,6 +175,7 @@ export const WordPredictionTray: React.FC<WordPredictionTrayProps> = ({
                       <ScriptText
                         script={primaryOutputScript}
                         text={suggestionText}
+                        className={clsx(index === lexicalSelectedSuggestionIndex ? 'text-white' : 'text-slate-900')}
                         tamilFontPreset={displaySettings.tamilFontPreset}
                         sanskritFontPreset={displaySettings.sanskritFontPreset}
                       />
