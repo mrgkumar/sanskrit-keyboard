@@ -4,6 +4,7 @@ import { getDisplayMappingsForScheme, getMappingTrie } from '@/lib/vedic/mapping
 import { clsx } from 'clsx';
 import type { ChunkEditTarget } from '@/store/types';
 import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
+import { ScriptText } from '@/components/ScriptText';
 
 const PHONETIC_GROUPS = {
   // Stop Consonants (Varga)
@@ -167,7 +168,15 @@ export const ShortcutHUD: React.FC = () => {
                 )}
               >
                 <span className={clsx('text-xs font-bold -ml-1 mr-2 flex h-4 w-4 items-center justify-center rounded-full tabular-nums', i === selectedSuggestionIndex ? 'bg-white/20' : 'bg-slate-100 text-slate-400')}>{i + 1}</span>
-                <span className={clsx('text-xl font-serif text-slate-900 transition-transform group-hover:scale-110', i === selectedSuggestionIndex && 'text-white')}>{m.unicode}</span>
+                <div className={clsx('text-xl font-serif text-slate-900 transition-transform group-hover:scale-110', i === selectedSuggestionIndex && 'text-white')}>
+                  <ScriptText 
+                    script={displaySettings.primaryOutputScript} 
+                    text={m.unicode}
+                    sanskritFontPreset={displaySettings.sanskritFontPreset}
+                    tamilFontPreset={displaySettings.tamilFontPreset}
+                    className={i === selectedSuggestionIndex ? 'text-white' : 'text-slate-900'}
+                  />
+                </div>
                 <kbd className={clsx('text-[10px] font-mono font-bold tracking-tighter', i === selectedSuggestionIndex ? 'text-blue-100' : 'text-blue-600 opacity-60')}>{m.itrans}</kbd>
               </button>
             ))}
@@ -184,7 +193,15 @@ export const ShortcutHUD: React.FC = () => {
                 )}
               >
                 <span className={clsx('text-xs font-bold -ml-1 mr-2 flex h-4 w-4 items-center justify-center rounded-full tabular-nums', i === selectedSuggestionIndex ? 'bg-white/20' : 'bg-slate-100 text-slate-400')}>{i + 1}</span>
-                <span className={clsx('text-xl font-serif text-slate-900 transition-transform group-hover:scale-110', i === selectedSuggestionIndex && 'text-white')}>{m.unicode}</span>
+                <div className={clsx('text-xl font-serif text-slate-900 transition-transform group-hover:scale-110', i === selectedSuggestionIndex && 'text-white')}>
+                  <ScriptText 
+                    script={displaySettings.primaryOutputScript} 
+                    text={m.unicode}
+                    sanskritFontPreset={displaySettings.sanskritFontPreset}
+                    tamilFontPreset={displaySettings.tamilFontPreset}
+                    className={i === selectedSuggestionIndex ? 'text-white' : 'text-slate-900'}
+                  />
+                </div>
                 <kbd className={clsx('text-[10px] font-mono font-bold tracking-tighter', i === selectedSuggestionIndex ? 'text-blue-100' : 'text-blue-600 opacity-60')}>{m.itrans}</kbd>
               </button>
             ))}
@@ -195,7 +212,14 @@ export const ShortcutHUD: React.FC = () => {
                 onClick={() => handleInsert(m.itrans, m.tail)}
                 className="group flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 transition-all active:scale-95 hover:border-blue-300 hover:bg-blue-50"
               >
-                <span className="text-xl font-serif text-slate-900 transition-transform group-hover:scale-110">{m.unicode}</span>
+                <div className="text-xl font-serif text-slate-900 transition-transform group-hover:scale-110">
+                  <ScriptText 
+                    script={displaySettings.primaryOutputScript} 
+                    text={m.unicode}
+                    sanskritFontPreset={displaySettings.sanskritFontPreset}
+                    tamilFontPreset={displaySettings.tamilFontPreset}
+                  />
+                </div>
                 <kbd className="text-[10px] font-mono font-bold tracking-tighter text-blue-600 opacity-60">{m.itrans}</kbd>
               </button>
             ))}

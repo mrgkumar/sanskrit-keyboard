@@ -336,7 +336,6 @@ export const MainDocumentArea: React.FC = () => {
 
     if (script === 'devanagari') {
       const renderedBlock = transliterate(block.source, { inputScheme });
-      const renderedChars = Array.from(renderedBlock.unicode);
 
       return (
         <div
@@ -345,19 +344,17 @@ export const MainDocumentArea: React.FC = () => {
           style={lineNumber !== undefined ? { gridTemplateColumns: '2.5rem minmax(0, 1fr)' } : undefined}
         >
           {lineGuide}
-          <p
+          <div
             data-testid={
               paneRole === 'primary'
                 ? `${viewTestIdPrefix}-block-${block.id}`
                 : `${viewTestIdPrefix}-compare-block-${block.id}`
             }
             className={clsx(
-              'script-text-devanagari whitespace-pre-wrap break-words rounded-md px-1 py-1 transition-colors',
+              'rounded-md px-1 py-1 transition-colors',
               paneRole === 'compare' && 'text-slate-700'
             )}
-            data-font-preset={sanskritFontPreset}
             data-selected-read-line={isSelectedReadLine ? 'true' : undefined}
-            lang="sa"
             title={
               isComparePane
                 ? 'Reference view'
@@ -380,21 +377,18 @@ export const MainDocumentArea: React.FC = () => {
                   }
                 : undefined
             }
-            style={{
-              fontSize: `${getRenderedFontSizeForScript(script)}px`,
-              lineHeight: getRenderedLineHeightForScript(script),
-            }}
           >
-            {renderedChars.map((char, index) => (
-              <span
-                key={`${block.id}-${index}-${char}`}
-                data-target-index={index}
-                className="cursor-text"
-              >
-                {char}
-              </span>
-            ))}
-          </p>
+            <ScriptText
+              script={script}
+              text={renderedBlock.unicode}
+              sanskritFontPreset={sanskritFontPreset}
+              tamilFontPreset={tamilFontPreset}
+              style={{
+                fontSize: `${getRenderedFontSizeForScript(script)}px`,
+                lineHeight: getRenderedLineHeightForScript(script),
+              }}
+            />
+          </div>
         </div>
       );
     }
@@ -616,17 +610,17 @@ export const MainDocumentArea: React.FC = () => {
             </button>
           </div>
         </div>
-        <p
-          className="script-text-devanagari mt-2 text-slate-800"
-          data-font-preset={sanskritFontPreset}
-          lang="sa"
-          style={{
-            fontSize: `${documentTypography.devanagariFontSize}px`,
-            lineHeight: documentTypography.devanagariLineHeight,
-          }}
-        >
-          {block.rendered}
-        </p>
+        <div className="mt-2">
+          <ScriptText
+            script="devanagari"
+            text={block.rendered}
+            sanskritFontPreset={sanskritFontPreset}
+            style={{
+              fontSize: `${documentTypography.devanagariFontSize}px`,
+              lineHeight: documentTypography.devanagariLineHeight,
+            }}
+          />
+        </div>
         {showModeSourceCard && (
           <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
@@ -751,15 +745,17 @@ export const MainDocumentArea: React.FC = () => {
                     >
                       {segment.source}
                     </p>
-                    <p
-                      className="font-serif text-slate-800"
-                      style={{
-                        fontSize: `${documentTypography.devanagariFontSize}px`,
-                        lineHeight: documentTypography.devanagariLineHeight,
-                      }}
-                    >
-                      {segment.rendered}
-                    </p>
+                    <div className="mt-1">
+                      <ScriptText
+                        script="devanagari"
+                        text={segment.rendered}
+                        sanskritFontPreset={sanskritFontPreset}
+                        style={{
+                          fontSize: `${documentTypography.devanagariFontSize}px`,
+                          lineHeight: documentTypography.devanagariLineHeight,
+                        }}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -831,29 +827,18 @@ export const MainDocumentArea: React.FC = () => {
                       {block.source}
                     </p>
                   )}
-                  <p
-                    className={clsx(
-                      primaryOutputScript === 'devanagari' ? 'script-text-devanagari' : '',
-                      'whitespace-pre-wrap break-words text-slate-900'
-                    )}
-                    data-font-preset={sanskritFontPreset}
-                    lang={primaryOutputScript === 'devanagari' ? 'sa' : undefined}
-                    style={{
-                      fontSize: `${getRenderedFontSizeForScript(primaryOutputScript)}px`,
-                      lineHeight: getRenderedLineHeightForScript(primaryOutputScript),
-                    }}
-                  >
-                    {primaryOutputScript === 'devanagari' ? (
-                      block.rendered
-                    ) : (
-                      <ScriptText
-                        script={primaryOutputScript}
-                        text={formatted}
-                        sanskritFontPreset={sanskritFontPreset}
-                        tamilFontPreset={tamilFontPreset}
-                      />
-                    )}
-                  </p>
+                  <div className="whitespace-pre-wrap break-words text-slate-900">
+                    <ScriptText
+                      script={primaryOutputScript}
+                      text={primaryOutputScript === 'devanagari' ? block.rendered : formatted}
+                      sanskritFontPreset={sanskritFontPreset}
+                      tamilFontPreset={tamilFontPreset}
+                      style={{
+                        fontSize: `${getRenderedFontSizeForScript(primaryOutputScript)}px`,
+                        lineHeight: getRenderedLineHeightForScript(primaryOutputScript),
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             );

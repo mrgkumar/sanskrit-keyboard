@@ -24,6 +24,62 @@ import {
 } from '@/lib/vedic/mapping';
 import type { ChunkEditTarget } from '@/store/types';
 
+interface CaretOverlayProps {
+  targetRef: React.RefObject<HTMLElement | null>;
+  containerRef: React.RefObject<HTMLElement | null>;
+  color?: string;
+}
+
+const CaretOverlay: React.FC<CaretOverlayProps> = ({ targetRef, containerRef, color = 'bg-blue-600' }) => {
+  const [style, setStyle] = React.useState<React.CSSProperties>({ opacity: 0 });
+
+  React.useLayoutEffect(() => {
+    const container = containerRef.current;
+    const updatePosition = () => {
+      if (!targetRef.current || !container) return;
+
+      const targetRect = targetRef.current.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+
+      setStyle({
+        position: 'absolute',
+        left: targetRect.left - containerRect.left,
+        top: targetRect.top - containerRect.top,
+        height: targetRect.height || '1.2em',
+        width: '2px',
+        opacity: 1,
+        transition: 'left 0.1s ease-out, top 0.1s ease-out',
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    container?.addEventListener('scroll', updatePosition);
+
+    const observer = new MutationObserver(updatePosition);
+    if (container) {
+      observer.observe(container, { childList: true, subtree: true, characterData: true });
+    }
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      container?.removeEventListener('scroll', updatePosition);
+      observer.disconnect();
+    };
+  }, [targetRef, containerRef]);
+
+  return (
+    <div
+      className={clsx(
+        'pointer-events-none rounded-full motion-safe:animate-caret',
+        color
+      )}
+      style={style}
+      data-testid="preview-caret"
+    />
+  );
+};
+
 export const StickyTopComposer: React.FC = () => {
   const { 
     blocks,
@@ -46,6 +102,8 @@ export const StickyTopComposer: React.FC = () => {
   const comparePreviewRef = React.useRef<HTMLDivElement>(null);
   const itransPanelRef = React.useRef<HTMLDivElement>(null);
   const mirrorCaretRef = React.useRef<HTMLSpanElement>(null);
+  const primaryPreviewCaretRef = React.useRef<HTMLSpanElement>(null);
+  const comparisonPreviewCaretRef = React.useRef<HTMLSpanElement>(null);
   const isPointerSelectingRef = React.useRef(false);
 
   const [showShiftEnterHint, setShowShiftEnterHint] = React.useState(false);
@@ -216,20 +274,6 @@ export const StickyTopComposer: React.FC = () => {
     return renderedPreview.sourceToTargetMap[Math.max(0, composerSelectionStart)] ?? renderedPreviewChars.length;
   })();
 
-  const targetSelectionEndIndex = (() => {
-    if (composerSelectionEnd >= currentChunkSource.length) {
-      return renderedPreviewChars.length;
-    }
-
-    return renderedPreview.sourceToTargetMap[Math.max(0, composerSelectionEnd)] ?? renderedPreviewChars.length;
-  })();
-
-  const selectedTargetRange = (() => {
-    const start = Math.min(targetCaretIndex, targetSelectionEndIndex);
-    const end = Math.max(targetCaretIndex, targetSelectionEndIndex);
-    return { start, end };
-  })();
-
   const selectedSourceRange = (() => {
     const start = Math.min(composerSelectionStart, composerSelectionEnd);
     const end = Math.max(composerSelectionStart, composerSelectionEnd);
@@ -279,24 +323,6 @@ export const StickyTopComposer: React.FC = () => {
         : renderedPreview.sourceToTargetMap[currentSourceWordRange.end] ?? renderedPreviewChars.length;
 
     return targetEnd > targetStart ? { start: targetStart, end: targetEnd } : null;
-  })();
-
-  const sourceRenderBoundaries = (() => {
-    const sourceLength = currentChunkSource.length;
-    const boundaries = new Set<number>([
-      0,
-      sourceLength,
-      Math.max(0, Math.min(composerSelectionStart, sourceLength)),
-      selectedSourceRange.start,
-      selectedSourceRange.end,
-    ]);
-
-    if (currentSourceWordRange) {
-      boundaries.add(currentSourceWordRange.start);
-      boundaries.add(currentSourceWordRange.end);
-    }
-
-    return Array.from(boundaries).sort((a, b) => a - b);
   })();
 
   const sourceMirrorFragments = (() => {
@@ -654,23 +680,6 @@ export const StickyTopComposer: React.FC = () => {
     });
   };
 
-  const getTargetCaretForClick = (targetIndex: number, clientX: number, currentTarget: HTMLElement) => {
-    const sourceStart = renderedPreview.targetToSourceMap[targetIndex] ?? currentChunkSource.length;
-    let sourceEnd = currentChunkSource.length;
-
-    for (let index = targetIndex + 1; index < renderedPreview.targetToSourceMap.length; index += 1) {
-      const nextSourceIndex = renderedPreview.targetToSourceMap[index] ?? currentChunkSource.length;
-      if (nextSourceIndex > sourceStart) {
-        sourceEnd = nextSourceIndex;
-        break;
-      }
-    }
-
-    const rect = currentTarget.getBoundingClientRect();
-    const midpoint = rect.left + rect.width / 2;
-    return clientX >= midpoint ? sourceEnd : sourceStart;
-  };
-
   const focusComposerAt = (nextCaret: number) => {
     setComposerSelection(nextCaret, nextCaret);
     const applySelection = () => {
@@ -682,28 +691,8 @@ export const StickyTopComposer: React.FC = () => {
     requestAnimationFrame(applySelection);
   };
 
-  const handlePreviewCharacterClick = (
-    event: React.MouseEvent<HTMLSpanElement>,
-    targetIndex: number
-  ) => {
-    event.preventDefault();
-    const nextCaret = getTargetCaretForClick(targetIndex, event.clientX, event.currentTarget);
-    focusComposerAt(nextCaret);
-  };
-
-  const handleTamilPreviewFragmentClick = (
-    event: React.MouseEvent<HTMLSpanElement>,
-    start: number,
-    end: number,
-  ) => {
-    event.preventDefault();
-    const rect = event.currentTarget.getBoundingClientRect();
-    const midpoint = rect.left + rect.width / 2;
-    const nextCaret = event.clientX >= midpoint ? end : start;
-    focusComposerAt(nextCaret);
-  };
-
-  const handleTamilPreviewMouseDown = (event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
+  const handleTamilPreviewMouseDown = (
+event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
     const target = (event.target as HTMLElement).closest<HTMLElement>('[data-target-index]');
     if (!target) {
       event.preventDefault();
@@ -1099,94 +1088,6 @@ export const StickyTopComposer: React.FC = () => {
 
     deleteBlock(activeBlock.id);
     setDeletedBuffer(null);
-  };
-
-  const renderTamilSurface = () => {
-    if (!currentChunkSource) {
-      return null;
-    }
-
-    const fragments: React.ReactNode[] = [];
-    for (let index = 0; index < sourceRenderBoundaries.length - 1; index += 1) {
-      const start = sourceRenderBoundaries[index];
-      const end = sourceRenderBoundaries[index + 1];
-
-      if (end <= start) {
-        continue;
-      }
-
-      const fragmentSource = currentChunkSource.slice(start, end);
-      const fragmentText = formatSourceForScript(fragmentSource, 'tamil', {
-        romanOutputStyle,
-        tamilOutputStyle,
-      });
-      const fragmentDisplayText = getScriptDisplayText('tamil', fragmentText);
-      const isSelectionVisible =
-        selectedSourceRange.end > selectedSourceRange.start &&
-        start >= selectedSourceRange.start &&
-        end <= selectedSourceRange.end;
-      const isCurrentWordVisible =
-        !isSelectionVisible &&
-        currentSourceWordRange !== null &&
-        start >= currentSourceWordRange.start &&
-        end <= currentSourceWordRange.end;
-      const showCaretBefore = composerSelectionStart === composerSelectionEnd && start === composerSelectionStart;
-
-      if (showCaretBefore) {
-        fragments.push(
-          <span
-            key={`tamil-caret-${start}`}
-            aria-hidden="true"
-            className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-blue-600 align-middle motion-safe:animate-caret"
-            data-testid="preview-caret"
-          />
-        );
-      }
-
-      fragments.push(
-        <span
-          key={`tamil-fragment-${start}-${end}`}
-          className={clsx(
-            'cursor-text rounded-[0.18em]',
-            isSelectionVisible && 'bg-blue-200/80 text-blue-950',
-            isCurrentWordVisible && 'font-semibold text-[#6b1f1f]'
-          )}
-          data-current-word={isCurrentWordVisible ? 'true' : undefined}
-          data-target-index={start}
-          data-target-end={end}
-          data-source-selection={isSelectionVisible ? 'true' : undefined}
-          onMouseDown={(event) => handleTamilPreviewFragmentClick(event, start, end)}
-        >
-          {fragmentDisplayText}
-        </span>
-      );
-    }
-
-    if (composerSelectionStart === composerSelectionEnd && composerSelectionStart === currentChunkSource.length) {
-      fragments.push(
-        <span
-          key="tamil-caret-end"
-          aria-hidden="true"
-          className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-blue-600 align-middle motion-safe:animate-caret"
-          data-testid="preview-caret"
-        />
-      );
-    }
-
-    return (
-      <span
-        className="script-text-tamil script-text-wrap whitespace-pre-wrap text-slate-900"
-        data-font-preset={tamilFontPreset}
-        lang="ta"
-        dir="ltr"
-        style={{
-          fontSize: `${composerTypography.tamilFontSize}px`,
-          lineHeight: composerTypography.tamilLineHeight,
-        }}
-      >
-        {fragments}
-      </span>
-    );
   };
 
   return (
@@ -1603,61 +1504,90 @@ export const StickyTopComposer: React.FC = () => {
                       renderedPreviewChars.length === 0 ? (
                         'Devanagari preview'
                       ) : (
-                      <span
-                        className="script-text-devanagari whitespace-pre-wrap break-words text-slate-900"
-                        data-font-preset={sanskritFontPreset}
-                        lang="sa"
-                        style={{
-                          fontSize: `${composerTypography.devanagariFontSize}px`,
-                          lineHeight: composerTypography.devanagariLineHeight,
-                          }}
-                        >
-                          {renderedPreviewChars.map((char, index) => {
-                            const isSelectionVisible =
-                              selectedTargetRange.end > selectedTargetRange.start &&
-                              index >= selectedTargetRange.start &&
-                              index < selectedTargetRange.end;
-                            const isCurrentWordVisible =
-                              !isSelectionVisible &&
-                              currentWordTargetRange !== null &&
-                              index >= currentWordTargetRange.start &&
-                              index < currentWordTargetRange.end;
-                            const showCaretBefore = index === targetCaretIndex;
+                        <div className="relative">
+                          {/* Hidden mirror to position the caret */}
+                          <div 
+                            aria-hidden="true"
+                            className="pointer-events-none absolute inset-0 text-transparent opacity-0"
+                          >
+                            <span 
+                              className="font-serif script-text-devanagari whitespace-pre-wrap break-words"
+                              data-font-preset={sanskritFontPreset}
+                              style={{
+                                fontSize: `${composerTypography.devanagariFontSize}px`,
+                                lineHeight: composerTypography.devanagariLineHeight,
+                              }}
+                            >
+                              {renderedPreview.unicode.slice(0, targetCaretIndex)}
+                              <span ref={primaryPreviewCaretRef} className="inline-block w-0" />
+                            </span>
+                          </div>
 
-                            return (
-                              <span
-                                key={`${index}-${char}`}
-                                className={clsx(
-                                  'relative cursor-text rounded-[0.18em] transition-colors',
-                                  isSelectionVisible && 'bg-blue-200/80 text-blue-950',
-                                  isCurrentWordVisible && 'font-semibold text-[#6b1f1f]'
-                                )}
-                                data-current-word={isCurrentWordVisible ? 'true' : undefined}
-                                data-target-index={index}
-                                onClick={(event) => handlePreviewCharacterClick(event, index)}
-                              >
-                                {showCaretBefore && (
-                                  <span
-                                    aria-hidden="true"
-                                    className="pointer-events-none absolute -left-[2px] top-1/2 inline-block h-[1.1em] w-[2px] -translate-y-1/2 rounded-full bg-blue-600 motion-safe:animate-caret"
-                                    data-testid="preview-caret"
-                                  />
-                                )}
-                                {char === ' ' ? '\u00A0' : char}
-                              </span>
-                            );
-                          })}
-                          {targetCaretIndex === renderedPreviewChars.length && (
-                            <span
-                              aria-hidden="true"
-                              className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-blue-600 align-middle motion-safe:animate-caret"
-                              data-testid="preview-caret"
-                            />
-                          )}
-                        </span>
+                          {/* Real text as a single node for perfect ligatures */}
+                          <span
+                            className="font-serif script-text-devanagari whitespace-pre-wrap break-words text-slate-900"
+                            data-font-preset={sanskritFontPreset}
+                            lang="sa"
+                            style={{
+                              fontSize: `${composerTypography.devanagariFontSize}px`,
+                              lineHeight: composerTypography.devanagariLineHeight,
+                            }}
+                          >
+                            {renderedPreview.unicode}
+                          </span>
+                          
+                          {/* Absolutely positioned visible caret */}
+                          <CaretOverlay 
+                            targetRef={primaryPreviewCaretRef} 
+                            containerRef={previewRef}
+                            color="bg-blue-600"
+                          />
+                        </div>
                       )
                     ) : primaryOutputScript === 'tamil' ? (
-                      renderTamilSurface() ?? 'Tamil preview'
+                      <div className="relative">
+                        <div 
+                          aria-hidden="true"
+                          className="pointer-events-none absolute inset-0 text-transparent opacity-0"
+                        >
+                          <span 
+                            className="font-tamil-reading script-text-tamil whitespace-pre-wrap break-words"
+                            data-font-preset={tamilFontPreset}
+                            style={{
+                              fontSize: `${composerTypography.tamilFontSize}px`,
+                              lineHeight: composerTypography.tamilLineHeight,
+                            }}
+                          >
+                            {formatSourceForScript(currentChunkSource.slice(0, composerSelectionStart), 'tamil', {
+                              romanOutputStyle,
+                              tamilOutputStyle,
+                            })}
+                            <span ref={primaryPreviewCaretRef} className="inline-block w-0" />
+                          </span>
+                        </div>
+                        
+                        <span
+                          className="font-tamil-reading script-text-tamil script-text-wrap whitespace-pre-wrap text-slate-900"
+                          data-font-preset={tamilFontPreset}
+                          lang="ta"
+                          dir="ltr"
+                          style={{
+                            fontSize: `${composerTypography.tamilFontSize}px`,
+                            lineHeight: composerTypography.tamilLineHeight,
+                          }}
+                        >
+                          {getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource, 'tamil', {
+                            romanOutputStyle,
+                            tamilOutputStyle,
+                          }))}
+                        </span>
+
+                        <CaretOverlay 
+                          targetRef={primaryPreviewCaretRef} 
+                          containerRef={previewRef}
+                          color="bg-blue-600"
+                        />
+                      </div>
                     ) : (
                       <ScriptText
                         script={primaryOutputScript}
@@ -1712,16 +1642,67 @@ export const StickyTopComposer: React.FC = () => {
                           {copyStates.compare === 'copied' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                         </button>
                       </div>
-                      {activeComparisonScript === 'tamil' ? (
-                        renderTamilSurface() ?? 'Tamil compare'
-                      ) : (
-                        <ScriptText
-                          script={activeComparisonScript ?? primaryOutputScript}
-                          sanskritFontPreset={sanskritFontPreset}
-                          tamilFontPreset={tamilFontPreset}
-                          text={comparisonPreviewText}
+                      <div className="relative">
+                        {/* Hidden mirror to position the caret */}
+                        <div 
+                          aria-hidden="true"
+                          className="pointer-events-none absolute inset-0 text-transparent opacity-0"
+                        >
+                          <span 
+                            className={clsx(
+                              (activeComparisonScript ?? primaryOutputScript) === 'devanagari' ? 'font-serif script-text-devanagari' : 
+                              (activeComparisonScript ?? primaryOutputScript) === 'tamil' ? 'font-tamil-reading script-text-tamil' : 'font-mono',
+                              'whitespace-pre-wrap break-words'
+                            )}
+                            data-font-preset={(activeComparisonScript ?? primaryOutputScript) === 'tamil' ? tamilFontPreset : sanskritFontPreset}
+                            style={{
+                              fontSize: `${Math.max(getRenderedFontSizeForScript(activeComparisonScript ?? primaryOutputScript) - 2, 14)}px`,
+                              lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
+                            }}
+                          >
+                            {(activeComparisonScript ?? primaryOutputScript) === 'devanagari' ? (
+                              renderedPreview.unicode.slice(0, targetCaretIndex)
+                            ) : (activeComparisonScript ?? primaryOutputScript) === 'tamil' ? (
+                              formatSourceForScript(currentChunkSource.slice(0, composerSelectionStart), 'tamil', {
+                                romanOutputStyle,
+                                tamilOutputStyle,
+                              })
+                            ) : (
+                              comparisonPreviewText.slice(0, composerSelectionStart)
+                            )}
+                            <span ref={comparisonPreviewCaretRef} className="inline-block w-0" />
+                          </span>
+                        </div>
+
+                        {/* Real text as a single node for perfect ligatures */}
+                        <span
+                          className={clsx(
+                            (activeComparisonScript ?? primaryOutputScript) === 'devanagari' ? 'font-serif script-text-devanagari' : 
+                            (activeComparisonScript ?? primaryOutputScript) === 'tamil' ? 'font-tamil-reading script-text-tamil' : 'font-mono',
+                            'whitespace-pre-wrap break-words text-slate-700'
+                          )}
+                          data-font-preset={(activeComparisonScript ?? primaryOutputScript) === 'tamil' ? tamilFontPreset : sanskritFontPreset}
+                          lang={(activeComparisonScript ?? primaryOutputScript) === 'devanagari' ? 'sa' : (activeComparisonScript ?? primaryOutputScript) === 'tamil' ? 'ta' : undefined}
+                          dir={(activeComparisonScript ?? primaryOutputScript) === 'tamil' ? 'ltr' : undefined}
+                          style={{
+                            fontSize: `${Math.max(getRenderedFontSizeForScript(activeComparisonScript ?? primaryOutputScript) - 2, 14)}px`,
+                            lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
+                          }}
+                        >
+                          {(activeComparisonScript ?? primaryOutputScript) === 'tamil' 
+                            ? getScriptDisplayText('tamil', comparisonPreviewText) 
+                            : (comparisonPreviewText || ((activeComparisonScript ?? primaryOutputScript) === 'devanagari' ? 'Devanagari compare' : 'Comparison preview'))
+                          }
+                        </span>
+
+                        {/* Absolutely positioned visible caret */}
+                        <CaretOverlay 
+                          targetRef={comparisonPreviewCaretRef} 
+                          containerRef={comparePreviewRef}
+                          color="bg-slate-400"
                         />
-                      )}
+                      </div>
+
                     </div>
                   )}
                 </div>

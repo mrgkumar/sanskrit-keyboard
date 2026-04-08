@@ -213,8 +213,8 @@ export const VEDIC_MAPPINGS: VedicMapping[] = [
   // Composite Scholarly Units
   { itrans: 'vvi~M', unicode: '\u0935\u094D\u0935\u093F\u0901', category: 'special' },
   { itrans: 'vva~M', unicode: '\u0935\u094D\u0935\u0901', category: 'special' },
-  { itrans: 'ai^', unicode: '\u0948\uF176', category: 'mark' },
-  { itrans: 'A^', unicode: '\u093E\uF176', category: 'mark' },
+  { itrans: 'ai^', unicode: '\u0948\u1CDA', category: 'mark' },
+  { itrans: 'A^', unicode: '\u093E\u1CDA', category: 'mark' },
   { itrans: "..a", unicode: '\u093D\u093D', name: 'double avagraha', category: 'mark' },
   
   // Standard Conjuncts
@@ -307,14 +307,10 @@ export const VEDIC_MAPPINGS: VedicMapping[] = [
   { itrans: 'O', unicode: '\u0913', category: 'vowel' },
   { itrans: '.e', unicode: '\u090E', preferredReverse: true, category: 'vowel' },
   { itrans: '.o', unicode: '\u0912', preferredReverse: true, category: 'vowel' },
-  { itrans: '.e', unicode: '\u0946', preferredReverse: true, category: 'mark' },
-  { itrans: '.o', unicode: '\u094A', preferredReverse: true, category: 'mark' },
 
 
   // Vedic Marks
-  { itrans: "'", unicode: '\u0951', name: 'svarita', category: 'vedic' },
   { itrans: "'", unicode: '\u0951', preferredReverse: true, name: 'svarita', category: 'vedic' },
-  { itrans: "\_", unicode: '\u0952', name: 'anudatta', category: 'vedic' },
   { itrans: "_", unicode: '\u0952', preferredReverse: true, name: 'anudatta', category: 'vedic' },
   { itrans: "_M~_", unicode: '\u0952\uF156\u0952', category: 'vedic' },
   { itrans: "_M~M_", unicode: '\u0952\uF156\u0902\u0952', category: 'vedic' },
@@ -389,7 +385,6 @@ export const VEDIC_MAPPINGS: VedicMapping[] = [
   { itrans: '^pm', unicode: '\u094E', category: 'mark', isScholarly: true, subCategory: 'Archaic' },
   { itrans: '^aw', unicode: '\u094F', category: 'mark', isScholarly: true, subCategory: 'Regional' },
   { itrans: '\u0060', unicode: '\u0953', category: 'mark', isScholarly: true, subCategory: 'Vedic' },
-  { itrans: "''", unicode: '\u0954', category: 'mark', isScholarly: true, subCategory: 'Vedic' },
   { itrans: '~E=', unicode: '\u0955', category: 'mark', isScholarly: true, subCategory: 'Candra' },
   { itrans: '^uue', unicode: '\u0957', category: 'mark', isScholarly: true, subCategory: 'Regional' },
   { itrans: 'q', unicode: '\u0958', category: 'consonant', isScholarly: false, subCategory: 'Nukta' },

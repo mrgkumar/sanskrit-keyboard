@@ -11,6 +11,7 @@ import { transliterate } from '@/lib/vedic/utils';
 import { Search, ChevronRight, ChevronDown, Sparkles } from 'lucide-react';
 import { useFlowStore } from '@/store/useFlowStore';
 import type { ChunkEditTarget } from '@/store/types';
+import { ScriptText } from '@/components/ScriptText';
 
 interface ReferenceLibraryProps {
   deletedBuffer: string | null;
@@ -186,7 +187,14 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
                   onClick={() => handleInsert(m.itrans)}
                   className="flex flex-col items-center justify-center p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md hover:border-amber-200 hover:bg-amber-50/30 transition-all group cursor-pointer active:scale-95"
                 >
-                  <span className="text-2xl font-serif text-slate-900 group-hover:scale-110 transition-transform">{m.unicode}</span>
+                  <div className="text-2xl font-serif text-slate-900 group-hover:scale-110 transition-transform">
+                    <ScriptText 
+                      script={primaryOutputScript} 
+                      text={m.unicode}
+                      sanskritFontPreset={displaySettings.sanskritFontPreset}
+                      tamilFontPreset={displaySettings.tamilFontPreset}
+                    />
+                  </div>
                   <kbd className="mt-1 px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded text-[10px] text-amber-700 font-mono font-bold">{m.itrans}</kbd>
                 </div>
               ))}
@@ -243,9 +251,22 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
                               className="flex items-center justify-between gap-4 p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md hover:border-blue-200 hover:bg-blue-50/30 transition-all group cursor-pointer active:scale-95"
                             >
                               <div className="flex items-baseline gap-3">
-                                <span className="text-3xl font-serif text-slate-900 group-hover:scale-110 transition-transform">{m.unicode}</span>
+                                <div className="text-3xl font-serif text-slate-900 group-hover:scale-110 transition-transform">
+                                  <ScriptText 
+                                    script={primaryOutputScript} 
+                                    text={m.unicode}
+                                    sanskritFontPreset={displaySettings.sanskritFontPreset}
+                                    tamilFontPreset={displaySettings.tamilFontPreset}
+                                  />
+                                </div>
                                 {devanagariEquivalent && (
-                                  <span className="text-xl font-serif text-slate-400">({devanagariEquivalent})</span>
+                                  <div className="text-xl font-serif text-slate-400">
+                                    (<ScriptText 
+                                      script="devanagari" 
+                                      text={devanagariEquivalent}
+                                      sanskritFontPreset={displaySettings.sanskritFontPreset}
+                                    />)
+                                  </div>
                                 )}
                               </div>
                               <div className="min-w-0 text-right">
@@ -289,8 +310,8 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
                   <p className="mt-1 text-xs leading-5 text-slate-500">
                     {shortcut.description}
                   </p>
-                  <p className="mt-2 text-xs font-medium text-slate-600">
-                    Example: <span className="font-serif text-sm text-slate-900" dir="ltr">{shortcut.example}</span>
+                  <p className="mt-2 text-xs font-medium text-slate-600 flex items-center gap-1">
+                    Example: <ScriptText script="devanagari" text={shortcut.example} sanskritFontPreset={displaySettings.sanskritFontPreset} className="text-sm text-slate-900" />
                     <span className="ml-2 text-[10px] uppercase tracking-[0.12em] text-slate-400">({shortcut.exampleLabel})</span>
                   </p>
                 </div>
