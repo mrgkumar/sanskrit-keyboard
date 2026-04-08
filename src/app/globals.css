@@ -45,6 +45,7 @@ kbd {
 
 .script-text-devanagari {
   text-rendering: optimizeLegibility;
+  font-feature-settings: "kern" 1, "abvm" 1, "blwm" 1, "dist" 1, "half" 1, "vatu" 1;
 }
 
 .script-text-devanagari[data-font-preset="chandas"] {
