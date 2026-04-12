@@ -9,7 +9,8 @@ import {
   Info,
   HelpCircle,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Bug
 } from 'lucide-react';
 import { VEDIC_MAPPINGS } from '@/lib/vedic/mapping';
 
@@ -205,11 +206,24 @@ export default function HelpPage() {
         </div>
 
         {/* Closing */}
-        <footer className="pt-12 border-t border-slate-200 text-center space-y-4">
-          <p className="text-slate-400 text-sm font-medium">
-            Developed for scholarly research. Settings are persisted locally.
-          </p>
-          <div className="flex justify-center gap-8">
+        <footer className="pt-12 border-t border-slate-200 text-center space-y-6">
+          <div className="space-y-2">
+            <p className="text-slate-400 text-sm font-medium">
+              Developed for scholarly research. Settings are persisted locally.
+            </p>
+            <div className="flex flex-col items-center gap-4 pt-2">
+              <a 
+                href="https://github.com/mrgkumar/sanskrit-keyboard/issues" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 font-bold text-xs uppercase tracking-widest rounded-xl transition-all active:scale-95 border border-slate-200"
+              >
+                <Bug className="w-4 h-4 text-rose-500" />
+                Report an Issue on GitHub
+              </a>
+            </div>
+          </div>
+          <div className="flex justify-center gap-8 pt-4">
             <Link href="/" className="text-blue-600 font-bold text-sm hover:underline">Return to Workspace</Link>
             <Link href="/welcome" className="text-blue-600 font-bold text-sm hover:underline">Restart Walkthrough</Link>
           </div>

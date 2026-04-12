@@ -1,3 +1,3 @@
 // This file is auto-generated during build
-export const BUILD_VERSION = '20260408.2346';
-export const BUILD_TIME = '2026-04-08T18:16:04.586Z';
+export const BUILD_VERSION = '20260412.1730';
+export const BUILD_TIME = '2026-04-12T12:00:42.210Z';

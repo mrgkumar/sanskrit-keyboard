@@ -4,12 +4,12 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { useFlowStore } from '@/store/useFlowStore';
-import { BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, Trash2, Undo2, HelpCircle } from 'lucide-react';
+import { BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, Trash2, Undo2, HelpCircle, Bug } from 'lucide-react';
 import { clsx } from 'clsx';
 import Link from 'next/link';
 import { ShortcutHUD } from '@/components/engine/ShortcutHUD';
 import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
-import { getScriptDisplayText, ScriptText } from '@/components/ScriptText';
+import { getScriptDisplayText } from '@/components/ScriptText';
 import { VerticalResizeHandle } from '@/components/VerticalResizeHandle';
 import {
   canonicalizeDevanagariPaste,
@@ -722,6 +722,27 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
     focusComposerAt(currentChunkSource.length);
   };
 
+  const scrollAnchorIntoView = React.useCallback((container: HTMLElement | null) => {
+    if (!container) return;
+    
+    const anchor =
+      container.querySelector<HTMLElement>('[data-current-word="true"]') ??
+      container.querySelector<HTMLElement>(`[data-target-index="${targetCaretIndex}"]`) ??
+      container.querySelector<HTMLElement>('[data-testid="preview-caret"]');
+
+    if (!anchor) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const anchorRect = anchor.getBoundingClientRect();
+    const isFullyVisible =
+      anchorRect.top >= containerRect.top + 8 &&
+      anchorRect.bottom <= containerRect.bottom - 8;
+
+    if (!isFullyVisible) {
+      anchor.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+    }
+  }, [targetCaretIndex]);
+
   const handleComposerScroll = (event: React.UIEvent<HTMLTextAreaElement>) => {
     if (programmaticScrollTargetRef.current === event.currentTarget) {
       return;
@@ -733,28 +754,9 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
     }
     syncPaneScroll(event.currentTarget, [previewRef.current, comparePreviewRef.current]);
     window.requestAnimationFrame(() => {
-      const preview = previewRef.current;
-      if (!preview) {
-        return;
-      }
-
-      const anchor =
-        preview.querySelector<HTMLElement>('[data-current-word="true"]') ??
-        preview.querySelector<HTMLElement>(`[data-target-index="${targetCaretIndex}"]`) ??
-        preview.querySelector<HTMLElement>('[data-testid="preview-caret"]');
-
-      if (!anchor) {
-        return;
-      }
-
-      const containerRect = preview.getBoundingClientRect();
-      const anchorRect = anchor.getBoundingClientRect();
-      const isFullyVisible =
-        anchorRect.top >= containerRect.top + 8 &&
-        anchorRect.bottom <= containerRect.bottom - 8;
-
-      if (!isFullyVisible) {
-        anchor.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+      scrollAnchorIntoView(previewRef.current);
+      if (isComposerCompareMode) {
+        scrollAnchorIntoView(comparePreviewRef.current);
       }
     });
   };
@@ -829,28 +831,9 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
     }
 
     const rafId = window.requestAnimationFrame(() => {
-      const preview = previewRef.current;
-      if (!preview) {
-        return;
-      }
-
-      const anchor =
-        preview.querySelector<HTMLElement>('[data-current-word="true"]') ??
-        preview.querySelector<HTMLElement>(`[data-target-index="${targetCaretIndex}"]`) ??
-        preview.querySelector<HTMLElement>('[data-testid="preview-caret"]');
-
-      if (!anchor) {
-        return;
-      }
-
-      const containerRect = preview.getBoundingClientRect();
-      const anchorRect = anchor.getBoundingClientRect();
-      const isFullyVisible =
-        anchorRect.top >= containerRect.top + 8 &&
-        anchorRect.bottom <= containerRect.bottom - 8;
-
-      if (!isFullyVisible) {
-        anchor.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
+      scrollAnchorIntoView(previewRef.current);
+      if (isComposerCompareMode) {
+        scrollAnchorIntoView(comparePreviewRef.current);
       }
     });
     return () => window.cancelAnimationFrame(rafId);
@@ -862,6 +845,8 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
     currentWordTargetRange?.end,
     syncComposerScroll,
     targetCaretIndex,
+    scrollAnchorIntoView,
+    isComposerCompareMode,
   ]);
 
   React.useEffect(() => {
@@ -1284,6 +1269,17 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                   Help
                 </Link>
 
+                <a
+                  href="https://github.com/mrgkumar/sanskrit-keyboard/issues"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex touch-manipulation items-center gap-1 rounded-md border border-rose-100 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-rose-700 hover:bg-rose-50"
+                  title="Report an issue on GitHub"
+                >
+                  <Bug className="h-3.5 w-3.5 text-rose-500" />
+                  Report Bug
+                </a>
+
                 <button
                   onClick={() => {
                     setActiveQuickSwitchMenu(null);
@@ -1408,7 +1404,7 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                           syncSelection(e.currentTarget);
                         }
                       }}
-                      rows={Math.min(6, Math.max(1, currentChunkSource.split('\n').length))}
+                      rows={6}
                       placeholder="... start typing or paste devanagari text."
                     />
                   </div>
@@ -1523,7 +1519,7 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                             </span>
                           </div>
 
-                          {/* Real text as a single node for perfect ligatures */}
+                          {/* Real text with highlighting */}
                           <span
                             className="font-serif script-text-devanagari whitespace-pre-wrap break-words text-slate-900"
                             data-font-preset={sanskritFontPreset}
@@ -1533,7 +1529,18 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                               lineHeight: composerTypography.devanagariLineHeight,
                             }}
                           >
-                            {renderedPreview.unicode}
+                            {currentWordTargetRange ? (
+                              <>
+                                {renderedPreview.unicode.slice(0, currentWordTargetRange.start)}
+                                <span 
+                                  className="rounded-sm bg-yellow-100/40 px-0.5 -mx-0.5 font-bold text-[#6b1f1f]" 
+                                  data-current-word="true"
+                                >
+                                  {renderedPreview.unicode.slice(currentWordTargetRange.start, currentWordTargetRange.end)}
+                                </span>
+                                {renderedPreview.unicode.slice(currentWordTargetRange.end)}
+                              </>
+                            ) : renderedPreview.unicode}
                           </span>
                           
                           {/* Absolutely positioned visible caret */}
@@ -1576,10 +1583,23 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                             lineHeight: composerTypography.tamilLineHeight,
                           }}
                         >
-                          {getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource, 'tamil', {
-                            romanOutputStyle,
-                            tamilOutputStyle,
-                          }))}
+                          {currentSourceWordRange ? (
+                            <>
+                              {getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource.slice(0, currentSourceWordRange.start), 'tamil', { romanOutputStyle, tamilOutputStyle }))}
+                              <span 
+                                className="rounded-sm bg-yellow-100/40 px-0.5 -mx-0.5 font-bold text-[#6b1f1f]" 
+                                data-current-word="true"
+                              >
+                                {getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.start, currentSourceWordRange.end), 'tamil', { romanOutputStyle, tamilOutputStyle }))}
+                              </span>
+                              {getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.end), 'tamil', { romanOutputStyle, tamilOutputStyle }))}
+                            </>
+                          ) : (
+                            getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource, 'tamil', {
+                              romanOutputStyle,
+                              tamilOutputStyle,
+                            }))
+                          )}
                         </span>
 
                         <CaretOverlay 
@@ -1589,17 +1609,26 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                         />
                       </div>
                     ) : (
-                      <ScriptText
-                        script={primaryOutputScript}
-                        sanskritFontPreset={sanskritFontPreset}
-                        tamilFontPreset={tamilFontPreset}
-                        text={primaryPreviewText || 'Roman preview'}
-                        className="text-slate-900"
+                      <span
+                        className="font-mono script-text-wrap whitespace-pre-wrap break-words text-slate-900"
                         style={{
                           fontSize: `${composerTypography.devanagariFontSize}px`,
                           lineHeight: composerTypography.devanagariLineHeight,
                         }}
-                      />
+                      >
+                        {currentSourceWordRange ? (
+                          <>
+                            {formatSourceForScript(currentChunkSource.slice(0, currentSourceWordRange.start), 'roman', { romanOutputStyle, tamilOutputStyle })}
+                            <span 
+                              className="rounded-sm bg-yellow-100/40 px-0.5 -mx-0.5 font-bold text-[#6b1f1f]" 
+                              data-current-word="true"
+                            >
+                              {formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.start, currentSourceWordRange.end), 'roman', { romanOutputStyle, tamilOutputStyle })}
+                            </span>
+                            {formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.end), 'roman', { romanOutputStyle, tamilOutputStyle })}
+                          </>
+                        ) : primaryPreviewText || 'Roman preview'}
+                      </span>
                     )}
                   </div>
                   <VerticalResizeHandle
@@ -1689,10 +1718,46 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                             lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
                           }}
                         >
-                          {(activeComparisonScript ?? primaryOutputScript) === 'tamil' 
-                            ? getScriptDisplayText('tamil', comparisonPreviewText) 
-                            : (comparisonPreviewText || ((activeComparisonScript ?? primaryOutputScript) === 'devanagari' ? 'Devanagari compare' : 'Comparison preview'))
-                          }
+                          {(activeComparisonScript ?? primaryOutputScript) === 'devanagari' ? (
+                            currentWordTargetRange ? (
+                              <>
+                                {renderedPreview.unicode.slice(0, currentWordTargetRange.start)}
+                                <span 
+                                  className="rounded-sm bg-slate-200/50 px-0.5 -mx-0.5 font-bold text-slate-900" 
+                                  data-current-word="true"
+                                >
+                                  {renderedPreview.unicode.slice(currentWordTargetRange.start, currentWordTargetRange.end)}
+                                </span>
+                                {renderedPreview.unicode.slice(currentWordTargetRange.end)}
+                              </>
+                            ) : renderedPreview.unicode
+                          ) : (activeComparisonScript ?? primaryOutputScript) === 'tamil' ? (
+                            currentSourceWordRange ? (
+                              <>
+                                {getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource.slice(0, currentSourceWordRange.start), 'tamil', { romanOutputStyle, tamilOutputStyle }))}
+                                <span 
+                                  className="rounded-sm bg-slate-200/50 px-0.5 -mx-0.5 font-bold text-slate-900" 
+                                  data-current-word="true"
+                                >
+                                  {getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.start, currentSourceWordRange.end), 'tamil', { romanOutputStyle, tamilOutputStyle }))}
+                                </span>
+                                {getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.end), 'tamil', { romanOutputStyle, tamilOutputStyle }))}
+                              </>
+                            ) : getScriptDisplayText('tamil', comparisonPreviewText)
+                          ) : (
+                            currentSourceWordRange ? (
+                              <>
+                                {formatSourceForScript(currentChunkSource.slice(0, currentSourceWordRange.start), 'roman', { romanOutputStyle, tamilOutputStyle })}
+                                <span 
+                                  className="rounded-sm bg-slate-200/50 px-0.5 -mx-0.5 font-bold text-slate-900" 
+                                  data-current-word="true"
+                                >
+                                  {formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.start, currentSourceWordRange.end), 'roman', { romanOutputStyle, tamilOutputStyle })}
+                                </span>
+                                {formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.end), 'roman', { romanOutputStyle, tamilOutputStyle })}
+                              </>
+                            ) : (comparisonPreviewText || 'Comparison preview')
+                          )}
                         </span>
 
                         {/* Absolutely positioned visible caret */}

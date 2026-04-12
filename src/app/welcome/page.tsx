@@ -10,7 +10,8 @@ import {
   MousePointer2, 
   CheckCircle2,
   ArrowRight,
-  Command
+  Command,
+  Bug
 } from 'lucide-react';
 
 export default function WelcomePage() {
@@ -48,6 +49,54 @@ export default function WelcomePage() {
               Sanskirt Keyboard is designed for scholars who need to move at the speed of thought. 
               No menus, no distractions—just a fluid transliteration experience that learns your patterns.
             </p>
+          </div>
+        </section>
+
+        {/* Attributes & Inspiration */}
+        <section className="max-w-3xl mx-auto py-12 px-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm space-y-8">
+          <div className="text-center space-y-2">
+            <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase">Attributes & Inspiration</h2>
+            <div className="w-12 h-1 bg-blue-600 mx-auto rounded-full" />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-8 text-sm leading-relaxed">
+            <div className="space-y-3">
+              <h4 className="font-bold text-blue-700 uppercase tracking-wider text-[10px]">Data & Research</h4>
+              <p className="text-slate-600">
+                Validated against <a href="https://huggingface.co/datasets/ai4bharat/Aksharantar" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Aksharantar</a> and inspired by <a href="https://github.com/AI4Bharat/IndicXlit" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">IndicXlit</a> from AI4Bharat.
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <h4 className="font-bold text-blue-700 uppercase tracking-wider text-[10px]">Tools & Precedents</h4>
+              <p className="text-slate-600">
+                Rooted in the phonetic logic of <a href="https://baraha.com/main.php" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Baraha</a> and the excellent corpus work of <a href="https://vignanam.org" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">Vignanam.org</a>.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="font-bold text-blue-700 uppercase tracking-wider text-[10px]">Methodology</h4>
+              <p className="text-slate-600">
+                Learned through an unsupervised loop modelling the path: <span className="font-bold text-slate-800 text-[10px]">Devanagari → English → Devanagari → English → Tamil → English</span>.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="font-bold text-blue-700 uppercase tracking-wider text-[10px]">Agentic Development</h4>
+              <p className="text-slate-600">
+                Orchestrated via <span className="font-medium text-slate-800">Gemini CLI</span> & <span className="font-medium text-slate-800">Codex</span> using the <a href="https://docs.bmad-method.org/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">BMad-Method</a> on <a href="https://github.com/mrgkumar/sanskrit-keyboard" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-medium">GitHub</a>.
+              </p>
+            </div>
+
+            <div className="lg:col-span-4 md:col-span-2 space-y-4 pt-4 border-t border-slate-50">
+              <h4 className="font-bold text-blue-700 uppercase tracking-wider text-[10px] text-center">The Scholarly Mission</h4>
+              <p className="text-slate-600 text-center italic max-w-2xl mx-auto">
+                &quot;Driven by the gap in Vedic swara support in Tamil transliteration. This work is dedicated to my Guru, family, and friends who motivated the quest for 100% cross-script precision.&quot;
+              </p>
+              <p className="text-slate-400 text-[10px] text-center uppercase tracking-widest font-bold">
+                Built entirely with GenAI &bull; No manual React coding involved
+              </p>
+            </div>
           </div>
         </section>
 
@@ -177,11 +226,20 @@ export default function WelcomePage() {
         <p className="text-slate-400 text-xs font-medium uppercase tracking-[0.2em]">
           Scholarly Standard • Sanskrit Keyboard
         </p>
-        <div className="flex justify-center gap-6">
+        <div className="flex justify-center items-center gap-8">
           <Link href="/help" className="text-blue-600 font-bold text-xs uppercase tracking-widest hover:underline flex items-center gap-1.5">
             <BookOpen className="w-3.5 h-3.5" />
             Full Documentation
           </Link>
+          <a 
+            href="https://github.com/mrgkumar/sanskrit-keyboard/issues" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-slate-500 hover:text-rose-600 font-bold text-xs uppercase tracking-widest hover:underline flex items-center gap-1.5 transition-colors"
+          >
+            <Bug className="w-3.5 h-3.5" />
+            Report Issue
+          </a>
         </div>
       </footer>
     </div>

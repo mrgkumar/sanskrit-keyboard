@@ -213,9 +213,9 @@ const DEFAULT_TYPOGRAPHY: TypographySettings = {
     tamilLineHeight: 1.8,
     itransFontSize: 18,
     itransLineHeight: 1.6,
-    itransPanelHeight: 168,
-    primaryPreviewHeight: 224,
-    comparePreviewHeight: 224,
+    itransPanelHeight: 150,
+    primaryPreviewHeight: 150,
+    comparePreviewHeight: 150,
   },
   document: {
     itransFontSize: 18,
@@ -345,8 +345,8 @@ const clampTypographyHeights = (settings: TypographySettings): TypographySetting
   composer: {
     ...settings.composer,
     itransPanelHeight: Math.max(settings.composer.itransPanelHeight, 140),
-    primaryPreviewHeight: Math.max(settings.composer.primaryPreviewHeight, 220),
-    comparePreviewHeight: Math.max(settings.composer.comparePreviewHeight, 220),
+    primaryPreviewHeight: Math.max(settings.composer.primaryPreviewHeight, 140),
+    comparePreviewHeight: Math.max(settings.composer.comparePreviewHeight, 140),
   },
   document: {
     ...settings.document,

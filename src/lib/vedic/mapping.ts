@@ -452,10 +452,10 @@ export const TAMIL_MAPPINGS: VedicMapping[] = [
   { itrans: 'au', unicode: '\u0B94', preferredReverse: true, name: 'au', category: 'vowel' },
 
   // Vocalics (Sanskrit-in-Tamil Precision)
-  { itrans: 'R^i', unicode: 'ரு¹', name: 'vocalic r', category: 'vowel', isScholarly: true },
-  { itrans: 'R^I', unicode: 'ரூ¹', name: 'vocalic rr', category: 'vowel', isScholarly: true },
-  { itrans: 'L^i', unicode: 'லு¹', name: 'vocalic l', category: 'vowel', isScholarly: true },
-  { itrans: 'L^I', unicode: 'லூ¹', name: 'vocalic ll', category: 'vowel', isScholarly: true },
+  { itrans: 'R^i', unicode: 'ரு', name: 'vocalic r', category: 'vowel', isScholarly: true },
+  { itrans: 'R^I', unicode: 'ரூ', name: 'vocalic rr', category: 'vowel', isScholarly: true },
+  { itrans: 'L^i', unicode: 'லு', name: 'vocalic l', category: 'vowel', isScholarly: true },
+  { itrans: 'L^I', unicode: 'லூ', name: 'vocalic ll', category: 'vowel', isScholarly: true },
   
   // Consonants (with Precision Superscripts)
   { itrans: 'k', unicode: '\u0B95\u0BCD', name: 'ka', category: 'consonant' },
@@ -508,7 +508,7 @@ export const TAMIL_MAPPINGS: VedicMapping[] = [
 
   // Marks
   { itrans: 'M', unicode: '\u0B82', preferredReverse: true, name: 'anusvara', category: 'mark' },
-  { itrans: ':', unicode: '\u0B83', preferredReverse: true, name: 'visarga', category: 'mark' },
+  { itrans: ':', unicode: ':', preferredReverse: true, name: 'visarga', category: 'mark' },
   { itrans: '^z', unicode: '\u200C', preferredReverse: true, name: 'zwnj', category: 'special' },
   { itrans: '^Z', unicode: '\u200D', preferredReverse: true, name: 'zwj', category: 'special' },
   

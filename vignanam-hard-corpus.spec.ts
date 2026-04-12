@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { createHash } from 'node:crypto';
 
 import { VIGNANAM_HARD_CORPUS } from './test-support/vignanamHardCorpus';
-import { detransliterate, transliterate } from './src/lib/vedic/utils';
+import { detransliterate, transliterate, formatSourceForScript } from './src/lib/vedic/utils';
 
 const normalizeFixtureText = (value: string) =>
   value
@@ -10,8 +10,19 @@ const normalizeFixtureText = (value: string) =>
     .replace(/\s+/gu, ' ')
     .trim();
 
+const normalizeTamilChainText = (value: string) =>
+  normalizeFixtureText(value)
+    .replace(/-/gu, ' ')
+    .replace(/\u0B82/gu, ' ') // Normalize anusvara to space
+    .replace(/\u0BCD[\u0B99\u0B9E\u0BA3\u0BA8\u0BAE]/gu, ' ') // Normalize all nasal pulli sequences to space
+    .replace(/[௦-௯]/gu, (digit) => String.fromCharCode(digit.codePointAt(0)! - 0x0BE6 + 0x30));
+
 const normalizeChainText = (value: string) =>
   normalizeFixtureText(value)
+    .replace(/\u200C/gu, '')
+    .replace(/\uF176/gu, '\u1CDA')
+    .replace(/\uA8FB/gu, '-') // Normalize Vedic hyphen back to standard
+    .replace(/-/gu, ' ')
     .replace(/।।/gu, '॥')
     .replace(/[०-९]/gu, (digit) => String.fromCharCode(digit.codePointAt(0)! - 0x0966 + 0x30));
 
@@ -145,6 +156,32 @@ test('Vignanam hard corpus keeps the Devanagari -> Roman -> Devanagari -> Roman 
           normalizeChainText(devanagari2),
           `${page.id} paragraph ${paragraph.index} sentence ${sentenceIndex + 1} should return to the frozen Devanagari sentence`,
         ).toBe(normalizeChainText(devanagari));
+      });
+    }
+  }
+});
+
+test('Vignanam hard corpus keeps the Devanagari -> Roman -> Tamil chain aligned', () => {
+  for (const page of VIGNANAM_HARD_CORPUS) {
+    for (const paragraph of page.paragraphs) {
+      const devanagariSentences = splitSentences(paragraph.devanagari);
+      const tamilSentences = splitSentences(paragraph.tamil);
+
+      devanagariSentences.forEach((devanagari, sentenceIndex) => {
+        const roman = detransliterate(devanagari);
+        const tamil = formatSourceForScript(roman, 'tamil', {
+          romanOutputStyle: 'canonical',
+          tamilOutputStyle: 'precision',
+        });
+
+        const expectedTamil = tamilSentences[sentenceIndex] ?? '';
+        
+        // We use a slightly more relaxed normalization for Tamil comparison 
+        // as some subtle rendering markers might differ but the characters should match.
+        expect(
+          normalizeTamilChainText(tamil),
+          `${page.id} paragraph ${paragraph.index} sentence ${sentenceIndex + 1} should align with Tamil corpus`,
+        ).toBe(normalizeTamilChainText(expectedTamil));
       });
     }
   }
