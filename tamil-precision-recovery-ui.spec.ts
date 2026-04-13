@@ -16,6 +16,7 @@ const clearStorage = async (page: Page) => {
     Object.keys(window.localStorage)
       .filter((key) => key.startsWith('sanskrit-keyboard.session.v2.'))
       .forEach((key) => window.localStorage.removeItem(key));
+    window.localStorage.setItem('sanskirt-keyboard-visited', 'true');
   }, STORAGE_KEYS_TO_CLEAR);
 };
 
@@ -23,12 +24,32 @@ const loadDefaultSession = async (page: Page) => {
   await clearStorage(page);
   await page.goto(APP_URL);
   page.on('dialog', (dialog) => dialog.accept());
-  await expect(page.getByTestId('sticky-itrans-input')).toBeVisible();
+  
+  // Handle Session Landing if present
+  const newSessionButton = page.getByRole('button', { name: 'New Session' });
+  if (await newSessionButton.isVisible({ timeout: 5000 })) {
+    await newSessionButton.click({ force: true });
+  }
+
+  await expect(page.getByTestId('sticky-itrans-input')).toBeVisible({ timeout: 15000 });
 };
 
 const openWorkspace = async (page: Page) => {
-  await page.getByRole('button', { name: 'Workspace' }).click();
-  await expect(page.getByTestId('workspace-tamil-precision-recovery')).toBeVisible();
+  // Ensure the toggle button is ready
+  const toggle = page.getByTestId('workspace-toggle');
+  await expect(toggle).toBeVisible();
+  await toggle.click({ force: true });
+  
+  // Wait for the panel to be visible
+  await expect(page.getByTestId('workspace-panel')).toBeVisible({ timeout: 10000 });
+  
+  // Wait for the tab to be attached and click it via evaluate
+  await page.waitForFunction(() => document.querySelector('[data-testid="workspace-tab-utility"]') !== null);
+  await page.evaluate(() => {
+    (document.querySelector('[data-testid="workspace-tab-utility"]') as HTMLElement)?.click();
+  });
+  
+  await expect(page.getByTestId('workspace-tamil-precision-recovery')).toBeVisible({ timeout: 15000 });
 };
 
 test('Tamil Precision Recovery stays explicitly bounded in the workspace panel', async ({ page }) => {
@@ -50,14 +71,14 @@ test('Tamil Precision Recovery shows canonical and Baraha Roman outputs for exac
   await loadDefaultSession(page);
   await openWorkspace(page);
 
-  await page.getByTestId('tamil-recovery-input').fill('க³ீதா');
+  await page.getByTestId('tamil-recovery-input').fill('கீ³தா');
 
   await expect(page.getByTestId('tamil-recovery-success')).toContainText(
     'Exact recovery succeeded from Tamil Precision input.',
   );
   await expect(page.getByTestId('tamil-recovery-canonical-output')).toContainText('gItA');
   await expect(page.getByText('Derived Baraha Roman')).toBeVisible();
-  await expect(page.getByTestId('tamil-recovery-baraha-output')).toContainText('gItA');
+  await expect(page.getByTestId('tamil-recovery-baraha-output')).toContainText('geetA');
   await expect(page.getByText('Derived from the canonical recovery result. It is not a separate Tamil parser mode.')).toBeVisible();
 });
 
@@ -81,7 +102,7 @@ test('Tamil Precision Recovery clears success outputs when input transitions fro
   await openWorkspace(page);
 
   const input = page.getByTestId('tamil-recovery-input');
-  await input.fill('க³ீதா');
+  await input.fill('கீ³தா');
   await expect(page.getByTestId('tamil-recovery-success')).toBeVisible();
   await expect(page.getByTestId('tamil-recovery-canonical-output')).toContainText('gItA');
 

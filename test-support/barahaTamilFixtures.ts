@@ -37,7 +37,7 @@ export const BARAHA_TAMIL_PHONETIC_PAGE_FIXTURES = {
     ['ஒ', ['o']],
     ['ஓ', ['O']],
     ['ஔ', ['au', 'ou']],
-    ['ஃ', ['H']],
+    [':', ['H']],
   ],
   consonants: [
     ['க்', ['k', 'K', 'kh', 'g', 'G', 'gh']],

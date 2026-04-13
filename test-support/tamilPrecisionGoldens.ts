@@ -4,7 +4,7 @@ export const TAMIL_PRECISION_RICH_GOLDENS = [
   ['L^i', 'லு¹'],
   ['L^I', 'லூ¹'],
   ['M', 'ம்'],
-  [':', 'ஃ'],
+  [':', ':'],
   ['ka', 'க'],
   ['kha', 'க²'],
   ['ga', 'க³'],
@@ -30,7 +30,7 @@ export const TAMIL_PRECISION_RICH_GOLDENS = [
   ['sa', 'ஸ'],
   ['ha', 'ஹ'],
   ['kSha', 'க்ஷ'],
-  ['gItA', 'க³ீதா'],
+  ['gItA', 'கீ³தா'],
   ['veda', 'வேத³'],
   ['dharma', 'த⁴ர்ம'],
   ['bhakti', 'ப⁴க்தி'],
@@ -40,7 +40,7 @@ export const TAMIL_PRECISION_RICH_GOLDENS = [
   ['kR^ita', 'க்ரு¹த'],
   ['kL^ipta', 'க்லு¹ப்த'],
   ['saMskR^ita', 'ஸம்ஸ்க்ரு¹த'],
-  ['guru:', 'க³ுருஃ'],
+  ['guru:', 'கு³ரு:'],
   ['shrI', 'ஶ்ரீ'],
 ] as const;
 
@@ -58,5 +58,5 @@ export const TAMIL_PRECISION_ASCII_FALLBACK_GOLDENS = [
   ['amR^ita', 'அம்ரு<R>த'],
   ['kR^ita', 'க்ரு<R>த'],
   ['kL^ipta', 'க்லு<L>ப்த'],
-  ['guru:', 'க^3ுருஃ'],
+  ['guru:', 'கு^3ரு:'],
 ] as const;

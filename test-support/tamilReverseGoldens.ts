@@ -29,8 +29,8 @@ export const TAMIL_REVERSE_RICH_GOLDENS = [
   ['லு¹', 'L^i'],
   ['லூ¹', 'L^I'],
   ['ஂ', 'M'],
-  ['ஃ', ':'],
-  ['க³ீதா', 'gItA'],
+  [':', ':'],
+  ['கீ³தா', 'gItA'],
   ['வேத³', 'veda'],
   ['த⁴ர்ம', 'dharma'],
   ['ப⁴க்தி', 'bhakti'],
@@ -40,7 +40,7 @@ export const TAMIL_REVERSE_RICH_GOLDENS = [
   ['க்ரு¹த', 'kR^ita'],
   ['க்லு¹ப்த', 'kL^ipta'],
   ['ஸஂஸ்க்ரு¹த', 'saMskR^ita'],
-  ['க³ுருஃ', 'guru:'],
+  ['கு³ரு:', 'guru:'],
   ['ஶ்ரீ', 'shrI'],
 ] as const;
 
@@ -55,9 +55,9 @@ export const TAMIL_REVERSE_ASCII_GOLDENS = [
   ['ரூ<R>', 'R^I'],
   ['லு<L>', 'L^i'],
   ['லூ<L>', 'L^I'],
-  ['க^3ீதா', 'gItA'],
+  ['கீ^3தா', 'gItA'],
   ['அம்ரு<R>த', 'amR^ita'],
   ['க்ரு<R>த', 'kR^ita'],
   ['க்லு<L>ப்த', 'kL^ipta'],
-  ['க^3ுருஃ', 'guru:'],
+  ['கு^3ரு:', 'guru:'],
 ] as const;

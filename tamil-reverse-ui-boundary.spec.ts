@@ -38,22 +38,24 @@ test('Gate 6 does not expose a generic Tamil reverse entry point or claim genera
   expect(shippedUiSources).not.toMatch(/generic Tamil input/i);
 });
 
-test('Gate 6 keeps Tamil read mode explicitly gated away from exact cursor-linked navigation', () => {
+test('Gate 6 ensures Tamil read mode now supports cursor-linked word highlighting', () => {
   const stickyComposerSource = readSource('src/components/StickyTopComposer.tsx');
 
-  expect(stickyComposerSource).toContain('Tamil preview is read-only. Cursor-linked navigation and highlight stay Devanagari-only.');
+  expect(stickyComposerSource).toContain('primaryOutputScript === \'tamil\'');
+  expect(stickyComposerSource).toContain('data-current-word="true"');
+  expect(stickyComposerSource).not.toContain('Tamil preview is read-only');
 });
 
 test('Tamil Precision recovery copy stays bounded to precision-only input and honest rejection language', () => {
-  const engineSource = readSource('src/components/engine/TransliterationEngine.tsx');
+  const recoverySource = readSource('src/components/engine/TamilPrecisionRecovery.tsx');
 
-  expect(engineSource).toContain('Tamil Precision Recovery');
-  expect(engineSource).toContain('Utility');
-  expect(engineSource).toContain(
+  expect(recoverySource).toContain('Tamil Precision Recovery');
+  expect(recoverySource).toContain('Utility');
+  expect(recoverySource).toContain(
     'Phase 1 utility: recovers Roman Sanskrit only from frozen Tamil Precision input. Plain Tamil and Baraha Tamil reject instead of guessing.',
   );
-  expect(engineSource).toContain('Derived Baraha Roman');
-  expect(engineSource).toContain('Derived from the canonical recovery result. It is not a separate Tamil parser mode.');
-  expect(engineSource).toContain('Rejected Source');
-  expect(engineSource).not.toMatch(/supports generic Tamil input/i);
+  expect(recoverySource).toContain('Derived Baraha Roman');
+  expect(recoverySource).toContain('Derived from the canonical recovery result. It is not a separate Tamil parser mode.');
+  expect(recoverySource).toContain('Rejected Source');
+  expect(recoverySource).not.toMatch(/supports generic Tamil input/i);
 });

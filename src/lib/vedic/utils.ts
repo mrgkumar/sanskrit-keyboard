@@ -103,10 +103,10 @@ const DEVANAGARI_INDEPENDENT_VOWELS: Record<string, string> = {
   '\u0908': 'ஈ',
   '\u0909': 'உ',
   '\u090A': 'ஊ',
-  '\u090B': 'ரு',
-  '\u0960': 'ரூ',
-  '\u090C': 'லு',
-  '\u0961': 'லூ',
+  '\u090B': 'ரு¹',
+  '\u0960': 'ரூ¹',
+  '\u090C': 'லு¹',
+  '\u0961': 'லூ¹',
   '\u090E': 'எ',
   '\u090F': 'ஏ',
   '\u0910': 'ஐ',
@@ -128,10 +128,10 @@ const DEVANAGARI_DEPENDENT_VOWELS_TO_TAMIL: Record<string, string> = {
   '\u094C': 'ௌ',
 };
 const DEVANAGARI_DEPENDENT_VOCALICS_TO_TAMIL: Record<string, string> = {
-  '\u0943': '்ரு',
-  '\u0944': '்ரூ',
-  '\u0962': '்லு',
-  '\u0963': '்லூ',
+  '\u0943': '்ரு¹',
+  '\u0944': '்ரூ¹',
+  '\u0962': '்லு¹',
+  '\u0963': '்லூ¹',
 };
 const DEVANAGARI_CONSONANTS_TO_TAMIL: Record<string, string> = {
   '\u0915': 'க',
@@ -174,10 +174,10 @@ const DEVANAGARI_CONSONANTS_TO_TAMIL: Record<string, string> = {
   '\u0939': 'ஹ',
 };
 const TAMIL_PRECISION_INDEPENDENT_VOWELS_TO_CANONICAL: Record<string, string> = {
-  'ரூ': 'R^I',
-  'லூ': 'L^I',
-  'ரு': 'R^i',
-  'லு': 'L^i',
+  'ரூ¹': 'R^I',
+  'லூ¹': 'L^I',
+  'ரு¹': 'R^i',
+  'லு¹': 'L^i',
   'அ': 'a',
   'ஆ': 'A',
   'இ': 'i',
@@ -205,10 +205,10 @@ const TAMIL_PRECISION_DEPENDENT_VOWELS_TO_CANONICAL: Record<string, string> = {
   'ௌ': 'au',
 };
 const TAMIL_PRECISION_DEPENDENT_VOCALICS_TO_CANONICAL: Record<string, string> = {
-  '்ரூ': 'R^I',
-  '்லூ': 'L^I',
-  '்ரு': 'R^i',
-  '்லு': 'L^i',
+  '்ரூ¹': 'R^I',
+  '்லூ¹': 'L^I',
+  '்ரு¹': 'R^i',
+  '்லு¹': 'L^i',
 };
 const TAMIL_PRECISION_CONSONANTS_TO_CANONICAL: Record<string, string> = {
   'க்ஷ': 'kSh',
@@ -329,12 +329,12 @@ const normalizeTamilPrecisionInput = (value: string) => {
     },
   );
 
-  normalized = normalized.replace(/([\p{Script=Tamil}]+)்([²³⁴])/gu, '$1$2்');
+  normalized = normalized.replace(/([\p{Script=Tamil}]+)்([²³⁴]|\^[234])/gu, '$1$2்');
   normalized = normalized.replace(
-    /([\p{Script=Tamil}])([ாிீுூேொோைௌ]+)([॒॑᳚]+)([²³⁴]+)/gu,
+    /([\p{Script=Tamil}])([ாிீுூேொோைௌ]+)([॒॑᳚]*)([²³⁴]+|\^[234]+)/gu,
     '$1$4$2$3',
   );
-  normalized = normalized.replace(/([\p{Script=Tamil}])([॒॑᳚]+)([²³⁴]+)/gu, '$1$3$2');
+  normalized = normalized.replace(/([\p{Script=Tamil}])([॒॑᳚]+)([²³⁴]+|\^[234]+)/gu, '$1$3$2');
 
   return normalized.replace(
     TAMIL_PRECISION_ASCII_SUPERSCRIPT_PATTERN,
@@ -467,7 +467,7 @@ const formatTamilPrecisionSource = (itrans: string, asciiFallback: boolean) => {
 
       const dependentVocalic = DEVANAGARI_DEPENDENT_VOCALICS_TO_TAMIL[next];
       if (dependentVocalic) {
-        formatted += `${consonantBase}${renderTamilPrecisionToken(dependentVocalic, asciiFallback)}${consonantMarker}`;
+        formatted += `${consonantBase}${consonantMarker}${renderTamilPrecisionToken(dependentVocalic, asciiFallback)}`;
         index += 1;
         continue;
       }

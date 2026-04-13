@@ -26,7 +26,8 @@ import {
   History,
   Zap,
   Info,
-  Download
+  Download,
+  Wrench
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { SessionSnapshot, SanskritFontPreset, TamilFontPreset, TypographySettings, SessionListItem } from '@/store/types';
@@ -36,6 +37,7 @@ import {
   OUTPUT_TARGET_CONTROL_LABELS,
   OUTPUT_TARGET_VALUE_LABELS,
 } from '@/lib/vedic/mapping';
+import { TamilPrecisionRecovery } from './TamilPrecisionRecovery';
 
 const LEGACY_STORAGE_KEY = 'sanskrit-keyboard.sessions.v1';
 const LEXICAL_HISTORY_KEY = 'sanskrit-keyboard.lexical-history.v1';
@@ -124,7 +126,7 @@ export const TransliterationEngine: React.FC = () => {
   } = useFlowStore();
   
   const [isWorkspacePanelOpen, setIsWorkspacePanelOpen] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState<'sessions' | 'display' | 'intelligence' | 'info'>('sessions');
+  const [activeTab, setActiveTab] = React.useState<'sessions' | 'display' | 'intelligence' | 'utility' | 'info'>('sessions');
   const [editingSessionId, setEditingSessionId] = React.useState<string | null>(null);
   const [editingName, setEditingName] = React.useState('');
   const hasLoadedSessions = React.useRef(true); // Disable auto-load here
@@ -574,6 +576,7 @@ export const TransliterationEngine: React.FC = () => {
       </div>
 
       <div
+        data-testid="workspace-panel"
         className={clsx(
           'fixed left-0 top-0 z-[75] flex h-full w-[32rem] max-w-[90vw] overflow-hidden border-r border-slate-200 bg-white shadow-2xl transition-transform duration-500 ease-in-out',
           isWorkspacePanelOpen ? 'translate-x-0' : '-translate-x-full'
@@ -585,6 +588,7 @@ export const TransliterationEngine: React.FC = () => {
           
           <button 
             onClick={() => setActiveTab('sessions')}
+            data-testid="workspace-tab-sessions"
             className={clsx(
               "p-3 rounded-xl transition-all duration-300",
               activeTab === 'sessions' ? "bg-white/10 text-white shadow-inner" : "text-slate-500 hover:text-slate-300"
@@ -596,6 +600,7 @@ export const TransliterationEngine: React.FC = () => {
 
           <button 
             onClick={() => setActiveTab('display')}
+            data-testid="workspace-tab-display"
             className={clsx(
               "p-3 rounded-xl transition-all duration-300",
               activeTab === 'display' ? "bg-white/10 text-white shadow-inner" : "text-slate-500 hover:text-slate-300"
@@ -607,6 +612,7 @@ export const TransliterationEngine: React.FC = () => {
 
           <button 
             onClick={() => setActiveTab('intelligence')}
+            data-testid="workspace-tab-intelligence"
             className={clsx(
               "p-3 rounded-xl transition-all duration-300",
               activeTab === 'intelligence' ? "bg-white/10 text-white shadow-inner" : "text-slate-500 hover:text-slate-300"
@@ -614,6 +620,18 @@ export const TransliterationEngine: React.FC = () => {
             title="Intelligence"
           >
             <Zap className="w-5 h-5" />
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('utility')}
+            data-testid="workspace-tab-utility"
+            className={clsx(
+              "p-3 rounded-xl transition-all duration-300",
+              activeTab === 'utility' ? "bg-white/10 text-white shadow-inner" : "text-slate-500 hover:text-slate-300"
+            )}
+            title="Utilities"
+          >
+            <Wrench className="w-5 h-5" />
           </button>
 
           <div className="flex-1" />
@@ -638,12 +656,14 @@ export const TransliterationEngine: React.FC = () => {
                 {activeTab === 'sessions' && 'Workspaces'}
                 {activeTab === 'display' && 'Display & Scripts'}
                 {activeTab === 'intelligence' && 'Intelligence'}
+                {activeTab === 'utility' && 'Utilities'}
                 {activeTab === 'info' && 'Resources'}
               </h2>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">
                 {activeTab === 'sessions' && 'Manage your scholarly sessions'}
                 {activeTab === 'display' && 'Configure rendering and typography'}
                 {activeTab === 'intelligence' && 'Lexical learning and predictions'}
+                {activeTab === 'utility' && 'Scholarly precision tools'}
                 {activeTab === 'info' && 'Version and scholarly resources'}
               </p>
             </div>
@@ -1109,6 +1129,13 @@ export const TransliterationEngine: React.FC = () => {
                     </div>
                   </div>
                 </section>
+              </div>
+            )}
+
+            {/* UTILITY TAB */}
+            {activeTab === 'utility' && (
+              <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <TamilPrecisionRecovery />
               </div>
             )}
 

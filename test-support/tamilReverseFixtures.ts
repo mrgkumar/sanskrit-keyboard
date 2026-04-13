@@ -52,11 +52,11 @@ export const TAMIL_REVERSE_VOCALIC_FIXTURES = [
 
 export const TAMIL_REVERSE_SPECIAL_MARK_FIXTURES = [
   ['ம்', 'M'],
-  ['ஃ', ':'],
+  [':', ':'],
 ] as const;
 
 export const TAMIL_REVERSE_CLUSTER_FIXTURES = [
-  ['க³ீதா', 'gItA'],
+  ['கீ³தா', 'gItA'],
   ['த⁴ர்ம', 'dharma'],
   ['ப⁴க்தி', 'bhakti'],
   ['லக்ஷ்மீ', 'lakShmI'],
@@ -65,13 +65,13 @@ export const TAMIL_REVERSE_CLUSTER_FIXTURES = [
   ['க்ரு¹த', 'kR^ita'],
   ['க்லு¹ப்த', 'kL^ipta'],
   ['ஸம்ஸ்க்ரு¹த', 'saMskR^ita'],
-  ['க³ுருஃ', 'guru:'],
+  ['கு³ரு:', 'guru:'],
   ['ஶ்ரீ', 'shrI'],
 ] as const;
 
 export const TAMIL_REVERSE_ASCII_NORMALIZATION_FIXTURES = [
-  { rich: 'க³ீதா', ascii: 'க^3ீதா', tokens: ['க³', 'ீ', 'த', 'ா'] },
-  { rich: 'க்²', ascii: 'க^2்', tokens: ['க²', '்'] },
+  { rich: 'கீ³தா', ascii: 'கீ^3தா', tokens: ['க³', 'ீ', 'த', 'ா'] },
+  { rich: 'க்²', ascii: 'க்^2', tokens: ['க²', '்'] },
   { rich: 'ரு¹', ascii: 'ரு<R>', tokens: ['ரு¹'] },
   { rich: 'லூ¹', ascii: 'லூ<L>', tokens: ['லூ¹'] },
   { rich: 'க்ரு¹த', ascii: 'க்ரு<R>த', tokens: ['க', '்ரு¹', 'த'] },
@@ -114,9 +114,9 @@ export const TAMIL_REVERSE_MALFORMED_PRECISION_FIXTURES = [
 ] as const;
 
 export const TAMIL_REVERSE_MIXED_AMBIGUOUS_FIXTURES = [
-  'க³ுரு ரு',
-  'க^3ுரு ரு',
-  'க³ீதா gItA',
-  'gItA க³ீதா',
-  'க³ீதா संस्कृतम्',
+  'கு³ரு ரு',
+  'கு^3ரு ரு',
+  'கீ³தா gItA',
+  'gItA கீ³தா',
+  'கீ³தா संस्कृतम्',
 ] as const;

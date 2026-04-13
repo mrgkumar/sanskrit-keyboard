@@ -201,7 +201,7 @@ export const OUTPUT_SCHEME_UI_METADATA: Record<
   },
   'sanskrit-tamil-precision': {
     buttonTitle: 'Tamil Precision Output',
-    buttonDescription: 'Copies Sanskrit-in-Tamil precision forms such as `க³ீதா`, `அம்ரு¹த`, and `க³ுருஃ` without changing stored source.',
+    buttonDescription: 'Copies Sanskrit-in-Tamil precision forms such as `கீ³தா`, `அம்ரு¹த`, and `கு³ரு:` without changing stored source.',
   },
 };
 
@@ -452,36 +452,36 @@ export const TAMIL_MAPPINGS: VedicMapping[] = [
   { itrans: 'au', unicode: '\u0B94', preferredReverse: true, name: 'au', category: 'vowel' },
 
   // Vocalics (Sanskrit-in-Tamil Precision)
-  { itrans: 'R^i', unicode: 'ரு', name: 'vocalic r', category: 'vowel', isScholarly: true },
-  { itrans: 'R^I', unicode: 'ரூ', name: 'vocalic rr', category: 'vowel', isScholarly: true },
-  { itrans: 'L^i', unicode: 'லு', name: 'vocalic l', category: 'vowel', isScholarly: true },
-  { itrans: 'L^I', unicode: 'லூ', name: 'vocalic ll', category: 'vowel', isScholarly: true },
+  { itrans: 'R^i', unicode: 'ரு¹', name: 'vocalic r', category: 'vowel', isScholarly: true },
+  { itrans: 'R^I', unicode: 'ரூ¹', name: 'vocalic rr', category: 'vowel', isScholarly: true },
+  { itrans: 'L^i', unicode: 'லு¹', name: 'vocalic l', category: 'vowel', isScholarly: true },
+  { itrans: 'L^I', unicode: 'லூ¹', name: 'vocalic ll', category: 'vowel', isScholarly: true },
   
   // Consonants (with Precision Superscripts)
   { itrans: 'k', unicode: '\u0B95\u0BCD', name: 'ka', category: 'consonant' },
-  { itrans: 'kh', unicode: 'க²்', preferredReverse: true, name: 'kha', category: 'consonant' },
-  { itrans: 'g', unicode: 'க³்', preferredReverse: true, name: 'ga', category: 'consonant' },
-  { itrans: 'gh', unicode: 'க⁴்', preferredReverse: true, name: 'gha', category: 'consonant' },
+  { itrans: 'kh', unicode: 'க்²', preferredReverse: true, name: 'kha', category: 'consonant' },
+  { itrans: 'g', unicode: 'க்³', preferredReverse: true, name: 'ga', category: 'consonant' },
+  { itrans: 'gh', unicode: 'க்⁴', preferredReverse: true, name: 'gha', category: 'consonant' },
   
   { itrans: 'ch', unicode: '\u0B9A\u0BCD', name: 'cha', category: 'consonant' },
-  { itrans: 'Ch', unicode: 'ச²்', preferredReverse: true, name: 'Cha', category: 'consonant' },
+  { itrans: 'Ch', unicode: 'ச்²', preferredReverse: true, name: 'Cha', category: 'consonant' },
   { itrans: 'j', unicode: '\u0B9C\u0BCD', name: 'ja', category: 'consonant' },
-  { itrans: 'jh', unicode: 'ஜ²்', preferredReverse: true, name: 'jha', category: 'consonant' },
+  { itrans: 'jh', unicode: 'ஜ்²', preferredReverse: true, name: 'jha', category: 'consonant' },
   
   { itrans: 'T', unicode: '\u0B9F\u0BCD', name: 'Ta', category: 'consonant' },
-  { itrans: 'Th', unicode: 'ட²்', preferredReverse: true, name: 'Tha', category: 'consonant' },
-  { itrans: 'D', unicode: 'ட³்', preferredReverse: true, name: 'Da', category: 'consonant' },
-  { itrans: 'Dh', unicode: 'ட⁴்', preferredReverse: true, name: 'Dha', category: 'consonant' },
+  { itrans: 'Th', unicode: 'ட்²', preferredReverse: true, name: 'Tha', category: 'consonant' },
+  { itrans: 'D', unicode: 'ட்³', preferredReverse: true, name: 'Da', category: 'consonant' },
+  { itrans: 'Dh', unicode: 'ட்⁴', preferredReverse: true, name: 'Dha', category: 'consonant' },
   
   { itrans: 't', unicode: '\u0BA4\u0BCD', name: 'ta', category: 'consonant' },
-  { itrans: 'th', unicode: 'த²்', preferredReverse: true, name: 'tha', category: 'consonant' },
-  { itrans: 'd', unicode: 'த³்', preferredReverse: true, name: 'da', category: 'consonant' },
-  { itrans: 'dh', unicode: 'த⁴்', preferredReverse: true, name: 'dha', category: 'consonant' },
+  { itrans: 'th', unicode: 'த்²', preferredReverse: true, name: 'tha', category: 'consonant' },
+  { itrans: 'd', unicode: 'த்³', preferredReverse: true, name: 'da', category: 'consonant' },
+  { itrans: 'dh', unicode: 'த்⁴', preferredReverse: true, name: 'dha', category: 'consonant' },
   
   { itrans: 'p', unicode: '\u0BAA\u0BCD', name: 'pa', category: 'consonant' },
-  { itrans: 'ph', unicode: 'ப²்', preferredReverse: true, name: 'pha', category: 'consonant' },
-  { itrans: 'b', unicode: 'ப³்', preferredReverse: true, name: 'ba', category: 'consonant' },
-  { itrans: 'bh', unicode: 'ப⁴்', preferredReverse: true, name: 'bha', category: 'consonant' },
+  { itrans: 'ph', unicode: 'ப்²', preferredReverse: true, name: 'pha', category: 'consonant' },
+  { itrans: 'b', unicode: 'ப்³', preferredReverse: true, name: 'ba', category: 'consonant' },
+  { itrans: 'bh', unicode: 'ப்⁴', preferredReverse: true, name: 'bha', category: 'consonant' },
   
   { itrans: 'n', unicode: '\u0BA8\u0BCD', name: 'dental n', category: 'consonant' },
   { itrans: 'N', unicode: '\u0BA3\u0BCD', name: 'retroflex N', category: 'consonant' },
