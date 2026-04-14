@@ -8,7 +8,7 @@ import { clsx } from 'clsx';
 import { Check, Copy, Trash2 } from 'lucide-react';
 import { formatSourceForScript, transliterate } from '@/lib/vedic/utils';
 import { ScriptText } from '@/components/ScriptText';
-import { VerticalResizeHandle } from '@/components/VerticalResizeHandle';
+import { ResizeHandle } from '@/components/VerticalResizeHandle';
 
 export const MainDocumentArea: React.FC = () => {
   const { blocks, editorState, setActiveBlockId, activateBlockChunk, deleteBlock, getActiveChunkGroup, displaySettings, setViewMode, setComposerSelection, setTypography } = useFlowStore();
@@ -25,6 +25,7 @@ export const MainDocumentArea: React.FC = () => {
     showItransInDocument,
   } = displaySettings;
   const documentTypography = typography.document;
+  const immersiveTypography = typography.immersive;
   const updateDocumentHeight = React.useCallback(
     (key: 'primaryPaneHeight' | 'comparePaneHeight') => (nextHeight: number) => {
       setTypography('document', { [key]: nextHeight } as Partial<typeof documentTypography>);
@@ -384,8 +385,8 @@ export const MainDocumentArea: React.FC = () => {
               sanskritFontPreset={sanskritFontPreset}
               tamilFontPreset={tamilFontPreset}
               style={{
-                fontSize: `${getRenderedFontSizeForScript(script)}px`,
-                lineHeight: getRenderedLineHeightForScript(script),
+                fontSize: `${isImmersive ? immersiveTypography.devanagariFontSize : getRenderedFontSizeForScript(script)}px`,
+                lineHeight: isImmersive ? immersiveTypography.devanagariLineHeight : getRenderedLineHeightForScript(script),
               }}
             />
           </div>
@@ -477,6 +478,7 @@ export const MainDocumentArea: React.FC = () => {
   if (viewMode === 'read' || viewMode === 'immersive') {
     const viewTestIdPrefix = viewMode === 'immersive' ? 'document-immersive' : 'document-read';
     const isImmersive = viewMode === 'immersive';
+    const immersiveTopInsetClass = isImmersive ? 'pt-20 sm:pt-24' : 'py-3 sm:py-5';
 
     return (
       <div
@@ -485,7 +487,7 @@ export const MainDocumentArea: React.FC = () => {
         tabIndex={0}
         className={clsx(
           'flex-1 outline-none',
-          isImmersive ? 'overflow-hidden px-4 py-6 sm:px-8 sm:py-8' : 'overflow-y-auto px-4 py-8'
+          isImmersive ? `overflow-hidden px-2 ${immersiveTopInsetClass} sm:px-4` : 'overflow-y-auto px-4 py-3 sm:px-8 sm:py-5'
         )}
         style={isImmersive ? { height: 'calc(100dvh - 5rem)' } : undefined}
         onKeyDown={handleReadModeKeyDown}
@@ -497,10 +499,10 @@ export const MainDocumentArea: React.FC = () => {
       >
         <div
           className={clsx(
-            'mx-auto border border-slate-200 bg-white shadow-sm',
+            'mx-auto w-full max-w-none bg-transparent',
             isImmersive
-              ? 'flex h-full max-w-6xl flex-col rounded-[2.25rem] px-6 py-10 sm:px-12'
-              : 'max-w-4xl rounded-[2rem] px-6 py-8 sm:px-10'
+              ? 'flex h-full flex-col rounded-[1.5rem] px-0 py-0'
+              : 'rounded-[1.5rem] px-0 py-0'
           )}
         >
           <div
@@ -518,7 +520,7 @@ export const MainDocumentArea: React.FC = () => {
           >
             <div
               className={clsx(
-                'grid gap-5',
+                'grid gap-3',
                 'grid-cols-1',
                 isImmersive && 'h-full min-h-0'
               )}
@@ -526,26 +528,27 @@ export const MainDocumentArea: React.FC = () => {
               <section
                 data-testid={`${viewTestIdPrefix}-primary-pane`}
                 className={clsx(
-                  'group relative overflow-hidden rounded-2xl border border-blue-100 bg-blue-50/55 shadow-sm',
+                  'group relative overflow-hidden rounded-[1.25rem] border border-slate-100/70 bg-white/85 shadow-sm',
                   isImmersive && 'flex min-h-0 flex-1 flex-col'
                 )}
                 style={isImmersive ? undefined : { height: `${documentTypography.primaryPaneHeight}px` }}
               >
                 <div
                   ref={primaryPaneScrollRef}
-                  className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto px-4 py-4"
+                  className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto px-2.5 py-2.5 sm:px-4 sm:py-4"
                 >
                   {blocks
                     .filter((block) => block.rendered.trim().length > 0)
                     .map((block, index) => renderScriptBlock(block, primaryOutputScript, 'primary', viewTestIdPrefix, index + 1))}
                 </div>
                 {!isImmersive && (
-                  <VerticalResizeHandle
-                    height={documentTypography.primaryPaneHeight}
-                    minHeight={240}
-                    maxHeight={700}
+                  <ResizeHandle
+                    size={documentTypography.primaryPaneHeight}
+                    minSize={240}
+                    maxSize={700}
                     ariaLabel="Resize primary read pane height"
-                    onHeightChange={updateDocumentHeight('primaryPaneHeight')}
+                    onSizeChange={updateDocumentHeight('primaryPaneHeight')}
+                    axis="y"
                   />
                 )}
               </section>
@@ -770,7 +773,7 @@ export const MainDocumentArea: React.FC = () => {
 
   const renderDocumentCanvas = () => {
     return (
-      <div className="mx-auto w-full max-w-4xl overflow-x-hidden rounded-[2.5rem] border border-slate-200 bg-white p-12 shadow-xl sm:p-16">
+      <div className="mx-auto w-full max-w-none overflow-x-hidden rounded-[1.5rem] bg-transparent px-6 py-0 sm:px-10">
         <div className="space-y-8">
           {blocks.map((block) => {
             const isActive = block.id === activeBlockId;
@@ -790,11 +793,11 @@ export const MainDocumentArea: React.FC = () => {
                 data-testid={`document-canvas-block-${block.id}`}
                 className={clsx(
                   'group relative cursor-pointer transition-all',
-                  isActive ? 'bg-blue-50/30 -mx-4 px-4 py-2 rounded-xl ring-1 ring-blue-100' : 'hover:bg-slate-50/50 -mx-4 px-4 py-2 rounded-xl'
+                  isActive ? 'bg-blue-50/30 px-4 py-2 rounded-xl ring-1 ring-blue-100' : 'hover:bg-slate-50/50 px-4 py-2 rounded-xl'
                 )}
               >
                 {isActive && (
-                  <div className="absolute -left-8 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-blue-500 rounded-full shadow-sm" />
+                  <div className="absolute left-0 top-1/2 -translate-x-4 -translate-y-1/2 w-1.5 h-8 bg-blue-500 rounded-full shadow-sm" />
                 )}
                 <div className="pointer-events-none absolute right-0 top-0 z-10 opacity-0 transition-opacity group-hover:opacity-100">
                   <button

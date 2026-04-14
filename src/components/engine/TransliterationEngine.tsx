@@ -148,10 +148,19 @@ export const TransliterationEngine: React.FC = () => {
     showItransInDocument,
     autoSwapVisargaSvarita,
   } = displaySettings;
+  const documentTypography = typography.document;
+  const immersiveTypography = typography.immersive;
 
   const sanskritFontOptions: Array<{ value: SanskritFontPreset; label: string; sample: string }> = [
     { value: 'chandas', label: 'Chandas', sample: 'नमस्ते रुद्राय' },
     { value: 'sampradaya', label: 'Sampradaya', sample: 'नमस्ते रुद्राय' },
+    { value: 'sanskrit2003', label: 'Sanskrit 2003', sample: 'नमस्ते रुद्राय' },
+    { value: 'siddhanta', label: 'Siddhanta', sample: 'नमस्ते रुद्राय' },
+  ];
+  const devanagariFontDownloads = [
+    { name: 'Chandas Devanagari', url: 'https://sanskritdocuments.org/hindi/chandas/' },
+    { name: 'Sanskrit 2003', url: 'https://salrc.uchicago.edu/resources/fonts/available/sanskrit/sanskrit2003.shtml' },
+    { name: 'Siddhanta', url: 'https://sanskritdocuments.org/projects/siddhanta/' },
   ];
   const tamilFontOptions: Array<{ value: TamilFontPreset; label: string; sample: string }> = [
     { value: 'hybrid', label: 'Hybrid', sample: 'நமஸ்தே ருத்³ராய' },
@@ -274,6 +283,21 @@ export const TransliterationEngine: React.FC = () => {
                 </button>
               ))}
             </div>
+            {script === 'devanagari' && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {devanagariFontDownloads.map((font) => (
+                  <a
+                    key={font.name}
+                    href={font.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.12em] text-slate-600 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                  >
+                    {font.name}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -315,6 +339,33 @@ export const TransliterationEngine: React.FC = () => {
         </div>
       </div>
     );
+  };
+
+  const getImmersiveTypographyKey = (key: 'fontSize' | 'lineHeight') =>
+    primaryOutputScript === 'tamil'
+      ? key === 'fontSize'
+        ? 'tamilFontSize'
+        : 'tamilLineHeight'
+      : key === 'fontSize'
+        ? 'devanagariFontSize'
+        : 'devanagariLineHeight';
+
+  const getImmersiveTypographyValue = (key: 'fontSize' | 'lineHeight') => {
+    const resolvedKey = getImmersiveTypographyKey(key);
+    return immersiveTypography[resolvedKey];
+  };
+
+  const adjustImmersiveTypographyValue = (
+    key: 'fontSize' | 'lineHeight',
+    delta: number,
+    min: number,
+    max: number,
+    step: number = 1
+  ) => {
+    const resolvedKey = getImmersiveTypographyKey(key);
+    const currentValue = Number(immersiveTypography[resolvedKey]);
+    const nextValue = Math.max(min, Math.min(max, currentValue + delta * step));
+    setTypography('immersive', { [resolvedKey]: nextValue } as Partial<typeof immersiveTypography>);
   };
 
   const { viewMode } = editorState;
@@ -573,6 +624,47 @@ export const TransliterationEngine: React.FC = () => {
             <BookText className="h-4 w-4" />
           </button>
         </div>
+        {viewMode === 'immersive' && (
+          <div className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white/90 px-2 py-1 shadow-sm backdrop-blur">
+            <span className="mr-1 text-[9px] font-black uppercase tracking-[0.14em] text-slate-400">Immersive</span>
+            <button
+              type="button"
+              onClick={() => adjustImmersiveTypographyValue('fontSize', -1, 18, 60)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-100"
+              aria-label="Decrease immersive font size"
+              title="Decrease immersive font size"
+            >
+              -
+            </button>
+            <button
+              type="button"
+              onClick={() => adjustImmersiveTypographyValue('fontSize', 1, 18, 60)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-100"
+              aria-label="Increase immersive font size"
+              title="Increase immersive font size"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={() => adjustImmersiveTypographyValue('lineHeight', -1, 1.2, 3, 0.1)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-100"
+              aria-label="Decrease immersive line spacing"
+              title="Decrease immersive line spacing"
+            >
+              -
+            </button>
+            <button
+              type="button"
+              onClick={() => adjustImmersiveTypographyValue('lineHeight', 1, 1.2, 3, 0.1)}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-100"
+              aria-label="Increase immersive line spacing"
+              title="Increase immersive line spacing"
+            >
+              +
+            </button>
+          </div>
+        )}
       </div>
 
       <div
@@ -914,6 +1006,70 @@ export const TransliterationEngine: React.FC = () => {
                   </div>
                 </section>
 
+                <section className="space-y-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Immersive Mode</p>
+                  <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase tracking-[0.08em] text-slate-400">Font Size</span>
+                          <span className="rounded-md border border-blue-100 bg-blue-50/80 px-2 py-0.5 text-[11px] font-black tabular-nums text-blue-700">
+                            {(viewMode === 'immersive'
+                              ? getImmersiveTypographyValue('fontSize')
+                              : documentTypography.devanagariFontSize)}px
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => adjustImmersiveTypographyValue('fontSize', -1, 18, 56)}
+                            className="flex-1 rounded-lg border border-slate-200 bg-white py-2 text-xs font-black text-slate-600 shadow-sm hover:border-blue-200 hover:bg-slate-50"
+                            aria-label="Decrease immersive font size"
+                          >
+                            -
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => adjustImmersiveTypographyValue('fontSize', 1, 18, 56)}
+                            className="flex-1 rounded-lg border border-slate-200 bg-white py-2 text-xs font-black text-slate-600 shadow-sm hover:border-blue-200 hover:bg-slate-50"
+                            aria-label="Increase immersive font size"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-black uppercase tracking-[0.08em] text-slate-400">Line Spacing</span>
+                          <span className="rounded-md border border-blue-100 bg-blue-50/80 px-2 py-0.5 text-[11px] font-black tabular-nums text-blue-700">
+                            {viewMode === 'immersive'
+                              ? getImmersiveTypographyValue('lineHeight').toFixed(1)
+                              : documentTypography.devanagariLineHeight.toFixed(1)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => adjustImmersiveTypographyValue('lineHeight', -1, 1.2, 2.8, 0.1)}
+                            className="flex-1 rounded-lg border border-slate-200 bg-white py-2 text-xs font-black text-slate-600 shadow-sm hover:border-blue-200 hover:bg-slate-50"
+                            aria-label="Decrease immersive line spacing"
+                          >
+                            -
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => adjustImmersiveTypographyValue('lineHeight', 1, 1.2, 2.8, 0.1)}
+                            className="flex-1 rounded-lg border border-slate-200 bg-white py-2 text-xs font-black text-slate-600 shadow-sm hover:border-blue-200 hover:bg-slate-50"
+                            aria-label="Increase immersive line spacing"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
                 {(primaryOutputScript === 'roman' || comparisonOutputScript === 'roman') && (
                   <section className="space-y-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -1147,6 +1303,7 @@ export const TransliterationEngine: React.FC = () => {
                   <div className="grid grid-cols-1 gap-3">
                     {[
                       { name: 'Chandas Devanagari', desc: 'High-Precision Vedic Glyphs', url: 'https://sanskritdocuments.org/hindi/chandas/' },
+                      { name: 'Sanskrit 2003', desc: 'Unicode Devanagari Standard', url: 'https://salrc.uchicago.edu/resources/fonts/available/sanskrit/sanskrit2003.shtml' },
                       { name: 'Siddhanta', desc: 'Modern Digital Standard', url: 'https://sanskritdocuments.org/projects/siddhanta/' },
                       { name: 'Anek Tamil', desc: 'Versatile Tamil Display', url: 'https://fonts.google.com/specimen/Anek+Tamil' },
                       { name: 'Noto Serif Tamil', desc: 'Scholarly Tamil Standard', url: 'https://fonts.google.com/specimen/Noto+Serif+Tamil' }

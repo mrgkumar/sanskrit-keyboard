@@ -93,6 +93,7 @@ export interface TypographySettings {
     renderedLineHeight: number;
     primaryPreviewHeight: number;
     comparePreviewHeight: number;
+    sideBySideSplitRatio: number;
   };
   document: {
     itransFontSize: number;
@@ -106,9 +107,15 @@ export interface TypographySettings {
     renderedFontSize: number;
     renderedLineHeight: number;
   };
+  immersive: {
+    devanagariFontSize: number;
+    devanagariLineHeight: number;
+    tamilFontSize: number;
+    tamilLineHeight: number;
+  };
 }
 
-export type SanskritFontPreset = 'chandas' | 'sampradaya';
+export type SanskritFontPreset = 'chandas' | 'sampradaya' | 'sanskrit2003' | 'siddhanta';
 export type TamilFontPreset = 'hybrid' | 'noto-serif' | 'anek';
 
 export interface LegacyTypographySettings {

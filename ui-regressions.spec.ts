@@ -215,6 +215,129 @@ test('dragging the ITRANS resize handle persists the panel height across reloads
   await expect.poll(async () => page.getByTestId('sticky-itrans-panel').evaluate((node) => Number.parseFloat(getComputedStyle(node).height))).toBeGreaterThan(initialHeight);
 });
 
+test('dragging the compare split handle resizes both preview panes', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  await page.getByTestId('sticky-compare-chip').click();
+  await page.getByTestId('sticky-compare-option-devanagari').click();
+
+  const primaryPane = page.getByTestId('sticky-preview-primary-pane');
+  const comparePane = page.getByTestId('sticky-preview-compare-pane');
+  const initialPrimaryHeight = await primaryPane.evaluate((node) => Number.parseFloat(getComputedStyle(node).height));
+  const initialCompareHeight = await comparePane.evaluate((node) => Number.parseFloat(getComputedStyle(node).height));
+  const handle = page.getByLabel('Resize compare split');
+  const box = await handle.boundingBox();
+
+  if (!box) {
+    throw new Error('Expected compare split handle to be visible');
+  }
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 48, { steps: 8 });
+  await page.mouse.up();
+
+  await expect.poll(async () => primaryPane.evaluate((node) => Number.parseFloat(getComputedStyle(node).height))).toBeGreaterThan(initialPrimaryHeight);
+  await expect.poll(async () => comparePane.evaluate((node) => Number.parseFloat(getComputedStyle(node).height))).toBeLessThan(initialCompareHeight);
+});
+
+test('clicking roman and compare preview words places the cursor inside the clicked word', async ({ page }) => {
+  await loadDefaultSession(page);
+
+  const textarea = page.getByTestId('sticky-itrans-input');
+  const sample = 'agniM ile purohitaM yajnasya';
+  const targetWord = 'purohitaM';
+  const targetStart = sample.indexOf(targetWord);
+  const targetEnd = targetStart + targetWord.length;
+
+  await textarea.fill(sample);
+  await setReadAs(page, 'roman');
+  await page.getByTestId('sticky-compare-chip').click();
+  await page.getByTestId('sticky-compare-option-devanagari').click();
+
+  const primaryPane = page.getByTestId('sticky-preview-primary-pane');
+  await primaryPane.locator(`[data-source-start="${targetStart}"]`).click();
+  await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeGreaterThanOrEqual(targetStart);
+  await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeLessThanOrEqual(targetEnd);
+
+  const comparePane = page.getByTestId('sticky-preview-compare-pane');
+  await comparePane.locator(`[data-source-start="${targetStart}"]`).click();
+  await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeGreaterThanOrEqual(targetStart);
+  await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeLessThanOrEqual(targetEnd);
+});
+
+test('dragging the composer width handle resizes the input and preview columns', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1200 });
+  await loadDefaultSession(page);
+
+  const handle = page.getByLabel('Resize composer width');
+  const box = await handle.boundingBox();
+
+  if (!box) {
+    throw new Error('Expected composer width handle to be visible');
+  }
+
+  const initialSizes = await handle.evaluate((node) => {
+    const sourcePane = node.previousElementSibling as HTMLElement | null;
+    const previewPane = node.nextElementSibling as HTMLElement | null;
+
+    if (!sourcePane || !previewPane) {
+      throw new Error('Expected width handle to sit between the source and preview panes');
+    }
+
+    return {
+      sourceWidth: Number.parseFloat(getComputedStyle(sourcePane).width),
+      previewWidth: Number.parseFloat(getComputedStyle(previewPane).width),
+    };
+  });
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 96, box.y + box.height / 2, { steps: 10 });
+  await page.mouse.up();
+
+  await expect.poll(async () =>
+    handle.evaluate((node) => {
+      const sourcePane = node.previousElementSibling as HTMLElement | null;
+      if (!sourcePane) {
+        return 0;
+      }
+      return Number.parseFloat(getComputedStyle(sourcePane).width);
+    })
+  ).toBeGreaterThan(initialSizes.sourceWidth);
+  await expect.poll(async () =>
+    handle.evaluate((node) => {
+      const previewPane = node.nextElementSibling as HTMLElement | null;
+      if (!previewPane) {
+        return 0;
+      }
+      return Number.parseFloat(getComputedStyle(previewPane).width);
+    })
+  ).toBeLessThan(initialSizes.previewWidth);
+});
+
+test('immersive mode leaves the first line below the fixed workspace controls', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1200 });
+  await loadDefaultSession(page);
+
+  await page.getByRole('button', { name: 'Immersive mode' }).click();
+
+  const control = page.getByTestId('workspace-toggle');
+  const firstBlock = page.getByTestId('document-immersive-block-block-1');
+
+  await expect(control).toBeVisible();
+  await expect(firstBlock).toBeVisible();
+
+  const boxes = await Promise.all([control.boundingBox(), firstBlock.boundingBox()]);
+  const [controlBox, blockBox] = boxes;
+
+  if (!controlBox || !blockBox) {
+    throw new Error('Expected both the workspace control and first immersive block to be visible');
+  }
+
+  expect(blockBox.y).toBeGreaterThan(controlBox.y + controlBox.height);
+});
+
 test('clicking Tamil preview text moves the edit cursor to the clicked chunk', async ({ page }) => {
   await loadDefaultSession(page);
 

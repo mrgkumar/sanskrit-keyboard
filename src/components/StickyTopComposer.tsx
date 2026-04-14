@@ -9,8 +9,7 @@ import { clsx } from 'clsx';
 import Link from 'next/link';
 import { ShortcutHUD } from '@/components/engine/ShortcutHUD';
 import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
-import { getScriptDisplayText } from '@/components/ScriptText';
-import { VerticalResizeHandle } from '@/components/VerticalResizeHandle';
+import { ResizeHandle } from '@/components/VerticalResizeHandle';
 import {
   canonicalizeDevanagariPaste,
   formatSourceForScript,
@@ -98,6 +97,7 @@ export const StickyTopComposer: React.FC = () => {
   const composerRef = React.useRef<HTMLTextAreaElement>(null);
   const composerHighlightRef = React.useRef<HTMLDivElement>(null);
   const sourcePaneRef = React.useRef<HTMLDivElement>(null);
+  const composerSplitContainerRef = React.useRef<HTMLDivElement>(null);
   const previewRef = React.useRef<HTMLDivElement>(null);
   const comparePreviewRef = React.useRef<HTMLDivElement>(null);
   const itransPanelRef = React.useRef<HTMLDivElement>(null);
@@ -105,6 +105,7 @@ export const StickyTopComposer: React.FC = () => {
   const primaryPreviewCaretRef = React.useRef<HTMLSpanElement>(null);
   const comparisonPreviewCaretRef = React.useRef<HTMLSpanElement>(null);
   const isPointerSelectingRef = React.useRef(false);
+  const [composerSplitContainerWidth, setComposerSplitContainerWidth] = React.useState(0);
 
   const [showShiftEnterHint, setShowShiftEnterHint] = React.useState(false);
   const hintTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -161,38 +162,144 @@ export const StickyTopComposer: React.FC = () => {
   const composerTypography = typography.composer;
   const isStackedComposer = composerLayout === 'stacked';
   const isComposerCompareMode = comparisonOutputScript !== 'off';
+  const composerSplitDividerWidth = 20;
+  const composerSplitMinPaneWidth = 320;
   const previewResizeHandleHeight = 16;
-  const composerPreviewHeight = Math.max(
-    composerTypography.primaryPreviewHeight,
-    composerTypography.comparePreviewHeight
+  const previewMinHeight = 112;
+  const composerPrimaryPreviewHeight = composerTypography.primaryPreviewHeight;
+  const composerComparePreviewHeight = isComposerCompareMode ? composerTypography.comparePreviewHeight : 0;
+  const composerSplitRatio = composerTypography.sideBySideSplitRatio;
+  const composerSplitAvailableWidth = Math.max(composerSplitContainerWidth - composerSplitDividerWidth, 0);
+  const composerSourcePaneWidth = composerSplitAvailableWidth > 0
+    ? Math.round(composerSplitAvailableWidth * composerSplitRatio)
+    : 0;
+  const composerSplitMaxSourceWidth = Math.max(
+    composerSplitAvailableWidth - composerSplitMinPaneWidth,
+    composerSplitMinPaneWidth
   );
-  const composerPreviewStackHeight =
-    composerPreviewHeight * (isComposerCompareMode ? 2 : 1) + previewResizeHandleHeight;
+  const composerPreviewStackHeight = isComposerCompareMode
+    ? composerPrimaryPreviewHeight + composerComparePreviewHeight + previewResizeHandleHeight
+    : composerPrimaryPreviewHeight;
   const composerInputHeight = composerTypography.itransPanelHeight;
-  const updateComposerPreviewHeight = React.useCallback(
-    (nextPreviewHeight: number) => {
-      const nextStackHeight = nextPreviewHeight * (isComposerCompareMode ? 2 : 1) + previewResizeHandleHeight;
+  const previewSplitMaxHeight = Math.max(
+    composerPrimaryPreviewHeight + composerComparePreviewHeight - previewMinHeight,
+    previewMinHeight
+  );
+  const updateComposerPreviewSplitHeight = React.useCallback(
+    (nextPrimaryHeight: number) => {
+      if (!isComposerCompareMode) {
+        setTypography('composer', {
+          primaryPreviewHeight: nextPrimaryHeight,
+        } as Partial<typeof composerTypography>);
+        return;
+      }
+
+      const currentContentHeight = composerPrimaryPreviewHeight + composerComparePreviewHeight;
+      const boundedPrimary = Math.max(
+        previewMinHeight,
+        Math.min(nextPrimaryHeight, Math.max(currentContentHeight - previewMinHeight, previewMinHeight))
+      );
+      const boundedCompare = Math.max(previewMinHeight, currentContentHeight - boundedPrimary);
+
       setTypography('composer', {
-        primaryPreviewHeight: nextPreviewHeight,
-        comparePreviewHeight: nextPreviewHeight,
-        itransPanelHeight: nextStackHeight,
+        primaryPreviewHeight: boundedPrimary,
+        comparePreviewHeight: boundedCompare,
       } as Partial<typeof composerTypography>);
     },
-    [isComposerCompareMode, setTypography, previewResizeHandleHeight]
+    [
+      composerComparePreviewHeight,
+      composerPrimaryPreviewHeight,
+      isComposerCompareMode,
+      previewMinHeight,
+      setTypography,
+    ]
   );
   const updateComposerInputHeight = React.useCallback(
     (nextHeight: number) => {
-      const nextPreviewHeight = Math.round(
-        (nextHeight - previewResizeHandleHeight) / (isComposerCompareMode ? 2 : 1)
+      if (!isComposerCompareMode) {
+        setTypography('composer', {
+          itransPanelHeight: nextHeight,
+          primaryPreviewHeight: nextHeight,
+        } as Partial<typeof composerTypography>);
+        return;
+      }
+
+      const nextContentHeight = Math.max(nextHeight - previewResizeHandleHeight, previewMinHeight * 2);
+      const currentContentHeight = composerPrimaryPreviewHeight + composerComparePreviewHeight;
+      const currentRatio = currentContentHeight > 0 ? composerPrimaryPreviewHeight / currentContentHeight : 0.5;
+      const nextPrimaryHeight = Math.max(
+        previewMinHeight,
+        Math.min(
+          Math.round(nextContentHeight * currentRatio),
+          nextContentHeight - previewMinHeight
+        )
       );
+      const nextCompareHeight = Math.max(previewMinHeight, nextContentHeight - nextPrimaryHeight);
       setTypography('composer', {
         itransPanelHeight: nextHeight,
-        primaryPreviewHeight: nextPreviewHeight,
-        comparePreviewHeight: nextPreviewHeight,
+        primaryPreviewHeight: nextPrimaryHeight,
+        comparePreviewHeight: nextCompareHeight,
       } as Partial<typeof composerTypography>);
     },
-    [isComposerCompareMode, setTypography, previewResizeHandleHeight]
+    [
+      composerComparePreviewHeight,
+      composerPrimaryPreviewHeight,
+      isComposerCompareMode,
+      previewMinHeight,
+      previewResizeHandleHeight,
+      setTypography,
+    ]
   );
+  const updateComposerSplitWidth = React.useCallback(
+    (nextSourceWidth: number) => {
+      if (composerSplitAvailableWidth <= 0) {
+        return;
+      }
+
+      const boundedSourceWidth = Math.max(
+        composerSplitMinPaneWidth,
+        Math.min(nextSourceWidth, composerSplitMaxSourceWidth)
+      );
+
+      setTypography('composer', {
+        sideBySideSplitRatio: boundedSourceWidth / composerSplitAvailableWidth,
+      } as Partial<typeof composerTypography>);
+    },
+    [
+      composerSplitAvailableWidth,
+      composerSplitMaxSourceWidth,
+      composerSplitMinPaneWidth,
+      setTypography,
+    ]
+  );
+  React.useEffect(() => {
+    if (isStackedComposer) {
+      return;
+    }
+
+    const element = composerSplitContainerRef.current;
+    if (!element) {
+      return;
+    }
+
+    const updateWidth = () => {
+      setComposerSplitContainerWidth(element.getBoundingClientRect().width);
+    };
+
+    updateWidth();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateWidth);
+      return () => window.removeEventListener('resize', updateWidth);
+    }
+
+    const observer = new ResizeObserver(() => {
+      updateWidth();
+    });
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [isStackedComposer]);
   const isPredictionListbox = predictionLayout === 'listbox';
   const isLongBlock = activeBlock?.type === 'long';
   const currentChunkSource = activeChunkGroup?.source || '';
@@ -265,6 +372,9 @@ export const StickyTopComposer: React.FC = () => {
     { script: 'devanagari', label: OUTPUT_TARGET_VALUE_LABELS.devanagari },
     { script: 'tamil', label: OUTPUT_TARGET_VALUE_LABELS.tamil },
   ] as const;
+  const composerSplitGridTemplateColumns = isStackedComposer
+    ? undefined
+    : `minmax(0, ${composerSplitRatio}fr) ${composerSplitDividerWidth}px minmax(0, ${1 - composerSplitRatio}fr)`;
 
   const targetCaretIndex = (() => {
     if (composerSelectionStart >= currentChunkSource.length) {
@@ -324,6 +434,143 @@ export const StickyTopComposer: React.FC = () => {
 
     return targetEnd > targetStart ? { start: targetStart, end: targetEnd } : null;
   })();
+  const previewWordRanges = React.useMemo(() => {
+    const ranges: Array<{ start: number; end: number }> = [];
+    const source = currentChunkSource;
+    const wordPattern = /\S+/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = wordPattern.exec(source)) !== null) {
+      ranges.push({
+        start: match.index,
+        end: match.index + match[0].length,
+      });
+    }
+
+    return ranges;
+  }, [currentChunkSource]);
+
+  const getPreviewWordRangeFromPoint = React.useCallback(
+    (event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
+      const target = (event.target as HTMLElement).closest<HTMLElement>('[data-source-start]');
+      if (!target) {
+        return null;
+      }
+
+      const sourceStart = Number(target.dataset.sourceStart);
+      const sourceEnd = Number(target.dataset.sourceEnd);
+      if (Number.isNaN(sourceStart) || Number.isNaN(sourceEnd)) {
+        return null;
+      }
+
+      const rect = target.getBoundingClientRect();
+      const ratio = rect.width > 0 ? Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)) : 0.5;
+      const nextCaret = Math.round(sourceStart + (sourceEnd - sourceStart) * ratio);
+
+      return {
+        start: sourceStart,
+        end: sourceEnd,
+        caret: Math.max(sourceStart, Math.min(sourceEnd, nextCaret)),
+      };
+    },
+    []
+  );
+
+  const renderPreviewWordSegments = React.useCallback(
+    (
+      script: typeof primaryOutputScript,
+      options: {
+        sourceText: string;
+        fontSize: number;
+        lineHeight: number;
+        sanskritFontPreset?: typeof sanskritFontPreset;
+        tamilFontPreset?: typeof tamilFontPreset;
+        activeWordRange?: { start: number; end: number } | null;
+        caretRef?: React.RefObject<HTMLSpanElement | null>;
+      }
+    ) => {
+      const { sourceText, fontSize, lineHeight, sanskritFontPreset: fontPreset, tamilFontPreset: tamilPreset, activeWordRange, caretRef } = options;
+      const nodes: React.ReactNode[] = [];
+      let cursor = 0;
+
+      const pushText = (text: string, key: string) => {
+        if (!text) {
+          return;
+        }
+
+        nodes.push(
+          <span key={key}>
+            {formatSourceForScript(text, script, {
+              romanOutputStyle,
+              tamilOutputStyle,
+            })}
+          </span>
+        );
+      };
+
+      if (previewWordRanges.length === 0) {
+        return [
+          <span
+            key="preview-empty"
+            className={clsx(
+              script === 'devanagari'
+                ? 'font-serif script-text-devanagari'
+                : script === 'tamil'
+                  ? 'font-tamil-reading script-text-tamil'
+                  : 'font-mono',
+              'whitespace-pre-wrap break-words text-slate-900'
+            )}
+            data-font-preset={script === 'tamil' ? tamilPreset : fontPreset}
+            lang={script === 'devanagari' ? 'sa' : script === 'tamil' ? 'ta' : undefined}
+            dir={script === 'tamil' ? 'ltr' : undefined}
+            style={{ fontSize: `${fontSize}px`, lineHeight }}
+          >
+            {formatSourceForScript(sourceText, script, {
+              romanOutputStyle,
+              tamilOutputStyle,
+            })}
+          </span>
+        ];
+      }
+
+      for (const range of previewWordRanges) {
+        if (cursor < range.start) {
+          pushText(sourceText.slice(cursor, range.start), `preview-gap-${cursor}-${range.start}`);
+        }
+
+        const wordText = formatSourceForScript(sourceText.slice(range.start, range.end), script, {
+          romanOutputStyle,
+          tamilOutputStyle,
+        });
+        const isActiveWord = activeWordRange?.start === range.start && activeWordRange?.end === range.end;
+        nodes.push(
+          <span
+            key={`preview-word-${range.start}-${range.end}`}
+            data-source-start={range.start}
+            data-source-end={range.end}
+            data-target-index={script === 'devanagari' ? renderedPreview.sourceToTargetMap[range.start] ?? range.start : undefined}
+            data-current-word={isActiveWord ? 'true' : undefined}
+            className={clsx(
+              'rounded-sm px-0.5 -mx-0.5',
+              isActiveWord && 'font-bold text-[#6b1f1f] bg-yellow-100/40'
+            )}
+          >
+            {wordText}
+            {cursor === range.start && caretRef ? <span ref={caretRef} className="inline-block w-0" /> : null}
+          </span>
+        );
+
+        cursor = range.end;
+      }
+
+      if (cursor < sourceText.length) {
+        pushText(sourceText.slice(cursor), `preview-tail-${cursor}-${sourceText.length}`);
+      }
+
+      return nodes;
+    },
+    [previewWordRanges, renderedPreview.sourceToTargetMap, romanOutputStyle, tamilOutputStyle]
+  );
 
   const sourceMirrorFragments = (() => {
     const sourceLength = currentChunkSource.length;
@@ -691,35 +938,18 @@ export const StickyTopComposer: React.FC = () => {
     requestAnimationFrame(applySelection);
   };
 
-  const handleTamilPreviewMouseDown = (
-event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
-    const target = (event.target as HTMLElement).closest<HTMLElement>('[data-target-index]');
-    if (!target) {
+  const handlePreviewPointerDown = (
+    event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>
+  ) => {
+    const wordRange = getPreviewWordRangeFromPoint(event);
+    if (!wordRange) {
       event.preventDefault();
       focusComposerAt(currentChunkSource.length);
       return;
     }
 
-    const start = Number(target.dataset.targetIndex);
-    const end = Number(target.dataset.targetEnd ?? target.dataset.targetIndex);
-    if (Number.isNaN(start) || Number.isNaN(end)) {
-      return;
-    }
-
     event.preventDefault();
-    const rect = target.getBoundingClientRect();
-    const midpoint = rect.left + rect.width / 2;
-    const nextCaret = event.clientX >= midpoint ? end : start;
-    focusComposerAt(nextCaret);
-  };
-
-  const handlePrimaryPreviewClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (event.target !== event.currentTarget) {
-      return;
-    }
-
-    event.preventDefault();
-    focusComposerAt(currentChunkSource.length);
+    focusComposerAt(wordRange.caret);
   };
 
   const scrollAnchorIntoView = React.useCallback((container: HTMLElement | null) => {
@@ -727,7 +957,7 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
     
     const anchor =
       container.querySelector<HTMLElement>('[data-current-word="true"]') ??
-      container.querySelector<HTMLElement>(`[data-target-index="${targetCaretIndex}"]`) ??
+      container.querySelector<HTMLElement>(`[data-source-start="${currentSourceWordRange?.start ?? -1}"]`) ??
       container.querySelector<HTMLElement>('[data-testid="preview-caret"]');
 
     if (!anchor) return;
@@ -741,7 +971,7 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
     if (!isFullyVisible) {
       anchor.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
     }
-  }, [targetCaretIndex]);
+  }, [currentSourceWordRange?.start]);
 
   const handleComposerScroll = (event: React.UIEvent<HTMLTextAreaElement>) => {
     if (programmaticScrollTargetRef.current === event.currentTarget) {
@@ -1077,8 +1307,8 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
 
   return (
     <>
-    <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 pb-3 pt-3">
+    <div className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur-sm">
+      <div className="mx-auto flex w-full max-w-none flex-col gap-3 px-2 pb-2 pt-2 sm:px-4 sm:pb-3 sm:pt-3 lg:px-6">
         <div className="flex items-center justify-end gap-3 text-sm text-slate-500">
           {isLongBlock && (
             <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1">
@@ -1104,7 +1334,7 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
           data-testid="sticky-composer-shell"
           data-layout={composerLayout}
         >
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/85 px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200/70 bg-slate-50/80 px-3 py-2">
             <div className="flex min-w-0 items-center gap-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
               <span>ITRANS</span>
               <span className="text-slate-300">/</span>
@@ -1296,17 +1526,19 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
           </div>
 
           <div
+            ref={composerSplitContainerRef}
             className={clsx(
-              'grid min-h-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70 shadow-[0_18px_42px_-30px_rgba(15,23,42,0.45)]',
+              'grid min-h-0 flex-1 overflow-hidden rounded-[1.4rem] border border-slate-200/50 bg-white/85 shadow-[0_18px_42px_-36px_rgba(15,23,42,0.4)]',
               isStackedComposer
-                ? 'grid-cols-1 gap-3 p-3'
-                : 'grid-cols-1 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)]'
+                ? 'grid-cols-1 gap-2.5 p-2.5'
+                : 'grid-cols-1 lg:gap-0'
             )}
+            style={composerSplitGridTemplateColumns ? { gridTemplateColumns: composerSplitGridTemplateColumns } : undefined}
           >
             <div
               ref={sourcePaneRef}
               className={clsx(
-                'group relative flex min-h-0 flex-col gap-3 overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white/95 p-3 shadow-sm',
+                'group relative flex min-h-0 flex-col gap-3 overflow-hidden rounded-[1.15rem] border border-slate-100/70 bg-white/92 p-2.5 shadow-sm sm:p-3',
                 isStackedComposer ? 'flex-auto min-h-[12rem]' : 'flex-1 min-h-0'
               )}
             >
@@ -1339,7 +1571,7 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
               </div>
               <div
                 ref={itransPanelRef}
-                className="relative flex-none overflow-hidden rounded-[1.125rem] border border-blue-200 bg-gradient-to-b from-blue-50/90 to-white shadow-sm"
+                className="relative flex-none overflow-hidden rounded-[1rem] border border-slate-200/40 bg-white/98 shadow-[0_6px_16px_-10px_rgba(15,23,42,0.35)]"
                 data-testid="sticky-itrans-panel"
                 style={{ height: `${composerInputHeight}px` }}
               >
@@ -1364,9 +1596,9 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                 </div>
                 <div className="flex h-[calc(100%-1rem)] min-h-0 flex-col">
                   <div className="relative flex-1 min-h-0">
-                    <div
-                      aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 overflow-hidden rounded-[1.125rem] py-2.5 pl-3 pr-7 font-mono text-lg text-slate-900 md:pr-8"
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 overflow-hidden rounded-[1rem] py-2.5 pl-3 pr-7 font-mono text-lg text-slate-900 md:pr-8"
                       style={{
                         fontSize: `${composerTypography.itransFontSize}px`,
                         lineHeight: composerTypography.itransLineHeight,
@@ -1379,7 +1611,7 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                     <textarea
                       ref={composerRef}
                       data-testid="sticky-itrans-input"
-                      className="relative z-10 h-full w-full overflow-y-auto rounded-[1.125rem] bg-transparent px-3 py-2.5 font-mono text-lg text-transparent caret-transparent outline-none selection:bg-blue-200/80 selection:text-transparent placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500"
+                      className="relative z-10 h-full w-full overflow-y-auto rounded-[1rem] bg-transparent px-3 py-2.5 font-mono text-lg text-transparent caret-transparent outline-none selection:bg-blue-200/80 selection:text-transparent placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500"
                       style={{
                         fontSize: `${composerTypography.itransFontSize}px`,
                         lineHeight: composerTypography.itransLineHeight,
@@ -1409,25 +1641,36 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                     />
                   </div>
                 </div>
-                <VerticalResizeHandle
-                  height={composerInputHeight}
-                  minHeight={140}
-                  maxHeight={360}
+                <ResizeHandle
+                  size={composerInputHeight}
+                  minSize={140}
+                  maxSize={360}
                   ariaLabel="Resize ITRANS input height"
-                  onHeightChange={updateComposerInputHeight}
+                  onSizeChange={updateComposerInputHeight}
                   placement="corner"
+                  axis="y"
                 />
               </div>
               {predictionLayout === 'inline' && <WordPredictionTray variant="inline" />}
               {predictionLayout === 'split' && <WordPredictionTray variant="split" />}
             </div>
 
-            {!isStackedComposer && <div className="hidden bg-slate-200/80 lg:block" aria-hidden="true" />}
+            {!isStackedComposer && (
+              <ResizeHandle
+                size={composerSourcePaneWidth}
+                minSize={composerSplitMinPaneWidth}
+                maxSize={composerSplitMaxSourceWidth}
+                ariaLabel="Resize composer width"
+                onSizeChange={updateComposerSplitWidth}
+                axis="x"
+                className="hidden lg:flex"
+              />
+            )}
 
             <div
               className={clsx(
-                'group flex min-h-0 flex-col gap-3 overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white/95 p-3 text-blue-800 shadow-sm',
-                isStackedComposer ? 'flex-auto border-slate-200' : 'flex-1 lg:border-l-0 lg:border-t-0 lg:rounded-l-none'
+                'group flex min-h-0 flex-col gap-3 overflow-hidden rounded-[1.15rem] border border-slate-100/70 bg-white/92 p-2.5 text-blue-800 shadow-sm sm:p-3',
+                isStackedComposer ? 'flex-auto border-slate-200/70' : 'flex-1 lg:border-l-0 lg:border-t-0 lg:rounded-l-none'
               )}
             >
               <div className="min-w-0 px-1">
@@ -1441,7 +1684,7 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                 </p>
               </div>
               <div
-                className="relative flex-none overflow-hidden rounded-[1.125rem] border border-blue-100 bg-gradient-to-b from-blue-50/90 to-white shadow-sm"
+                className="relative flex-none overflow-hidden rounded-[1rem] border border-slate-200/40 bg-white/98 shadow-[0_6px_16px_-10px_rgba(15,23,42,0.35)]"
                 data-testid="sticky-preview-primary-wrapper"
                 style={{ height: `${composerPreviewStackHeight}px` }}
               >
@@ -1480,18 +1723,12 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                 >
                   <div
                     ref={previewRef}
-                    className="overflow-y-auto rounded-[1.125rem] border border-blue-100/80 bg-white/65 px-3 pb-3 pt-2.5 shadow-inner"
+                    className="overflow-y-auto rounded-[1rem] bg-white/70 px-2.5 pb-2.5 pt-2 shadow-none sm:px-3 sm:pb-3 sm:pt-2.5"
                     data-testid="sticky-preview-primary-pane"
-                    onPointerDownCapture={primaryOutputScript === 'tamil' ? handleTamilPreviewMouseDown : undefined}
+                    onPointerDownCapture={handlePreviewPointerDown}
                     onScroll={handlePreviewScroll}
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={
-                      primaryOutputScript === 'devanagari' || primaryOutputScript === 'tamil'
-                        ? handlePrimaryPreviewClick
-                        : undefined
-                    }
                     style={{
-                      height: `${composerPreviewHeight}px`,
+                      height: `${composerPrimaryPreviewHeight}px`,
                       fontSize: `${getRenderedFontSizeForScript(primaryOutputScript)}px`,
                       lineHeight: getRenderedLineHeightForScript(primaryOutputScript),
                     }}
@@ -1529,18 +1766,14 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                               lineHeight: composerTypography.devanagariLineHeight,
                             }}
                           >
-                            {currentWordTargetRange ? (
-                              <>
-                                {renderedPreview.unicode.slice(0, currentWordTargetRange.start)}
-                                <span 
-                                  className="rounded-sm bg-yellow-100/40 px-0.5 -mx-0.5 font-bold text-[#6b1f1f]" 
-                                  data-current-word="true"
-                                >
-                                  {renderedPreview.unicode.slice(currentWordTargetRange.start, currentWordTargetRange.end)}
-                                </span>
-                                {renderedPreview.unicode.slice(currentWordTargetRange.end)}
-                              </>
-                            ) : renderedPreview.unicode}
+                            {renderPreviewWordSegments('devanagari', {
+                              sourceText: currentChunkSource,
+                              fontSize: composerTypography.devanagariFontSize,
+                              lineHeight: composerTypography.devanagariLineHeight,
+                              sanskritFontPreset,
+                              tamilFontPreset,
+                              activeWordRange: currentSourceWordRange,
+                            })}
                           </span>
                           
                           {/* Absolutely positioned visible caret */}
@@ -1583,23 +1816,14 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                             lineHeight: composerTypography.tamilLineHeight,
                           }}
                         >
-                          {currentSourceWordRange ? (
-                            <>
-                              {getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource.slice(0, currentSourceWordRange.start), 'tamil', { romanOutputStyle, tamilOutputStyle }))}
-                              <span 
-                                className="rounded-sm bg-yellow-100/40 px-0.5 -mx-0.5 font-bold text-[#6b1f1f]" 
-                                data-current-word="true"
-                              >
-                                {getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.start, currentSourceWordRange.end), 'tamil', { romanOutputStyle, tamilOutputStyle }))}
-                              </span>
-                              {getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.end), 'tamil', { romanOutputStyle, tamilOutputStyle }))}
-                            </>
-                          ) : (
-                            getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource, 'tamil', {
-                              romanOutputStyle,
-                              tamilOutputStyle,
-                            }))
-                          )}
+                          {renderPreviewWordSegments('tamil', {
+                            sourceText: currentChunkSource,
+                            fontSize: composerTypography.tamilFontSize,
+                            lineHeight: composerTypography.tamilLineHeight,
+                            sanskritFontPreset,
+                            tamilFontPreset,
+                            activeWordRange: currentSourceWordRange,
+                          })}
                         </span>
 
                         <CaretOverlay 
@@ -1616,39 +1840,35 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                           lineHeight: composerTypography.devanagariLineHeight,
                         }}
                       >
-                        {currentSourceWordRange ? (
-                          <>
-                            {formatSourceForScript(currentChunkSource.slice(0, currentSourceWordRange.start), 'roman', { romanOutputStyle, tamilOutputStyle })}
-                            <span 
-                              className="rounded-sm bg-yellow-100/40 px-0.5 -mx-0.5 font-bold text-[#6b1f1f]" 
-                              data-current-word="true"
-                            >
-                              {formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.start, currentSourceWordRange.end), 'roman', { romanOutputStyle, tamilOutputStyle })}
-                            </span>
-                            {formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.end), 'roman', { romanOutputStyle, tamilOutputStyle })}
-                          </>
-                        ) : primaryPreviewText || 'Roman preview'}
+                        {renderPreviewWordSegments('roman', {
+                          sourceText: currentChunkSource,
+                          fontSize: composerTypography.devanagariFontSize,
+                          lineHeight: composerTypography.devanagariLineHeight,
+                          sanskritFontPreset,
+                          tamilFontPreset,
+                          activeWordRange: currentSourceWordRange,
+                        })}
                       </span>
                     )}
                   </div>
-                  <VerticalResizeHandle
-                    height={composerPreviewHeight}
-                    minHeight={140}
-                    maxHeight={360}
-                    ariaLabel="Resize primary preview height"
-                    onHeightChange={updateComposerPreviewHeight}
+                  <ResizeHandle
+                    size={composerPrimaryPreviewHeight}
+                    minSize={previewMinHeight}
+                    maxSize={isComposerCompareMode ? previewSplitMaxHeight : 360}
+                    ariaLabel={isComposerCompareMode ? 'Resize compare split' : 'Resize primary preview height'}
+                    onSizeChange={updateComposerPreviewSplitHeight}
+                    axis="y"
                   />
 
                   {isComposerCompareMode && (
                     <div
                       ref={comparePreviewRef}
-                      className="relative overflow-y-auto rounded-[1.125rem] border border-blue-100/80 bg-white/60 px-3 pb-3 pt-2.5 text-slate-700 shadow-inner"
+                      className="relative overflow-y-auto rounded-[1rem] bg-slate-50/85 px-2.5 pb-2.5 pt-2 text-slate-700 shadow-none sm:px-3 sm:pb-3 sm:pt-2.5"
                       data-testid="sticky-preview-compare-pane"
-                      onPointerDownCapture={activeComparisonScript === 'tamil' ? handleTamilPreviewMouseDown : undefined}
+                      onPointerDownCapture={handlePreviewPointerDown}
                       onScroll={handleComparePreviewScroll}
-                      onClick={activeComparisonScript === 'tamil' ? handlePrimaryPreviewClick : undefined}
                       style={{
-                        height: `${composerPreviewHeight}px`,
+                        height: `${composerComparePreviewHeight}px`,
                         fontSize: `${Math.max(getRenderedFontSizeForScript(activeComparisonScript ?? primaryOutputScript) - 2, 14)}px`,
                         lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
                       }}
@@ -1718,46 +1938,14 @@ event: React.MouseEvent<HTMLElement> | React.PointerEvent<HTMLElement>) => {
                             lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
                           }}
                         >
-                          {(activeComparisonScript ?? primaryOutputScript) === 'devanagari' ? (
-                            currentWordTargetRange ? (
-                              <>
-                                {renderedPreview.unicode.slice(0, currentWordTargetRange.start)}
-                                <span 
-                                  className="rounded-sm bg-slate-200/50 px-0.5 -mx-0.5 font-bold text-slate-900" 
-                                  data-current-word="true"
-                                >
-                                  {renderedPreview.unicode.slice(currentWordTargetRange.start, currentWordTargetRange.end)}
-                                </span>
-                                {renderedPreview.unicode.slice(currentWordTargetRange.end)}
-                              </>
-                            ) : renderedPreview.unicode
-                          ) : (activeComparisonScript ?? primaryOutputScript) === 'tamil' ? (
-                            currentSourceWordRange ? (
-                              <>
-                                {getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource.slice(0, currentSourceWordRange.start), 'tamil', { romanOutputStyle, tamilOutputStyle }))}
-                                <span 
-                                  className="rounded-sm bg-slate-200/50 px-0.5 -mx-0.5 font-bold text-slate-900" 
-                                  data-current-word="true"
-                                >
-                                  {getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.start, currentSourceWordRange.end), 'tamil', { romanOutputStyle, tamilOutputStyle }))}
-                                </span>
-                                {getScriptDisplayText('tamil', formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.end), 'tamil', { romanOutputStyle, tamilOutputStyle }))}
-                              </>
-                            ) : getScriptDisplayText('tamil', comparisonPreviewText)
-                          ) : (
-                            currentSourceWordRange ? (
-                              <>
-                                {formatSourceForScript(currentChunkSource.slice(0, currentSourceWordRange.start), 'roman', { romanOutputStyle, tamilOutputStyle })}
-                                <span 
-                                  className="rounded-sm bg-slate-200/50 px-0.5 -mx-0.5 font-bold text-slate-900" 
-                                  data-current-word="true"
-                                >
-                                  {formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.start, currentSourceWordRange.end), 'roman', { romanOutputStyle, tamilOutputStyle })}
-                                </span>
-                                {formatSourceForScript(currentChunkSource.slice(currentSourceWordRange.end), 'roman', { romanOutputStyle, tamilOutputStyle })}
-                              </>
-                            ) : (comparisonPreviewText || 'Comparison preview')
-                          )}
+                          {renderPreviewWordSegments(activeComparisonScript ?? primaryOutputScript, {
+                            sourceText: currentChunkSource,
+                            fontSize: Math.max(getRenderedFontSizeForScript(activeComparisonScript ?? primaryOutputScript) - 2, 14),
+                            lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
+                            sanskritFontPreset,
+                            tamilFontPreset,
+                            activeWordRange: currentSourceWordRange,
+                          })}
                         </span>
 
                         {/* Absolutely positioned visible caret */}

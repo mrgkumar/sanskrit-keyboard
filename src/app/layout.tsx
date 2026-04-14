@@ -15,6 +15,18 @@ const sampradaya = localFont({
   display: 'swap',
 });
 
+const sanskrit2003 = localFont({
+  src: '../../public/fonts/Sanskrit2003-30.07.2019.otf',
+  variable: '--font-sanskrit2003',
+  display: 'swap',
+});
+
+const siddhanta = localFont({
+  src: '../../public/fonts/siddhanta.ttf',
+  variable: '--font-siddhanta',
+  display: 'swap',
+});
+
 const notoSerifTamil = localFont({
   src: '../../public/fonts/NotoSerifTamil-wdth-wght.ttf',
   variable: '--font-noto-serif-tamil',
@@ -40,7 +52,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`h-full antialiased ${chandas.variable} ${sampradaya.variable} ${notoSerifTamil.variable} ${anekTamil.variable}`}
+      className={`h-full antialiased ${chandas.variable} ${sampradaya.variable} ${sanskrit2003.variable} ${siddhanta.variable} ${notoSerifTamil.variable} ${anekTamil.variable}`}
     >
       <body className="min-h-full flex flex-col font-sans">
         <MobileOptimizationNotice />

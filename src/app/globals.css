@@ -2,7 +2,7 @@
 
 @theme {
   --font-sans: "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
-  --font-serif: var(--font-chandas), var(--font-sampradaya), "Tiro Devanagari Sanskrit", "Georgia", serif;
+  --font-serif: var(--font-chandas), var(--font-sampradaya), var(--font-sanskrit2003), var(--font-siddhanta), "Tiro Devanagari Sanskrit", "Georgia", serif;
   --font-display: "Playfair Display", "serif";
   --font-mono: "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", monospace;
   --font-tamil-reading: var(--font-noto-serif-tamil), var(--font-anek-tamil), "Noto Serif Tamil", "Nirmala UI", serif;
@@ -50,11 +50,19 @@ kbd {
 }
 
 .script-text-devanagari[data-font-preset="chandas"] {
-  font-family: var(--font-chandas), var(--font-sampradaya), "Tiro Devanagari Sanskrit", serif;
+  font-family: var(--font-chandas), var(--font-sampradaya), var(--font-sanskrit2003), var(--font-siddhanta), "Tiro Devanagari Sanskrit", serif;
 }
 
 .script-text-devanagari[data-font-preset="sampradaya"] {
-  font-family: var(--font-sampradaya), var(--font-chandas), "Tiro Devanagari Sanskrit", serif;
+  font-family: var(--font-sampradaya), var(--font-chandas), var(--font-sanskrit2003), var(--font-siddhanta), "Tiro Devanagari Sanskrit", serif;
+}
+
+.script-text-devanagari[data-font-preset="sanskrit2003"] {
+  font-family: var(--font-sanskrit2003), var(--font-chandas), var(--font-sampradaya), var(--font-siddhanta), "Tiro Devanagari Sanskrit", serif;
+}
+
+.script-text-devanagari[data-font-preset="siddhanta"] {
+  font-family: var(--font-siddhanta), var(--font-sanskrit2003), var(--font-chandas), var(--font-sampradaya), "Tiro Devanagari Sanskrit", serif;
 }
 
 .script-text-tamil[data-font-preset="hybrid"] {

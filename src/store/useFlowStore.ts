@@ -216,6 +216,7 @@ const DEFAULT_TYPOGRAPHY: TypographySettings = {
     itransPanelHeight: 150,
     primaryPreviewHeight: 150,
     comparePreviewHeight: 150,
+    sideBySideSplitRatio: 0.54,
   },
   document: {
     itransFontSize: 18,
@@ -228,6 +229,12 @@ const DEFAULT_TYPOGRAPHY: TypographySettings = {
     comparePaneHeight: 480,
     renderedFontSize: 30,
     renderedLineHeight: 1.75,
+  },
+  immersive: {
+    devanagariFontSize: 32,
+    devanagariLineHeight: 1.9,
+    tamilFontSize: 28,
+    tamilLineHeight: 2,
   },
 };
 export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
@@ -339,6 +346,7 @@ const deriveSessionExactFormUsageFromBlocks = (blocks: CanonicalBlock[]) => {
 const cloneTypographySettings = (settings: TypographySettings): TypographySettings => ({
   composer: { ...settings.composer },
   document: { ...settings.document },
+  immersive: { ...settings.immersive },
 });
 
 const clampTypographyHeights = (settings: TypographySettings): TypographySettings => ({
@@ -347,11 +355,19 @@ const clampTypographyHeights = (settings: TypographySettings): TypographySetting
     itransPanelHeight: Math.max(settings.composer.itransPanelHeight, 140),
     primaryPreviewHeight: Math.max(settings.composer.primaryPreviewHeight, 140),
     comparePreviewHeight: Math.max(settings.composer.comparePreviewHeight, 140),
+    sideBySideSplitRatio: Math.max(0.32, Math.min(settings.composer.sideBySideSplitRatio, 0.68)),
   },
   document: {
     ...settings.document,
     primaryPaneHeight: Math.max(settings.document.primaryPaneHeight, 260),
     comparePaneHeight: Math.max(settings.document.comparePaneHeight, 260),
+  },
+  immersive: {
+    ...settings.immersive,
+    devanagariFontSize: Math.max(settings.immersive.devanagariFontSize, 18),
+    tamilFontSize: Math.max(settings.immersive.tamilFontSize, 18),
+    devanagariLineHeight: Math.max(settings.immersive.devanagariLineHeight, 1.2),
+    tamilLineHeight: Math.max(settings.immersive.tamilLineHeight, 1.2),
   },
 });
 
@@ -408,6 +424,9 @@ export const normalizeDisplaySettings = (
                 DEFAULT_DISPLAY_SETTINGS.typography.composer.renderedLineHeight,
               DEFAULT_DISPLAY_SETTINGS.typography.composer.tamilLineHeight
             ),
+          sideBySideSplitRatio:
+            displaySettings.typography?.composer?.sideBySideSplitRatio ??
+            DEFAULT_DISPLAY_SETTINGS.typography.composer.sideBySideSplitRatio,
         },
         document: {
           ...DEFAULT_DISPLAY_SETTINGS.typography.document,
@@ -434,6 +453,10 @@ export const normalizeDisplaySettings = (
                 DEFAULT_DISPLAY_SETTINGS.typography.document.renderedLineHeight,
               DEFAULT_DISPLAY_SETTINGS.typography.document.tamilLineHeight
             ),
+        },
+        immersive: {
+          ...DEFAULT_DISPLAY_SETTINGS.typography.immersive,
+          ...displaySettings.typography?.immersive,
         },
       },
     };
@@ -462,6 +485,9 @@ export const normalizeDisplaySettings = (
           tamilFontSize: Math.max(DEFAULT_DISPLAY_SETTINGS.typography.document.renderedFontSize - 4, 18),
           devanagariLineHeight: DEFAULT_DISPLAY_SETTINGS.typography.document.renderedLineHeight,
           tamilLineHeight: DEFAULT_DISPLAY_SETTINGS.typography.document.renderedLineHeight,
+        },
+        immersive: {
+          ...DEFAULT_DISPLAY_SETTINGS.typography.immersive,
         },
       },
     };
