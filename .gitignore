@@ -44,3 +44,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local TeX experiments
+/tex-render-tests/*.aux
+/tex-render-tests/*.log
+/tex-render-tests/*.pdf

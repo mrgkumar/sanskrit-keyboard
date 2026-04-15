@@ -1,0 +1,69 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{fontspec}
+\usepackage{polyglossia}
+
+\setdefaultlanguage{sanskrit}
+\newfontfamily\chandasfont[
+  Path=public/fonts/,
+  Script=Devanagari,
+  Renderer=HarfBuzz
+]{chandas.ttf}
+\newfontfamily\devanagarifont[
+  Path=public/fonts/,
+  Script=Devanagari,
+  Renderer=HarfBuzz
+]{chandas.ttf}
+\newfontfamily\sanskrittwokfont[
+  Path=public/fonts/,
+  Script=Devanagari,
+  Renderer=HarfBuzz
+]{Sanskrit2003-30.07.2019.otf}
+\newfontfamily\siddhantafont[
+  Path=public/fonts/,
+  Script=Devanagari,
+  Renderer=HarfBuzz
+]{siddhanta.ttf}
+\newfontfamily\notoserifdevanagarifont[
+  Path=public/fonts/,
+  Script=Devanagari,
+  Renderer=HarfBuzz
+]{NotoSerifDevanagari-wdth-wght.ttf}
+
+\newcommand{\samplevisargafirst}{नमः॑}
+\newcommand{\sampleaccentfirst}{नम॑ः}
+
+\pagestyle{empty}
+
+\begin{document}
+\section*{Devanagari Font Rendering Test}
+
+\textbf{Sample 1:} \samplevisargafirst
+
+\textbf{Sample 2:} \sampleaccentfirst
+
+\bigskip
+
+\textbf{Chandas}
+
+{\chandasfont\fontsize{34}{42}\selectfont \samplevisargafirst\quad \sampleaccentfirst}
+
+\bigskip
+
+\textbf{Sanskrit 2003}
+
+{\sanskrittwokfont\fontsize{34}{42}\selectfont \samplevisargafirst\quad \sampleaccentfirst}
+
+\bigskip
+
+\textbf{Siddhanta}
+
+{\siddhantafont\fontsize{34}{42}\selectfont \samplevisargafirst\quad \sampleaccentfirst}
+
+\bigskip
+
+\textbf{Noto Serif Devanagari}
+
+{\notoserifdevanagarifont\fontsize{34}{42}\selectfont \samplevisargafirst\quad \sampleaccentfirst}
+
+\end{document}

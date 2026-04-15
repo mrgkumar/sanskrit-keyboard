@@ -65,7 +65,7 @@ export const ScriptText: React.FC<ScriptTextProps> = ({
     <span
       className={clsx('inline font-serif script-text-devanagari script-text-wrap whitespace-pre-wrap break-words text-slate-900', className)}
       data-font-preset={sanskritFontPreset}
-      lang="sa"
+      lang="sa-Deva"
       style={style}
     >
       {text}

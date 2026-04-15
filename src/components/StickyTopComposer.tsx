@@ -9,6 +9,7 @@ import { clsx } from 'clsx';
 import Link from 'next/link';
 import { ShortcutHUD } from '@/components/engine/ShortcutHUD';
 import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
+import { getScriptDisplayText } from '@/components/ScriptText';
 import { ResizeHandle } from '@/components/VerticalResizeHandle';
 import {
   canonicalizeDevanagariPaste,
@@ -570,6 +571,41 @@ export const StickyTopComposer: React.FC = () => {
       return nodes;
     },
     [previewWordRanges, renderedPreview.sourceToTargetMap, romanOutputStyle, tamilOutputStyle]
+  );
+
+  const renderPreviewVisibleText = React.useCallback(
+    (
+      script: typeof primaryOutputScript,
+      sourceText: string,
+      activeWordRange?: { start: number; end: number } | null
+    ) => {
+      const formatText = (value: string) => {
+        const formatted = formatSourceForScript(value, script, {
+          romanOutputStyle,
+          tamilOutputStyle,
+        });
+
+        return script === 'tamil' ? getScriptDisplayText('tamil', formatted) : formatted;
+      };
+
+      if (!activeWordRange) {
+        return formatText(sourceText);
+      }
+
+      return (
+        <>
+          {formatText(sourceText.slice(0, activeWordRange.start))}
+          <span
+            className="rounded-sm bg-yellow-100/40 px-0.5 -mx-0.5 font-bold text-[#6b1f1f]"
+            data-current-word="true"
+          >
+            {formatText(sourceText.slice(activeWordRange.start, activeWordRange.end))}
+          </span>
+          {formatText(sourceText.slice(activeWordRange.end))}
+        </>
+      );
+    },
+    [romanOutputStyle, tamilOutputStyle]
   );
 
   const sourceMirrorFragments = (() => {
@@ -1756,9 +1792,33 @@ export const StickyTopComposer: React.FC = () => {
                             </span>
                           </div>
 
+                          <div
+                            aria-hidden="true"
+                            className="absolute inset-0 opacity-0"
+                          >
+                            <span
+                              className="font-serif script-text-devanagari whitespace-pre-wrap break-words text-slate-900"
+                              data-font-preset={sanskritFontPreset}
+                              lang="sa"
+                              style={{
+                                fontSize: `${composerTypography.devanagariFontSize}px`,
+                                lineHeight: composerTypography.devanagariLineHeight,
+                              }}
+                            >
+                              {renderPreviewWordSegments('devanagari', {
+                                sourceText: currentChunkSource,
+                                fontSize: composerTypography.devanagariFontSize,
+                                lineHeight: composerTypography.devanagariLineHeight,
+                                sanskritFontPreset,
+                                tamilFontPreset,
+                                activeWordRange: currentSourceWordRange,
+                              })}
+                            </span>
+                          </div>
+
                           {/* Real text with highlighting */}
                           <span
-                            className="font-serif script-text-devanagari whitespace-pre-wrap break-words text-slate-900"
+                            className="pointer-events-none font-serif script-text-devanagari whitespace-pre-wrap break-words text-slate-900"
                             data-font-preset={sanskritFontPreset}
                             lang="sa"
                             style={{
@@ -1766,14 +1826,7 @@ export const StickyTopComposer: React.FC = () => {
                               lineHeight: composerTypography.devanagariLineHeight,
                             }}
                           >
-                            {renderPreviewWordSegments('devanagari', {
-                              sourceText: currentChunkSource,
-                              fontSize: composerTypography.devanagariFontSize,
-                              lineHeight: composerTypography.devanagariLineHeight,
-                              sanskritFontPreset,
-                              tamilFontPreset,
-                              activeWordRange: currentSourceWordRange,
-                            })}
+                            {renderPreviewVisibleText('devanagari', currentChunkSource, currentSourceWordRange)}
                           </span>
                           
                           {/* Absolutely positioned visible caret */}
@@ -1805,9 +1858,34 @@ export const StickyTopComposer: React.FC = () => {
                             <span ref={primaryPreviewCaretRef} className="inline-block w-0" />
                           </span>
                         </div>
+
+                        <div
+                          aria-hidden="true"
+                          className="absolute inset-0 opacity-0"
+                        >
+                          <span
+                            className="font-tamil-reading script-text-tamil script-text-wrap whitespace-pre-wrap text-slate-900"
+                            data-font-preset={tamilFontPreset}
+                            lang="ta"
+                            dir="ltr"
+                            style={{
+                              fontSize: `${composerTypography.tamilFontSize}px`,
+                              lineHeight: composerTypography.tamilLineHeight,
+                            }}
+                          >
+                            {renderPreviewWordSegments('tamil', {
+                              sourceText: currentChunkSource,
+                              fontSize: composerTypography.tamilFontSize,
+                              lineHeight: composerTypography.tamilLineHeight,
+                              sanskritFontPreset,
+                              tamilFontPreset,
+                              activeWordRange: currentSourceWordRange,
+                            })}
+                          </span>
+                        </div>
                         
                         <span
-                          className="font-tamil-reading script-text-tamil script-text-wrap whitespace-pre-wrap text-slate-900"
+                          className="pointer-events-none font-tamil-reading script-text-tamil script-text-wrap whitespace-pre-wrap text-slate-900"
                           data-font-preset={tamilFontPreset}
                           lang="ta"
                           dir="ltr"
@@ -1816,14 +1894,7 @@ export const StickyTopComposer: React.FC = () => {
                             lineHeight: composerTypography.tamilLineHeight,
                           }}
                         >
-                          {renderPreviewWordSegments('tamil', {
-                            sourceText: currentChunkSource,
-                            fontSize: composerTypography.tamilFontSize,
-                            lineHeight: composerTypography.tamilLineHeight,
-                            sanskritFontPreset,
-                            tamilFontPreset,
-                            activeWordRange: currentSourceWordRange,
-                          })}
+                          {renderPreviewVisibleText('tamil', currentChunkSource, currentSourceWordRange)}
                         </span>
 
                         <CaretOverlay 
@@ -1923,11 +1994,64 @@ export const StickyTopComposer: React.FC = () => {
                           </span>
                         </div>
 
+                        {(activeComparisonScript ?? primaryOutputScript) === 'tamil' && (
+                          <div
+                            aria-hidden="true"
+                            className="absolute inset-0 opacity-0"
+                          >
+                            <span
+                              className="font-tamil-reading script-text-tamil whitespace-pre-wrap break-words text-slate-700"
+                              data-font-preset={tamilFontPreset}
+                              lang="ta"
+                              dir="ltr"
+                              style={{
+                                fontSize: `${Math.max(getRenderedFontSizeForScript(activeComparisonScript ?? primaryOutputScript) - 2, 14)}px`,
+                                lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
+                              }}
+                            >
+                              {renderPreviewWordSegments('tamil', {
+                                sourceText: currentChunkSource,
+                                fontSize: Math.max(getRenderedFontSizeForScript(activeComparisonScript ?? primaryOutputScript) - 2, 14),
+                                lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
+                                sanskritFontPreset,
+                                tamilFontPreset,
+                                activeWordRange: currentSourceWordRange,
+                              })}
+                            </span>
+                          </div>
+                        )}
+
+                        {(activeComparisonScript ?? primaryOutputScript) === 'devanagari' && (
+                          <div
+                            aria-hidden="true"
+                            className="absolute inset-0 opacity-0"
+                          >
+                            <span
+                              className="font-serif script-text-devanagari whitespace-pre-wrap break-words text-slate-700"
+                              data-font-preset={sanskritFontPreset}
+                              lang="sa"
+                              style={{
+                                fontSize: `${Math.max(getRenderedFontSizeForScript(activeComparisonScript ?? primaryOutputScript) - 2, 14)}px`,
+                                lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
+                              }}
+                            >
+                              {renderPreviewWordSegments('devanagari', {
+                                sourceText: currentChunkSource,
+                                fontSize: Math.max(getRenderedFontSizeForScript(activeComparisonScript ?? primaryOutputScript) - 2, 14),
+                                lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
+                                sanskritFontPreset,
+                                tamilFontPreset,
+                                activeWordRange: currentSourceWordRange,
+                              })}
+                            </span>
+                          </div>
+                        )}
+
                         {/* Real text as a single node for perfect ligatures */}
                         <span
                           className={clsx(
-                            (activeComparisonScript ?? primaryOutputScript) === 'devanagari' ? 'font-serif script-text-devanagari' : 
-                            (activeComparisonScript ?? primaryOutputScript) === 'tamil' ? 'font-tamil-reading script-text-tamil' : 'font-mono',
+                            (activeComparisonScript ?? primaryOutputScript) === 'devanagari' ? 'font-serif script-text-devanagari pointer-events-none' : 
+                            (activeComparisonScript ?? primaryOutputScript) === 'tamil' ? 'font-tamil-reading script-text-tamil pointer-events-none' : 'font-mono',
                             'whitespace-pre-wrap break-words text-slate-700'
                           )}
                           data-font-preset={(activeComparisonScript ?? primaryOutputScript) === 'tamil' ? tamilFontPreset : sanskritFontPreset}
@@ -1938,14 +2062,18 @@ export const StickyTopComposer: React.FC = () => {
                             lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
                           }}
                         >
-                          {renderPreviewWordSegments(activeComparisonScript ?? primaryOutputScript, {
-                            sourceText: currentChunkSource,
-                            fontSize: Math.max(getRenderedFontSizeForScript(activeComparisonScript ?? primaryOutputScript) - 2, 14),
-                            lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
-                            sanskritFontPreset,
-                            tamilFontPreset,
-                            activeWordRange: currentSourceWordRange,
-                          })}
+                          {(activeComparisonScript ?? primaryOutputScript) === 'tamil'
+                            ? renderPreviewVisibleText('tamil', currentChunkSource, currentSourceWordRange)
+                            : (activeComparisonScript ?? primaryOutputScript) === 'devanagari'
+                              ? renderPreviewVisibleText('devanagari', currentChunkSource, currentSourceWordRange)
+                              : renderPreviewWordSegments(activeComparisonScript ?? primaryOutputScript, {
+                                sourceText: currentChunkSource,
+                                fontSize: Math.max(getRenderedFontSizeForScript(activeComparisonScript ?? primaryOutputScript) - 2, 14),
+                                lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
+                                sanskritFontPreset,
+                                tamilFontPreset,
+                                activeWordRange: currentSourceWordRange,
+                              })}
                         </span>
 
                         {/* Absolutely positioned visible caret */}

@@ -45,8 +45,9 @@ kbd {
 
 .script-text-devanagari {
   text-rendering: optimizeLegibility;
-  font-feature-settings: "kern" 1, "pres" 1, "abvs" 1, "blws" 1, "psts" 1, "haln" 1, "vatu" 1, "cjct" 1;
-  font-variant-ligatures: common-ligatures;
+  font-language-override: normal;
+  font-feature-settings: "kern" 1, "liga" 1, "clig" 1, "calt" 1, "rlig" 1, "ccmp" 1, "locl" 1, "mark" 1, "mkmk" 1, "nukt" 1, "rphf" 1, "abvs" 1, "blws" 1, "psts" 1, "haln" 1, "vatu" 1, "cjct" 1;
+  font-variant-ligatures: common-ligatures contextual discretionary-ligatures;
 }
 
 .script-text-devanagari[data-font-preset="chandas"] {
@@ -59,10 +60,13 @@ kbd {
 
 .script-text-devanagari[data-font-preset="sanskrit2003"] {
   font-family: var(--font-sanskrit2003), var(--font-chandas), var(--font-sampradaya), var(--font-siddhanta), "Tiro Devanagari Sanskrit", serif;
+  font-feature-settings: "kern" 1, "liga" 1, "clig" 1, "calt" 1, "rlig" 1, "ccmp" 1, "locl" 1, "mark" 1, "mkmk" 1, "nukt" 1, "rphf" 1, "abvs" 1, "blws" 1, "psts" 1, "haln" 1, "vatu" 1, "cjct" 1;
 }
 
 .script-text-devanagari[data-font-preset="siddhanta"] {
   font-family: var(--font-siddhanta), var(--font-sanskrit2003), var(--font-chandas), var(--font-sampradaya), "Tiro Devanagari Sanskrit", serif;
+  font-feature-settings: "kern" 1, "liga" 1, "clig" 1, "calt" 1, "rlig" 1, "ccmp" 1, "locl" 1, "mark" 1, "mkmk" 1, "nukt" 1, "rphf" 1, "abvs" 1, "blws" 1, "psts" 1, "haln" 1, "vatu" 1, "cjct" 1;
+  font-variant-ligatures: common-ligatures contextual discretionary-ligatures;
 }
 
 .script-text-tamil[data-font-preset="hybrid"] {
@@ -70,7 +74,7 @@ kbd {
 }
 
 .script-text-tamil[data-font-preset="noto-serif"] {
-  font-family: var(--font-noto-serif-tamil), "Nirmala UI", serif;
+  font-family: var(--font-noto-serif-tamil), "Noto Serif Tamil", "Nirmala UI", serif;
 }
 
 .script-text-tamil[data-font-preset="anek"] {

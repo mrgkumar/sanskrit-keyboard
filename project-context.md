@@ -238,6 +238,9 @@ Useful commands from `app/`:
 - Treat `mapping.ts` as the transliteration contract.
 - Treat `useFlowStore.ts` as the source of truth for editor state and persistence.
 - **Input Convention:** `Enter` is for newlines; `Shift+Enter` is for splitting blocks (available in `read` and `document` modes).
+- **Tamil Rendering Constraint:** In preview surfaces, visible Tamil text should remain a single DOM text run whenever possible. Splitting visible Tamil output into many per-word or per-cluster spans caused real shaping/fallback regressions compared with tag `v20260413.2042`.
+- **Preview Hit-Testing Constraint:** If cursor movement or pointer hit-testing needs word-level metadata, keep that in an invisible overlay or mirror layer. Do not use segmented visible spans as the main rendered Tamil text.
+- **Devanagari Note:** The same single-run visible-text pattern is safe to preserve for Devanagari previews as well, even though it did not materially improve current Devanagari rendering.
 - **Rendering:** Vedic accents following a visarga are automatically separated by a ZWNJ in the engine for correct rendering.
 - Treat `StickyTopComposer.tsx` as the top-half composer layout and output-target control surface.
 - Treat `MainDocumentArea.tsx` as the lower read/review/immersive document surface.
