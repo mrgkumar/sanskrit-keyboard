@@ -3,7 +3,7 @@
 import React from 'react';
 import { clsx } from 'clsx';
 import type { OutputScript } from '@/lib/vedic/mapping';
-import { normalizeTamilPrecisionDisplayText } from '@/lib/vedic/utils';
+import { normalizeDevanagariDisplayText, normalizeTamilPrecisionDisplayText } from '@/lib/vedic/utils';
 import type { SanskritFontPreset, TamilFontPreset } from '@/store/types';
 
 interface ScriptTextProps {
@@ -15,7 +15,19 @@ interface ScriptTextProps {
   tamilFontPreset?: TamilFontPreset;
 }
 
-export const getScriptDisplayText = (script: OutputScript, text: string) => {
+interface ScriptDisplayTextOptions {
+  sanskritFontPreset?: SanskritFontPreset;
+}
+
+export const getScriptDisplayText = (
+  script: OutputScript,
+  text: string,
+  options?: ScriptDisplayTextOptions,
+) => {
+  if (script === 'devanagari') {
+    return normalizeDevanagariDisplayText(text, options?.sanskritFontPreset);
+  }
+
   if (script === 'tamil') {
     return normalizeTamilPrecisionDisplayText(text);
   }
@@ -68,7 +80,7 @@ export const ScriptText: React.FC<ScriptTextProps> = ({
       lang="sa-Deva"
       style={style}
     >
-      {text}
+      {getScriptDisplayText('devanagari', text, { sanskritFontPreset })}
     </span>
   );
 

@@ -415,6 +415,8 @@ export const TransliterationEngine: React.FC = () => {
           formatSourceForScript(b.source, script, {
             romanOutputStyle,
             tamilOutputStyle,
+          }, {
+            sanskritFontPreset,
           })
         )
         .join('\n\n');

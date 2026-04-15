@@ -6,7 +6,7 @@ import { useFlowStore } from '@/store/useFlowStore';
 import { CanonicalBlock } from '@/store/types';
 import { clsx } from 'clsx';
 import { Check, Copy, Trash2 } from 'lucide-react';
-import { formatSourceForScript, transliterate } from '@/lib/vedic/utils';
+import { formatSourceForScript, normalizeDevanagariDisplayResult, transliterate } from '@/lib/vedic/utils';
 import { ScriptText } from '@/components/ScriptText';
 import { ResizeHandle } from '@/components/VerticalResizeHandle';
 
@@ -253,7 +253,10 @@ export const MainDocumentArea: React.FC = () => {
       return;
     }
 
-    const renderedBlock = transliterate(block.source, { inputScheme });
+    const renderedBlock = normalizeDevanagariDisplayResult(
+      transliterate(block.source, { inputScheme }),
+      sanskritFontPreset,
+    );
     const renderedChars = Array.from(renderedBlock.unicode);
 
     let wordStart = targetIndex;
@@ -336,7 +339,10 @@ export const MainDocumentArea: React.FC = () => {
     ) : null;
 
     if (script === 'devanagari') {
-      const renderedBlock = transliterate(block.source, { inputScheme });
+      const renderedBlock = normalizeDevanagariDisplayResult(
+        transliterate(block.source, { inputScheme }),
+        sanskritFontPreset,
+      );
 
       return (
         <div
@@ -397,6 +403,8 @@ export const MainDocumentArea: React.FC = () => {
     const formatted = formatSourceForScript(block.source, script, {
       romanOutputStyle,
       tamilOutputStyle,
+    }, {
+      sanskritFontPreset,
     });
 
     return (
@@ -594,6 +602,8 @@ export const MainDocumentArea: React.FC = () => {
                 const formatted = formatSourceForScript(block.source, primaryOutputScript, {
                   romanOutputStyle,
                   tamilOutputStyle,
+                }, {
+                  sanskritFontPreset,
                 });
                 void handleCopyBlock(block.id, formatted);
               }}
@@ -780,6 +790,8 @@ export const MainDocumentArea: React.FC = () => {
             const formatted = formatSourceForScript(block.source, primaryOutputScript, {
               romanOutputStyle,
               tamilOutputStyle,
+            }, {
+              sanskritFontPreset,
             });
 
             return (

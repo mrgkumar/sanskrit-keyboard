@@ -134,6 +134,8 @@ export const WordPredictionTray: React.FC<WordPredictionTrayProps> = ({
           const suggestionText = formatSourceForScript(entry.itrans, primaryOutputScript, {
             romanOutputStyle,
             tamilOutputStyle,
+          }, {
+            sanskritFontPreset: displaySettings.sanskritFontPreset,
           });
 
           return (

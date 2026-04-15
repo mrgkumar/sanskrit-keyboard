@@ -6,6 +6,8 @@ import {
   formatSourceForPrimaryOutput,
   getCopySourceControlText,
   formatSourceForScript,
+  normalizeDevanagariDisplayResult,
+  normalizeDevanagariDisplayText,
   normalizeTamilPrecisionDisplayText,
   tokenizeTamilPrecisionInput,
   reverseTamilInput,
@@ -202,6 +204,57 @@ test('Accent scheme maps backward with canonical outputs', () => {
   expect(detransliterate('ग')).toBe("ga''");
   expect(detransliterate('ग᳖')).toBe("ga''");
   expect(detransliterate('गः\u200C')).toBe("ga:''");
+});
+
+test('Devanagari display normalization is gated to Sanskrit 2003 and Siddhanta', () => {
+  expect(normalizeDevanagariDisplayText('नम॑ः', 'sanskrit2003')).toBe('नमः॑');
+  expect(normalizeDevanagariDisplayText('नम॒ः', 'sanskrit2003')).toBe('नमः॒');
+  expect(normalizeDevanagariDisplayText('नम᳚ः', 'sanskrit2003')).toBe('नमः᳚');
+  expect(normalizeDevanagariDisplayText('नमः', 'sanskrit2003')).toBe('नमः');
+  expect(normalizeDevanagariDisplayText('नमः॑', 'sanskrit2003')).toBe('नमः॑');
+  expect(normalizeDevanagariDisplayText('नम॑ः', 'siddhanta')).toBe('नमः॑');
+  expect(normalizeDevanagariDisplayText('नम॑ः', 'chandas')).toBe('नम॑ः');
+  expect(normalizeDevanagariDisplayText('नम॑ः', 'sampradaya')).toBe('नम॑ः');
+});
+
+test('Devanagari display normalization preserves transliteration maps', () => {
+  const normalized = normalizeDevanagariDisplayResult(transliterate("nama':"), 'sanskrit2003');
+  const normalizedAnudatta = normalizeDevanagariDisplayResult(transliterate('nama_:'), 'siddhanta');
+
+  expect(normalized.unicode).toBe('नमः॑');
+  expect(normalized.sourceToTargetMap).toEqual([0, 1, 1, 3, 3, 2]);
+  expect(normalized.targetToSourceMap).toEqual([0, 2, 5, 4]);
+
+  expect(normalizedAnudatta.unicode).toBe('नमः॒');
+  expect(normalizedAnudatta.sourceToTargetMap).toEqual([0, 1, 1, 3, 3, 2]);
+  expect(normalizedAnudatta.targetToSourceMap).toEqual([0, 2, 5, 4]);
+});
+
+test('Devanagari format output normalizes the visible display text', () => {
+  expect(
+    formatSourceForScript("nama':", 'devanagari', {
+      romanOutputStyle: 'canonical',
+      tamilOutputStyle: 'precision',
+    }, {
+      sanskritFontPreset: 'sanskrit2003',
+    }),
+  ).toBe('नमः॑');
+  expect(
+    formatSourceForScript('nama_:', 'devanagari', {
+      romanOutputStyle: 'canonical',
+      tamilOutputStyle: 'precision',
+    }, {
+      sanskritFontPreset: 'siddhanta',
+    }),
+  ).toBe('नमः॒');
+  expect(
+    formatSourceForScript("nama':", 'devanagari', {
+      romanOutputStyle: 'canonical',
+      tamilOutputStyle: 'precision',
+    }, {
+      sanskritFontPreset: 'chandas',
+    }),
+  ).toBe('नम॑ः');
 });
 
 test('Canonical slash separators preserve forward hiatus distinctions', () => {

@@ -15,6 +15,7 @@ import {
   canonicalizeDevanagariPaste,
   formatSourceForScript,
   normalizeMarkerSequences,
+  normalizeDevanagariDisplayResult,
   transliterate,
 } from '@/lib/vedic/utils';
 import {
@@ -304,10 +305,15 @@ export const StickyTopComposer: React.FC = () => {
   const isPredictionListbox = predictionLayout === 'listbox';
   const isLongBlock = activeBlock?.type === 'long';
   const currentChunkSource = activeChunkGroup?.source || '';
-  const renderedPreview = transliterate(currentChunkSource, { inputScheme });
+  const renderedPreview = normalizeDevanagariDisplayResult(
+    transliterate(currentChunkSource, { inputScheme }),
+    sanskritFontPreset,
+  );
   const primaryPreviewText = formatSourceForScript(currentChunkSource, primaryOutputScript, {
     romanOutputStyle,
     tamilOutputStyle,
+  }, {
+    sanskritFontPreset,
   });
   const comparisonPreviewText =
     comparisonOutputScript === 'off'
@@ -315,6 +321,8 @@ export const StickyTopComposer: React.FC = () => {
       : formatSourceForScript(currentChunkSource, comparisonOutputScript, {
           romanOutputStyle,
           tamilOutputStyle,
+        }, {
+          sanskritFontPreset,
         });
   const quickSwitchLabels = getOutputTargetQuickLabels({
     primaryOutputScript,
@@ -504,6 +512,8 @@ export const StickyTopComposer: React.FC = () => {
             {formatSourceForScript(text, script, {
               romanOutputStyle,
               tamilOutputStyle,
+            }, {
+              sanskritFontPreset,
             })}
           </span>
         );
@@ -529,6 +539,8 @@ export const StickyTopComposer: React.FC = () => {
             {formatSourceForScript(sourceText, script, {
               romanOutputStyle,
               tamilOutputStyle,
+            }, {
+              sanskritFontPreset,
             })}
           </span>
         ];
@@ -542,6 +554,8 @@ export const StickyTopComposer: React.FC = () => {
         const wordText = formatSourceForScript(sourceText.slice(range.start, range.end), script, {
           romanOutputStyle,
           tamilOutputStyle,
+        }, {
+          sanskritFontPreset,
         });
         const isActiveWord = activeWordRange?.start === range.start && activeWordRange?.end === range.end;
         nodes.push(
@@ -570,7 +584,7 @@ export const StickyTopComposer: React.FC = () => {
 
       return nodes;
     },
-    [previewWordRanges, renderedPreview.sourceToTargetMap, romanOutputStyle, tamilOutputStyle]
+    [previewWordRanges, renderedPreview.sourceToTargetMap, romanOutputStyle, tamilOutputStyle, sanskritFontPreset]
   );
 
   const renderPreviewVisibleText = React.useCallback(
@@ -583,6 +597,8 @@ export const StickyTopComposer: React.FC = () => {
         const formatted = formatSourceForScript(value, script, {
           romanOutputStyle,
           tamilOutputStyle,
+        }, {
+          sanskritFontPreset,
         });
 
         return script === 'tamil' ? getScriptDisplayText('tamil', formatted) : formatted;
@@ -605,7 +621,7 @@ export const StickyTopComposer: React.FC = () => {
         </>
       );
     },
-    [romanOutputStyle, tamilOutputStyle]
+    [romanOutputStyle, tamilOutputStyle, sanskritFontPreset]
   );
 
   const sourceMirrorFragments = (() => {
@@ -1324,7 +1340,9 @@ export const StickyTopComposer: React.FC = () => {
     } else {
       text = meaningfulBlocks.map(b => formatSourceForScript(b.source, script, {
         romanOutputStyle,
-        tamilOutputStyle
+        tamilOutputStyle,
+      }, {
+        sanskritFontPreset,
       })).join('\n\n');
     }
 
@@ -1854,6 +1872,8 @@ export const StickyTopComposer: React.FC = () => {
                             {formatSourceForScript(currentChunkSource.slice(0, composerSelectionStart), 'tamil', {
                               romanOutputStyle,
                               tamilOutputStyle,
+                            }, {
+                              sanskritFontPreset,
                             })}
                             <span ref={primaryPreviewCaretRef} className="inline-block w-0" />
                           </span>
@@ -1986,6 +2006,8 @@ export const StickyTopComposer: React.FC = () => {
                               formatSourceForScript(currentChunkSource.slice(0, composerSelectionStart), 'tamil', {
                                 romanOutputStyle,
                                 tamilOutputStyle,
+                              }, {
+                                sanskritFontPreset,
                               })
                             ) : (
                               comparisonPreviewText.slice(0, composerSelectionStart)

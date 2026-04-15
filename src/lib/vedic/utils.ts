@@ -2,6 +2,7 @@
 import { VEDIC_MAPPINGS, DEPENDENT_VOWELS, getInputMappings } from './mapping.ts';
 import type { InputScheme, OutputScript, OutputTargetSettings, OutputScheme, VedicMapping } from './mapping.ts';
 import { canonicalizeAcceptedInputToken, getPrimaryCopyTargetDescriptor } from './mapping.ts';
+import type { SanskritFontPreset } from '@/store/types';
 
 export interface CharConfidence {
   char: string;
@@ -23,6 +24,7 @@ interface TransliterationOptions {
 interface OutputFormattingOptions {
   outputScheme?: OutputScheme;
   tamilPrecisionAsciiFallback?: boolean;
+  sanskritFontPreset?: SanskritFontPreset;
 }
 
 interface DetransliterationOptions {
@@ -309,6 +311,121 @@ export const normalizeTamilPrecisionDisplayText = (text: string) => {
   return normalized.replaceAll('ஞ்ஜ', 'ஜ');
 };
 
+const DEVANAGARI_VEDIC_MARKS = new Set(['\u0951', '\u0952', '\u1CDA', '\uF176']);
+const DEVANAGARI_VISARGA = '\u0903';
+const DEVANAGARI_COMPAT_FONT_PRESETS = new Set<SanskritFontPreset>(['sanskrit2003', 'siddhanta']);
+
+const shouldNormalizeDevanagariDisplay = (preset?: SanskritFontPreset) =>
+  preset ? DEVANAGARI_COMPAT_FONT_PRESETS.has(preset) : false;
+
+const isDevanagariDisplayMark = (char: string) => DEVANAGARI_VEDIC_MARKS.has(char);
+
+export const normalizeDevanagariDisplayText = (text: string, sanskritFontPreset?: SanskritFontPreset) => {
+  if (!shouldNormalizeDevanagariDisplay(sanskritFontPreset)) {
+    return text;
+  }
+
+  const chars = Array.from(text);
+  const normalized: string[] = [];
+
+  for (let index = 0; index < chars.length;) {
+    if (!isDevanagariDisplayMark(chars[index])) {
+      normalized.push(chars[index]);
+      index += 1;
+      continue;
+    }
+
+    const markStart = index;
+    while (index < chars.length && isDevanagariDisplayMark(chars[index])) {
+      index += 1;
+    }
+
+    if (index < chars.length && chars[index] === DEVANAGARI_VISARGA) {
+      normalized.push(DEVANAGARI_VISARGA);
+      for (let markIndex = markStart; markIndex < index; markIndex += 1) {
+        normalized.push(chars[markIndex]);
+      }
+      index += 1;
+      continue;
+    }
+
+    for (let markIndex = markStart; markIndex < index; markIndex += 1) {
+      normalized.push(chars[markIndex]);
+    }
+  }
+
+  return normalized.join('');
+};
+
+export const normalizeDevanagariDisplayResult = (
+  result: TransliterationResult,
+  sanskritFontPreset?: SanskritFontPreset,
+): TransliterationResult => {
+  if (!shouldNormalizeDevanagariDisplay(sanskritFontPreset)) {
+    return result;
+  }
+
+  const sourceChars = Array.from(result.unicode);
+  const normalized: string[] = [];
+  const oldToNew: number[] = new Array(sourceChars.length).fill(0);
+  const newToOld: number[] = [];
+
+  for (let index = 0; index < sourceChars.length;) {
+    if (!isDevanagariDisplayMark(sourceChars[index])) {
+      oldToNew[index] = normalized.length;
+      newToOld.push(index);
+      normalized.push(sourceChars[index]);
+      index += 1;
+      continue;
+    }
+
+    const markStart = index;
+    while (index < sourceChars.length && isDevanagariDisplayMark(sourceChars[index])) {
+      index += 1;
+    }
+
+    if (index < sourceChars.length && sourceChars[index] === DEVANAGARI_VISARGA) {
+      const visargaOldIndex = index;
+      oldToNew[visargaOldIndex] = normalized.length;
+      newToOld.push(visargaOldIndex);
+      normalized.push(DEVANAGARI_VISARGA);
+
+      for (let markIndex = markStart; markIndex < visargaOldIndex; markIndex += 1) {
+        oldToNew[markIndex] = normalized.length;
+        newToOld.push(markIndex);
+        normalized.push(sourceChars[markIndex]);
+      }
+
+      index += 1;
+      continue;
+    }
+
+    for (let markIndex = markStart; markIndex < index; markIndex += 1) {
+      oldToNew[markIndex] = normalized.length;
+      newToOld.push(markIndex);
+      normalized.push(sourceChars[markIndex]);
+    }
+  }
+
+  const normalizedUnicode = normalized.join('');
+  if (normalizedUnicode === result.unicode) {
+    return result;
+  }
+
+  return {
+    ...result,
+    unicode: normalizedUnicode,
+    sourceToTargetMap: result.sourceToTargetMap.map((targetIndex) => {
+      if (targetIndex >= sourceChars.length) {
+        return normalized.length;
+      }
+
+      return oldToNew[targetIndex] ?? targetIndex;
+    }),
+    targetToSourceMap: newToOld.map((oldIndex) => result.targetToSourceMap[oldIndex] ?? 0),
+  };
+};
+
 const normalizeTamilPrecisionInput = (value: string) => {
   let normalized = value;
 
@@ -561,7 +678,7 @@ export const formatSourceForOutput = (
 export const formatSourceForPrimaryOutput = (
   itrans: string,
   settings: OutputTargetSettings,
-  options?: Pick<OutputFormattingOptions, 'tamilPrecisionAsciiFallback'>
+  options?: Pick<OutputFormattingOptions, 'tamilPrecisionAsciiFallback' | 'sanskritFontPreset'>
 ): string => {
   return formatSourceForScript(itrans, settings.primaryOutputScript, settings, options);
 };
@@ -570,14 +687,14 @@ export const formatSourceForScript = (
   itrans: string,
   script: OutputScript,
   settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
-  options?: Pick<OutputFormattingOptions, 'tamilPrecisionAsciiFallback'>
+  options?: Pick<OutputFormattingOptions, 'tamilPrecisionAsciiFallback' | 'sanskritFontPreset'>
 ): string => {
   if (!itrans) {
     return itrans;
   }
 
   if (script === 'devanagari') {
-    return transliterate(itrans).unicode;
+    return normalizeDevanagariDisplayText(transliterate(itrans).unicode, options?.sanskritFontPreset);
   }
 
   return formatSourceForOutput(itrans, {
