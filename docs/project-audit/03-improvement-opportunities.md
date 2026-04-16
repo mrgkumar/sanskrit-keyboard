@@ -44,13 +44,15 @@ Priority levels:
 
 Priority: P0
 
-Candidates:
+Status: completed in backlog item 1.5
 
-1. [UnicodeInspector.tsx](/home/ganesh/Documents/Research/sanskrit_keyboard/app/src/components/audit/UnicodeInspector.tsx)
-2. [useSyncScroll.ts](/home/ganesh/Documents/Research/sanskrit_keyboard/app/src/hooks/useSyncScroll.ts)
-3. [db.ts](/home/ganesh/Documents/Research/sanskrit_keyboard/app/src/lib/vedic/db.ts)
-4. [export.ts](/home/ganesh/Documents/Research/sanskrit_keyboard/app/src/lib/vedic/export.ts)
-5. [utils.ts](/home/ganesh/Documents/Research/sanskrit_keyboard/app/src/lib/utils.ts)
+Removed files:
+
+1. `UnicodeInspector.tsx`
+2. `useSyncScroll.ts`
+3. `db.ts`
+4. `export.ts`
+5. `utils.ts`
 
 Why:
 
@@ -60,13 +62,13 @@ Why:
 
 Suggested action:
 
-1. Remove if not planned.
-2. Otherwise move to an `archive/experimental` or `src/experimental` area with explicit status notes.
+1. Keep them removed unless a future feature explicitly reintroduces them.
+2. If a future feature needs one of them, recreate it with a clear owner and proof trail.
 
 Evidence:
 
 1. No active runtime imports were found for these modules.
-2. [`src/lib/vedic/db.ts`](../../src/lib/vedic/db.ts) is especially misleading because Dexie is present in dependencies but not used in active persistence.
+2. `src/lib/vedic/db.ts` was especially misleading because Dexie was present in dependencies but not used in active persistence.
 
 ## 2.2 Reconcile Misleading Secondary Routes
 

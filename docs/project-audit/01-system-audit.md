@@ -137,7 +137,7 @@ Proof:
 
 1. [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts)
 2. [`src/components/engine/TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx)
-3. [`src/lib/vedic/db.ts`](../../src/lib/vedic/db.ts)
+3. `src/lib/vedic/db.ts` was deleted in backlog item 1.5.
 
 ## 4. Functional Requirements Extracted From Code
 
@@ -276,22 +276,22 @@ Status labels:
 3. Partial
    UI exists, but behavior is stubbed or misleading.
 
-### Dead
+### Removed During Cleanup
 
-1. [`src/components/audit/UnicodeInspector.tsx`](../../src/components/audit/UnicodeInspector.tsx)
+1. `src/components/audit/UnicodeInspector.tsx`
    No runtime or test references.
-2. [`src/hooks/useSyncScroll.ts`](../../src/hooks/useSyncScroll.ts)
+2. `src/hooks/useSyncScroll.ts`
    Not imported anywhere.
-3. [`src/lib/vedic/db.ts`](../../src/lib/vedic/db.ts)
+3. `src/lib/vedic/db.ts`
    Dexie wrapper is unused.
-4. [`src/lib/vedic/export.ts`](../../src/lib/vedic/export.ts)
+4. `src/lib/vedic/export.ts`
    Export helper is unused.
-5. [`src/lib/utils.ts`](../../src/lib/utils.ts)
+5. `src/lib/utils.ts`
    `cn()` helper exists but the codebase imports `clsx` directly instead.
 
 Proof:
 
-1. No active runtime imports were found for these modules during the audit pass.
+1. These files were deleted in backlog item 1.5 after the audit confirmed no active runtime imports.
 
 ### Latent
 

@@ -108,17 +108,12 @@ Status labels used here:
    Desktop-first warning overlay.
 5. [`src/components/ui/SkeletonLoader.tsx`](../../src/components/ui/SkeletonLoader.tsx)
    Loading placeholder for the dynamic engine import.
-6. [`src/components/audit/UnicodeInspector.tsx`](../../src/components/audit/UnicodeInspector.tsx)
-   `Unused`. Inspection component with no active runtime references found.
-
 ## 4. State and Hooks
 
 1. [`src/store/types.ts`](../../src/store/types.ts)
    Shared domain types for blocks, segments, sessions, display settings, and modes.
 2. [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts)
    Zustand store and most business logic.
-3. [`src/hooks/useSyncScroll.ts`](../../src/hooks/useSyncScroll.ts)
-   `Unused`. Scroll-sync hook with no active runtime imports found.
 
 ## 5. Transliteration and Data Libraries
 
@@ -134,14 +129,18 @@ Status labels used here:
    `Support`. Shared output-path helper for dataset generation scripts.
 6. [`src/lib/version.ts`](../../src/lib/version.ts)
    `Support`. Build version metadata generated before build and displayed in the workspace.
-7. [`src/lib/vedic/db.ts`](../../src/lib/vedic/db.ts)
-   `Unused`. Dexie wrapper with no active runtime imports found.
-8. [`src/lib/vedic/export.ts`](../../src/lib/vedic/export.ts)
-   `Unused`. Export-format helper with no active runtime imports found.
-9. [`src/lib/utils.ts`](../../src/lib/utils.ts)
-   `Unused`. `cn()` helper with no active runtime imports found.
 
-## 6. Build and Data Pipeline Scripts
+## 6. Removed During Cleanup
+
+1. `src/components/audit/UnicodeInspector.tsx`
+2. `src/hooks/useSyncScroll.ts`
+3. `src/lib/vedic/db.ts`
+4. `src/lib/vedic/export.ts`
+5. `src/lib/utils.ts`
+
+These files were deleted in backlog item 1.5 after the audit found no active runtime references.
+
+## 7. Build and Data Pipeline Scripts
 
 1. [`scripts/copyAutocompleteAssets.mjs`](../../scripts/copyAutocompleteAssets.mjs)
    Copies generated autocomplete assets into deployable/static locations.

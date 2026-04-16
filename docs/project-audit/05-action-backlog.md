@@ -178,15 +178,15 @@ Trace:
 
 Type: `Cleanup`
 Priority: `P0`
-Status: `not-started`
+Status: `validated`
 
 Candidates:
 
-1. [`src/components/audit/UnicodeInspector.tsx`](../../src/components/audit/UnicodeInspector.tsx)
-2. [`src/hooks/useSyncScroll.ts`](../../src/hooks/useSyncScroll.ts)
-3. [`src/lib/vedic/db.ts`](../../src/lib/vedic/db.ts)
-4. [`src/lib/vedic/export.ts`](../../src/lib/vedic/export.ts)
-5. [`src/lib/utils.ts`](../../src/lib/utils.ts)
+1. `src/components/audit/UnicodeInspector.tsx`
+2. `src/hooks/useSyncScroll.ts`
+3. `src/lib/vedic/db.ts`
+4. `src/lib/vedic/export.ts`
+5. `src/lib/utils.ts`
 
 Action:
 
