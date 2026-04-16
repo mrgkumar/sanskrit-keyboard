@@ -178,7 +178,7 @@ Trace:
 
 Type: `Cleanup`
 Priority: `P0`
-Status: `validated`
+Status: `committed`
 
 Candidates:
 
@@ -201,6 +201,10 @@ Proof:
 
 1. [`01-system-audit.md`](./01-system-audit.md)
 2. [`02-file-inventory.md`](./02-file-inventory.md)
+
+Trace:
+
+1. `967b306` `refactor: remove dead audit modules`
 
 ## 1.6 Fix Naming Drift Between `Sanskirt` and `Sanskrit`
 
