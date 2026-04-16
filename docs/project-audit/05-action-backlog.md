@@ -108,7 +108,7 @@ Proof:
 
 Type: `Product Decision`
 Priority: `P0`
-Status: `validated`
+Status: `committed`
 
 Problem:
 
