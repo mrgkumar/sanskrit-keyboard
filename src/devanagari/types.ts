@@ -116,6 +116,7 @@ export interface ProducerConfig {
   includeExtendedConsonants?: boolean;
   includeVedic?: boolean;
   includeGeneralCombiningMarks?: boolean;
+  includeSymbols?: boolean;
   templates?: TemplateFamily[];
 }
 

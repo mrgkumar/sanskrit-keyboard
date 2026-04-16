@@ -8,6 +8,7 @@ import {
 } from './test-support/corpusRegistry';
 import {
   sanitizeDevanagariCorpusToken,
+  normalizeDevanagariCorpusComparison,
   stripDevanagariLexicalMarks,
   tokenizeDevanagariText,
 } from './test-support/corpusText';
@@ -115,6 +116,11 @@ test.describe('corpus pipeline registry', () => {
     expect(sanitizeDevanagariCorpusToken('ग')).toBe('ग');
   });
 
+  test('normalizes corpus comparison equivalents for legacy svarita and join control noise', () => {
+    expect(normalizeDevanagariCorpusComparison('स्वाहा')).toBe('स्वाहा᳚');
+    expect(normalizeDevanagariCorpusComparison('नमः\u200C॑')).toBe('नमः॑');
+  });
+
   test('canonicalizes vocalic r and l aliases for lexical training', () => {
     expect(canonicalizeLexicalItrans('tR^itiiya')).toBe('tRRitiiya');
     expect(canonicalizeLexicalItrans('kL^ipta')).toBe('kLLipta');
@@ -195,7 +201,7 @@ test.describe('corpus pipeline registry', () => {
     expect(record).toEqual({
       id: 'example-mtilde-1',
       devanagari: 'वारुणांञ्चतुष्कपालान्',
-      itrans: 'vaaruNaaM~nchatuSkapaalaan',
+      itrans: 'vAruNAM~nchatuShkapAlAn',
       originalRoman: '',
       source: 'example-vedic',
       score: null,

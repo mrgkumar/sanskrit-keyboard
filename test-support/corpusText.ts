@@ -6,6 +6,9 @@ const EDGE_PUNCTUATION_REGEX = /^[।॥]+|[।॥]+$/gu;
 const LEADING_INVALID_CORPUS_MARK_REGEX = /^[\u093A-\u094C\u0951\u0952\u1CD0-\u1CFF\uA8E0-\uA8FF\uF000-\uF8FF]/u;
 const LEADING_INDEPENDENT_VOWEL_WITH_MATRA_REGEX = /^[\u0904-\u0914][\u093A-\u094C\u0962\u0963]/u;
 const SUPPORTED_PRIVATE_USE_CHARS = new Set(['\uE001', '\uE002', '\uF156', '\uF176']);
+const DEVANAGARI_CORPUS_EQUIVALENCE_ZWNJ = '\u200C';
+const DEVANAGARI_DOUBLE_SVARITA = '\u1CDA';
+const DEVANAGARI_LEGACY_DOUBLE_SVARITA = '\uF176';
 
 const hasUnsupportedPrivateUseChars = (value: string) =>
   [...value.matchAll(PRIVATE_USE_CHAR_REGEX)].some(
@@ -40,3 +43,9 @@ export const tokenizeDevanagariText = (text: string) =>
 
 export const stripDevanagariLexicalMarks = (value: string) =>
   value.replace(DEVANAGARI_LEXICAL_MARKS_PATTERN, '').trim();
+
+export const normalizeDevanagariCorpusComparison = (value: string) =>
+  value
+    .normalize('NFC')
+    .replaceAll(DEVANAGARI_LEGACY_DOUBLE_SVARITA, DEVANAGARI_DOUBLE_SVARITA)
+    .replaceAll(DEVANAGARI_CORPUS_EQUIVALENCE_ZWNJ, '');

@@ -1,4 +1,7 @@
-import { stripDevanagariLexicalMarks } from '../test-support/corpusText.ts';
+import {
+  normalizeDevanagariCorpusComparison,
+  stripDevanagariLexicalMarks,
+} from '../test-support/corpusText.ts';
 import {
   normalizeForCanonicalValidation,
   normalizeForCanonicalLexiconTraining,
@@ -64,7 +67,10 @@ const repairCanonicalHiatusItrans = ({
       ? stripDevanagariLexicalMarks(validationUnicode)
       : validationUnicode;
 
-    if (comparableForwardUnicode !== expectedUnicode) {
+    if (
+      normalizeDevanagariCorpusComparison(comparableForwardUnicode) !==
+      normalizeDevanagariCorpusComparison(expectedUnicode)
+    ) {
       continue;
     }
 
@@ -122,7 +128,10 @@ export const processCanonicalRow = ({
     ? stripDevanagariLexicalMarks(validationUnicode)
     : validationUnicode;
   let forwardStatus: CanonicalMappingRecord['forwardStatus'] =
-    comparableForwardUnicode === expectedUnicode ? 'exact_pass' : 'fail';
+    normalizeDevanagariCorpusComparison(comparableForwardUnicode) ===
+    normalizeDevanagariCorpusComparison(expectedUnicode)
+      ? 'exact_pass'
+      : 'fail';
   let finalLexicalItrans = lexicalItrans;
   let finalForwardUnicode = validationUnicode;
 
