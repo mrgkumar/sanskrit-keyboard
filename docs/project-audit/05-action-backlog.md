@@ -352,7 +352,7 @@ Proof:
 
 Type: `Refactor`
 Priority: `P1`
-Status: `not-started`
+Status: `implemented`
 
 Problem:
 
@@ -366,6 +366,13 @@ Proof:
 
 1. [`src/components/StickyTopComposer.tsx`](../../src/components/StickyTopComposer.tsx)
 2. [`03-improvement-opportunities.md`](./03-improvement-opportunities.md)
+3. [`src/components/engine/useStickyComposerLayout.ts`](../../src/components/engine/useStickyComposerLayout.ts)
+4. [`src/components/engine/CaretOverlay.tsx`](../../src/components/engine/CaretOverlay.tsx)
+5. [`src/components/engine/StickyTopComposerPredictionPopup.tsx`](../../src/components/engine/StickyTopComposerPredictionPopup.tsx)
+
+Trace:
+
+1. `b8ec6f2` `refactor: extract composer layout helpers`
 
 ## 2.3 Split `TransliterationEngine.tsx`
 
