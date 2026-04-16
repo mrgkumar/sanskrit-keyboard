@@ -110,6 +110,10 @@ Why:
 1. Typos in persistent keys become long-lived compatibility baggage.
 2. Visible copy should stay normalized even while old storage aliases remain for migration.
 
+Status:
+
+1. Completed in backlog item 1.6.
+
 Suggested action:
 
 1. Introduce a migration path from `sanskirt-*` to `sanskrit-*`.

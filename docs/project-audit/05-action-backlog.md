@@ -210,7 +210,7 @@ Trace:
 
 Type: `Cleanup`
 Priority: `P0`
-Status: `validated`
+Status: `committed`
 
 Problem:
 
@@ -230,11 +230,15 @@ Proof:
 1. [`src/app/page.tsx`](../../src/app/page.tsx)
 2. [`src/app/welcome/page.tsx`](../../src/app/welcome/page.tsx)
 
+Trace:
+
+1. `72ee80b` `feat: normalize naming and add store contract tests`
+
 ## 1.7 Add Direct Store Tests For Block Operations
 
 Type: `Tests`
 Priority: `P0`
-Status: `validated`
+Status: `committed`
 
 Problem:
 
@@ -254,11 +258,15 @@ Proof:
 1. [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts)
 2. [`04-feature-test-coverage.md`](./04-feature-test-coverage.md)
 
+Trace:
+
+1. `72ee80b` `feat: normalize naming and add store contract tests`
+
 ## 1.8 Add Direct Tests For Session Orchestration
 
 Type: `Tests`
 Priority: `P0`
-Status: `validated`
+Status: `committed`
 
 Problem:
 
@@ -278,11 +286,15 @@ Proof:
 1. [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts)
 2. [`04-feature-test-coverage.md`](./04-feature-test-coverage.md)
 
+Trace:
+
+1. `72ee80b` `feat: normalize naming and add store contract tests`
+
 ## 1.9 Add Direct Segmentation Policy Tests
 
 Type: `Tests`
 Priority: `P0`
-Status: `validated`
+Status: `committed`
 
 Problem:
 
@@ -296,6 +308,10 @@ Proof:
 
 1. [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts)
 2. [`04-feature-test-coverage.md`](./04-feature-test-coverage.md)
+
+Trace:
+
+1. `72ee80b` `feat: normalize naming and add store contract tests`
 
 ## 2. P1 Backlog
 
