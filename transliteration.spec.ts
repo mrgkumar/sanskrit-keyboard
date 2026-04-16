@@ -206,7 +206,7 @@ test('Accent scheme maps backward with canonical outputs', () => {
   expect(detransliterate('गः\u200C')).toBe("ga:''");
 });
 
-test('Devanagari display normalization is gated to Sanskrit 2003 and Siddhanta', () => {
+test('Devanagari display normalization preserves visarga ordering and pra glyph mapping', () => {
   expect(normalizeDevanagariDisplayText('नम॑ः', 'sanskrit2003')).toBe('नमः॑');
   expect(normalizeDevanagariDisplayText('नम॒ः', 'sanskrit2003')).toBe('नमः॒');
   expect(normalizeDevanagariDisplayText('नम᳚ः', 'sanskrit2003')).toBe('नमः᳚');
@@ -215,6 +215,8 @@ test('Devanagari display normalization is gated to Sanskrit 2003 and Siddhanta',
   expect(normalizeDevanagariDisplayText('नम॑ः', 'siddhanta')).toBe('नमः॑');
   expect(normalizeDevanagariDisplayText('नम॑ः', 'chandas')).toBe('नम॑ः');
   expect(normalizeDevanagariDisplayText('नम॑ः', 'sampradaya')).toBe('नम॑ः');
+  expect(normalizeDevanagariDisplayText('प्र', 'chandas')).toBe('');
+  expect(normalizeDevanagariDisplayText('प्र', 'sanskrit2003')).toBe('');
 });
 
 test('Devanagari display normalization preserves transliteration maps', () => {
@@ -257,6 +259,37 @@ test('Devanagari format output normalizes the visible display text', () => {
   ).toBe('नम॑ः');
 });
 
+test('Devanagari compatibility display maps pra to the legacy glyph', () => {
+  const source = transliterate('pratha_masya_');
+
+  expect(
+    normalizeDevanagariDisplayText(source.unicode, 'sanskrit2003'),
+  ).toBe('थ॒मस्य॒');
+  expect(
+    normalizeDevanagariDisplayResult(source, 'sanskrit2003').unicode,
+  ).toBe('थ॒मस्य॒');
+  expect(
+    formatSourceForScript('pratha_masya_', 'devanagari', {
+      romanOutputStyle: 'canonical',
+      tamilOutputStyle: 'precision',
+    }, {
+      sanskritFontPreset: 'sanskrit2003',
+    }),
+  ).toBe('थ॒मस्य॒');
+  expect(formatSourceForScript("prasi'tiM_", 'devanagari', {
+    romanOutputStyle: 'canonical',
+    tamilOutputStyle: 'precision',
+  }, {
+    sanskritFontPreset: 'sampradaya',
+  })).toBe('सि॑तिं॒');
+  expect(formatSourceForScript('rpa', 'devanagari', {
+    romanOutputStyle: 'canonical',
+    tamilOutputStyle: 'precision',
+  }, {
+    sanskritFontPreset: 'chandas',
+  })).toBe('र्प');
+});
+
 test('Canonical slash separators preserve forward hiatus distinctions', () => {
   expect(transliterate('a/i').unicode).toBe('अइ');
   expect(transliterate('A/o').unicode).toBe('आओ');
@@ -284,6 +317,27 @@ test('Vocalic r round-trips through dependent vowel forms', () => {
   expect(transliterate('kR^ita').unicode).toBe('कृत');
   expect(detransliterate('कॄ')).toBe('kR^I');
   expect(transliterate('kR^I').unicode).toBe('कॄ');
+});
+
+test('Vocalic r keeps the explicit anudatta form after r_ clusters', () => {
+  expect(transliterate('r_RRi').unicode).toBe('र्॒ऋ');
+  expect(transliterate('r_R^i').unicode).toBe('र्॒ऋ');
+  expect(detransliterate('र्॒ऋ')).toBe('r_RRi');
+  expect(transliterate('r_RRI').unicode).toBe('र्॒ॠ');
+  expect(transliterate('r_R^I').unicode).toBe('र्॒ॠ');
+  expect(detransliterate('र्॒ॠ')).toBe('r_RRI');
+  expect(transliterate('_RRi').unicode).toBe('॒ऋ');
+  expect(transliterate('_R^i').unicode).toBe('॒ऋ');
+  expect(transliterate('_RRI').unicode).toBe('॒ॠ');
+  expect(transliterate('_R^I').unicode).toBe('॒ॠ');
+  expect(detransliterate('॒ऋ')).toBe('_RRi');
+  expect(detransliterate('॒ॠ')).toBe('_RRI');
+  expect(transliterate('nirR^i\'tiM').unicode).toBe('निरृ॑तिं');
+  expect(transliterate('nirR^I\'tiM').unicode).toBe('निरॄ॑तिं');
+  expect(transliterate('nirRRi_ti').unicode).toBe('निर्ऋ॒ति');
+  expect(detransliterate('निरृ॑तिं')).toBe("nirR^i'tiM");
+  expect(detransliterate('निरॄ॑तिं')).toBe("nirR^I'tiM");
+  expect(detransliterate('निर्ऋ॒ति')).toBe('nirRRi_ti');
 });
 
 test('Canonical ZWJ and ZWNJ shortcuts round-trip as literal join controls', () => {
@@ -321,6 +375,8 @@ test('Distinct vedic anusvara variants keep separate round-trip aliases', () => 
   expect(detransliterate('॒ꣳ॒')).toBe('_MM~_');
   expect(transliterate('_M~M_').unicode).toBe('॒ं॒');
   expect(detransliterate('॒ं॒')).toBe('_M~M_');
+  expect(transliterate('_M^~_').unicode).toBe('॒ꣴ॒');
+  expect(detransliterate('॒ꣴ॒')).toBe('_M^~_');
 });
 
 test('Baraha-compatible aliases map forward while reverse stays canonical', () => {

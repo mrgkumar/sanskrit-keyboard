@@ -314,15 +314,68 @@ export const normalizeTamilPrecisionDisplayText = (text: string) => {
 const DEVANAGARI_VEDIC_MARKS = new Set(['\u0951', '\u0952', '\u1CDA', '\uF176']);
 const DEVANAGARI_VISARGA = '\u0903';
 const DEVANAGARI_COMPAT_FONT_PRESETS = new Set<SanskritFontPreset>(['sanskrit2003', 'siddhanta']);
+const DEVANAGARI_COMPAT_PRA_SOURCE = '\u092A\u094D\u0930';
+const DEVANAGARI_COMPAT_PRA_TARGET = '\uF374';
 
 const shouldNormalizeDevanagariDisplay = (preset?: SanskritFontPreset) =>
   preset ? DEVANAGARI_COMPAT_FONT_PRESETS.has(preset) : false;
 
 const isDevanagariDisplayMark = (char: string) => DEVANAGARI_VEDIC_MARKS.has(char);
 
+const rewriteDevanagariPraGlyphText = (text: string) =>
+  text.replaceAll(DEVANAGARI_COMPAT_PRA_SOURCE, DEVANAGARI_COMPAT_PRA_TARGET);
+
+const rewriteDevanagariPraGlyphResult = (result: TransliterationResult): TransliterationResult => {
+  const sourceChars = Array.from(result.unicode);
+  const rewritten: string[] = [];
+  const oldToNew: number[] = new Array(sourceChars.length).fill(0);
+  const newToOld: number[] = [];
+
+  for (let index = 0; index < sourceChars.length;) {
+    if (
+      sourceChars[index] === '\u092A' &&
+      sourceChars[index + 1] === '\u094D' &&
+      sourceChars[index + 2] === '\u0930'
+    ) {
+      const targetIndex = rewritten.length;
+      oldToNew[index] = targetIndex;
+      oldToNew[index + 1] = targetIndex;
+      oldToNew[index + 2] = targetIndex;
+      newToOld.push(index);
+      rewritten.push(DEVANAGARI_COMPAT_PRA_TARGET);
+      index += 3;
+      continue;
+    }
+
+    const targetIndex = rewritten.length;
+    oldToNew[index] = targetIndex;
+    newToOld.push(index);
+    rewritten.push(sourceChars[index]);
+    index += 1;
+  }
+
+  const rewrittenUnicode = rewritten.join('');
+  if (rewrittenUnicode === result.unicode) {
+    return result;
+  }
+
+  return {
+    ...result,
+    unicode: rewrittenUnicode,
+    sourceToTargetMap: result.sourceToTargetMap.map((targetIndex) => {
+      if (targetIndex >= sourceChars.length) {
+        return rewritten.length;
+      }
+
+      return oldToNew[targetIndex] ?? targetIndex;
+    }),
+    targetToSourceMap: newToOld.map((oldIndex) => result.targetToSourceMap[oldIndex] ?? 0),
+  };
+};
+
 export const normalizeDevanagariDisplayText = (text: string, sanskritFontPreset?: SanskritFontPreset) => {
   if (!shouldNormalizeDevanagariDisplay(sanskritFontPreset)) {
-    return text;
+    return rewriteDevanagariPraGlyphText(text);
   }
 
   const chars = Array.from(text);
@@ -354,7 +407,7 @@ export const normalizeDevanagariDisplayText = (text: string, sanskritFontPreset?
     }
   }
 
-  return normalized.join('');
+  return rewriteDevanagariPraGlyphText(normalized.join(''));
 };
 
 export const normalizeDevanagariDisplayResult = (
@@ -362,7 +415,7 @@ export const normalizeDevanagariDisplayResult = (
   sanskritFontPreset?: SanskritFontPreset,
 ): TransliterationResult => {
   if (!shouldNormalizeDevanagariDisplay(sanskritFontPreset)) {
-    return result;
+    return rewriteDevanagariPraGlyphResult(result);
   }
 
   const sourceChars = Array.from(result.unicode);
@@ -408,11 +461,7 @@ export const normalizeDevanagariDisplayResult = (
   }
 
   const normalizedUnicode = normalized.join('');
-  if (normalizedUnicode === result.unicode) {
-    return result;
-  }
-
-  return {
+  return rewriteDevanagariPraGlyphResult({
     ...result,
     unicode: normalizedUnicode,
     sourceToTargetMap: result.sourceToTargetMap.map((targetIndex) => {
@@ -423,7 +472,7 @@ export const normalizeDevanagariDisplayResult = (
       return oldToNew[targetIndex] ?? targetIndex;
     }),
     targetToSourceMap: newToOld.map((oldIndex) => result.targetToSourceMap[oldIndex] ?? 0),
-  };
+  });
 };
 
 const normalizeTamilPrecisionInput = (value: string) => {
@@ -1042,6 +1091,77 @@ export const transliterate = (
       continue;
     }
 
+    if (
+      itransBuffer.startsWith('_RRi', i) ||
+      itransBuffer.startsWith('_R^i', i) ||
+      itransBuffer.startsWith('_RRI', i) ||
+      itransBuffer.startsWith('_R^I', i)
+    ) {
+      const replacement = itransBuffer.startsWith('_RRI', i) || itransBuffer.startsWith('_R^I', i)
+        ? '\u0952\u0960'
+        : '\u0952\u090B';
+      const replChars = Array.from(replacement);
+      const currentSourceIndex = i;
+      const targetStart = unicode.length;
+
+      replChars.forEach(() => targetToSourceMap.push(currentSourceIndex));
+      for (let m = 0; m < 4; m += 1) {
+        sourceToTargetMap[i + m] = targetStart;
+      }
+
+      replChars.forEach((c) =>
+        confidences.push({ char: c, confidence: 1.0, rationale: 'Explicit anudatta vocalic-r cluster' })
+      );
+      unicode += replacement;
+      i += 4;
+      continue;
+    }
+
+    if (
+      itransBuffer.startsWith('r_RRi', i) ||
+      itransBuffer.startsWith('r_R^i', i) ||
+      itransBuffer.startsWith('r_RRI', i) ||
+      itransBuffer.startsWith('r_R^I', i)
+    ) {
+      const replacement = itransBuffer.startsWith('r_RRI', i) || itransBuffer.startsWith('r_R^I', i)
+        ? '\u0930\u094D\u0952\u0960'
+        : '\u0930\u094D\u0952\u090B';
+      const replChars = Array.from(replacement);
+      const currentSourceIndex = i;
+      const targetStart = unicode.length;
+
+      replChars.forEach(() => targetToSourceMap.push(currentSourceIndex));
+      for (let m = 0; m < 5; m += 1) {
+        sourceToTargetMap[i + m] = targetStart;
+      }
+
+      replChars.forEach((c) =>
+        confidences.push({ char: c, confidence: 1.0, rationale: 'Explicit r-cluster vocalic vowel' })
+      );
+      unicode += replacement;
+      i += 5;
+      continue;
+    }
+
+    if (itransBuffer.startsWith('_M^~_', i)) {
+      const replacement = '\u0952\uA8F4\u0952';
+      const replChars = Array.from(replacement);
+      const currentSourceIndex = i;
+      const targetStart = unicode.length;
+
+      replChars.forEach(() => targetToSourceMap.push(currentSourceIndex));
+      for (let m = 0; m < 5; m += 1) {
+        sourceToTargetMap[i + m] = targetStart;
+      }
+
+      replChars.forEach((c) =>
+        confidences.push({ char: c, confidence: 1.0, rationale: 'Explicit legacy anusvara cluster' })
+      );
+      unicode += replacement;
+      i += 5;
+      continue;
+    }
+
     let match: VedicMapping | null = null;
     for (const entry of mappingTrie) {
       if (matchesInputEntryAt(itransBuffer, i, entry)) {
@@ -1074,11 +1194,41 @@ export const transliterate = (
         }
       }
 
-      if ((match.itrans === 'RRi' || match.itrans === 'RRI') && prevInputChar === 'r') {
+      const prevTwoChars = itransBuffer.slice(Math.max(0, i - 2), i);
+      const followsBareR = prevInputChar === 'r' || prevTwoChars === 'r_';
+
+      if ((match.itrans === 'RRi' || match.itrans === 'RRI') && followsBareR) {
         const replacement = match.unicode;
         const replChars = Array.from(replacement);
         const currentSourceIndex = i;
         const targetStart = unicode.length;
+
+        replChars.forEach(() => targetToSourceMap.push(currentSourceIndex));
+        for (let m = 0; m < match.itrans.length; m++) {
+          sourceToTargetMap[i + m] = targetStart;
+        }
+
+        replChars.forEach((c) =>
+          confidences.push({ char: c, confidence: 1.0, rationale: `Explicit vowel after r: ${match!.itrans}` })
+        );
+        unicode += replacement;
+        i += match.itrans.length;
+        continue;
+      }
+
+      if ((match.itrans === 'R^i' || match.itrans === 'R^I') && followsBareR) {
+        const replacement = matraMap[match.unicode] ?? match.unicode;
+        const replChars = Array.from(replacement);
+        const currentSourceIndex = i;
+        const targetStart = unicode.length;
+
+        if (unicode.endsWith('\u094D')) {
+          unicode = unicode.slice(0, -1);
+          targetToSourceMap.pop();
+          if (confidences.length > 0) {
+            confidences.pop();
+          }
+        }
 
         replChars.forEach(() => targetToSourceMap.push(currentSourceIndex));
         for (let m = 0; m < match.itrans.length; m++) {
@@ -1378,6 +1528,9 @@ addReverse('\u0903\uF176', ":''", 'special', { force: true });
 addReverse('\u0952\uF156\u0952', '_M~_', 'special', { force: true });
 addReverse('\u0952\uF156\u0902\u0952', '_M~M_', 'special', { force: true });
 addReverse('\u0952\uA8F3\u0952', '_MM~_', 'special', { force: true });
+addReverse('\u0952\u090B', '_RRi', 'special', { force: true });
+addReverse('\u0952\u0960', '_RRI', 'special', { force: true });
+addReverse('\u0952\uA8F4\u0952', '_M^~_', 'special', { force: true });
 
 // Convert Map to sorted array for greedy matching
 let _REVERSE_MAPPING_TRIE: ReverseMappingEntry[] | null = null;
