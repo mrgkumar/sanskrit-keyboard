@@ -148,7 +148,7 @@ Trace:
 
 Type: `Product Decision`
 Priority: `P0`
-Status: `validated`
+Status: `committed`
 
 Problem:
 
@@ -169,6 +169,10 @@ Proof:
 
 1. [`src/app/settings/mappings/page.tsx`](../../src/app/settings/mappings/page.tsx)
 2. [`src/components/settings/MappingManager.tsx`](../../src/components/settings/MappingManager.tsx)
+
+Trace:
+
+1. `56f7fee` `feat: reduce mapping settings to read-only library`
 
 ## 1.5 Remove or Archive Dead Modules
 
