@@ -48,7 +48,7 @@ export const ScriptText: React.FC<ScriptTextProps> = ({
   script,
   className,
   style,
-  sanskritFontPreset = 'chandas',
+  sanskritFontPreset = 'siddhanta',
   tamilFontPreset = 'anek',
 }) => {
   if (script === 'roman') {

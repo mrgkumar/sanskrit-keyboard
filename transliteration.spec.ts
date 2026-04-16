@@ -217,6 +217,8 @@ test('Devanagari display normalization preserves visarga ordering and pra glyph 
   expect(normalizeDevanagariDisplayText('नम॑ः', 'sampradaya')).toBe('नम॑ः');
   expect(normalizeDevanagariDisplayText('प्र', 'chandas')).toBe('');
   expect(normalizeDevanagariDisplayText('प्र', 'sanskrit2003')).toBe('');
+  expect(normalizeDevanagariDisplayText('प्र', 'siddhanta')).toBe('प्र');
+  expect(normalizeDevanagariDisplayText('प्र', 'noto-sans')).toBe('प्र');
 });
 
 test('Devanagari display normalization preserves transliteration maps', () => {
@@ -290,6 +292,26 @@ test('Devanagari compatibility display maps pra to the legacy glyph', () => {
   })).toBe('र्प');
 });
 
+test('Siddhanta keeps plain unicode output and avoids legacy pra glyphs', () => {
+  expect(DEFAULT_DISPLAY_SETTINGS.sanskritFontPreset).toBe('siddhanta');
+  expect(
+    formatSourceForScript('pratha_masya_', 'devanagari', {
+      romanOutputStyle: 'canonical',
+      tamilOutputStyle: 'precision',
+    }, {
+      sanskritFontPreset: 'siddhanta',
+    }),
+  ).toBe('प्रथ॒मस्य॒');
+  expect(
+    formatSourceForScript('shrIsUktam', 'devanagari', {
+      romanOutputStyle: 'canonical',
+      tamilOutputStyle: 'precision',
+    }, {
+      sanskritFontPreset: 'siddhanta',
+    }),
+  ).toBe('श्रीसूक्तम्');
+});
+
 test('Canonical slash separators preserve forward hiatus distinctions', () => {
   expect(transliterate('a/i').unicode).toBe('अइ');
   expect(transliterate('A/o').unicode).toBe('आओ');
@@ -317,6 +339,13 @@ test('Vocalic r round-trips through dependent vowel forms', () => {
   expect(transliterate('kR^ita').unicode).toBe('कृत');
   expect(detransliterate('कॄ')).toBe('kR^I');
   expect(transliterate('kR^I').unicode).toBe('कॄ');
+});
+
+test('Vocalic l keeps slash-prefixed independent forms distinct from consonantal l', () => {
+  expect(transliterate('/LLi').unicode).toBe('ऌ');
+  expect(transliterate('/LLI').unicode).toBe('ॡ');
+  expect(detransliterate('ऌ')).toBe('/LLi');
+  expect(detransliterate('ॡ')).toBe('/LLI');
 });
 
 test('Vocalic r keeps the explicit anudatta form after r_ clusters', () => {

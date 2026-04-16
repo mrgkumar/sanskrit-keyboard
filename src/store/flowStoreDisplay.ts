@@ -62,7 +62,7 @@ export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   inputScheme: 'canonical-vedic',
   outputScheme: 'canonical-vedic',
   ...DEFAULT_OUTPUT_TARGET_SETTINGS,
-  sanskritFontPreset: 'chandas',
+  sanskritFontPreset: 'siddhanta',
   tamilFontPreset: 'anek',
   autoSwapVisargaSvarita: true,
   showItransInDocument: false,

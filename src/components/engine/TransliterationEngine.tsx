@@ -152,12 +152,14 @@ export const TransliterationEngine: React.FC = () => {
   const immersiveTypography = typography.immersive;
 
   const sanskritFontOptions: Array<{ value: SanskritFontPreset; label: string; sample: string }> = [
+    { value: 'noto-sans', label: 'Noto Sans Devanagari', sample: 'श्रीसूक्तम्' },
     { value: 'chandas', label: 'Chandas', sample: 'नमस्ते रुद्राय' },
     { value: 'sampradaya', label: 'Sampradaya', sample: 'नमस्ते रुद्राय' },
     { value: 'sanskrit2003', label: 'Sanskrit 2003', sample: 'नमस्ते रुद्राय' },
     { value: 'siddhanta', label: 'Siddhanta', sample: 'नमस्ते रुद्राय' },
   ];
   const devanagariFontDownloads = [
+    { name: 'Noto Sans Devanagari', url: 'https://fonts.google.com/noto/specimen/Noto+Sans+Devanagari' },
     { name: 'Chandas Devanagari', url: 'https://sanskritdocuments.org/hindi/chandas/' },
     { name: 'Sanskrit 2003', url: 'https://salrc.uchicago.edu/resources/fonts/available/sanskrit/sanskrit2003.shtml' },
     { name: 'Siddhanta', url: 'https://sanskritdocuments.org/projects/siddhanta/' },

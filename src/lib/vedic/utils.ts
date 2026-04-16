@@ -313,12 +313,20 @@ export const normalizeTamilPrecisionDisplayText = (text: string) => {
 
 const DEVANAGARI_VEDIC_MARKS = new Set(['\u0951', '\u0952', '\u1CDA', '\uF176']);
 const DEVANAGARI_VISARGA = '\u0903';
-const DEVANAGARI_COMPAT_FONT_PRESETS = new Set<SanskritFontPreset>(['sanskrit2003', 'siddhanta']);
+const DEVANAGARI_MARK_NORMALIZATION_FONT_PRESETS = new Set<SanskritFontPreset>(['sanskrit2003', 'siddhanta']);
+const DEVANAGARI_PRA_GLYPH_FONT_PRESETS = new Set<SanskritFontPreset>([
+  'chandas',
+  'sampradaya',
+  'sanskrit2003',
+]);
 const DEVANAGARI_COMPAT_PRA_SOURCE = '\u092A\u094D\u0930';
 const DEVANAGARI_COMPAT_PRA_TARGET = '\uF374';
 
 const shouldNormalizeDevanagariDisplay = (preset?: SanskritFontPreset) =>
-  preset ? DEVANAGARI_COMPAT_FONT_PRESETS.has(preset) : false;
+  preset ? DEVANAGARI_MARK_NORMALIZATION_FONT_PRESETS.has(preset) : false;
+
+const shouldRewriteDevanagariPraGlyph = (preset?: SanskritFontPreset) =>
+  preset ? DEVANAGARI_PRA_GLYPH_FONT_PRESETS.has(preset) : false;
 
 const isDevanagariDisplayMark = (char: string) => DEVANAGARI_VEDIC_MARKS.has(char);
 
@@ -374,8 +382,10 @@ const rewriteDevanagariPraGlyphResult = (result: TransliterationResult): Transli
 };
 
 export const normalizeDevanagariDisplayText = (text: string, sanskritFontPreset?: SanskritFontPreset) => {
+  const rewritePraGlyph = shouldRewriteDevanagariPraGlyph(sanskritFontPreset);
+
   if (!shouldNormalizeDevanagariDisplay(sanskritFontPreset)) {
-    return rewriteDevanagariPraGlyphText(text);
+    return rewritePraGlyph ? rewriteDevanagariPraGlyphText(text) : text;
   }
 
   const chars = Array.from(text);
@@ -407,15 +417,18 @@ export const normalizeDevanagariDisplayText = (text: string, sanskritFontPreset?
     }
   }
 
-  return rewriteDevanagariPraGlyphText(normalized.join(''));
+  const normalizedText = normalized.join('');
+  return rewritePraGlyph ? rewriteDevanagariPraGlyphText(normalizedText) : normalizedText;
 };
 
 export const normalizeDevanagariDisplayResult = (
   result: TransliterationResult,
   sanskritFontPreset?: SanskritFontPreset,
 ): TransliterationResult => {
+  const rewritePraGlyph = shouldRewriteDevanagariPraGlyph(sanskritFontPreset);
+
   if (!shouldNormalizeDevanagariDisplay(sanskritFontPreset)) {
-    return rewriteDevanagariPraGlyphResult(result);
+    return rewritePraGlyph ? rewriteDevanagariPraGlyphResult(result) : result;
   }
 
   const sourceChars = Array.from(result.unicode);
@@ -461,7 +474,7 @@ export const normalizeDevanagariDisplayResult = (
   }
 
   const normalizedUnicode = normalized.join('');
-  return rewriteDevanagariPraGlyphResult({
+  const normalizedResult: TransliterationResult = {
     ...result,
     unicode: normalizedUnicode,
     sourceToTargetMap: result.sourceToTargetMap.map((targetIndex) => {
@@ -472,7 +485,9 @@ export const normalizeDevanagariDisplayResult = (
       return oldToNew[targetIndex] ?? targetIndex;
     }),
     targetToSourceMap: newToOld.map((oldIndex) => result.targetToSourceMap[oldIndex] ?? 0),
-  });
+  };
+
+  return rewritePraGlyph ? rewriteDevanagariPraGlyphResult(normalizedResult) : normalizedResult;
 };
 
 const normalizeTamilPrecisionInput = (value: string) => {
@@ -1184,7 +1199,7 @@ export const transliterate = (
       const nextChar = itransBuffer[i + match.itrans.length] ?? '';
       const prevInputChar = itransBuffer[i - 1] ?? '';
 
-      if ((match.itrans === 'LLi' || match.itrans === 'LLI') && i > 0) {
+      if ((match.itrans === 'LLi' || match.itrans === 'LLI') && i > 0 && prevInputChar !== '/') {
         const consonantalL = mappingTrie.find(
           (entry) => entry.itrans === 'L' && entry.category === 'consonant'
         );
@@ -1547,6 +1562,29 @@ const DEPENDENT_VOWEL_SET = new Set(Object.values(DEPENDENT_VOWELS));
 const INDEPENDENT_VOWEL_UNICODE_SET = new Set(
   VEDIC_MAPPINGS.filter((entry) => entry.category === 'vowel').map((entry) => entry.unicode)
 );
+const BARE_CONSONANT_UNICODE_SET = new Set(
+  VEDIC_MAPPINGS.filter((entry) => entry.category === 'consonant' && entry.unicode.endsWith('\u094D')).map((entry) =>
+    entry.unicode.slice(0, -1)
+  )
+);
+const EXTENDED_CONSONANT_UNICODE_SET = new Set([
+  '\u0978',
+  '\u0958',
+  '\u0959',
+  '\u095A',
+  '\u095B',
+  '\u095C',
+  '\u095D',
+  '\u095E',
+  '\u095F',
+  '\u0979',
+  '\u097A',
+  '\u097B',
+  '\u097C',
+  '\u097E',
+  '\u097F',
+  '\uA8FB',
+]);
 const HIATUS_IGNORABLE_PATTERN = /[\u0951\u0952\u1CD0-\u1CFF\uA8E0-\uA8FF\uF000-\uF8FF]/u;
 
 const getNextSignificantUnicodeChar = (chars: string[], startIndex: number) => {
@@ -1665,7 +1703,14 @@ export const detransliterate = (
             itrans += '/';
           }
 
-          itrans += match.itrans + 'a';
+          if (EXTENDED_CONSONANT_UNICODE_SET.has(match.unicode)) {
+            itrans += match.itrans;
+            if (nextUnicodeChar && BARE_CONSONANT_UNICODE_SET.has(nextUnicodeChar)) {
+              itrans += '/';
+            }
+          } else {
+            itrans += match.itrans + 'a';
+          }
           if (needsHiatusSeparator) {
             itrans += '/';
           }
