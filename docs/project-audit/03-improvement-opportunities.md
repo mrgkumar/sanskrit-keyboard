@@ -81,19 +81,18 @@ Candidates:
 
 Why:
 
-1. `/reference` looks like a real workflow but its right-hand workspace is empty.
-2. `Finish Assignment` is inert.
-3. `Reset to Default` is inert.
-4. Mapping edit controls imply customization features that are not implemented.
+1. `/reference` was shaped like a transcription workflow but now needs to read as a reference browser.
+2. `Reset to Default` is inert.
+3. Mapping edit controls imply customization features that are not implemented.
 
 Suggested action:
 
 1. Either ship the missing behavior.
-2. Or reduce these screens to honest read-only documentation/reference states.
+2. Or reduce these screens to honest reference/documentation states.
 
 Evidence:
 
-1. [`src/app/reference/page.tsx`](../../src/app/reference/page.tsx) renders an empty right-hand workspace.
+1. [`src/app/reference/page.tsx`](../../src/app/reference/page.tsx) now renders a reference browser rather than an empty workspace.
 2. [`src/components/settings/MappingManager.tsx`](../../src/components/settings/MappingManager.tsx) exposes edit affordances without an edit flow.
 
 ## 2.3 Remove Naming Drift

@@ -60,7 +60,7 @@ Status labels used here:
 4. [`src/app/help/page.tsx`](../../src/app/help/page.tsx)
    Mapping/help documentation page built from `VEDIC_MAPPINGS`.
 5. [`src/app/reference/page.tsx`](../../src/app/reference/page.tsx)
-   `Partial`. Reference-mode route; not a complete workspace.
+   Reference browser route; separate study surface, not the main transcription workspace.
 6. [`src/app/settings/mappings/page.tsx`](../../src/app/settings/mappings/page.tsx)
    `Partial`. Mapping/settings route with partially wired UI.
 7. [`src/app/globals.css`](../../src/app/globals.css)
@@ -101,7 +101,7 @@ Status labels used here:
 1. [`src/components/reference/ReferenceLibrary.tsx`](../../src/components/reference/ReferenceLibrary.tsx)
    Searchable mapping browser and insertion tool.
 2. [`src/components/reference/VedicReferencePane.tsx`](../../src/components/reference/VedicReferencePane.tsx)
-   `Partial`. Static/stubbed reference pane used only by `/reference`.
+   Study pane used on the `/reference` route.
 3. [`src/components/settings/MappingManager.tsx`](../../src/components/settings/MappingManager.tsx)
    `Partial`. Mapping browser with unwired edit affordances.
 4. [`src/components/MobileOptimizationNotice.tsx`](../../src/components/MobileOptimizationNotice.tsx)

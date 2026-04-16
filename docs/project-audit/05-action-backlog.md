@@ -108,17 +108,17 @@ Proof:
 
 Type: `Product Decision`
 Priority: `P0`
-Status: `not-started`
+Status: `validated`
 
 Problem:
 
-1. `/reference` looks like a real workflow, but the right-hand workspace is empty and the screen behaves like a partial concept route.
+1. `/reference` needs to be treated as a reference browser, not as a transcription workspace.
 
 Action:
 
-1. Either finish the workflow.
-2. Or reduce the route to an honest read-only reference page.
-3. Or remove/hide it from normal product surface.
+1. Reduce the route to an honest reference browser instead of a fake transcription workspace.
+2. Remove empty-workspace and assignment-oriented language from the route.
+3. Keep it as a study surface reachable from settings, not as a primary editor.
 
 Dependency:
 

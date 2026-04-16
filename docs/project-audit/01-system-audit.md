@@ -303,9 +303,9 @@ Proof:
 ### Partial or Misleading
 
 1. [`src/app/reference/page.tsx`](../../src/app/reference/page.tsx)
-   Right-hand typing workspace is empty and the "Finish Assignment" button has no behavior. This route reads like an abandoned concept screen.
+   Dedicated reference browser page. The earlier empty-workspace / assignment framing was misleading and has been reduced to a study/reference surface.
 2. [`src/components/reference/VedicReferencePane.tsx`](../../src/components/reference/VedicReferencePane.tsx)
-   Used only by the partial `/reference` route, not by the main workspace.
+   Used as the static study pane on the `/reference` route, not by the main workspace.
 3. [`src/components/settings/MappingManager.tsx`](../../src/components/settings/MappingManager.tsx)
    Presents editing affordances and claims custom mapping override behavior, but no mapping-edit workflow is actually wired.
 4. [`src/app/settings/mappings/page.tsx`](../../src/app/settings/mappings/page.tsx)
@@ -340,7 +340,7 @@ Result:
 
 ## 10. Recommended Cleanup Order
 
-1. Decide whether `/reference` and `VedicReferencePane` are worth keeping.
+1. Decide whether the `/reference` study page and `VedicReferencePane` should remain separate from the main workspace.
 2. Either wire real mapping customization or remove the fake edit/reset affordances.
 3. Remove or archive dead modules: `UnicodeInspector`, `useSyncScroll`, `db.ts`, `export.ts`, `lib/utils.ts`.
 4. Reconcile README claims with current implementation.

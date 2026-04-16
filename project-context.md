@@ -33,7 +33,7 @@ The app is not a generic editor. It is a transliteration-focused tool with a str
 
 ### Other routes
 
-- `app/src/app/reference/page.tsx`: Partial reference route.
+- `app/src/app/reference/page.tsx`: Reference browser route / study surface.
 - `app/src/app/welcome/page.tsx`: Onboarding walkthrough for new users.
 - `app/src/app/settings/mappings/page.tsx`: Partial input scheme/settings route.
 

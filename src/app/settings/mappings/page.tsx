@@ -26,7 +26,7 @@ export default function MappingsPage() {
         <div className="flex items-center gap-2">
           <Link href="/reference" className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-100 transition-all active:scale-95">
             <Keyboard className="w-4 h-4" />
-            <span className="text-xs uppercase">Start Transcription</span>
+            <span className="text-xs uppercase">Open Reference Library</span>
           </Link>
         </div>
       </header>
