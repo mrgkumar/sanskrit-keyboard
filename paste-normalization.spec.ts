@@ -7,23 +7,14 @@ test.describe('Paste Normalization', () => {
   });
 
   test('should swap visarga and marker in ITRANS paste when enabled', async ({ page }) => {
-    // Open Workspace panel
     await page.click('[data-testid="workspace-toggle"]');
-    await page.waitForSelector('[data-testid="workspace-sidebar"]', { state: 'visible' });
+    await page.click('[data-testid="workspace-tab-intelligence"]');
 
-    // Ensure auto-swap is enabled
-    // Open Workspace panel
-    await page.click('[data-testid="workspace-toggle"]');
-    await page.waitForSelector('[data-testid="workspace-sidebar"]', { state: 'visible' });
-
-    const toggle = page.locator('[data-testid="display-settings-toggle"]');
-    await toggle.scrollIntoViewIfNeeded();
-    await toggle.click();
-    const checkbox = page.locator('label:has-text("Auto-Swap Markers") input');
+    const checkbox = page.locator('label').filter({ hasText: 'Auto-Swap Markers' }).locator('input[type="checkbox"]');
     if (!(await checkbox.isChecked())) {
-      await checkbox.click();
+      await checkbox.check({ force: true });
     }
-    await page.keyboard.press('Escape'); // Close menu
+    await page.click('[data-testid="workspace-toggle"]');
     
     const input = page.locator('[data-testid="sticky-itrans-input"]');
     await input.focus();
@@ -46,18 +37,14 @@ test.describe('Paste Normalization', () => {
   });
 
   test('should swap visarga and marker in Devanagari paste when enabled', async ({ page }) => {
-    // Open Workspace panel
     await page.click('[data-testid="workspace-toggle"]');
-    await page.waitForSelector('[data-testid="workspace-sidebar"]', { state: 'visible' });
+    await page.click('[data-testid="workspace-tab-intelligence"]');
 
-    const toggle = page.locator('[data-testid="display-settings-toggle"]');
-    await toggle.scrollIntoViewIfNeeded();
-    await toggle.click();
-    const checkbox = page.locator('label:has-text("Auto-Swap Markers") input');
+    const checkbox = page.locator('label').filter({ hasText: 'Auto-Swap Markers' }).locator('input[type="checkbox"]');
     if (!(await checkbox.isChecked())) {
-      await checkbox.click();
+      await checkbox.check({ force: true });
     }
-    await page.keyboard.press('Escape');
+    await page.click('[data-testid="workspace-toggle"]');
 
     const input = page.locator('[data-testid="sticky-itrans-input"]');
     await input.focus();
@@ -80,18 +67,14 @@ test.describe('Paste Normalization', () => {
   });
 
   test('should NOT swap when auto-swap is disabled', async ({ page }) => {
-    // Open Workspace panel
     await page.click('[data-testid="workspace-toggle"]');
-    await page.waitForSelector('[data-testid="workspace-sidebar"]', { state: 'visible' });
+    await page.click('[data-testid="workspace-tab-intelligence"]');
 
-    const toggle = page.locator('[data-testid="display-settings-toggle"]');
-    await toggle.scrollIntoViewIfNeeded();
-    await toggle.click();
-    const checkbox = page.locator('label:has-text("Auto-Swap Markers") input');
+    const checkbox = page.locator('label').filter({ hasText: 'Auto-Swap Markers' }).locator('input[type="checkbox"]');
     if (await checkbox.isChecked()) {
-      await checkbox.click();
+      await checkbox.uncheck({ force: true });
     }
-    await page.keyboard.press('Escape');
+    await page.click('[data-testid="workspace-toggle"]');
 
     const input = page.locator('[data-testid="sticky-itrans-input"]');
     await input.focus();

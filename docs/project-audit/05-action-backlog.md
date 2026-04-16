@@ -82,7 +82,7 @@ Proof:
 
 Type: `Tests`
 Priority: `P0`
-Status: `not-started`
+Status: `validated`
 
 Problem:
 

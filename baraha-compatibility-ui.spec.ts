@@ -100,7 +100,8 @@ test('true-conflict aliases stay gated until Baraha-compatible mode is enabled',
 
   await clearTextarea(page);
   await page.getByRole('button', { name: 'Workspace' }).click();
-  await page.getByTestId('input-scheme-baraha').click();
+  await page.getByTestId('workspace-tab-display').click();
+  await page.getByRole('button', { name: /Baraha Compatible/i }).click();
   await page.getByRole('button', { name: 'Workspace' }).click();
   await setReadAs(page, 'devanagari');
 
@@ -122,8 +123,9 @@ test('source copy stays raw while whole-document copy buttons expose explicit sc
   await expect(textarea).toHaveValue('R^i kh ch OM .a');
 
   await page.getByRole('button', { name: 'Workspace' }).click();
-  await page.getByTestId('workspace-roman-style-baraha').click();
-  await expect(page.getByTestId('copy-whole-source')).toBeVisible();
+  await page.getByTestId('workspace-tab-display').click();
+  await page.getByRole('button', { name: /Baraha Compatible/i }).click();
+  await expect(page.getByRole('button', { name: /Copy Whole ITRANS/i })).toBeVisible();
   await page.getByRole('button', { name: 'Workspace' }).click();
 
   await page.getByTestId('copy-source-button').click();
@@ -139,17 +141,20 @@ test('whole-document copy buttons stay next to Reference and copy the requested 
   await page.keyboard.type("ma'", { delay: 40 });
   await expect(textarea).toHaveValue("ma'");
 
-  await expect(page.getByTestId('copy-whole-document-devanagari')).toBeVisible();
-  await expect(page.getByTestId('copy-whole-document-itrans')).toBeVisible();
-  await expect(page.getByTestId('copy-whole-document-tamil')).toBeVisible();
+  await page.getByRole('button', { name: 'Workspace' }).click();
+  await page.getByTestId('workspace-tab-display').click();
+  await expect(page.getByRole('button', { name: 'Devanagari All' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'ITRANS All' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tamil All' })).toBeVisible();
+  await page.getByRole('button', { name: 'Workspace' }).click();
 
-  await page.getByTestId('copy-whole-document-itrans').click();
+  await page.getByRole('button', { name: 'ITRANS All' }).click();
   await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText())).toBe("ma'");
 
-  await page.getByTestId('copy-whole-document-devanagari').click();
+  await page.getByRole('button', { name: 'Devanagari All' }).click();
   await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText())).toBe('म॑');
 
   await setReadAs(page, 'tamil');
-  await page.getByTestId('copy-whole-document-tamil').click();
+  await page.getByRole('button', { name: 'Tamil All' }).click();
   await expect.poll(async () => page.evaluate(() => navigator.clipboard.readText())).toBe('ம॑');
 });

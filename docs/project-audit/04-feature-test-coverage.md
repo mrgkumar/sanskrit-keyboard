@@ -25,8 +25,8 @@ Evidence hierarchy used here:
 Important correction:
 
 1. Earlier audit language overstated some UI coverage.
-2. [`session-management.spec.ts`](../../session-management.spec.ts), [`paste-normalization.spec.ts`](../../paste-normalization.spec.ts), and parts of [`lexical-ui.spec.ts`](../../lexical-ui.spec.ts) reference selectors that do not exist in current runtime source.
-3. Because of that, those files are weak proof for coverage until they are revalidated.
+2. [`session-management.spec.ts`](../../session-management.spec.ts), [`paste-normalization.spec.ts`](../../paste-normalization.spec.ts), [`lexical-ui.spec.ts`](../../lexical-ui.spec.ts), and [`baraha-compatibility-ui.spec.ts`](../../baraha-compatibility-ui.spec.ts) were repaired in this pass to match current runtime selectors.
+3. Those files now count as current browser proof again, while direct timer-level or store-level gaps remain where noted below.
 
 ## 1. Answer
 
@@ -40,7 +40,7 @@ What is actually true:
 
 1. Core transliteration behavior is well covered at unit level.
 2. Several important UI workflows are covered by current browser tests.
-3. Some workflows previously marked as covered are only weakly supported because the cited Playwright specs appear stale.
+3. The previously stale browser specs have been repaired and now match the current runtime markup.
 4. Store-heavy editor workflows still lack strong direct unit coverage.
 
 ## 2. Summary
@@ -63,13 +63,16 @@ What is actually true:
 4. Resize persistence for composer panes.
 5. Tamil Precision Recovery utility.
 6. Reference insertion and prediction tray behavior in the main workflow suite.
+7. Session search, rename, delete, and persistence across reloads.
+8. Paste normalization for ITRANS and Devanagari input.
+9. Lexical reset and global purge controls.
 
 ## 2.3 Weak or Overstated Areas From the Earlier Pass
 
-1. Session search/rename/delete flows were previously treated as solid UI proof, but the current spec references missing selectors.
-2. Paste-normalization UI coverage was previously treated as current, but the current spec references missing selectors.
-3. Lexical-learning reset coverage was previously treated as current, but two selector targets are missing from the current UI source.
-4. Baraha UI coverage is mixed: some assertions match the runtime, but the input-scheme toggle selector in the spec does not.
+1. Session search/rename/delete flows were previously treated as stale proof, but the spec is now repaired and current.
+2. Paste-normalization UI coverage is current again after selector repair.
+3. Lexical-learning reset coverage is current again after selector repair.
+4. Baraha UI coverage is current again after selector repair.
 
 ## 2.4 Clear Gaps
 
@@ -90,7 +93,7 @@ What is actually true:
    Evidence:
    [`transliteration.spec.ts`](../../transliteration.spec.ts)
    [`baraha-compatibility-ui.spec.ts`](../../baraha-compatibility-ui.spec.ts)
-   Note: unit proof is strong; Baraha UI proof is partially stale because the spec uses `input-scheme-baraha`, while the current UI uses plain buttons in [`TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx).
+   Note: unit proof is strong; Baraha UI proof now matches the current display-tab controls in [`TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx).
 
 2. Multiline composer input
    Status: `UI-Current`
@@ -114,7 +117,7 @@ What is actually true:
    [`transliteration.spec.ts`](../../transliteration.spec.ts)
    [`paste-normalization.spec.ts`](../../paste-normalization.spec.ts)
    [`lexical-ui.spec.ts`](../../lexical-ui.spec.ts)
-   Note: unit proof is strong. UI proof is weaker because [`paste-normalization.spec.ts`](../../paste-normalization.spec.ts) references missing selectors.
+   Note: unit proof is strong. UI proof is current again after selector repair.
 
 6. Alias input stays raw while typing and canonicalizes on commit
    Status: `Mixed`
@@ -127,7 +130,7 @@ What is actually true:
    Evidence:
    [`transliteration.spec.ts`](../../transliteration.spec.ts)
    [`paste-normalization.spec.ts`](../../paste-normalization.spec.ts)
-   Note: unit coverage is the reliable proof. The browser spec should be revalidated before it is treated as current proof.
+   Note: unit coverage is the reliable proof. The browser spec now matches the current intelligence-tab controls.
 
 8. Long blocks auto-segment
    Status: `Indirect`
@@ -268,7 +271,7 @@ What is actually true:
    [`runtime-lexicon.spec.ts`](../../runtime-lexicon.spec.ts)
    [`ui-regressions.spec.ts`](../../ui-regressions.spec.ts)
    [`lexical-ui.spec.ts`](../../lexical-ui.spec.ts)
-   Note: ranking and normalization have strong unit proof. Some lexical UI assertions are current, but reset-related selectors in [`lexical-ui.spec.ts`](../../lexical-ui.spec.ts) are stale.
+   Note: ranking and normalization have strong unit proof. Lexical UI coverage is now current, including reset and purge controls.
 
 ## 3.6 Session Management
 
@@ -283,16 +286,16 @@ What is actually true:
    runtime source clearly supports session landing and reload behavior, but no direct current test was found specifically for resume-latest semantics.
 
 3. Rename/delete/search sessions
-   Status: `UI-Questionable`
+   Status: `UI-Current`
    Evidence:
    [`session-management.spec.ts`](../../session-management.spec.ts)
-   Note: the spec references `workspace-sidebar` and `session-rename-input`, which are not present in current runtime markup. Treat this as stale proof until revalidated.
+   Note: the repaired spec now uses the current workspace panel and session controls.
 
 4. Sessions autosave on timer
-   Status: `UI-Questionable`
+   Status: `Indirect`
    Evidence:
    [`session-management.spec.ts`](../../session-management.spec.ts)
-   Note: persistence intent is real in runtime source, but the cited browser proof is stale and there is still no direct timing/debounce test.
+   Note: persistence across reload is covered, but there is still no direct timing/debounce test.
 
 5. Legacy v1 session migration to v2
    Status: `Unit`
@@ -306,7 +309,7 @@ What is actually true:
    Evidence:
    [`transliteration.spec.ts`](../../transliteration.spec.ts)
    [`baraha-compatibility-ui.spec.ts`](../../baraha-compatibility-ui.spec.ts)
-   Note: current runtime definitely exposes whole-document copy actions, but the baraha UI spec mixes current assertions with one stale selector for the input-scheme toggle.
+   Note: current runtime exposes whole-document copy actions and the repaired Baraha spec now aligns with the display-tab toggle.
 
 2. Tamil Precision Recovery bounded to precision input
    Status: `Mixed`
@@ -316,10 +319,10 @@ What is actually true:
    [`tamil-reverse-ui-boundary.spec.ts`](../../tamil-reverse-ui-boundary.spec.ts)
 
 3. Reset session-local and persisted lexical learning
-   Status: `UI-Questionable`
+   Status: `UI-Current`
    Evidence:
    [`lexical-ui.spec.ts`](../../lexical-ui.spec.ts)
-   Note: the current runtime still exposes reset and purge buttons in [`TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx), but the spec uses missing selectors `clear-session-learning` and `swara-prediction-toggle`.
+   Note: the current runtime exposes reset and purge buttons in [`TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx), and the repaired spec now uses those labels.
 
 ## 4. Missing Direct Unit-Test Coverage
 
@@ -339,16 +342,16 @@ These are the highest-value audited features that still do not have direct unit 
 7. First-visit onboarding redirect logic.
 8. Mobile optimization notice behavior.
 
-## 5. Specs That Need Revalidation Before They Are Used As Proof
+## 5. Revalidated Specs
 
 1. [`session-management.spec.ts`](../../session-management.spec.ts)
-   Uses `workspace-sidebar` and `session-rename-input`, which are not present in current source.
+   Current session search, rename, delete, and reload persistence coverage.
 2. [`paste-normalization.spec.ts`](../../paste-normalization.spec.ts)
-   Uses `workspace-sidebar` and `display-settings-toggle`, which are not present in current source.
+   Current ITRANS and Devanagari paste normalization coverage.
 3. [`lexical-ui.spec.ts`](../../lexical-ui.spec.ts)
-   Contains current flows, but also uses missing selectors `swara-prediction-toggle` and `clear-session-learning`.
+   Current lexical prediction, reset, and purge coverage.
 4. [`baraha-compatibility-ui.spec.ts`](../../baraha-compatibility-ui.spec.ts)
-   Mostly current, but uses missing selector `input-scheme-baraha`.
+   Current Baraha-compatible input and whole-document copy coverage.
 
 ## 6. Conclusion
 
@@ -357,7 +360,7 @@ The corrected conclusion is narrower and more defensible:
 1. The repo has strong unit coverage for transliteration correctness and output formatting.
 2. The repo has meaningful browser coverage for current editor and reading workflows.
 3. The repo does not have unit tests for all features from [`01-system-audit.md`](./01-system-audit.md).
-4. The repo also has a small cluster of stale browser specs, so test-file presence alone is not sufficient proof of active feature coverage.
+4. The repo still has coverage gaps in store-level behavior, autosave timing, and some route-level decisions.
 
 ## 7. Best Next Additions
 

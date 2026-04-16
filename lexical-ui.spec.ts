@@ -28,7 +28,12 @@ const loadDefaultSession = async (page: Page) => {
 
 const openDisplaySettings = async (page: Page) => {
   await page.getByRole('button', { name: 'Workspace' }).click();
-  await page.locator('button').filter({ hasText: /^Display$/ }).click();
+  await page.getByTestId('workspace-tab-display').click();
+};
+
+const openIntelligenceSettings = async (page: Page) => {
+  await page.getByRole('button', { name: 'Workspace' }).click();
+  await page.getByTestId('workspace-tab-intelligence').click();
 };
 
 const closeWorkspace = async (page: Page) => {
@@ -98,8 +103,9 @@ test('single-line Devanagari paste feeds session-local lexical prediction', asyn
 
   await expect(page.getByTestId('word-predictions-footer')).toContainText("karNe'bhi");
 
-  await openDisplaySettings(page);
-  await page.getByTestId('swara-prediction-toggle').uncheck();
+  await openIntelligenceSettings(page);
+  const adaptivePredictionToggle = page.locator('label').filter({ hasText: 'Adaptive Prediction' }).locator('input[type="checkbox"]');
+  await adaptivePredictionToggle.uncheck({ force: true });
   await closeWorkspace(page);
 
   await textarea.click();
@@ -108,8 +114,8 @@ test('single-line Devanagari paste feeds session-local lexical prediction', asyn
   await page.keyboard.type('karN', { delay: 80 });
   await expect(page.getByTestId('word-predictions-footer')).toContainText('karNebhi');
 
-  await openDisplaySettings(page);
-  await page.getByTestId('swara-prediction-toggle').check();
+  await openIntelligenceSettings(page);
+  await adaptivePredictionToggle.check({ force: true });
   await closeWorkspace(page);
 
   await textarea.click();
@@ -139,7 +145,7 @@ test('Tamil read-as mode surfaces Tamil word predictions', async ({ page }) => {
 
 test('can purge current-session and saved swara learning separately', async ({ page }) => {
   await loadDefaultSession(page);
-  await openDisplaySettings(page);
+  await openIntelligenceSettings(page);
   await page.getByRole('button', { name: 'Footer' }).click();
   await closeWorkspace(page);
 
@@ -155,8 +161,8 @@ test('can purge current-session and saved swara learning separately', async ({ p
 
   await expect(page.getByTestId('word-predictions-footer')).toContainText(learnedToken);
 
-  await openDisplaySettings(page);
-  await page.getByTestId('clear-session-learning').click();
+  await openIntelligenceSettings(page);
+  await page.getByRole('button', { name: 'Reset Session Learning' }).click();
   await closeWorkspace(page);
 
   await textarea.click();
@@ -165,8 +171,8 @@ test('can purge current-session and saved swara learning separately', async ({ p
   await page.keyboard.type('gaNe', { delay: 80 });
   await expect(page.getByTestId('word-predictions-footer')).toContainText(learnedToken);
 
-  await openDisplaySettings(page);
-  await page.getByTestId('purge-saved-learning').click();
+  await openIntelligenceSettings(page);
+  await page.getByRole('button', { name: 'Purge Global History' }).click();
   await closeWorkspace(page);
 
   await textarea.click();
