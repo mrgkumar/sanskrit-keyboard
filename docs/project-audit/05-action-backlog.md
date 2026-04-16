@@ -56,7 +56,7 @@ Execution rule:
 
 Type: `Docs`
 Priority: `P0`
-Status: `validated`
+Status: `committed`
 
 Problem:
 
