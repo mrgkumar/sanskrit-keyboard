@@ -62,7 +62,7 @@ Status labels used here:
 5. [`src/app/reference/page.tsx`](../../src/app/reference/page.tsx)
    Reference browser route; separate study surface, not the main transcription workspace.
 6. [`src/app/settings/mappings/page.tsx`](../../src/app/settings/mappings/page.tsx)
-   `Partial`. Mapping/settings route with partially wired UI.
+   Read-only mapping/settings route with a searchable library and no live customization flow.
 7. [`src/app/globals.css`](../../src/app/globals.css)
    Global styles, script/font classes, workspace styling.
 8. [`src/app/favicon.ico`](../../src/app/favicon.ico)
@@ -103,7 +103,7 @@ Status labels used here:
 2. [`src/components/reference/VedicReferencePane.tsx`](../../src/components/reference/VedicReferencePane.tsx)
    Study pane used on the `/reference` route.
 3. [`src/components/settings/MappingManager.tsx`](../../src/components/settings/MappingManager.tsx)
-   `Partial`. Mapping browser with unwired edit affordances.
+   Read-only mapping browser; the old edit affordances are no longer present.
 4. [`src/components/MobileOptimizationNotice.tsx`](../../src/components/MobileOptimizationNotice.tsx)
    Desktop-first warning overlay.
 5. [`src/components/ui/SkeletonLoader.tsx`](../../src/components/ui/SkeletonLoader.tsx)

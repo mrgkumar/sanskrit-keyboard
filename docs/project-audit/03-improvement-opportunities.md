@@ -82,18 +82,18 @@ Candidates:
 Why:
 
 1. `/reference` was shaped like a transcription workflow but now needs to read as a reference browser.
-2. `Reset to Default` is inert.
-3. Mapping edit controls imply customization features that are not implemented.
+2. Mapping settings now need to read as a reference library rather than a customization tool.
+3. Any future edit/reset behavior should be explicitly implemented instead of implied.
 
 Suggested action:
 
-1. Either ship the missing behavior.
-2. Or reduce these screens to honest reference/documentation states.
+1. Keep the screens read-only unless mapping customization is explicitly shipped.
+2. Add customization only with real persistence, migration, and tests.
 
 Evidence:
 
 1. [`src/app/reference/page.tsx`](../../src/app/reference/page.tsx) now renders a reference browser rather than an empty workspace.
-2. [`src/components/settings/MappingManager.tsx`](../../src/components/settings/MappingManager.tsx) exposes edit affordances without an edit flow.
+2. [`src/components/settings/MappingManager.tsx`](../../src/components/settings/MappingManager.tsx) is now read-only, matching the current runtime.
 
 ## 2.3 Remove Naming Drift
 

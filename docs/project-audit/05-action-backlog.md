@@ -78,6 +78,11 @@ Proof:
 4. [`src/components/engine/TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx)
 5. [`src/lib/vedic/db.ts`](../../src/lib/vedic/db.ts)
 
+Trace:
+
+1. `3d927a1` `docs: validate audit backlog and runtime docs`
+2. `a136231` `docs: mark audit item committed`
+
 ## 1.2 Repair Stale Playwright Specs Before Using Them As Proof
 
 Type: `Tests`
@@ -104,6 +109,11 @@ Proof:
 2. [`src/components/engine/TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx)
 3. [`src/components/StickyTopComposer.tsx`](../../src/components/StickyTopComposer.tsx)
 
+Trace:
+
+1. `4e88b1b` `test: repair stale audit specs`
+2. `b5c338b` `docs: mark test repair committed`
+
 ## 1.3 Decide the Fate of `/reference`
 
 Type: `Product Decision`
@@ -129,22 +139,27 @@ Proof:
 1. [`src/app/reference/page.tsx`](../../src/app/reference/page.tsx)
 2. [`src/components/reference/VedicReferencePane.tsx`](../../src/components/reference/VedicReferencePane.tsx)
 
+Trace:
+
+1. `cba33b1` `feat: reduce reference route to study surface`
+2. `ad1cfb8` `docs: mark reference route committed`
+
 ## 1.4 Decide the Fate of Mapping Customization UI
 
 Type: `Product Decision`
 Priority: `P0`
-Status: `not-started`
+Status: `validated`
 
 Problem:
 
-1. Mapping settings imply editable customization, but the workflow is not actually implemented.
-2. `Reset to Default` is a no-op.
+1. Mapping settings implied editable customization, but the workflow is not actually implemented.
+2. The screen needed to stop promising edit/reset behavior.
 
 Action:
 
-1. Either implement true mapping customization.
-2. Or downgrade the route to read-only reference/documentation.
-3. Remove fake edit/reset affordances if feature work is not planned.
+1. Downgrade the route to a read-only reference/documentation surface.
+2. Remove fake edit/reset affordances.
+3. Keep the route only as a searchable mapping library.
 
 Dependency:
 

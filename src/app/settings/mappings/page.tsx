@@ -40,12 +40,12 @@ export default function MappingsPage() {
           <div className="lg:col-span-1 space-y-8">
 
             <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm space-y-4">
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Personalization Pro-Tip</h3>
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest">Read-Only Note</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                The engine automatically learns your most frequent swara sequences. You can override these learned patterns by clicking the edit icon on any mapping.
+                The mapping list is a reference view only. Editing and reset behavior are not implemented in the current runtime.
               </p>
               <div className="pt-2">
-                <button className="text-blue-600 text-xs font-bold uppercase tracking-tight hover:underline">Reset to Default</button>
+                <span className="text-slate-400 text-xs font-bold uppercase tracking-tight">No customization actions available</span>
               </div>
             </div>
           </div>

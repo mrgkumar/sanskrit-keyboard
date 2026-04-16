@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { getDisplayMappingsForScheme, getAcceptedInputs, getAlternateAcceptedInputs } from '@/lib/vedic/mapping';
-import { Search, Edit3, Command } from 'lucide-react';
+import { Search, Command } from 'lucide-react';
 import { useFlowStore } from '@/store/useFlowStore';
 
 export const MappingManager: React.FC = () => {
@@ -53,14 +53,9 @@ export const MappingManager: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Shortcut</p>
-                <p className="text-xs font-bold text-slate-600">Auto-learned</p>
-              </div>
-              <button className="p-2 hover:bg-white text-slate-400 hover:text-blue-600 rounded-lg transition-all active:scale-90 border border-transparent hover:border-blue-100 hover:shadow-sm">
-                <Edit3 className="w-4 h-4" />
-              </button>
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Mode</p>
+              <p className="text-xs font-bold text-slate-600">Read-only</p>
             </div>
           </div>
         ))}
@@ -69,7 +64,7 @@ export const MappingManager: React.FC = () => {
       <div className="shrink-0 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-center gap-3">
         <Command className="w-5 h-5 text-amber-600" />
         <p className="text-[10px] font-bold text-amber-800 leading-normal">
-          Shortcut conflicts are automatically detected. Your custom mappings take priority over standard ITRANS during flow sessions.
+          This page is a read-only mapping library. Custom mapping editing is not wired in the current runtime.
         </p>
       </div>
     </div>

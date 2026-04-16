@@ -307,9 +307,9 @@ Proof:
 2. [`src/components/reference/VedicReferencePane.tsx`](../../src/components/reference/VedicReferencePane.tsx)
    Used as the static study pane on the `/reference` route, not by the main workspace.
 3. [`src/components/settings/MappingManager.tsx`](../../src/components/settings/MappingManager.tsx)
-   Presents editing affordances and claims custom mapping override behavior, but no mapping-edit workflow is actually wired.
+   Read-only mapping library. Earlier edit affordances and override claims were misleading and have been removed from the runtime.
 4. [`src/app/settings/mappings/page.tsx`](../../src/app/settings/mappings/page.tsx)
-   "Reset to Default" is a no-op button.
+   Read-only settings surface. The prior "Reset to Default" affordance was misleading and has been removed.
 5. [`README.md`](../../README.md)
    Claims Dexie persistence and an OCR fix mode, neither of which reflects the current runtime accurately.
 
@@ -341,7 +341,7 @@ Result:
 ## 10. Recommended Cleanup Order
 
 1. Decide whether the `/reference` study page and `VedicReferencePane` should remain separate from the main workspace.
-2. Either wire real mapping customization or remove the fake edit/reset affordances.
+2. Keep the route as a searchable library unless a true customization flow is planned.
 3. Remove or archive dead modules: `UnicodeInspector`, `useSyncScroll`, `db.ts`, `export.ts`, `lib/utils.ts`.
 4. Reconcile README claims with current implementation.
 5. Decide whether `focus` mode and primary Roman output should be exposed or deleted.

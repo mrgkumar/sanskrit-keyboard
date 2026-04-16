@@ -35,7 +35,7 @@ The app is not a generic editor. It is a transliteration-focused tool with a str
 
 - `app/src/app/reference/page.tsx`: Reference browser route / study surface.
 - `app/src/app/welcome/page.tsx`: Onboarding walkthrough for new users.
-- `app/src/app/settings/mappings/page.tsx`: Partial input scheme/settings route.
+- `app/src/app/settings/mappings/page.tsx`: Read-only input scheme/settings route with a searchable mapping library.
 
 ## 4. Current Workspace Layout
 
