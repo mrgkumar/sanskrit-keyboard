@@ -1,0 +1,3412 @@
+{
+  "classification": [
+    {
+      "codePoint": 768,
+      "char": "̀",
+      "hex": "U+0300",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 769,
+      "char": "́",
+      "hex": "U+0301",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 770,
+      "char": "̂",
+      "hex": "U+0302",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 771,
+      "char": "̃",
+      "hex": "U+0303",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 772,
+      "char": "̄",
+      "hex": "U+0304",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 773,
+      "char": "̅",
+      "hex": "U+0305",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 774,
+      "char": "̆",
+      "hex": "U+0306",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 775,
+      "char": "̇",
+      "hex": "U+0307",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 776,
+      "char": "̈",
+      "hex": "U+0308",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 777,
+      "char": "̉",
+      "hex": "U+0309",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 778,
+      "char": "̊",
+      "hex": "U+030A",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 779,
+      "char": "̋",
+      "hex": "U+030B",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 780,
+      "char": "̌",
+      "hex": "U+030C",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 781,
+      "char": "̍",
+      "hex": "U+030D",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 782,
+      "char": "̎",
+      "hex": "U+030E",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 783,
+      "char": "̏",
+      "hex": "U+030F",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 784,
+      "char": "̐",
+      "hex": "U+0310",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 785,
+      "char": "̑",
+      "hex": "U+0311",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 786,
+      "char": "̒",
+      "hex": "U+0312",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 787,
+      "char": "̓",
+      "hex": "U+0313",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 788,
+      "char": "̔",
+      "hex": "U+0314",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 789,
+      "char": "̕",
+      "hex": "U+0315",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 790,
+      "char": "̖",
+      "hex": "U+0316",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 791,
+      "char": "̗",
+      "hex": "U+0317",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 792,
+      "char": "̘",
+      "hex": "U+0318",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 793,
+      "char": "̙",
+      "hex": "U+0319",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 794,
+      "char": "̚",
+      "hex": "U+031A",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 795,
+      "char": "̛",
+      "hex": "U+031B",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 796,
+      "char": "̜",
+      "hex": "U+031C",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 797,
+      "char": "̝",
+      "hex": "U+031D",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 798,
+      "char": "̞",
+      "hex": "U+031E",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 799,
+      "char": "̟",
+      "hex": "U+031F",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 800,
+      "char": "̠",
+      "hex": "U+0320",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 801,
+      "char": "̡",
+      "hex": "U+0321",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 802,
+      "char": "̢",
+      "hex": "U+0322",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 803,
+      "char": "̣",
+      "hex": "U+0323",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 804,
+      "char": "̤",
+      "hex": "U+0324",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 805,
+      "char": "̥",
+      "hex": "U+0325",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 806,
+      "char": "̦",
+      "hex": "U+0326",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 807,
+      "char": "̧",
+      "hex": "U+0327",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 808,
+      "char": "̨",
+      "hex": "U+0328",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 809,
+      "char": "̩",
+      "hex": "U+0329",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 810,
+      "char": "̪",
+      "hex": "U+032A",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 811,
+      "char": "̫",
+      "hex": "U+032B",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 812,
+      "char": "̬",
+      "hex": "U+032C",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 813,
+      "char": "̭",
+      "hex": "U+032D",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 814,
+      "char": "̮",
+      "hex": "U+032E",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 815,
+      "char": "̯",
+      "hex": "U+032F",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 816,
+      "char": "̰",
+      "hex": "U+0330",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 817,
+      "char": "̱",
+      "hex": "U+0331",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 818,
+      "char": "̲",
+      "hex": "U+0332",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 819,
+      "char": "̳",
+      "hex": "U+0333",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 820,
+      "char": "̴",
+      "hex": "U+0334",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 821,
+      "char": "̵",
+      "hex": "U+0335",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 822,
+      "char": "̶",
+      "hex": "U+0336",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 823,
+      "char": "̷",
+      "hex": "U+0337",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 824,
+      "char": "̸",
+      "hex": "U+0338",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 825,
+      "char": "̹",
+      "hex": "U+0339",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 826,
+      "char": "̺",
+      "hex": "U+033A",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 827,
+      "char": "̻",
+      "hex": "U+033B",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 828,
+      "char": "̼",
+      "hex": "U+033C",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 829,
+      "char": "̽",
+      "hex": "U+033D",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 830,
+      "char": "̾",
+      "hex": "U+033E",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 831,
+      "char": "̿",
+      "hex": "U+033F",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 832,
+      "char": "̀",
+      "hex": "U+0340",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 833,
+      "char": "́",
+      "hex": "U+0341",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 834,
+      "char": "͂",
+      "hex": "U+0342",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 835,
+      "char": "̓",
+      "hex": "U+0343",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 836,
+      "char": "̈́",
+      "hex": "U+0344",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 837,
+      "char": "ͅ",
+      "hex": "U+0345",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 838,
+      "char": "͆",
+      "hex": "U+0346",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 839,
+      "char": "͇",
+      "hex": "U+0347",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 840,
+      "char": "͈",
+      "hex": "U+0348",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 841,
+      "char": "͉",
+      "hex": "U+0349",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 842,
+      "char": "͊",
+      "hex": "U+034A",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 843,
+      "char": "͋",
+      "hex": "U+034B",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 844,
+      "char": "͌",
+      "hex": "U+034C",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 845,
+      "char": "͍",
+      "hex": "U+034D",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 846,
+      "char": "͎",
+      "hex": "U+034E",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 847,
+      "char": "͏",
+      "hex": "U+034F",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 848,
+      "char": "͐",
+      "hex": "U+0350",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 849,
+      "char": "͑",
+      "hex": "U+0351",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 850,
+      "char": "͒",
+      "hex": "U+0352",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 851,
+      "char": "͓",
+      "hex": "U+0353",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 852,
+      "char": "͔",
+      "hex": "U+0354",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 853,
+      "char": "͕",
+      "hex": "U+0355",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 854,
+      "char": "͖",
+      "hex": "U+0356",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 855,
+      "char": "͗",
+      "hex": "U+0357",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 856,
+      "char": "͘",
+      "hex": "U+0358",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 857,
+      "char": "͙",
+      "hex": "U+0359",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 858,
+      "char": "͚",
+      "hex": "U+035A",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 859,
+      "char": "͛",
+      "hex": "U+035B",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 860,
+      "char": "͜",
+      "hex": "U+035C",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 861,
+      "char": "͝",
+      "hex": "U+035D",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 862,
+      "char": "͞",
+      "hex": "U+035E",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 863,
+      "char": "͟",
+      "hex": "U+035F",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 864,
+      "char": "͠",
+      "hex": "U+0360",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 865,
+      "char": "͡",
+      "hex": "U+0361",
+      "category": "combiningMarkGeneral",
+      "sourceGroups": [
+        "combiningMarkRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Latin combining marks in supplied list"
+      ]
+    },
+    {
+      "codePoint": 2304,
+      "char": "ऀ",
+      "hex": "U+0900",
+      "category": "binduSign",
+      "sourceGroups": [
+        "binduSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:binduSigns"
+      ]
+    },
+    {
+      "codePoint": 2305,
+      "char": "ँ",
+      "hex": "U+0901",
+      "category": "binduSign",
+      "sourceGroups": [
+        "binduSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:binduSigns"
+      ]
+    },
+    {
+      "codePoint": 2306,
+      "char": "ं",
+      "hex": "U+0902",
+      "category": "binduSign",
+      "sourceGroups": [
+        "binduSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:binduSigns"
+      ]
+    },
+    {
+      "codePoint": 2307,
+      "char": "ः",
+      "hex": "U+0903",
+      "category": "binduSign",
+      "sourceGroups": [
+        "binduSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:binduSigns"
+      ]
+    },
+    {
+      "codePoint": 2308,
+      "char": "ऄ",
+      "hex": "U+0904",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2309,
+      "char": "अ",
+      "hex": "U+0905",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2310,
+      "char": "आ",
+      "hex": "U+0906",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2311,
+      "char": "इ",
+      "hex": "U+0907",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2312,
+      "char": "ई",
+      "hex": "U+0908",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2313,
+      "char": "उ",
+      "hex": "U+0909",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2314,
+      "char": "ऊ",
+      "hex": "U+090A",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2315,
+      "char": "ऋ",
+      "hex": "U+090B",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2316,
+      "char": "ऌ",
+      "hex": "U+090C",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2317,
+      "char": "ऍ",
+      "hex": "U+090D",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2318,
+      "char": "ऎ",
+      "hex": "U+090E",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2319,
+      "char": "ए",
+      "hex": "U+090F",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2320,
+      "char": "ऐ",
+      "hex": "U+0910",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2321,
+      "char": "ऑ",
+      "hex": "U+0911",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2322,
+      "char": "ऒ",
+      "hex": "U+0912",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2323,
+      "char": "ओ",
+      "hex": "U+0913",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2324,
+      "char": "औ",
+      "hex": "U+0914",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2325,
+      "char": "क",
+      "hex": "U+0915",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2326,
+      "char": "ख",
+      "hex": "U+0916",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2327,
+      "char": "ग",
+      "hex": "U+0917",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2328,
+      "char": "घ",
+      "hex": "U+0918",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2329,
+      "char": "ङ",
+      "hex": "U+0919",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2330,
+      "char": "च",
+      "hex": "U+091A",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2331,
+      "char": "छ",
+      "hex": "U+091B",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2332,
+      "char": "ज",
+      "hex": "U+091C",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2333,
+      "char": "झ",
+      "hex": "U+091D",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2334,
+      "char": "ञ",
+      "hex": "U+091E",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2335,
+      "char": "ट",
+      "hex": "U+091F",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2336,
+      "char": "ठ",
+      "hex": "U+0920",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2337,
+      "char": "ड",
+      "hex": "U+0921",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2338,
+      "char": "ढ",
+      "hex": "U+0922",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2339,
+      "char": "ण",
+      "hex": "U+0923",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2340,
+      "char": "त",
+      "hex": "U+0924",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2341,
+      "char": "थ",
+      "hex": "U+0925",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2342,
+      "char": "द",
+      "hex": "U+0926",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2343,
+      "char": "ध",
+      "hex": "U+0927",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2344,
+      "char": "न",
+      "hex": "U+0928",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2345,
+      "char": "ऩ",
+      "hex": "U+0929",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2346,
+      "char": "प",
+      "hex": "U+092A",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2347,
+      "char": "फ",
+      "hex": "U+092B",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2348,
+      "char": "ब",
+      "hex": "U+092C",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2349,
+      "char": "भ",
+      "hex": "U+092D",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2350,
+      "char": "म",
+      "hex": "U+092E",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2351,
+      "char": "य",
+      "hex": "U+092F",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2352,
+      "char": "र",
+      "hex": "U+0930",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2353,
+      "char": "ऱ",
+      "hex": "U+0931",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2354,
+      "char": "ल",
+      "hex": "U+0932",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2355,
+      "char": "ळ",
+      "hex": "U+0933",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2356,
+      "char": "ऴ",
+      "hex": "U+0934",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2357,
+      "char": "व",
+      "hex": "U+0935",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2358,
+      "char": "श",
+      "hex": "U+0936",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2359,
+      "char": "ष",
+      "hex": "U+0937",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2360,
+      "char": "स",
+      "hex": "U+0938",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2361,
+      "char": "ह",
+      "hex": "U+0939",
+      "category": "baseConsonant",
+      "sourceGroups": [
+        "baseConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:baseConsonants"
+      ]
+    },
+    {
+      "codePoint": 2362,
+      "char": "ऺ",
+      "hex": "U+093A",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2363,
+      "char": "ऻ",
+      "hex": "U+093B",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2364,
+      "char": "़",
+      "hex": "U+093C",
+      "category": "nukta",
+      "sourceGroups": [
+        "nukta"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:nukta"
+      ]
+    },
+    {
+      "codePoint": 2365,
+      "char": "ऽ",
+      "hex": "U+093D",
+      "category": "symbol",
+      "sourceGroups": [
+        "symbols"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:symbols"
+      ]
+    },
+    {
+      "codePoint": 2366,
+      "char": "ा",
+      "hex": "U+093E",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2367,
+      "char": "ि",
+      "hex": "U+093F",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2368,
+      "char": "ी",
+      "hex": "U+0940",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2369,
+      "char": "ु",
+      "hex": "U+0941",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2370,
+      "char": "ू",
+      "hex": "U+0942",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2371,
+      "char": "ृ",
+      "hex": "U+0943",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2372,
+      "char": "ॄ",
+      "hex": "U+0944",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2373,
+      "char": "ॅ",
+      "hex": "U+0945",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2374,
+      "char": "ॆ",
+      "hex": "U+0946",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2375,
+      "char": "े",
+      "hex": "U+0947",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2376,
+      "char": "ै",
+      "hex": "U+0948",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2377,
+      "char": "ॉ",
+      "hex": "U+0949",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2378,
+      "char": "ॊ",
+      "hex": "U+094A",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2379,
+      "char": "ो",
+      "hex": "U+094B",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2380,
+      "char": "ौ",
+      "hex": "U+094C",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2381,
+      "char": "्",
+      "hex": "U+094D",
+      "category": "virama",
+      "sourceGroups": [
+        "virama"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:virama"
+      ]
+    },
+    {
+      "codePoint": 2382,
+      "char": "ॎ",
+      "hex": "U+094E",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2383,
+      "char": "ॏ",
+      "hex": "U+094F",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2384,
+      "char": "ॐ",
+      "hex": "U+0950",
+      "category": "symbol",
+      "sourceGroups": [
+        "symbols"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:symbols"
+      ]
+    },
+    {
+      "codePoint": 2385,
+      "char": "॑",
+      "hex": "U+0951",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:vedicSigns"
+      ]
+    },
+    {
+      "codePoint": 2386,
+      "char": "॒",
+      "hex": "U+0952",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:vedicSigns"
+      ]
+    },
+    {
+      "codePoint": 2387,
+      "char": "॓",
+      "hex": "U+0953",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:vedicSigns"
+      ]
+    },
+    {
+      "codePoint": 2388,
+      "char": "॔",
+      "hex": "U+0954",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:vedicSigns"
+      ]
+    },
+    {
+      "codePoint": 2389,
+      "char": "ॕ",
+      "hex": "U+0955",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2390,
+      "char": "ॖ",
+      "hex": "U+0956",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2391,
+      "char": "ॗ",
+      "hex": "U+0957",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2392,
+      "char": "क़",
+      "hex": "U+0958",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 2393,
+      "char": "ख़",
+      "hex": "U+0959",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 2394,
+      "char": "ग़",
+      "hex": "U+095A",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 2395,
+      "char": "ज़",
+      "hex": "U+095B",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 2396,
+      "char": "ड़",
+      "hex": "U+095C",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 2397,
+      "char": "ढ़",
+      "hex": "U+095D",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 2398,
+      "char": "फ़",
+      "hex": "U+095E",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 2399,
+      "char": "य़",
+      "hex": "U+095F",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 2400,
+      "char": "ॠ",
+      "hex": "U+0960",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2401,
+      "char": "ॡ",
+      "hex": "U+0961",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2402,
+      "char": "ॢ",
+      "hex": "U+0962",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2403,
+      "char": "ॣ",
+      "hex": "U+0963",
+      "category": "dependentVowelSign",
+      "sourceGroups": [
+        "dependentVowelSigns"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:dependentVowelSigns"
+      ]
+    },
+    {
+      "codePoint": 2404,
+      "char": "।",
+      "hex": "U+0964",
+      "category": "punctuation",
+      "sourceGroups": [
+        "punctuation"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:punctuation"
+      ]
+    },
+    {
+      "codePoint": 2405,
+      "char": "॥",
+      "hex": "U+0965",
+      "category": "punctuation",
+      "sourceGroups": [
+        "punctuation"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:punctuation"
+      ]
+    },
+    {
+      "codePoint": 2416,
+      "char": "॰",
+      "hex": "U+0970",
+      "category": "punctuation",
+      "sourceGroups": [
+        "punctuation"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:punctuation"
+      ]
+    },
+    {
+      "codePoint": 2417,
+      "char": "ॱ",
+      "hex": "U+0971",
+      "category": "punctuation",
+      "sourceGroups": [
+        "punctuation"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:punctuation"
+      ]
+    },
+    {
+      "codePoint": 2418,
+      "char": "ॲ",
+      "hex": "U+0972",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2419,
+      "char": "ॳ",
+      "hex": "U+0973",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2420,
+      "char": "ॴ",
+      "hex": "U+0974",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2421,
+      "char": "ॵ",
+      "hex": "U+0975",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2422,
+      "char": "ॶ",
+      "hex": "U+0976",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2423,
+      "char": "ॷ",
+      "hex": "U+0977",
+      "category": "independentVowel",
+      "sourceGroups": [
+        "independentVowels"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:independentVowels"
+      ]
+    },
+    {
+      "codePoint": 2425,
+      "char": "ॹ",
+      "hex": "U+0979",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 2426,
+      "char": "ॺ",
+      "hex": "U+097A",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 2427,
+      "char": "ॻ",
+      "hex": "U+097B",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 2428,
+      "char": "ॼ",
+      "hex": "U+097C",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 2430,
+      "char": "ॾ",
+      "hex": "U+097E",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 2431,
+      "char": "ॿ",
+      "hex": "U+097F",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 7376,
+      "char": "᳐",
+      "hex": "U+1CD0",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Vedic tone marks"
+      ]
+    },
+    {
+      "codePoint": 7377,
+      "char": "᳑",
+      "hex": "U+1CD1",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Vedic tone marks"
+      ]
+    },
+    {
+      "codePoint": 7378,
+      "char": "᳒",
+      "hex": "U+1CD2",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Vedic tone marks"
+      ]
+    },
+    {
+      "codePoint": 7379,
+      "char": "᳓",
+      "hex": "U+1CD3",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Vedic tone marks"
+      ]
+    },
+    {
+      "codePoint": 7380,
+      "char": "᳔",
+      "hex": "U+1CD4",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Vedic tone marks"
+      ]
+    },
+    {
+      "codePoint": 43232,
+      "char": "꣠",
+      "hex": "U+A8E0",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43233,
+      "char": "꣡",
+      "hex": "U+A8E1",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43234,
+      "char": "꣢",
+      "hex": "U+A8E2",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43235,
+      "char": "꣣",
+      "hex": "U+A8E3",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43236,
+      "char": "꣤",
+      "hex": "U+A8E4",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43237,
+      "char": "꣥",
+      "hex": "U+A8E5",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43238,
+      "char": "꣦",
+      "hex": "U+A8E6",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43239,
+      "char": "꣧",
+      "hex": "U+A8E7",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43240,
+      "char": "꣨",
+      "hex": "U+A8E8",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43241,
+      "char": "꣩",
+      "hex": "U+A8E9",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43242,
+      "char": "꣪",
+      "hex": "U+A8EA",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43243,
+      "char": "꣫",
+      "hex": "U+A8EB",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43244,
+      "char": "꣬",
+      "hex": "U+A8EC",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43245,
+      "char": "꣭",
+      "hex": "U+A8ED",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43246,
+      "char": "꣮",
+      "hex": "U+A8EE",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43247,
+      "char": "꣯",
+      "hex": "U+A8EF",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43248,
+      "char": "꣰",
+      "hex": "U+A8F0",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43249,
+      "char": "꣱",
+      "hex": "U+A8F1",
+      "category": "vedicSign",
+      "sourceGroups": [
+        "vedicRanges"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "range:Devanagari Extended-A Vedic marks"
+      ]
+    },
+    {
+      "codePoint": 43259,
+      "char": "ꣻ",
+      "hex": "U+A8FB",
+      "category": "extendedConsonant",
+      "sourceGroups": [
+        "extendedConsonants"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:extendedConsonants"
+      ]
+    },
+    {
+      "codePoint": 57345,
+      "char": "",
+      "hex": "U+E001",
+      "category": "privateUseOrFontSpecific",
+      "sourceGroups": [
+        "privateUseSamples"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:privateUseSamples",
+        "private-use-or-font-specific"
+      ]
+    },
+    {
+      "codePoint": 57346,
+      "char": "",
+      "hex": "U+E002",
+      "category": "privateUseOrFontSpecific",
+      "sourceGroups": [
+        "privateUseSamples"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:privateUseSamples",
+        "private-use-or-font-specific"
+      ]
+    },
+    {
+      "codePoint": 61745,
+      "char": "",
+      "hex": "U+F131",
+      "category": "privateUseOrFontSpecific",
+      "sourceGroups": [
+        "privateUseSamples"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:privateUseSamples",
+        "private-use-or-font-specific"
+      ]
+    },
+    {
+      "codePoint": 61782,
+      "char": "",
+      "hex": "U+F156",
+      "category": "privateUseOrFontSpecific",
+      "sourceGroups": [
+        "privateUseSamples",
+        "privateUseSamples"
+      ],
+      "sourceCount": 2,
+      "notes": [
+        "source:privateUseSamples",
+        "private-use-or-font-specific"
+      ]
+    },
+    {
+      "codePoint": 61814,
+      "char": "",
+      "hex": "U+F176",
+      "category": "privateUseOrFontSpecific",
+      "sourceGroups": [
+        "privateUseSamples",
+        "privateUseSamples"
+      ],
+      "sourceCount": 2,
+      "notes": [
+        "source:privateUseSamples",
+        "private-use-or-font-specific"
+      ]
+    },
+    {
+      "codePoint": 61830,
+      "char": "",
+      "hex": "U+F186",
+      "category": "privateUseOrFontSpecific",
+      "sourceGroups": [
+        "privateUseSamples"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:privateUseSamples",
+        "private-use-or-font-specific"
+      ]
+    },
+    {
+      "codePoint": 61831,
+      "char": "",
+      "hex": "U+F187",
+      "category": "privateUseOrFontSpecific",
+      "sourceGroups": [
+        "privateUseSamples"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:privateUseSamples",
+        "private-use-or-font-specific"
+      ]
+    },
+    {
+      "codePoint": 61832,
+      "char": "",
+      "hex": "U+F188",
+      "category": "privateUseOrFontSpecific",
+      "sourceGroups": [
+        "privateUseSamples"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:privateUseSamples",
+        "private-use-or-font-specific"
+      ]
+    },
+    {
+      "codePoint": 61846,
+      "char": "",
+      "hex": "U+F196",
+      "category": "privateUseOrFontSpecific",
+      "sourceGroups": [
+        "privateUseSamples"
+      ],
+      "sourceCount": 1,
+      "notes": [
+        "source:privateUseSamples",
+        "private-use-or-font-specific"
+      ]
+    }
+  ],
+  "countsByCategory": {
+    "baseConsonant": 37,
+    "extendedConsonant": 15,
+    "independentVowel": 25,
+    "dependentVowelSign": 24,
+    "virama": 1,
+    "nukta": 1,
+    "binduSign": 4,
+    "vedicSign": 27,
+    "combiningMarkGeneral": 98,
+    "punctuation": 4,
+    "symbol": 2,
+    "privateUseOrFontSpecific": 11,
+    "excluded": 0
+  },
+  "includedConsonants": [
+    "क",
+    "ख",
+    "ग",
+    "घ",
+    "ङ",
+    "च",
+    "छ",
+    "ज",
+    "झ",
+    "ञ",
+    "ट",
+    "ठ",
+    "ड",
+    "ढ",
+    "ण",
+    "त",
+    "थ",
+    "द",
+    "ध",
+    "न",
+    "ऩ",
+    "प",
+    "फ",
+    "ब",
+    "भ",
+    "म",
+    "य",
+    "र",
+    "ऱ",
+    "ल",
+    "ळ",
+    "ऴ",
+    "व",
+    "श",
+    "ष",
+    "स",
+    "ह",
+    "क़",
+    "ख़",
+    "ग़",
+    "ज़",
+    "ड़",
+    "ढ़",
+    "फ़",
+    "य़",
+    "ॹ",
+    "ॺ",
+    "ॻ",
+    "ॼ",
+    "ॾ",
+    "ॿ",
+    "ꣻ"
+  ],
+  "excludedConsonants": [],
+  "unknownCodePoints": [],
+  "duplicates": [
+    "",
+    ""
+  ],
+  "privateUseCodePoints": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+  ],
+  "nonDevanagariCombiningMarks": [
+    "̀",
+    "́",
+    "̂",
+    "̃",
+    "̄",
+    "̅",
+    "̆",
+    "̇",
+    "̈",
+    "̉",
+    "̊",
+    "̋",
+    "̌",
+    "̍",
+    "̎",
+    "̏",
+    "̐",
+    "̑",
+    "̒",
+    "̓",
+    "̔",
+    "̕",
+    "̖",
+    "̗",
+    "̘",
+    "̙",
+    "̚",
+    "̛",
+    "̜",
+    "̝",
+    "̞",
+    "̟",
+    "̠",
+    "̡",
+    "̢",
+    "̣",
+    "̤",
+    "̥",
+    "̦",
+    "̧",
+    "̨",
+    "̩",
+    "̪",
+    "̫",
+    "̬",
+    "̭",
+    "̮",
+    "̯",
+    "̰",
+    "̱",
+    "̲",
+    "̳",
+    "̴",
+    "̵",
+    "̶",
+    "̷",
+    "̸",
+    "̹",
+    "̺",
+    "̻",
+    "̼",
+    "̽",
+    "̾",
+    "̿",
+    "̀",
+    "́",
+    "͂",
+    "̓",
+    "̈́",
+    "ͅ",
+    "͆",
+    "͇",
+    "͈",
+    "͉",
+    "͊",
+    "͋",
+    "͌",
+    "͍",
+    "͎",
+    "͏",
+    "͐",
+    "͑",
+    "͒",
+    "͓",
+    "͔",
+    "͕",
+    "͖",
+    "͗",
+    "͘",
+    "͙",
+    "͚",
+    "͛",
+    "͜",
+    "͝",
+    "͞",
+    "͟",
+    "͠",
+    "͡"
+  ]
+}
