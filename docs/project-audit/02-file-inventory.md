@@ -75,7 +75,7 @@ Status labels used here:
 1. [`src/components/engine/TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx)
    Main workspace shell, left drawer, persistence wiring, view controls, utility panels.
 2. [`src/components/StickyTopComposer.tsx`](../../src/components/StickyTopComposer.tsx)
-   Primary editable chunk surface, previews, compare mode, copy actions, prediction popup.
+   Primary editable chunk surface, previews, compare mode, copy actions, inline prediction flows, and orchestration for extracted subcomponents.
 3. [`src/components/MainDocumentArea.tsx`](../../src/components/MainDocumentArea.tsx)
    Read/review/document/immersive rendering surface.
 4. [`src/components/ReferenceSidePanel.tsx`](../../src/components/ReferenceSidePanel.tsx)
@@ -95,6 +95,12 @@ Status labels used here:
    Character assist, alternates, phonetic completions, footer predictions.
 4. [`src/components/engine/TamilPrecisionRecovery.tsx`](../../src/components/engine/TamilPrecisionRecovery.tsx)
    Bounded Tamil precision reverse utility.
+5. [`src/components/engine/CaretOverlay.tsx`](../../src/components/engine/CaretOverlay.tsx)
+   Shared caret-position overlay used by the composer preview panes.
+6. [`src/components/engine/StickyTopComposerPredictionPopup.tsx`](../../src/components/engine/StickyTopComposerPredictionPopup.tsx)
+   Portal wrapper for the listbox prediction popup.
+7. [`src/components/engine/useStickyComposerLayout.ts`](../../src/components/engine/useStickyComposerLayout.ts)
+   Layout, split-width, and resize math for the sticky composer.
 
 ### 3.3 Reference and Secondary UI
 

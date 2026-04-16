@@ -319,7 +319,7 @@ Trace:
 
 Type: `Refactor`
 Priority: `P1`
-Status: `committed`
+Status: `implemented`
 
 Problem:
 
@@ -334,6 +334,7 @@ Action:
    `segmentation`
    `lexicalLearning`
 2. Keep `useFlowStore.ts` as the composition layer while the reusable helper logic moves out.
+3. Continue decomposing the composer surface into smaller subcomponents for layout, popup, and pane responsibilities.
 
 Proof:
 
@@ -343,10 +344,9 @@ Proof:
 4. [`src/store/flowStoreLexical.ts`](../../src/store/flowStoreLexical.ts)
 5. [`src/store/flowStoreSegmentation.ts`](../../src/store/flowStoreSegmentation.ts)
 6. [`src/store/flowStoreSessions.ts`](../../src/store/flowStoreSessions.ts)
-
-Trace:
-
-1. `3e4152f` `refactor: split flow store helpers`
+7. [`src/components/engine/useStickyComposerLayout.ts`](../../src/components/engine/useStickyComposerLayout.ts)
+8. [`src/components/engine/CaretOverlay.tsx`](../../src/components/engine/CaretOverlay.tsx)
+9. [`src/components/engine/StickyTopComposerPredictionPopup.tsx`](../../src/components/engine/StickyTopComposerPredictionPopup.tsx)
 
 ## 2.2 Split `StickyTopComposer.tsx`
 

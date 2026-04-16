@@ -66,7 +66,7 @@ Proof:
 1. `TransliterationEngine`
    Responsibility: global workspace shell, left workspace drawer, autosave, lexical-learning persistence, view-mode controls, whole-document copy actions, Tamil recovery utility.
 2. `StickyTopComposer`
-   Responsibility: active chunk editing, live previews, block/chunk navigation, compare mode, copy actions, prediction popup, reference-panel entry point.
+   Responsibility: active chunk editing, live previews, block/chunk navigation, compare mode, copy actions, prediction flows, reference-panel entry point, plus orchestration for extracted layout and popup helpers.
 3. `MainDocumentArea`
    Responsibility: lower reading surface for `document`, `read`, `review`, `focus`, and `immersive` modes.
 4. `ReferenceSidePanel` + `ReferenceLibrary`

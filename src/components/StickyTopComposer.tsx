@@ -2,15 +2,17 @@
 'use client';
 
 import React from 'react';
-import { createPortal } from 'react-dom';
 import { useFlowStore } from '@/store/useFlowStore';
 import { BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, Trash2, Undo2, HelpCircle, Bug } from 'lucide-react';
 import { clsx } from 'clsx';
 import Link from 'next/link';
+import { CaretOverlay } from '@/components/engine/CaretOverlay';
 import { ShortcutHUD } from '@/components/engine/ShortcutHUD';
+import { StickyTopComposerPredictionPopup } from '@/components/engine/StickyTopComposerPredictionPopup';
 import { WordPredictionTray } from '@/components/engine/WordPredictionTray';
 import { getScriptDisplayText } from '@/components/ScriptText';
 import { ResizeHandle } from '@/components/VerticalResizeHandle';
+import { useStickyComposerLayout } from '@/components/engine/useStickyComposerLayout';
 import {
   canonicalizeDevanagariPaste,
   formatSourceForScript,
@@ -24,62 +26,6 @@ import {
   OUTPUT_TARGET_VALUE_LABELS,
 } from '@/lib/vedic/mapping';
 import type { ChunkEditTarget } from '@/store/types';
-
-interface CaretOverlayProps {
-  targetRef: React.RefObject<HTMLElement | null>;
-  containerRef: React.RefObject<HTMLElement | null>;
-  color?: string;
-}
-
-const CaretOverlay: React.FC<CaretOverlayProps> = ({ targetRef, containerRef, color = 'bg-blue-600' }) => {
-  const [style, setStyle] = React.useState<React.CSSProperties>({ opacity: 0 });
-
-  React.useLayoutEffect(() => {
-    const container = containerRef.current;
-    const updatePosition = () => {
-      if (!targetRef.current || !container) return;
-
-      const targetRect = targetRef.current.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-
-      setStyle({
-        position: 'absolute',
-        left: targetRect.left - containerRect.left,
-        top: targetRect.top - containerRect.top,
-        height: targetRect.height || '1.2em',
-        width: '2px',
-        opacity: 1,
-        transition: 'left 0.1s ease-out, top 0.1s ease-out',
-      });
-    };
-
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    container?.addEventListener('scroll', updatePosition);
-
-    const observer = new MutationObserver(updatePosition);
-    if (container) {
-      observer.observe(container, { childList: true, subtree: true, characterData: true });
-    }
-
-    return () => {
-      window.removeEventListener('resize', updatePosition);
-      container?.removeEventListener('scroll', updatePosition);
-      observer.disconnect();
-    };
-  }, [targetRef, containerRef]);
-
-  return (
-    <div
-      className={clsx(
-        'pointer-events-none rounded-full motion-safe:animate-caret',
-        color
-      )}
-      style={style}
-      data-testid="preview-caret"
-    />
-  );
-};
 
 export const StickyTopComposer: React.FC = () => {
   const { 
@@ -107,7 +53,6 @@ export const StickyTopComposer: React.FC = () => {
   const primaryPreviewCaretRef = React.useRef<HTMLSpanElement>(null);
   const comparisonPreviewCaretRef = React.useRef<HTMLSpanElement>(null);
   const isPointerSelectingRef = React.useRef(false);
-  const [composerSplitContainerWidth, setComposerSplitContainerWidth] = React.useState(0);
 
   const [showShiftEnterHint, setShowShiftEnterHint] = React.useState(false);
   const hintTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -164,144 +109,28 @@ export const StickyTopComposer: React.FC = () => {
   const composerTypography = typography.composer;
   const isStackedComposer = composerLayout === 'stacked';
   const isComposerCompareMode = comparisonOutputScript !== 'off';
-  const composerSplitDividerWidth = 20;
-  const composerSplitMinPaneWidth = 320;
-  const previewResizeHandleHeight = 16;
-  const previewMinHeight = 112;
-  const composerPrimaryPreviewHeight = composerTypography.primaryPreviewHeight;
-  const composerComparePreviewHeight = isComposerCompareMode ? composerTypography.comparePreviewHeight : 0;
-  const composerSplitRatio = composerTypography.sideBySideSplitRatio;
-  const composerSplitAvailableWidth = Math.max(composerSplitContainerWidth - composerSplitDividerWidth, 0);
-  const composerSourcePaneWidth = composerSplitAvailableWidth > 0
-    ? Math.round(composerSplitAvailableWidth * composerSplitRatio)
-    : 0;
-  const composerSplitMaxSourceWidth = Math.max(
-    composerSplitAvailableWidth - composerSplitMinPaneWidth,
-    composerSplitMinPaneWidth
-  );
-  const composerPreviewStackHeight = isComposerCompareMode
-    ? composerPrimaryPreviewHeight + composerComparePreviewHeight + previewResizeHandleHeight
-    : composerPrimaryPreviewHeight;
-  const composerInputHeight = composerTypography.itransPanelHeight;
-  const previewSplitMaxHeight = Math.max(
-    composerPrimaryPreviewHeight + composerComparePreviewHeight - previewMinHeight,
-    previewMinHeight
-  );
-  const updateComposerPreviewSplitHeight = React.useCallback(
-    (nextPrimaryHeight: number) => {
-      if (!isComposerCompareMode) {
-        setTypography('composer', {
-          primaryPreviewHeight: nextPrimaryHeight,
-        } as Partial<typeof composerTypography>);
-        return;
-      }
-
-      const currentContentHeight = composerPrimaryPreviewHeight + composerComparePreviewHeight;
-      const boundedPrimary = Math.max(
-        previewMinHeight,
-        Math.min(nextPrimaryHeight, Math.max(currentContentHeight - previewMinHeight, previewMinHeight))
-      );
-      const boundedCompare = Math.max(previewMinHeight, currentContentHeight - boundedPrimary);
-
-      setTypography('composer', {
-        primaryPreviewHeight: boundedPrimary,
-        comparePreviewHeight: boundedCompare,
-      } as Partial<typeof composerTypography>);
-    },
-    [
-      composerComparePreviewHeight,
-      composerPrimaryPreviewHeight,
-      isComposerCompareMode,
-      previewMinHeight,
-      setTypography,
-    ]
-  );
-  const updateComposerInputHeight = React.useCallback(
-    (nextHeight: number) => {
-      if (!isComposerCompareMode) {
-        setTypography('composer', {
-          itransPanelHeight: nextHeight,
-          primaryPreviewHeight: nextHeight,
-        } as Partial<typeof composerTypography>);
-        return;
-      }
-
-      const nextContentHeight = Math.max(nextHeight - previewResizeHandleHeight, previewMinHeight * 2);
-      const currentContentHeight = composerPrimaryPreviewHeight + composerComparePreviewHeight;
-      const currentRatio = currentContentHeight > 0 ? composerPrimaryPreviewHeight / currentContentHeight : 0.5;
-      const nextPrimaryHeight = Math.max(
-        previewMinHeight,
-        Math.min(
-          Math.round(nextContentHeight * currentRatio),
-          nextContentHeight - previewMinHeight
-        )
-      );
-      const nextCompareHeight = Math.max(previewMinHeight, nextContentHeight - nextPrimaryHeight);
-      setTypography('composer', {
-        itransPanelHeight: nextHeight,
-        primaryPreviewHeight: nextPrimaryHeight,
-        comparePreviewHeight: nextCompareHeight,
-      } as Partial<typeof composerTypography>);
-    },
-    [
-      composerComparePreviewHeight,
-      composerPrimaryPreviewHeight,
-      isComposerCompareMode,
-      previewMinHeight,
-      previewResizeHandleHeight,
-      setTypography,
-    ]
-  );
-  const updateComposerSplitWidth = React.useCallback(
-    (nextSourceWidth: number) => {
-      if (composerSplitAvailableWidth <= 0) {
-        return;
-      }
-
-      const boundedSourceWidth = Math.max(
-        composerSplitMinPaneWidth,
-        Math.min(nextSourceWidth, composerSplitMaxSourceWidth)
-      );
-
-      setTypography('composer', {
-        sideBySideSplitRatio: boundedSourceWidth / composerSplitAvailableWidth,
-      } as Partial<typeof composerTypography>);
-    },
-    [
-      composerSplitAvailableWidth,
-      composerSplitMaxSourceWidth,
-      composerSplitMinPaneWidth,
-      setTypography,
-    ]
-  );
-  React.useEffect(() => {
-    if (isStackedComposer) {
-      return;
-    }
-
-    const element = composerSplitContainerRef.current;
-    if (!element) {
-      return;
-    }
-
-    const updateWidth = () => {
-      setComposerSplitContainerWidth(element.getBoundingClientRect().width);
-    };
-
-    updateWidth();
-
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', updateWidth);
-      return () => window.removeEventListener('resize', updateWidth);
-    }
-
-    const observer = new ResizeObserver(() => {
-      updateWidth();
-    });
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [isStackedComposer]);
+  const {
+    composerComparePreviewHeight,
+    composerInputHeight,
+    composerPreviewStackHeight,
+    composerPrimaryPreviewHeight,
+    composerSourcePaneWidth,
+    composerSplitRatio,
+    composerSplitDividerWidth,
+    composerSplitMaxSourceWidth,
+    composerSplitMinPaneWidth,
+    previewMinHeight,
+    previewSplitMaxHeight,
+    updateComposerInputHeight,
+    updateComposerPreviewSplitHeight,
+    updateComposerSplitWidth,
+  } = useStickyComposerLayout({
+    composerSplitContainerRef,
+    composerTypography,
+    isComposerCompareMode,
+    isStackedComposer,
+    setTypography,
+  });
   const isPredictionListbox = predictionLayout === 'listbox';
   const isLongBlock = activeBlock?.type === 'long';
   const currentChunkSource = activeChunkGroup?.source || '';
@@ -2164,22 +1993,15 @@ export const StickyTopComposer: React.FC = () => {
         </div>
       </div>
     </div>
-    {isPredictionListbox &&
-      isPredictionPopupVisible &&
-      typeof document !== 'undefined' &&
-      createPortal(
-        <div className="pointer-events-none fixed z-[120]" style={predictionPopupPortalStyle}>
-          <WordPredictionTray
-            variant="listbox"
-            className="pointer-events-auto max-h-[12rem] bg-white/98 backdrop-blur-sm"
-            onSuggestionAccepted={() => {
-              setIsPredictionPopupVisible(false);
-              setIsPredictionPopupSuppressed(true);
-            }}
-          />
-        </div>,
-        document.body
-      )}
+    <StickyTopComposerPredictionPopup
+      isPredictionListbox={isPredictionListbox}
+      isPredictionPopupVisible={isPredictionPopupVisible}
+      predictionPopupPortalStyle={predictionPopupPortalStyle}
+      onSuggestionAccepted={() => {
+        setIsPredictionPopupVisible(false);
+        setIsPredictionPopupSuppressed(true);
+      }}
+    />
     </>
   );
 };

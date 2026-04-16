@@ -243,6 +243,13 @@ Expected payoff:
 2. More focused regression tests.
 3. Less coupling between selection logic and UI chrome.
 
+Current status:
+
+1. The first extraction pass has started.
+2. Layout/resizing concerns now live in `useStickyComposerLayout.ts`.
+3. The prediction popup is wrapped by `StickyTopComposerPredictionPopup.tsx`.
+4. The main composer still owns the toolbar, input pane, preview panes, compare pane, copy actions, scroll sync, and deleted-block toast.
+
 ## 3.3 Split `TransliterationEngine.tsx`
 
 Priority: P1
