@@ -113,7 +113,15 @@ Status labels used here:
 1. [`src/store/types.ts`](../../src/store/types.ts)
    Shared domain types for blocks, segments, sessions, display settings, and modes.
 2. [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts)
-   Zustand store and most business logic.
+   Zustand store composition layer and remaining action wiring.
+3. [`src/store/flowStoreDisplay.ts`](../../src/store/flowStoreDisplay.ts)
+   Display-setting normalization, typography defaults, and commit-boundary canonicalization helpers.
+4. [`src/store/flowStoreLexical.ts`](../../src/store/flowStoreLexical.ts)
+   Session lexical-count helpers and lexical-learning orchestration utilities.
+5. [`src/store/flowStoreSegmentation.ts`](../../src/store/flowStoreSegmentation.ts)
+   Block creation, segmentation, and block-source splitting helpers.
+6. [`src/store/flowStoreSessions.ts`](../../src/store/flowStoreSessions.ts)
+   Session index, snapshot, and naming helpers for localStorage-backed persistence.
 
 ## 5. Transliteration and Data Libraries
 

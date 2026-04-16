@@ -33,7 +33,7 @@ Sanskrit Keyboard is a client-heavy scholarly transliteration workspace built ar
 3. Render that source immediately into Devanagari, Tamil precision, or Roman output.
 4. Support long-form editing through blocks, chunks, sessions, and read/review modes instead of a single large editor.
 
-The real architectural center is [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts). The UI is mostly a shell around that store plus the transliteration contract in [`src/lib/vedic/mapping.ts`](../../src/lib/vedic/mapping.ts) and [`src/lib/vedic/utils.ts`](../../src/lib/vedic/utils.ts).
+The real architectural center is [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts). The UI is mostly a shell around that store plus the transliteration contract in [`src/lib/vedic/mapping.ts`](../../src/lib/vedic/mapping.ts) and [`src/lib/vedic/utils.ts`](../../src/lib/vedic/utils.ts). The store now delegates reusable helper logic to [`flowStoreDisplay.ts`](../../src/store/flowStoreDisplay.ts), [`flowStoreLexical.ts`](../../src/store/flowStoreLexical.ts), [`flowStoreSegmentation.ts`](../../src/store/flowStoreSegmentation.ts), and [`flowStoreSessions.ts`](../../src/store/flowStoreSessions.ts), but `useFlowStore.ts` still owns the action wiring and selector surface.
 
 The project is materially more mature than some of its secondary routes and documentation. The main workspace is real and substantially implemented. The test suite is broad, but not uniformly current; some UI specs appear stale. Several secondary modules are either orphaned, only partially wired, or still describing capabilities that are not actually implemented.
 
@@ -94,6 +94,10 @@ Proof:
    Active block, active anchor segment, focus span, and view mode.
 5. `DisplaySettings`
    Input scheme, output targets, typography, fonts, prediction layout, and reference preferences.
+
+Implementation note:
+
+1. Store behavior is split across helper modules, but the public state and action API still flows through `useFlowStore.ts`.
 
 Important implementation note: the app stores canonical ITRANS and derives rendered output from it. Rendered text is never the source of truth.
 

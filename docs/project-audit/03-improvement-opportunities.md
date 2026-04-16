@@ -181,7 +181,7 @@ Priority: P0
 
 Current issue:
 
-[`useFlowStore.ts`](/home/ganesh/Documents/Research/sanskrit_keyboard/app/src/store/useFlowStore.ts) is the core asset in the repo, but it is too large and mixes too many concerns:
+[`useFlowStore.ts`](/home/ganesh/Documents/Research/sanskrit_keyboard/app/src/store/useFlowStore.ts) is the core asset in the repo. The first extraction pass has already moved reusable helper logic into dedicated modules, but the file still mixes too many concerns:
 
 1. document model creation
 2. segmentation logic
@@ -204,6 +204,11 @@ Expected payoff:
 1. Lower regression risk.
 2. Better testability for pure logic.
 3. Easier reasoning about state changes.
+
+Current status:
+
+1. The helper-module split is in place for display settings, lexical helpers, segmentation, and session helpers.
+2. The remaining action wiring still lives in `useFlowStore.ts`, so this item is only partially complete until the action layer is also decomposed.
 
 ## 3.2 Split `StickyTopComposer.tsx`
 

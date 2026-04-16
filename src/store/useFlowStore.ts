@@ -2,144 +2,100 @@
 import { create } from 'zustand';
 import {
   CanonicalBlock,
-  Segment,
-  ChunkGroup,
   ChunkEditTarget,
+  ChunkGroup,
   DisplaySettings,
   EditorState,
-  ViewMode,
-  LegacyTypographySettings,
-  TypographySettings,
-  SessionSnapshot,
   SessionListItem,
+  SessionSnapshot,
+  Segment,
+  TypographySettings,
+  ViewMode,
 } from './types';
 import { transliterate } from '@/lib/vedic/utils';
 import {
   canonicalizeAcceptedInputToken,
-  DEFAULT_OUTPUT_TARGET_SETTINGS,
   getDisplayMapping,
   getInputMappings,
   getOutputTargetSettingsFromLegacyOutputScheme,
-  normalizeOutputTargetSettings,
   resolveLegacyOutputSchemeBridge,
   type InputScheme,
   type OutputScheme,
 } from '@/lib/vedic/mapping';
 import {
+  DEFAULT_DISPLAY_SETTINGS,
+  canonicalizeCommittedEditorSource,
+  cloneTypographySettings,
+  normalizeDisplaySettings,
+  normalizeViewMode,
+} from './flowStoreDisplay';
+import {
+  createBlockFromSource,
+  createBlankBlock,
+  createSegments,
+  isLongBlockSource,
+  splitIntoBlockSources,
+} from './flowStoreSegmentation';
+import {
+  DEFAULT_SWARA_PREDICTION_ENABLED,
+  accumulateSessionExactFormUsageFromText,
+  accumulateSessionLexicalUsageFromText,
   applyLearnedSwaraVariants,
-  accumulateExactFormUsageFromText,
-  incrementExactFormUsage,
+  deriveSessionExactFormUsageFromBlocks,
+  deriveSessionLexicalUsageFromBlocks,
   getLexicalSuggestions,
+  incrementExactFormUsage,
+  incrementSessionLexicalUsage,
   mergeLexicalSuggestionsWithSessionCounts,
   normalizeForLexicalLookup,
   preloadRuntimeLexiconAssets,
   shouldLookupLexicalSuggestions,
   type ExactFormUsageCounts,
-  type LexicalUsageCounts,
   type LexicalSuggestion,
-} from '@/lib/vedic/runtimeLexicon';
+  type LexicalUsageCounts,
+} from './flowStoreLexical';
+import {
+  INITIAL_SESSION_ID,
+  INITIAL_SESSION_NAME,
+  createDefaultSessionName,
+  createSessionId,
+  getSessionStorageKey,
+  readSessionIndex,
+  writeSessionIndex,
+} from './flowStoreSessions';
 
-// --- UTILITY FUNCTIONS ---
-// These functions might live here or in a separate file.
-
-/**
- * A simple utility to segment a long source string.
- * In a real implementation, this would be much more sophisticated.
- */
-const createSegments = (source: string): Segment[] => {
-  const segments: Segment[] = [];
-  let currentOffset = 0;
-  let segmentId = 0;
-
-  // Split by spaces and common punctuation (like danda '|' or '||')
-  // This regex matches any sequence of word characters or any sequence of non-word characters (including spaces and punctuation)
-  const delimiters = /(\s+|[.,;!?|]+)/;
-  const parts = source.split(delimiters).filter(part => part.length > 0);
-
-  let tempSegmentSource = '';
-  let tempSegmentStartOffset = 0;
-
-  const addCurrentSegment = () => {
-    if (tempSegmentSource.length > 0) {
-      segments.push({
-        id: `seg-${segmentId++}`,
-        source: tempSegmentSource,
-        rendered: transliterate(tempSegmentSource).unicode,
-        startOffset: tempSegmentStartOffset,
-        endOffset: tempSegmentStartOffset + tempSegmentSource.length,
-      });
-      tempSegmentSource = '';
-    }
-  };
-
-  for (const part of parts) {
-    if (tempSegmentSource.length + part.length > 50 && tempSegmentSource.length > 0) {
-      // If adding this part would make the segment too long, commit the current segment
-      addCurrentSegment();
-      tempSegmentStartOffset = currentOffset; // Start new segment at current offset
-    } else if (tempSegmentSource.length === 0) {
-      tempSegmentStartOffset = currentOffset; // Mark start of new segment
-    }
-    tempSegmentSource += part;
-    currentOffset += part.length;
-  }
-  addCurrentSegment(); // Add any remaining part
-
-  return segments;
-};
-
-const isLongBlockSource = (source: string) =>
-  source.length > 100 || source.split(/[\s|]+/).filter(Boolean).length > 10;
-
-const splitIntoBlockSources = (source: string): string[] =>
-  source
-    .replace(/\r/g, '')
-    .split(/\n\s*\n|\n+/)
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0);
-
-export const getSessionStorageKey = (sessionId: string) => `sanskrit-keyboard.session.v2.${sessionId}`;
-
-export const readStoredSessionSnapshot = (sessionId: string): SessionSnapshot | null => {
-  if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(getSessionStorageKey(sessionId));
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(raw) as SessionSnapshot;
-  } catch (e) {
-    console.error(`Failed to parse session ${sessionId}:`, e);
-    return null;
-  }
-};
-
-const createBlockFromSource = (
-  source: string,
-  title: string,
-  options?: { disableAutoSegmentation?: boolean }
-): CanonicalBlock => {
-  const disableAutoSegmentation = options?.disableAutoSegmentation ?? false;
-  const type = !disableAutoSegmentation && isLongBlockSource(source) ? 'long' : 'short';
-  const block: CanonicalBlock = {
-    id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    type,
-    title,
-    disableAutoSegmentation,
-    source,
-    rendered: transliterate(source).unicode,
-  };
-
-  if (type === 'long') {
-    block.segments = createSegments(source);
-  }
-
-  return block;
-};
-
-
-// --- MOCK DATA ---
+export {
+  DEFAULT_DISPLAY_SETTINGS,
+  canonicalizeCommittedEditorSource,
+  cloneTypographySettings,
+  normalizeDisplaySettings,
+  normalizeViewMode,
+} from './flowStoreDisplay';
+export {
+  DEFAULT_SWARA_PREDICTION_ENABLED,
+  accumulateSessionExactFormUsageFromText,
+  accumulateSessionLexicalUsageFromText,
+  applyLearnedSwaraVariants,
+  deriveSessionExactFormUsageFromBlocks,
+  deriveSessionLexicalUsageFromBlocks,
+  getLexicalSuggestions,
+  incrementExactFormUsage,
+  incrementSessionLexicalUsage,
+  mergeLexicalSuggestionsWithSessionCounts,
+  normalizeForLexicalLookup,
+  preloadRuntimeLexiconAssets,
+  shouldLookupLexicalSuggestions,
+} from './flowStoreLexical';
+export {
+  INITIAL_SESSION_ID,
+  INITIAL_SESSION_NAME,
+  createDefaultSessionName,
+  createSessionId,
+  getSessionStorageKey,
+  readSessionIndex,
+  readStoredSessionSnapshot,
+  writeSessionIndex,
+} from './flowStoreSessions';
 
 const DEFAULT_BLOCK_SEEDS = [
   {
@@ -190,319 +146,9 @@ const INITIAL_BLOCKS: CanonicalBlock[] = DEFAULT_BLOCK_SEEDS.map(({ id, title, s
 
   return block;
 });
-const createBlankBlock = (): CanonicalBlock => ({
-  id: `block-${Date.now()}`,
-  type: 'short',
-  title: 'Untitled Block',
-  disableAutoSegmentation: true,
-  source: '',
-  rendered: '',
-});
-const LEGACY_DEFAULT_TYPOGRAPHY: LegacyTypographySettings = {
-  itransFontSize: 18,
-  itransLineHeight: 1.6,
-  renderedFontSize: 32,
-  renderedLineHeight: 1.7,
-};
-const DEFAULT_TYPOGRAPHY: TypographySettings = {
-  composer: {
-    ...LEGACY_DEFAULT_TYPOGRAPHY,
-    devanagariFontSize: 27,
-    tamilFontSize: 23,
-    devanagariLineHeight: 1.6,
-    tamilLineHeight: 1.8,
-    itransFontSize: 18,
-    itransLineHeight: 1.6,
-    itransPanelHeight: 150,
-    primaryPreviewHeight: 150,
-    comparePreviewHeight: 150,
-    sideBySideSplitRatio: 0.54,
-  },
-  document: {
-    itransFontSize: 18,
-    devanagariFontSize: 27,
-    tamilFontSize: 23,
-    devanagariLineHeight: 1.8,
-    tamilLineHeight: 1.8,
-    itransLineHeight: 1.6,
-    primaryPaneHeight: 480,
-    comparePaneHeight: 480,
-    renderedFontSize: 30,
-    renderedLineHeight: 1.75,
-  },
-  immersive: {
-    devanagariFontSize: 32,
-    devanagariLineHeight: 1.9,
-    tamilFontSize: 28,
-    tamilLineHeight: 2,
-  },
-};
-export const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
-  composerLayout: 'side-by-side',
-  syncComposerScroll: true,
-  predictionLayout: 'listbox',
-  predictionPopupTimeoutMs: 10000,
-  inputScheme: 'canonical-vedic',
-  outputScheme: 'canonical-vedic',
-  ...DEFAULT_OUTPUT_TARGET_SETTINGS,
-  sanskritFontPreset: 'chandas',
-  tamilFontPreset: 'anek',
-  autoSwapVisargaSvarita: true,
-  showItransInDocument: false,
-  referenceUsage: {},
-  expandedCategories: ['Vowel', 'Consonant'],
-  typography: DEFAULT_TYPOGRAPHY,
-};
 
-const SESSION_INDEX_KEY = 'sanskrit-keyboard.session-index.v2';
-
-const sortSessionList = (sessions: SessionListItem[]) =>
-  [...sessions].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-
-const readSessionIndex = (): SessionListItem[] => {
-  if (typeof window === 'undefined') return [];
-  const raw = window.localStorage.getItem(SESSION_INDEX_KEY);
-  if (!raw) return [];
-  try {
-    return sortSessionList(JSON.parse(raw) as SessionListItem[]);
-  } catch {
-    return [];
-  }
-};
-
-const writeSessionIndex = (items: SessionListItem[]) => {
-  if (typeof window === 'undefined') return items;
-  const nextItems = sortSessionList(items).slice(0, 25);
-  window.localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(nextItems));
-  return nextItems;
-};
-
-const INITIAL_SESSION_ID = 'session-initial';
-const INITIAL_SESSION_NAME = 'Current Session';
-const createSessionId = () => `session-${Date.now()}`;
-const createDefaultSessionName = () => {
-  const now = new Date();
-  return `Session ${now.toLocaleDateString()} ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-};
-const SESSION_LEXICAL_TOKEN_PATTERN = /[A-Za-z0-9\\^'"_~.=\/&#$]+/g;
 const ACTIVE_BUFFER_PATTERN = /[A-Za-z0-9\\^'"_~.=\/&#$]+$/;
 const COMMIT_DELIMITER_PATTERN = /[\s|.,;!?\n]/;
-const DEFAULT_SWARA_PREDICTION_ENABLED = true;
-
-const extractLexicalTokens = (source: string) =>
-  source.match(SESSION_LEXICAL_TOKEN_PATTERN) ?? [];
-
-export const incrementSessionLexicalUsage = (counts: LexicalUsageCounts, rawValue: string) => {
-  const normalized = normalizeForLexicalLookup(rawValue);
-  if (!shouldLookupLexicalSuggestions(normalized)) {
-    return counts;
-  }
-
-  return {
-    ...counts,
-    [normalized]: (counts[normalized] ?? 0) + 1,
-  };
-};
-
-export const accumulateSessionLexicalUsageFromText = (
-  counts: LexicalUsageCounts,
-  source: string
-) => {
-  let nextCounts = counts;
-  const matches = extractLexicalTokens(source);
-
-  for (const token of matches) {
-    nextCounts = incrementSessionLexicalUsage(nextCounts, token);
-  }
-
-  return nextCounts;
-};
-
-export const accumulateSessionExactFormUsageFromText = (
-  counts: ExactFormUsageCounts,
-  source: string
-) => accumulateExactFormUsageFromText(counts, extractLexicalTokens(source));
-
-const deriveSessionLexicalUsageFromBlocks = (blocks: CanonicalBlock[]) => {
-  let counts: LexicalUsageCounts = {};
-
-  for (const block of blocks) {
-    counts = accumulateSessionLexicalUsageFromText(counts, block.source);
-  }
-
-  return counts;
-};
-
-const deriveSessionExactFormUsageFromBlocks = (blocks: CanonicalBlock[]) => {
-  let counts: ExactFormUsageCounts = {};
-
-  for (const block of blocks) {
-    counts = accumulateSessionExactFormUsageFromText(counts, block.source);
-  }
-
-  return counts;
-};
-
-const cloneTypographySettings = (settings: TypographySettings): TypographySettings => ({
-  composer: { ...settings.composer },
-  document: { ...settings.document },
-  immersive: { ...settings.immersive },
-});
-
-const clampTypographyHeights = (settings: TypographySettings): TypographySettings => ({
-  composer: {
-    ...settings.composer,
-    itransPanelHeight: Math.max(settings.composer.itransPanelHeight, 140),
-    primaryPreviewHeight: Math.max(settings.composer.primaryPreviewHeight, 140),
-    comparePreviewHeight: Math.max(settings.composer.comparePreviewHeight, 140),
-    sideBySideSplitRatio: Math.max(0.32, Math.min(settings.composer.sideBySideSplitRatio, 0.68)),
-  },
-  document: {
-    ...settings.document,
-    primaryPaneHeight: Math.max(settings.document.primaryPaneHeight, 260),
-    comparePaneHeight: Math.max(settings.document.comparePaneHeight, 260),
-  },
-  immersive: {
-    ...settings.immersive,
-    devanagariFontSize: Math.max(settings.immersive.devanagariFontSize, 18),
-    tamilFontSize: Math.max(settings.immersive.tamilFontSize, 18),
-    devanagariLineHeight: Math.max(settings.immersive.devanagariLineHeight, 1.2),
-    tamilLineHeight: Math.max(settings.immersive.tamilLineHeight, 1.2),
-  },
-});
-
-export const normalizeDisplaySettings = (
-  displaySettings?: DisplaySettings,
-  legacyTypography?: LegacyTypographySettings
-): DisplaySettings => {
-  if (displaySettings) {
-    const outputTargetSettings = normalizeOutputTargetSettings(displaySettings);
-    const normalized: DisplaySettings = {
-      composerLayout: displaySettings.composerLayout ?? DEFAULT_DISPLAY_SETTINGS.composerLayout,
-      syncComposerScroll: displaySettings.syncComposerScroll ?? DEFAULT_DISPLAY_SETTINGS.syncComposerScroll,
-      predictionLayout: displaySettings.predictionLayout ?? DEFAULT_DISPLAY_SETTINGS.predictionLayout,
-      predictionPopupTimeoutMs:
-        displaySettings.predictionPopupTimeoutMs ?? DEFAULT_DISPLAY_SETTINGS.predictionPopupTimeoutMs,
-      inputScheme: displaySettings.inputScheme ?? DEFAULT_DISPLAY_SETTINGS.inputScheme,
-      outputScheme: resolveLegacyOutputSchemeBridge(
-        outputTargetSettings,
-        displaySettings.outputScheme ?? DEFAULT_DISPLAY_SETTINGS.outputScheme,
-      ),
-      ...outputTargetSettings,
-      sanskritFontPreset:
-        displaySettings.sanskritFontPreset ?? DEFAULT_DISPLAY_SETTINGS.sanskritFontPreset,
-      tamilFontPreset: displaySettings.tamilFontPreset ?? DEFAULT_DISPLAY_SETTINGS.tamilFontPreset,
-      autoSwapVisargaSvarita:
-        displaySettings.autoSwapVisargaSvarita ?? DEFAULT_DISPLAY_SETTINGS.autoSwapVisargaSvarita,
-      showItransInDocument:
-        displaySettings.showItransInDocument ?? DEFAULT_DISPLAY_SETTINGS.showItransInDocument,
-      referenceUsage: displaySettings.referenceUsage ?? DEFAULT_DISPLAY_SETTINGS.referenceUsage,
-      expandedCategories: displaySettings.expandedCategories ?? DEFAULT_DISPLAY_SETTINGS.expandedCategories,
-      typography: {
-        composer: {
-          ...DEFAULT_DISPLAY_SETTINGS.typography.composer,
-          ...displaySettings.typography?.composer,
-          devanagariFontSize:
-            displaySettings.typography?.composer?.devanagariFontSize ??
-            displaySettings.typography?.composer?.renderedFontSize ??
-            DEFAULT_DISPLAY_SETTINGS.typography.composer.devanagariFontSize,
-          tamilFontSize:
-            displaySettings.typography?.composer?.tamilFontSize ??
-            Math.max(
-              (displaySettings.typography?.composer?.renderedFontSize ??
-                DEFAULT_DISPLAY_SETTINGS.typography.composer.renderedFontSize) - 4,
-              18
-            ),
-          devanagariLineHeight:
-            displaySettings.typography?.composer?.devanagariLineHeight ??
-            displaySettings.typography?.composer?.renderedLineHeight ??
-            DEFAULT_DISPLAY_SETTINGS.typography.composer.devanagariLineHeight,
-          tamilLineHeight:
-            displaySettings.typography?.composer?.tamilLineHeight ??
-            Math.max(
-              displaySettings.typography?.composer?.renderedLineHeight ??
-                DEFAULT_DISPLAY_SETTINGS.typography.composer.renderedLineHeight,
-              DEFAULT_DISPLAY_SETTINGS.typography.composer.tamilLineHeight
-            ),
-          sideBySideSplitRatio:
-            displaySettings.typography?.composer?.sideBySideSplitRatio ??
-            DEFAULT_DISPLAY_SETTINGS.typography.composer.sideBySideSplitRatio,
-        },
-        document: {
-          ...DEFAULT_DISPLAY_SETTINGS.typography.document,
-          ...displaySettings.typography?.document,
-          devanagariFontSize:
-            displaySettings.typography?.document?.devanagariFontSize ??
-            displaySettings.typography?.document?.renderedFontSize ??
-            DEFAULT_DISPLAY_SETTINGS.typography.document.devanagariFontSize,
-          tamilFontSize:
-            displaySettings.typography?.document?.tamilFontSize ??
-            Math.max(
-              (displaySettings.typography?.document?.renderedFontSize ??
-                DEFAULT_DISPLAY_SETTINGS.typography.document.renderedFontSize) - 4,
-              18
-            ),
-          devanagariLineHeight:
-            displaySettings.typography?.document?.devanagariLineHeight ??
-            displaySettings.typography?.document?.renderedLineHeight ??
-            DEFAULT_DISPLAY_SETTINGS.typography.document.devanagariLineHeight,
-          tamilLineHeight:
-            displaySettings.typography?.document?.tamilLineHeight ??
-            Math.max(
-              displaySettings.typography?.document?.renderedLineHeight ??
-                DEFAULT_DISPLAY_SETTINGS.typography.document.renderedLineHeight,
-              DEFAULT_DISPLAY_SETTINGS.typography.document.tamilLineHeight
-            ),
-        },
-        immersive: {
-          ...DEFAULT_DISPLAY_SETTINGS.typography.immersive,
-          ...displaySettings.typography?.immersive,
-        },
-      },
-    };
-    return {
-      ...normalized,
-      typography: clampTypographyHeights(normalized.typography),
-    };
-  }
-
-  if (legacyTypography) {
-    const legacyDisplaySettings: DisplaySettings = {
-      ...DEFAULT_DISPLAY_SETTINGS,
-      typography: {
-        composer: {
-          ...DEFAULT_DISPLAY_SETTINGS.typography.composer,
-          ...legacyTypography,
-          devanagariFontSize: DEFAULT_DISPLAY_SETTINGS.typography.composer.devanagariFontSize,
-          tamilFontSize: Math.max(DEFAULT_DISPLAY_SETTINGS.typography.composer.renderedFontSize - 4, 18),
-          devanagariLineHeight: DEFAULT_DISPLAY_SETTINGS.typography.composer.renderedLineHeight,
-          tamilLineHeight: DEFAULT_DISPLAY_SETTINGS.typography.composer.renderedLineHeight,
-        },
-        document: {
-          ...DEFAULT_DISPLAY_SETTINGS.typography.document,
-          ...legacyTypography,
-          devanagariFontSize: DEFAULT_DISPLAY_SETTINGS.typography.document.devanagariFontSize,
-          tamilFontSize: Math.max(DEFAULT_DISPLAY_SETTINGS.typography.document.renderedFontSize - 4, 18),
-          devanagariLineHeight: DEFAULT_DISPLAY_SETTINGS.typography.document.renderedLineHeight,
-          tamilLineHeight: DEFAULT_DISPLAY_SETTINGS.typography.document.renderedLineHeight,
-        },
-        immersive: {
-          ...DEFAULT_DISPLAY_SETTINGS.typography.immersive,
-        },
-      },
-    };
-
-    return {
-      ...legacyDisplaySettings,
-      typography: clampTypographyHeights(legacyDisplaySettings.typography),
-    };
-  }
-
-  return {
-    ...DEFAULT_DISPLAY_SETTINGS,
-    typography: clampTypographyHeights(cloneTypographySettings(DEFAULT_DISPLAY_SETTINGS.typography)),
-  };
-};
 
 const shouldRecordCommittedBuffer = (activeBuffer: string, source: string, caret: number) => {
   if (!activeBuffer || caret <= 0) {
@@ -512,55 +158,6 @@ const shouldRecordCommittedBuffer = (activeBuffer: string, source: string, caret
   const delimiter = source.slice(caret - 1, caret);
   return COMMIT_DELIMITER_PATTERN.test(delimiter);
 };
-
-export const canonicalizeCommittedEditorSource = (
-  source: string,
-  caret: number,
-  committedBuffer: string,
-  inputScheme: InputScheme = 'canonical-vedic'
-) => {
-  if (!committedBuffer || caret <= 0) {
-    return {
-      source,
-      caret,
-      canonicalBuffer: committedBuffer,
-    };
-  }
-
-  const canonicalBuffer = canonicalizeAcceptedInputToken(committedBuffer, inputScheme);
-  if (canonicalBuffer === committedBuffer) {
-    return {
-      source,
-      caret,
-      canonicalBuffer,
-    };
-  }
-
-  const delimiterIndex = caret - 1;
-  const tokenStart = delimiterIndex - committedBuffer.length;
-  if (tokenStart < 0 || source.slice(tokenStart, delimiterIndex) !== committedBuffer) {
-    return {
-      source,
-      caret,
-      canonicalBuffer: committedBuffer,
-    };
-  }
-
-  const nextSource =
-    source.slice(0, tokenStart) +
-    canonicalBuffer +
-    source.slice(delimiterIndex);
-  const delta = canonicalBuffer.length - committedBuffer.length;
-
-  return {
-    source: nextSource,
-    caret: caret + delta,
-    canonicalBuffer,
-  };
-};
-
-const normalizeViewMode = (mode: ViewMode): ViewMode =>
-  mode === 'review' ? 'read' : mode;
 
 interface DeletedBlockSnapshot {
   block: CanonicalBlock;
