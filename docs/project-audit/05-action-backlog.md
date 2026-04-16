@@ -210,11 +210,11 @@ Trace:
 
 Type: `Cleanup`
 Priority: `P0`
-Status: `not-started`
+Status: `validated`
 
 Problem:
 
-1. Persistent keys and some copy still use `Sanskirt`.
+1. Legacy `sanskirt-*` keys still exist for compatibility, and the cleanup needs a final traceable commit/status.
 
 Action:
 
@@ -234,7 +234,7 @@ Proof:
 
 Type: `Tests`
 Priority: `P0`
-Status: `not-started`
+Status: `validated`
 
 Problem:
 
@@ -258,7 +258,7 @@ Proof:
 
 Type: `Tests`
 Priority: `P0`
-Status: `not-started`
+Status: `validated`
 
 Problem:
 
@@ -282,7 +282,7 @@ Proof:
 
 Type: `Tests`
 Priority: `P0`
-Status: `not-started`
+Status: `validated`
 
 Problem:
 

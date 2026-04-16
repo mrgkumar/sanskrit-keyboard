@@ -325,7 +325,7 @@ Proof:
 
 1. [`project-context.md`](../../project-context.md) is broadly useful but slightly ahead of or beside the current UI in a few places.
 2. [`README.md`](../../README.md) is more marketing-oriented than code-accurate.
-3. The app name is inconsistently spelled as `Sanskirt Keyboard` in several localStorage keys and visible strings.
+3. The visible app name is now standardized, but legacy `sanskirt-*` localStorage aliases still exist for compatibility.
 
 ## 9. Validation Notes
 
@@ -345,7 +345,7 @@ Result:
 3. Remove or archive dead modules: `UnicodeInspector`, `useSyncScroll`, `db.ts`, `export.ts`, `lib/utils.ts`.
 4. Reconcile README claims with current implementation.
 5. Decide whether `focus` mode and primary Roman output should be exposed or deleted.
-6. Normalize the `Sanskirt` vs `Sanskrit` naming drift before more persistence keys accumulate.
+6. Finish the `Sanskirt` vs `Sanskrit` cleanup so no new legacy aliases accumulate.
 
 ## 11. Remaining Uncertainty
 

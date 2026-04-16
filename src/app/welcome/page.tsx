@@ -16,7 +16,8 @@ import {
 
 export default function WelcomePage() {
   const markAsVisited = () => {
-    localStorage.setItem('sanskirt-keyboard-visited', 'true');
+    localStorage.setItem('sanskrit-keyboard-visited', 'true');
+    localStorage.removeItem('sanskirt-keyboard-visited');
   };
 
   return (
@@ -34,7 +35,7 @@ export default function WelcomePage() {
           The Invisible Interface
         </h1>
         <p className="text-slate-500 font-bold uppercase text-xs tracking-[0.4em] mt-4 text-center">
-          Sanskirt Keyboard Walkthrough
+          Sanskrit Keyboard Walkthrough
         </p>
       </header>
 
@@ -46,7 +47,7 @@ export default function WelcomePage() {
           <div className="max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold text-slate-800">Typing, Transformed</h2>
             <p className="mt-4 text-lg text-slate-600 leading-relaxed">
-              Sanskirt Keyboard is designed for scholars who need to move at the speed of thought. 
+              Sanskrit Keyboard is designed for scholars who need to move at the speed of thought. 
               No menus, no distractions—just a fluid transliteration experience that learns your patterns.
             </p>
           </div>

@@ -54,6 +54,8 @@ What is actually true:
 5. Devanagari display normalization.
 6. Tamil precision rendering and bounded reverse parsing.
 7. Lexical normalization and runtime ranking behavior.
+8. Block-level store contracts for splitting, merging, deletion, restoration, and long-block segmentation.
+9. Session orchestration and durable snapshot persistence.
 
 ## 2.2 Current UI-Covered Areas
 
@@ -76,13 +78,10 @@ What is actually true:
 
 ## 2.4 Clear Gaps
 
-1. No direct unit tests for segmentation policy.
-2. No direct unit tests for `splitBlock`, `mergeBlocks`, `deleteBlock`, or `restoreDeletedBlock`.
-3. No direct unit tests for session orchestration methods in the store.
-4. No direct unit tests for autosave timing/debounce behavior in the engine shell.
-5. No direct tests for onboarding redirect logic.
-6. No direct tests for the mobile optimization notice.
-7. No direct tests for reference usage ranking or category toggle state.
+1. No direct unit tests for autosave timing/debounce behavior in the engine shell.
+2. No direct tests for onboarding redirect logic.
+3. No direct tests for the mobile optimization notice.
+4. No direct tests for reference usage ranking or category toggle state.
 
 ## 3. Feature Matrix
 
@@ -133,9 +132,9 @@ What is actually true:
    Note: unit coverage is the reliable proof. The browser spec now matches the current intelligence-tab controls.
 
 8. Long blocks auto-segment
-   Status: `Indirect`
+   Status: `Unit`
    Evidence:
-   chunk-based flows exist throughout UI tests, but there is no direct unit test for segmentation policy such as `createSegments()` or `isLongBlockSource()`.
+   [`store-contract.spec.ts`](../../store-contract.spec.ts)
 
 ## 3.2 Block and Chunk Workflow
 
@@ -158,16 +157,17 @@ What is actually true:
    [`ui-regressions.spec.ts`](../../ui-regressions.spec.ts)
 
 4. Merge blocks
-   Status: `Gap`
+   Status: `Unit`
    Evidence:
-   code exists in [`useFlowStore.ts`](../../src/store/useFlowStore.ts), but no direct test was found.
+   [`store-contract.spec.ts`](../../store-contract.spec.ts)
 
 5. Delete block and restore through undo toast
-   Status: `UI-Current`
+   Status: `Mixed`
    Evidence:
+   [`store-contract.spec.ts`](../../store-contract.spec.ts)
    [`ui-regressions.spec.ts`](../../ui-regressions.spec.ts)
    [`lexical-ui.spec.ts`](../../lexical-ui.spec.ts)
-   Note: this stays `UI-Current` because the cited delete/undo assertions use selectors that still exist, including `recently-deleted-block`.
+   Note: this now has both direct store coverage and browser proof.
 
 6. Blank document represented by a single empty block
    Status: `Indirect`
@@ -276,8 +276,9 @@ What is actually true:
 ## 3.6 Session Management
 
 1. Create new session
-   Status: `UI-Current`
+   Status: `Mixed`
    Evidence:
+   [`store-contract.spec.ts`](../../store-contract.spec.ts)
    current workspace flows in [`lexical-ui.spec.ts`](../../lexical-ui.spec.ts) and other UI suites use the `Workspace` drawer plus `New` action successfully.
 
 2. Resume latest session
@@ -286,8 +287,9 @@ What is actually true:
    runtime source clearly supports session landing and reload behavior, but no direct current test was found specifically for resume-latest semantics.
 
 3. Rename/delete/search sessions
-   Status: `UI-Current`
+   Status: `Mixed`
    Evidence:
+   [`store-contract.spec.ts`](../../store-contract.spec.ts)
    [`session-management.spec.ts`](../../session-management.spec.ts)
    Note: the repaired spec now uses the current workspace panel and session controls.
 
@@ -324,23 +326,34 @@ What is actually true:
    [`lexical-ui.spec.ts`](../../lexical-ui.spec.ts)
    Note: the current runtime exposes reset and purge buttons in [`TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx), and the repaired spec now uses those labels.
 
+## 3.8 Store Contracts
+
+1. Block editing actions `addBlocks`, `splitBlock`, `mergeBlocks`, `deleteBlock`, `restoreDeletedBlock`
+   Status: `Unit`
+   Evidence:
+   [`store-contract.spec.ts`](../../store-contract.spec.ts)
+
+2. Session orchestration and durable persistence
+   Status: `Unit`
+   Evidence:
+   [`store-contract.spec.ts`](../../store-contract.spec.ts)
+
+3. Long-block segmentation policy
+   Status: `Unit`
+   Evidence:
+   [`store-contract.spec.ts`](../../store-contract.spec.ts)
+
 ## 4. Missing Direct Unit-Test Coverage
 
 These are the highest-value audited features that still do not have direct unit tests:
 
-1. Segmentation policy
-   `createSegments`, long-block heuristics, offset stability.
-2. Store-level block editing operations
-   `addBlocks`, `splitBlock`, `mergeBlocks`, `deleteBlock`, `restoreDeletedBlock`.
-3. Store-level mode transitions
+1. Store-level mode transitions
    `document`, `read`, `review`, `immersive`, `focus`.
-4. Reference state logic
+2. Reference state logic
    `incrementReferenceUsage`, `toggleReferenceCategory`.
-5. Session state orchestration
-   `markSessionSaved`, `deleteSession`, `renameSession`, `resetSession`, `loadSessionSnapshot`.
-6. Autosave timer behavior in the engine shell.
-7. First-visit onboarding redirect logic.
-8. Mobile optimization notice behavior.
+3. Autosave timer behavior in the engine shell.
+4. First-visit onboarding redirect logic.
+5. Mobile optimization notice behavior.
 
 ## 5. Revalidated Specs
 

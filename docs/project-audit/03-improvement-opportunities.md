@@ -103,12 +103,12 @@ Priority: P0
 
 Example:
 
-1. `sanskirt-keyboard-visited` in [page.tsx](/home/ganesh/Documents/Research/sanskrit_keyboard/app/src/app/page.tsx) and [welcome/page.tsx](/home/ganesh/Documents/Research/sanskrit_keyboard/app/src/app/welcome/page.tsx)
+1. `sanskirt-keyboard-visited` legacy alias in [page.tsx](/home/ganesh/Documents/Research/sanskrit_keyboard/app/src/app/page.tsx) and [welcome/page.tsx](/home/ganesh/Documents/Research/sanskrit_keyboard/app/src/app/welcome/page.tsx)
 
 Why:
 
 1. Typos in persistent keys become long-lived compatibility baggage.
-2. The project name is inconsistently presented to users and future maintainers.
+2. Visible copy should stay normalized even while old storage aliases remain for migration.
 
 Suggested action:
 

@@ -12,7 +12,7 @@ test('Adversarial Cursor Stability Test', async ({ page }) => {
   
   // Bypass onboarding
   await page.evaluate(() => {
-    localStorage.setItem('sanskirt-keyboard-visited', 'true');
+    localStorage.setItem('sanskrit-keyboard-visited', 'true');
   });
   await page.reload();
 

@@ -18,9 +18,16 @@ export default function Home() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
   const [isSessionConfirmed, setIsSessionConfirmed] = useState(false);
+  const LEGACY_VISITED_KEY = 'sanskirt-keyboard-visited';
+  const VISITED_KEY = 'sanskrit-keyboard-visited';
 
   useEffect(() => {
-    const hasVisited = localStorage.getItem('sanskirt-keyboard-visited');
+    const legacyVisited = localStorage.getItem(LEGACY_VISITED_KEY);
+    const hasVisited = localStorage.getItem(VISITED_KEY) || legacyVisited;
+    if (legacyVisited && !localStorage.getItem(VISITED_KEY)) {
+      localStorage.setItem(VISITED_KEY, legacyVisited);
+      localStorage.removeItem(LEGACY_VISITED_KEY);
+    }
     if (!hasVisited) {
       router.push('/welcome');
     } else {

@@ -60,7 +60,7 @@ export default function HelpPage() {
         <section className="space-y-4">
           <h2 className="text-3xl font-black text-slate-900 tracking-tight">ITRANS Transliteration Scheme</h2>
           <p className="text-lg text-slate-600 leading-relaxed max-w-3xl">
-            Sanskirt Keyboard uses a scholarly-tuned version of the ITRANS scheme. 
+            Sanskrit Keyboard uses a scholarly-tuned version of the ITRANS scheme. 
             This guide provides a comprehensive reference for mapping Roman characters to Devanagari.
           </p>
           <div className="flex items-center gap-4 pt-2">

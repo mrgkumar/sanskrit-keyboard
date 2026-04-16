@@ -16,7 +16,7 @@ const clearStorage = async (page: Page) => {
     Object.keys(window.localStorage)
       .filter((key) => key.startsWith('sanskrit-keyboard.session.v2.'))
       .forEach((key) => window.localStorage.removeItem(key));
-    window.localStorage.setItem('sanskirt-keyboard-visited', 'true');
+    window.localStorage.setItem('sanskrit-keyboard-visited', 'true');
   }, STORAGE_KEYS_TO_CLEAR);
 };
 

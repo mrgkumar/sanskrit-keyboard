@@ -1351,7 +1351,7 @@ export const TransliterationEngine: React.FC = () => {
                     Released on {new Date(BUILD_TIME).toLocaleDateString('en-IN', { dateStyle: 'long' })}
                   </p>
                   <p className="mt-12 text-center text-[10px] font-black uppercase tracking-[0.4em] text-slate-200 select-none">
-                    Sanskirt Keyboard
+                    Sanskrit Keyboard
                   </p>
                 </section>
               </div>

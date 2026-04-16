@@ -19,7 +19,7 @@ const loadDefaultSession = async (page: Page) => {
       .forEach((key) => window.localStorage.removeItem(key));
     
     // Bypass onboarding
-    window.localStorage.setItem('sanskirt-keyboard-visited', 'true');
+    window.localStorage.setItem('sanskrit-keyboard-visited', 'true');
   }, STORAGE_KEYS_TO_CLEAR);
   await page.goto(APP_URL);
 
