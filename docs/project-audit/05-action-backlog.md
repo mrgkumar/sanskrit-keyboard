@@ -7,6 +7,7 @@ Scope: consolidated backlog from the audit set:
 2. [`02-file-inventory.md`](./02-file-inventory.md)
 3. [`03-improvement-opportunities.md`](./03-improvement-opportunities.md)
 4. [`04-feature-test-coverage.md`](./04-feature-test-coverage.md)
+5. [`project-context.md`](../../project-context.md)
 
 ## 0. How To Read This Backlog
 
@@ -28,18 +29,34 @@ Types:
 5. `Tests`
 6. `Product Decision`
 
+Status flow:
+
+1. `not-started`
+2. `started`
+3. `implemented`
+4. `validated`
+5. `committed`
+6. `done`
+
 Proof policy:
 
 1. Runtime source outweighs older docs and stale specs.
 2. Test-file existence alone is not treated as proof.
 3. Each item below is tied to a source file or audit conclusion.
 
+Execution rule:
+
+1. Decision items should be resolved before refactors that depend on them.
+2. Test-repair items should happen before test-expansion items that build on the same surface.
+3. Documentation updates should happen after the relevant runtime or decision state is settled, unless the current docs are actively misleading.
+
 ## 1. P0 Backlog
 
-## 1.1 Reconcile README With Actual Runtime
+## 1.1 Reconcile Core Documentation With Actual Runtime
 
 Type: `Docs`
 Priority: `P0`
+Status: `validated`
 
 Problem:
 
@@ -50,19 +67,22 @@ Action:
 
 1. Update README architecture, persistence, and feature claims.
 2. Remove or soften unsupported claims.
-3. Link the audit docs as the current internal source of truth.
+3. Update [`project-context.md`](../../project-context.md) where it is ahead of or beside the current UI.
+4. Link the audit docs as the current internal source of truth.
 
 Proof:
 
 1. [`README.md`](../../README.md)
-2. [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts)
-3. [`src/components/engine/TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx)
-4. [`src/lib/vedic/db.ts`](../../src/lib/vedic/db.ts)
+2. [`project-context.md`](../../project-context.md)
+3. [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts)
+4. [`src/components/engine/TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx)
+5. [`src/lib/vedic/db.ts`](../../src/lib/vedic/db.ts)
 
 ## 1.2 Repair Stale Playwright Specs Before Using Them As Proof
 
 Type: `Tests`
 Priority: `P0`
+Status: `not-started`
 
 Problem:
 
@@ -76,6 +96,7 @@ Action:
    [`lexical-ui.spec.ts`](../../lexical-ui.spec.ts)
    [`baraha-compatibility-ui.spec.ts`](../../baraha-compatibility-ui.spec.ts)
 2. Reclassify them as current proof only after they match runtime markup and behavior.
+3. Update [`04-feature-test-coverage.md`](./04-feature-test-coverage.md) after revalidation so the audit stays aligned.
 
 Proof:
 
@@ -87,6 +108,7 @@ Proof:
 
 Type: `Product Decision`
 Priority: `P0`
+Status: `not-started`
 
 Problem:
 
@@ -98,6 +120,10 @@ Action:
 2. Or reduce the route to an honest read-only reference page.
 3. Or remove/hide it from normal product surface.
 
+Dependency:
+
+1. Resolve this before investing in route-specific tests or refactors for `/reference`.
+
 Proof:
 
 1. [`src/app/reference/page.tsx`](../../src/app/reference/page.tsx)
@@ -107,6 +133,7 @@ Proof:
 
 Type: `Product Decision`
 Priority: `P0`
+Status: `not-started`
 
 Problem:
 
@@ -119,6 +146,10 @@ Action:
 2. Or downgrade the route to read-only reference/documentation.
 3. Remove fake edit/reset affordances if feature work is not planned.
 
+Dependency:
+
+1. Resolve this before adding tests or deeper UX polish for mapping customization.
+
 Proof:
 
 1. [`src/app/settings/mappings/page.tsx`](../../src/app/settings/mappings/page.tsx)
@@ -128,6 +159,7 @@ Proof:
 
 Type: `Cleanup`
 Priority: `P0`
+Status: `not-started`
 
 Candidates:
 
@@ -142,6 +174,10 @@ Action:
 1. Remove dead files if they are not planned.
 2. Otherwise move them into an explicit experimental/archive area and label them clearly.
 
+Dependency:
+
+1. Do this before large refactors so dead modules do not distort the new structure.
+
 Proof:
 
 1. [`01-system-audit.md`](./01-system-audit.md)
@@ -151,6 +187,7 @@ Proof:
 
 Type: `Cleanup`
 Priority: `P0`
+Status: `not-started`
 
 Problem:
 
@@ -161,6 +198,10 @@ Action:
 1. Introduce compatibility migration for old keys.
 2. Standardize naming in storage keys, comments, and user-facing copy.
 
+Dependency:
+
+1. Do this before expanding onboarding/session tests so new test fixtures target the stable key set.
+
 Proof:
 
 1. [`src/app/page.tsx`](../../src/app/page.tsx)
@@ -170,6 +211,7 @@ Proof:
 
 Type: `Tests`
 Priority: `P0`
+Status: `not-started`
 
 Problem:
 
@@ -189,10 +231,35 @@ Proof:
 1. [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts)
 2. [`04-feature-test-coverage.md`](./04-feature-test-coverage.md)
 
-## 1.8 Add Direct Segmentation Policy Tests
+## 1.8 Add Direct Tests For Session Orchestration
 
 Type: `Tests`
 Priority: `P0`
+Status: `not-started`
+
+Problem:
+
+1. Session behavior is product-critical, but key store-level operations do not have strong direct tests.
+
+Action:
+
+1. Add direct tests for:
+   `markSessionSaved`
+   `deleteSession`
+   `renameSession`
+   `resetSession`
+   `loadSessionSnapshot`
+
+Proof:
+
+1. [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts)
+2. [`04-feature-test-coverage.md`](./04-feature-test-coverage.md)
+
+## 1.9 Add Direct Segmentation Policy Tests
+
+Type: `Tests`
+Priority: `P0`
+Status: `not-started`
 
 Problem:
 
@@ -213,6 +280,7 @@ Proof:
 
 Type: `Refactor`
 Priority: `P1`
+Status: `not-started`
 
 Problem:
 
@@ -236,6 +304,7 @@ Proof:
 
 Type: `Refactor`
 Priority: `P1`
+Status: `not-started`
 
 Problem:
 
@@ -254,6 +323,7 @@ Proof:
 
 Type: `Refactor`
 Priority: `P1`
+Status: `not-started`
 
 Problem:
 
@@ -272,6 +342,7 @@ Proof:
 
 Type: `Performance`
 Priority: `P1`
+Status: `not-started`
 
 Problem:
 
@@ -292,6 +363,7 @@ Proof:
 
 Type: `Performance`
 Priority: `P1`
+Status: `not-started`
 
 Problem:
 
@@ -312,6 +384,7 @@ Proof:
 
 Type: `Tests`
 Priority: `P1`
+Status: `not-started`
 
 Problem:
 
@@ -326,10 +399,30 @@ Proof:
 1. [`session-management.spec.ts`](../../session-management.spec.ts)
 2. [`src/components/engine/TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx)
 
-## 2.7 Add Current UI Tests For Lexical Reset/Purge Controls
+## 2.7 Add Direct Tests For Reference State Logic
 
 Type: `Tests`
 Priority: `P1`
+Status: `not-started`
+
+Problem:
+
+1. Reference usage and category toggle state affect UX but are not directly covered.
+
+Action:
+
+1. Add tests for `incrementReferenceUsage` and `toggleReferenceCategory`.
+
+Proof:
+
+1. [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts)
+2. [`04-feature-test-coverage.md`](./04-feature-test-coverage.md)
+
+## 2.8 Add Current UI Tests For Lexical Reset/Purge Controls
+
+Type: `Tests`
+Priority: `P1`
+Status: `not-started`
 
 Problem:
 
@@ -347,28 +440,11 @@ Proof:
 1. [`lexical-ui.spec.ts`](../../lexical-ui.spec.ts)
 2. [`src/components/engine/TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx)
 
-## 2.8 Add Direct Tests For Reference State Logic
-
-Type: `Tests`
-Priority: `P1`
-
-Problem:
-
-1. Reference usage and category toggle state affect UX but are not directly covered.
-
-Action:
-
-1. Add tests for `incrementReferenceUsage` and `toggleReferenceCategory`.
-
-Proof:
-
-1. [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts)
-2. [`04-feature-test-coverage.md`](./04-feature-test-coverage.md)
-
 ## 2.9 Add Tests For Onboarding and Mobile Warning
 
 Type: `Tests`
 Priority: `P1`
+Status: `not-started`
 
 Problem:
 
@@ -385,10 +461,31 @@ Proof:
 2. [`src/app/welcome/page.tsx`](../../src/app/welcome/page.tsx)
 3. [`src/components/MobileOptimizationNotice.tsx`](../../src/components/MobileOptimizationNotice.tsx)
 
-## 2.10 Separate Harvesting Jobs From Regression Specs
+## 2.10 Add Direct Tests For Autosave Timing and Persistence Boundaries
+
+Type: `Tests`
+Priority: `P1`
+Status: `not-started`
+
+Problem:
+
+1. Autosave exists and matters, but current proof is indirect and timing behavior is not pinned down.
+
+Action:
+
+1. Add tests for debounce/timer behavior.
+2. Add tests for write boundaries so unchanged state does not cause unnecessary persistence writes.
+
+Proof:
+
+1. [`src/components/engine/TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx)
+2. [`04-feature-test-coverage.md`](./04-feature-test-coverage.md)
+
+## 2.11 Separate Harvesting Jobs From Regression Specs
 
 Type: `Cleanup`
 Priority: `P1`
+Status: `not-started`
 
 Problem:
 
@@ -405,10 +502,11 @@ Proof:
 2. [`harvest_shiva_words.spec.ts`](../../harvest_shiva_words.spec.ts)
 3. [`harvest_combined_words.spec.ts`](../../harvest_combined_words.spec.ts)
 
-## 2.11 Isolate Autosave Into A Dedicated Hook
+## 2.12 Isolate Autosave Into A Dedicated Hook
 
 Type: `Refactor`
 Priority: `P1`
+Status: `not-started`
 
 Problem:
 
@@ -425,10 +523,11 @@ Proof:
 1. [`src/components/engine/TransliterationEngine.tsx`](../../src/components/engine/TransliterationEngine.tsx)
 2. [`04-feature-test-coverage.md`](./04-feature-test-coverage.md)
 
-## 2.12 Centralize Segmentation Rules
+## 2.13 Centralize Segmentation Rules
 
 Type: `Refactor`
 Priority: `P1`
+Status: `not-started`
 
 Problem:
 
@@ -450,6 +549,7 @@ Proof:
 
 Type: `Product Decision`
 Priority: `P2`
+Status: `not-started`
 
 Problem:
 
@@ -469,6 +569,7 @@ Proof:
 
 Type: `Product Decision`
 Priority: `P2`
+Status: `not-started`
 
 Problem:
 
@@ -488,6 +589,7 @@ Proof:
 
 Type: `Performance`
 Priority: `P2`
+Status: `not-started`
 
 Problem:
 
@@ -507,6 +609,7 @@ Proof:
 
 Type: `Performance`
 Priority: `P2`
+Status: `not-started`
 
 Problem:
 
@@ -526,6 +629,7 @@ Proof:
 
 Type: `Performance`
 Priority: `P2`
+Status: `not-started`
 
 Problem:
 
@@ -544,6 +648,7 @@ Proof:
 
 Type: `Refactor`
 Priority: `P2`
+Status: `not-started`
 
 Problem:
 
@@ -564,18 +669,21 @@ Proof:
 ## Phase 1
 
 1. Reconcile README.
-2. Repair stale Playwright specs.
-3. Decide fate of `/reference`.
-4. Decide fate of mapping customization UI.
-5. Remove/archive dead modules.
-6. Fix naming drift.
+2. Reconcile `project-context.md`.
+3. Repair stale Playwright specs.
+4. Decide fate of `/reference`.
+5. Decide fate of mapping customization UI.
+6. Remove/archive dead modules.
+7. Fix naming drift.
 
 ## Phase 2
 
 1. Add block-operation tests.
-2. Add segmentation tests.
-3. Add current session/lexical/onboarding/mobile tests.
-4. Separate harvesting jobs from regression specs.
+2. Add session-orchestration tests.
+3. Add segmentation tests.
+4. Add current session/lexical/onboarding/mobile tests.
+5. Add autosave timing tests.
+6. Separate harvesting jobs from regression specs.
 
 ## Phase 3
 
@@ -598,5 +706,5 @@ If only a small first pass is funded, this is the best sequence:
 1. Fix documentation drift.
 2. Repair stale specs.
 3. Remove dead and misleading surfaces.
-4. Add direct tests for block operations and segmentation.
+4. Add direct tests for block operations, sessions, and segmentation.
 5. Then start structural refactors.

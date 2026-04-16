@@ -12,7 +12,7 @@ Sanskrit Keyboard is a transliteration workspace for scholarly Sanskrit and Vedi
 - keep a reference drawer available for mappings and shortcuts
 - copy source or rendered output in several formats
 
-The app is not a generic editor. It is a transliteration-focused tool with a strong read/edit split and session persistence.
+The app is not a generic editor. It is a transliteration-focused tool with a strong read/edit split and browser-local session persistence.
 
 ## 2. Tech Stack
 
@@ -22,7 +22,7 @@ The app is not a generic editor. It is a transliteration-focused tool with a str
 - Zustand for app state
 - Tailwind CSS 4
 - Playwright for browser regression checks
-- Dexie is present in dependencies, used for some persistence tasks
+- Dexie is present in dependencies, but the current runtime persistence path is `localStorage`
 
 ## 3. Entry Points And Routes
 
@@ -33,9 +33,9 @@ The app is not a generic editor. It is a transliteration-focused tool with a str
 
 ### Other routes
 
-- `app/src/app/reference/page.tsx`: Full-page reference guide.
-- `app/src/app/welcome/page.tsx`: Redesigned educational walkthrough for new users.
-- `app/src/app/settings/mappings/page.tsx`: Input scheme configuration.
+- `app/src/app/reference/page.tsx`: Partial reference route.
+- `app/src/app/welcome/page.tsx`: Onboarding walkthrough for new users.
+- `app/src/app/settings/mappings/page.tsx`: Partial input scheme/settings route.
 
 ## 4. Current Workspace Layout
 
@@ -80,7 +80,7 @@ It manages:
 
 Important view modes:
 
-- `focus`: Tight editing focus
+- `focus`: Implemented in the store and document surface, but not exposed from the current workspace shell
 - `read`: Standard document reading
 - `review`: Reviewing changes
 - `immersive`: Full-height reading experience
@@ -178,12 +178,14 @@ Word predictions are driven by the `runtimeLexicon` and appear in the composer. 
 
 ### Audit and Inspection
 
-Specialized components for text integrity:
-- `UnicodeInspector`: Deep inspection of character codes
+Current audit and verification tools:
+
+- `docs/project-audit/`: source-backed system audit, file inventory, improvement opportunities, feature coverage, and action backlog
+- Playwright specs and transliteration scripts: runtime and logic verification
 
 ## 10. Session And Persistence
 
-The app persists workspace state in localStorage.
+The app persists workspace state in browser `localStorage`.
 
 It stores:
 
@@ -212,7 +214,6 @@ The most important files for agent work are:
 - `app/src/components/engine/WordPredictionTray.tsx`
 - `app/src/components/engine/ShortcutHUD.tsx`
 - `app/src/components/ScriptText.tsx`
-- `app/src/components/audit/UnicodeInspector.tsx`
 - `app/src/lib/vedic/mapping.ts`
 - `app/src/lib/vedic/utils.ts`
 - `app/src/store/useFlowStore.ts`

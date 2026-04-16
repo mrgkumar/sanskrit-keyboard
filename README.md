@@ -2,9 +2,15 @@
 
 ![Sanskrit Keyboard Screenshot](docs/images/screenshot.png)
 
-**Sanskrit Keyboard** is a high-performance, scholarly transliteration workspace designed for researchers, students, and practitioners of Sanskrit and Vedic texts. It provides a seamless "invisible" typing experience, converting ITRANS input into 100% accurate Unicode output in Devanagari, Roman (IAST/Baraha), and Tamil scripts.
+**Sanskrit Keyboard** is a transliteration workspace for scholarly Sanskrit and Vedic text entry. The main workflow is:
 
-Built with **Next.js 15**, **React 19**, and **Tailwind CSS 4**, it prioritizes flow-state typing and cryptographic precision for complex Vedic swaras and marks.
+- type canonical or Baraha-compatible ITRANS
+- see live output in Roman, Devanagari, or Tamil
+- edit chunk-by-chunk for longer passages
+- keep reference mappings and predictions close to the composer
+- copy source or rendered output in several formats
+
+Built with **Next.js 15**, **React 19**, and **Tailwind CSS 4**, it prioritizes low-friction typing and careful transliteration behavior for Vedic marks and precision rendering.
 
 ---
 
@@ -20,9 +26,9 @@ Experience the application live: **[https://mrgkumar.github.io/sanskrit-keyboard
 - **🎼 Vedic Support:** Full support for Vedic accents (svaritas, anudattas) and rare marks (jihvamuliya, upadhmaniya).
 - **🎭 Multi-Script Preview:** Side-by-side or stacked "Compare Mode" to view multiple scripts simultaneously.
 - **🧠 Intelligent Predictions:** Context-aware word suggestions that learn from your typing patterns.
-- **🛠️ Normalization & Cleanup:** Dedicated "OCR Fix" mode for correcting and normalizing digitized Sanskrit texts.
+- **🛠️ Normalization & Cleanup:** Devanagari paste normalization and Tamil precision recovery for digitized text.
 - **📜 Document Workspace:** Immersive read/edit split optimized for long-form passages and mantras.
-- **📂 Session Persistence:** Automatic saving and management of your workspaces using LocalStorage.
+- **📂 Session Persistence:** Automatic saving and management of your workspaces using `localStorage`.
 
 ---
 
@@ -32,8 +38,8 @@ Experience the application live: **[https://mrgkumar.github.io/sanskrit-keyboard
 - **Library:** [React 19](https://react.dev/)
 - **Styling:** [Tailwind CSS 4](https://tailwindcss.com/)
 - **State Management:** [Zustand](https://zustand-demo.pmnd.rs/)
-- **Persistence:** [Dexie.js](https://dexie.org/) (IndexedDB)
-- **Testing:** [Playwright](https://playwright.dev/) (E2E) & custom algorithmic audit scripts.
+- **Persistence:** Browser `localStorage` for sessions and lexical learning
+- **Testing:** [Playwright](https://playwright.dev/) (E2E) plus script-level audit checks
 
 ---
 
@@ -73,6 +79,7 @@ Open [http://localhost:3000](http://localhost:3000) to see the application in ac
   - `mapping.ts`: The definitive scholarly mapping table (Source of Truth).
   - `utils.ts`: Transliteration logic and script normalization.
 - **`src/store/`**: Global state management via Zustand (`useFlowStore`).
+- **`docs/project-audit/`**: Source-backed audit notes, improvement opportunities, feature coverage, and backlog.
 
 ---
 
@@ -81,10 +88,13 @@ Open [http://localhost:3000](http://localhost:3000) to see the application in ac
 We take precision seriously. All changes to the engine or UI must be validated.
 
 ```bash
-# Run transliteration accuracy tests
-npm run test:transliteration
+# Run targeted reverse-transliteration checks
+npm run test-detransliterate
 
-# Run full UI regression suite (requires Playwright)
+# Run the sampled reverse-transliteration check
+npm run test-detransliterate-sampled
+
+# Run the full browser regression suite
 npx playwright test
 ```
 
@@ -96,8 +106,8 @@ Contributions are welcome! Whether you're fixing a typo in the mapping, improvin
 
 1.  **Fork the repo** and create your branch from `main`.
 2.  **Check the mapping**: If you're adding characters, update `src/lib/vedic/mapping.ts`.
-3.  **Run tests**: Ensure `npm run test:transliteration` passes.
-4.  **Style**: We use Tailwind CSS 4 and follow a clean, "scholarly" aesthetic.
+3.  **Run tests**: Use `npm run test-detransliterate`, `npm run test-detransliterate-sampled`, and relevant Playwright specs for UI work.
+4.  **Style**: We use Tailwind CSS 4 and follow a clean, scholarly aesthetic.
 5.  **Submit a PR**: Provide a clear description of your changes and any relevant screenshots.
 
 ---
