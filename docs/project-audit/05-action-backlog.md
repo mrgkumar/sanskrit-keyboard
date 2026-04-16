@@ -319,7 +319,7 @@ Trace:
 
 Type: `Refactor`
 Priority: `P1`
-Status: `not-started`
+Status: `committed`
 
 Problem:
 
@@ -333,11 +333,20 @@ Action:
    `blockEditing`
    `segmentation`
    `lexicalLearning`
+2. Keep `useFlowStore.ts` as the composition layer while the reusable helper logic moves out.
 
 Proof:
 
 1. [`src/store/useFlowStore.ts`](../../src/store/useFlowStore.ts)
 2. [`03-improvement-opportunities.md`](./03-improvement-opportunities.md)
+3. [`src/store/flowStoreDisplay.ts`](../../src/store/flowStoreDisplay.ts)
+4. [`src/store/flowStoreLexical.ts`](../../src/store/flowStoreLexical.ts)
+5. [`src/store/flowStoreSegmentation.ts`](../../src/store/flowStoreSegmentation.ts)
+6. [`src/store/flowStoreSessions.ts`](../../src/store/flowStoreSessions.ts)
+
+Trace:
+
+1. `3e4152f` `refactor: split flow store helpers`
 
 ## 2.2 Split `StickyTopComposer.tsx`
 
