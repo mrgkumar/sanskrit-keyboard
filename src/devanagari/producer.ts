@@ -21,6 +21,7 @@ const mergeRequest = (config: ProducerConfig, request: BatchRequest) => {
   const includeExtendedConsonants = request.includeExtendedConsonants ?? config.includeExtendedConsonants ?? false;
   const includeGeneralCombiningMarks =
     request.includeGeneralCombiningMarks ?? config.includeGeneralCombiningMarks ?? false;
+  const includeSymbols = request.includeSymbols ?? config.includeSymbols ?? false;
   const templates = resolveTemplateFamilies(request.templates ?? config.templates, includeVedic);
 
   return {
@@ -31,6 +32,7 @@ const mergeRequest = (config: ProducerConfig, request: BatchRequest) => {
     includeVedic,
     includeExtendedConsonants,
     includeGeneralCombiningMarks,
+    includeSymbols,
     templates,
   };
 };
@@ -41,8 +43,11 @@ class StreamProducerSession {
   private recorder: CorpusRecorder | null = null;
   private replay: CorpusReplay | null = null;
   private activeRequestKey = '';
+  private readonly config: ProducerConfig;
 
-  constructor(private readonly config: ProducerConfig) {}
+  constructor(config: ProducerConfig) {
+    this.config = config;
+  }
 
   private resolveRecordDir() {
     return this.config.recordDir ?? join(process.cwd(), 'output');
@@ -69,6 +74,7 @@ class StreamProducerSession {
         includeVedic: request.includeVedic,
         includeExtendedConsonants: request.includeExtendedConsonants,
         includeGeneralCombiningMarks: request.includeGeneralCombiningMarks,
+        includeSymbols: request.includeSymbols,
         ordered: request.ordered,
         seed: request.seed,
       },
@@ -86,6 +92,7 @@ class StreamProducerSession {
           includeExtendedConsonants: request.includeExtendedConsonants,
           includeVedic: request.includeVedic,
           includeGeneralCombiningMarks: request.includeGeneralCombiningMarks,
+          includeSymbols: request.includeSymbols,
         }, totalEmittedBatches, replayFiles)
       );
     }

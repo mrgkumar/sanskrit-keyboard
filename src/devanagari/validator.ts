@@ -10,6 +10,7 @@ const isBindu = (char: string, inventories: CuratedInventories) => inventories.b
 const isVedic = (char: string, inventories: CuratedInventories) => inventories.vedicSigns.includes(char);
 const isGeneralCombining = (char: string, inventories: CuratedInventories) =>
   inventories.combiningMarks.includes(char);
+const isSymbol = (char: string, inventories: CuratedInventories) => inventories.symbols.includes(char);
 
 export interface ValidationOptions {
   request: BatchRequest;
@@ -66,10 +67,18 @@ export const validateOrthography = (text: string, options: ValidationOptions) =>
         return { valid: false, reason: 'mark-leading-invalid' };
       }
     }
+
+    if (isSymbol(current, inventories) && index === 0) {
+      return { valid: false, reason: 'symbol-leading-invalid' };
+    }
   }
 
   if (!request.includeVedic && chars.some((char) => isVedic(char, inventories))) {
     return { valid: false, reason: 'vedic-disabled' };
+  }
+
+  if (!request.includeSymbols && chars.some((char) => isSymbol(char, inventories))) {
+    return { valid: false, reason: 'symbol-disabled' };
   }
 
   return { valid: true as const };

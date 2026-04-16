@@ -12,8 +12,10 @@ export class CorpusReplay {
   private readonly batches: BatchResult[];
   private cursor = 0;
   readonly manifest: CorpusManifest;
+  private readonly replayDir: string;
 
-  constructor(private readonly replayDir: string) {
+  constructor(replayDir: string) {
+    this.replayDir = replayDir;
     this.manifest = readJson<CorpusManifest>(join(replayDir, 'manifest.json'));
     const files = this.manifest.replayFiles ?? [];
     this.batches = files.map((file) => {

@@ -17,6 +17,7 @@ export interface CorpusManifest {
     includeExtendedConsonants: boolean;
     includeVedic: boolean;
     includeGeneralCombiningMarks: boolean;
+    includeSymbols: boolean;
   };
   sourceInventoryHash: string;
   totalEmittedBatches?: number;
@@ -33,6 +34,7 @@ export const buildManifest = (
     includeExtendedConsonants: boolean;
     includeVedic: boolean;
     includeGeneralCombiningMarks: boolean;
+    includeSymbols: boolean;
   },
   totalEmittedBatches?: number,
   replayFiles?: string[]
@@ -49,6 +51,7 @@ export const buildManifest = (
     includeExtendedConsonants: config.includeExtendedConsonants,
     includeVedic: config.includeVedic,
     includeGeneralCombiningMarks: config.includeGeneralCombiningMarks,
+    includeSymbols: config.includeSymbols,
   },
   sourceInventoryHash: hashObject(SOURCE_INVENTORY),
   totalEmittedBatches,

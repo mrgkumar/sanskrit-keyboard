@@ -13,11 +13,15 @@ export class CorpusRecorder {
   private readonly recordingsDir: string;
   private readonly files: RecordedBatchFile[] = [];
   private emittedBatches = 0;
+  private readonly recordDir: string;
+  private readonly manifestFactory: (totalEmittedBatches?: number, replayFiles?: string[]) => CorpusManifest;
 
   constructor(
-    private readonly recordDir: string,
-    private readonly manifestFactory: (totalEmittedBatches?: number, replayFiles?: string[]) => CorpusManifest
+    recordDir: string,
+    manifestFactory: (totalEmittedBatches?: number, replayFiles?: string[]) => CorpusManifest
   ) {
+    this.recordDir = recordDir;
+    this.manifestFactory = manifestFactory;
     this.recordingsDir = join(recordDir, 'recordings');
     ensureDir(this.recordingsDir);
   }

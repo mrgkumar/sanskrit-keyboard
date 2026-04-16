@@ -3,8 +3,11 @@ export class BoundedAsyncQueue<T> {
   private readonly takers: Array<(value: T | null) => void> = [];
   private readonly pushWaiters: Array<() => void> = [];
   private closed = false;
+  readonly highWaterMark: number;
 
-  constructor(public readonly highWaterMark: number) {}
+  constructor(highWaterMark: number) {
+    this.highWaterMark = highWaterMark;
+  }
 
   get size() {
     return this.items.length;

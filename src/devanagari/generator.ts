@@ -17,13 +17,29 @@ const digitsFromIndex = (index: number, radices: number[]) => {
   return digits;
 };
 
-const makeEntry = (
+const deriveCategoriesUsed = (text: string, inventories: CuratedInventories) =>
+  uniqueSorted(
+    Array.from(text).map((char) => {
+      if (inventories.consonants.includes(char)) return 'consonant';
+      if (inventories.vowels.includes(char)) return 'independentVowel';
+      if (inventories.dependentVowelSigns.includes(char)) return 'dependentVowelSign';
+      if (char === inventories.virama) return 'virama';
+      if (char === inventories.nukta) return 'nukta';
+      if (inventories.binduSigns.includes(char)) return 'binduSign';
+      if (inventories.vedicSigns.includes(char)) return 'vedicSign';
+      if (inventories.symbols.includes(char)) return 'symbol';
+      if (inventories.combiningMarks.includes(char)) return 'combiningMarkGeneral';
+      return 'excluded';
+    })
+  );
+
+export const materializeEntry = (
   text: string,
   templateId: string,
   partition: PartitionDescriptor,
   seed: number,
-  categoriesUsed: string[],
-  notes: string[]
+  inventories: CuratedInventories,
+  notes: string[] = ['valid']
 ): CorpusEntry => {
   const codePointsHex = codePoints(text).map((codePoint) => `U+${codePoint.toString(16).toUpperCase().padStart(4, '0')}`);
   return {
@@ -34,7 +50,7 @@ const makeEntry = (
     normalizedNFD: text.normalize('NFD'),
     codePointsHex,
     templateId,
-    categoriesUsed: uniqueSorted(categoriesUsed),
+    categoriesUsed: deriveCategoriesUsed(text, inventories),
     hasVirama: text.includes('्'),
     hasMatra: /[ािीुूृॄॢॣॅॆेैॉॊोौऺऻॎॏॕॖॗ]/u.test(text),
     hasIndependentVowel: /^[ऄअआइईउऊऋॠऌॡऍऎएऐऑऒओऔॲॳॴॵॶॷ]/u.test(text),
@@ -46,19 +62,79 @@ const makeEntry = (
   };
 };
 
-const getSuffixPool = (inventories: CuratedInventories, context: GenerationContext, family: PartitionDescriptor['family'], baseKind: PartitionDescriptor['baseKind']) => {
-  const suffixes = [...inventories.binduSigns];
-  if (family === 'plain' && baseKind === 'consonant') {
-    suffixes.unshift(inventories.nukta);
-  }
-  if (context.includeGeneralCombiningMarks) {
-    suffixes.push(...inventories.combiningMarks);
-  }
-  return suffixes.length > 0 ? suffixes : inventories.binduSigns;
+const makeEntry = (
+  text: string,
+  templateId: string,
+  partition: PartitionDescriptor,
+  seed: number,
+  inventories: CuratedInventories,
+  notes: string[]
+): CorpusEntry => {
+  return materializeEntry(text, templateId, partition, seed, inventories, notes);
 };
 
-const getVedicPool = (inventories: CuratedInventories, context: GenerationContext) =>
-  context.includeVedic ? [...inventories.vedicSigns] : [];
+const buildSlotPools = (
+  partition: PartitionDescriptor,
+  context: GenerationContext,
+  inventories: CuratedInventories
+) => {
+  const remainingSlots = Math.max(0, context.length - 1);
+
+  if (partition.family === 'plain') {
+    return Array.from({ length: remainingSlots }, () => inventories.consonants);
+  }
+
+  if (partition.family === 'virama') {
+    if (context.length < 3) {
+      return [];
+    }
+
+    return [
+      [inventories.virama],
+      inventories.consonants,
+      ...Array.from({ length: context.length - 3 }, () => inventories.consonants),
+    ];
+  }
+
+  if (partition.family === 'matra') {
+    if (context.length < 2) {
+      return [];
+    }
+
+    return [
+      inventories.dependentVowelSigns,
+      ...Array.from({ length: context.length - 2 }, () => inventories.consonants),
+    ];
+  }
+
+  if (partition.family === 'ending') {
+    if (remainingSlots === 0) {
+      return [];
+    }
+
+    return [
+      ...Array.from({ length: Math.max(0, remainingSlots - 1) }, () => inventories.consonants),
+      context.includeSymbols && inventories.symbols.length > 0
+        ? [...inventories.binduSigns, ...inventories.symbols]
+        : inventories.binduSigns,
+    ];
+  }
+
+  if (!context.includeVedic || inventories.vedicSigns.length === 0) {
+    return [];
+  }
+
+  if (remainingSlots === 0) {
+    return [inventories.vedicSigns];
+  }
+
+  return [
+    ...Array.from({ length: Math.max(0, remainingSlots - 1) }, () => inventories.consonants),
+    inventories.vedicSigns,
+  ];
+};
+
+const getRadices = (slotPools: string[][]) => slotPools.map((pool) => pool.length);
 
 const buildTextForPartition = (
   partition: PartitionDescriptor,
@@ -68,53 +144,15 @@ const buildTextForPartition = (
 ) => {
   const basePool = partition.baseKind === 'consonant' ? inventories.consonants : inventories.vowels;
   const base = basePool[partition.baseIndex];
-  const family = partition.family;
-  const remainingSlots =
-    family === 'virama' ? context.length - 3 : family === 'matra' ? context.length - 2 : family === 'vedic' ? context.length - 3 : context.length - 1;
+  const slotPools = buildSlotPools(partition, context, inventories);
 
-  if (remainingSlots < 0) {
+  if (slotPools.length === 0) {
     return null;
   }
 
-  if (family === 'virama') {
-    const followerPool = inventories.consonants;
-    const suffixPool = getSuffixPool(inventories, context, family, partition.baseKind);
-    const radices = [followerPool.length, ...Array.from({ length: remainingSlots }, () => suffixPool.length)];
-    const digits = digitsFromIndex(index, radices);
-    const follower = followerPool[digits[0]];
-    const suffixes = digits.slice(1).map((digit) => suffixPool[digit]);
-    return stableJoin([base, inventories.virama, follower, ...suffixes]);
-  }
-
-  if (family === 'matra') {
-    const matraPool = inventories.dependentVowelSigns;
-    const suffixPool = getSuffixPool(inventories, context, family, partition.baseKind);
-    const radices = [matraPool.length, ...Array.from({ length: remainingSlots }, () => suffixPool.length)];
-    const digits = digitsFromIndex(index, radices);
-    const matra = matraPool[digits[0]];
-    const suffixes = digits.slice(1).map((digit) => suffixPool[digit]);
-    return stableJoin([base, matra, ...suffixes]);
-  }
-
-  if (family === 'vedic') {
-    const suffixPool = getSuffixPool(inventories, context, family, partition.baseKind);
-    const vedicPool = getVedicPool(inventories, context);
-    const trailingCount = 2;
-    const prefixCount = context.length - trailingCount - 1;
-    if (prefixCount < 0 || vedicPool.length === 0) {
-      return null;
-    }
-    const radices = [...Array.from({ length: prefixCount }, () => suffixPool.length), vedicPool.length, vedicPool.length];
-    const digits = digitsFromIndex(index, radices);
-    const suffixes = digits.slice(0, prefixCount).map((digit) => suffixPool[digit]);
-    const vedicTail = digits.slice(prefixCount).map((digit) => vedicPool[digit]);
-    return stableJoin([base, ...suffixes, ...vedicTail]);
-  }
-
-  const suffixPool = getSuffixPool(inventories, context, family, partition.baseKind);
-  const radices = Array.from({ length: remainingSlots }, () => suffixPool.length);
+  const radices = getRadices(slotPools);
   const digits = digitsFromIndex(index, radices);
-  const suffixes = digits.map((digit) => suffixPool[digit]);
+  const suffixes = digits.map((digit, slotIndex) => slotPools[slotIndex][digit]);
   return stableJoin([base, ...suffixes]);
 };
 
@@ -125,27 +163,12 @@ export const estimatePartitionCount = (
   context: GenerationContext,
   inventories: CuratedInventories
 ) => {
-  const suffixPool = getSuffixPool(inventories, context, partition.family, partition.baseKind);
-  if (partition.family === 'virama') {
-    return product([
-      inventories.consonants.length,
-      ...Array.from({ length: Math.max(0, context.length - 3) }, () => suffixPool.length),
-    ]);
+  const slotPools = buildSlotPools(partition, context, inventories);
+  if (slotPools.length === 0) {
+    return 0;
   }
-  if (partition.family === 'matra') {
-    return product([
-      inventories.dependentVowelSigns.length,
-      ...Array.from({ length: Math.max(0, context.length - 2) }, () => suffixPool.length),
-    ]);
-  }
-  if (partition.family === 'vedic') {
-    return product([
-      ...Array.from({ length: Math.max(0, context.length - 3) }, () => suffixPool.length),
-      inventories.vedicSigns.length,
-      inventories.vedicSigns.length,
-    ]);
-  }
-  return product(Array.from({ length: Math.max(0, context.length - 1) }, () => suffixPool.length));
+
+  return product(getRadices(slotPools));
 };
 
 export const generatePartitionBatch = (
@@ -172,24 +195,7 @@ export const generatePartitionBatch = (
       continue;
     }
 
-    const entry = makeEntry(
-      text,
-      partitionTemplateId(partition),
-      partition,
-      context.seed,
-      Array.from(text).map((char) => {
-        if (inventories.consonants.includes(char)) return 'consonant';
-        if (inventories.vowels.includes(char)) return 'independentVowel';
-        if (inventories.dependentVowelSigns.includes(char)) return 'dependentVowelSign';
-        if (char === inventories.virama) return 'virama';
-        if (char === inventories.nukta) return 'nukta';
-        if (inventories.binduSigns.includes(char)) return 'binduSign';
-        if (inventories.vedicSigns.includes(char)) return 'vedicSign';
-        if (inventories.combiningMarks.includes(char)) return 'combiningMarkGeneral';
-        return 'excluded';
-      }),
-      ['valid']
-    );
+    const entry = makeEntry(text, partitionTemplateId(partition), partition, context.seed, inventories, ['valid']);
     items.push(entry);
   }
 
@@ -207,6 +213,7 @@ export const generatePartitionBatch = (
     partitionOrdinal: partition.ordinal,
     batchIndex: cursor.batchIndex,
     batchId: `${partition.id}:${cursor.batchIndex.toString().padStart(6, '0')}`,
+    templateId: partitionTemplateId(partition),
     items,
     hasMore,
     nextCursor,

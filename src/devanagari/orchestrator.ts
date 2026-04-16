@@ -3,8 +3,8 @@ import { join } from 'node:path';
 import { BoundedAsyncQueue } from './queue.ts';
 import type { CuratedInventories } from './curatedInventories.ts';
 import { buildPartitions, type PartitionDescriptor } from './partition.ts';
-import type { BatchCursor, BatchRequest, GenerationContext, GeneratedBatch } from './types.ts';
-import { generatePartitionBatch } from './generator.ts';
+import type { BatchCursor, BatchRequest, GenerationContext, GeneratedBatch, WorkerGeneratedBatch } from './types.ts';
+import { generatePartitionBatch, materializeEntry } from './generator.ts';
 
 interface SessionJob {
   partition: PartitionDescriptor;
@@ -33,16 +33,17 @@ export class CorpusOrchestrator {
   private closed = false;
   private fatalError: Error | null = null;
   private activeJobs = 0;
+  private readonly maxInflightJobs: number;
+  private readonly context: GenerationContext;
+  private readonly inventories: CuratedInventories;
 
-  constructor(
-    private readonly context: GenerationContext,
-    private readonly inventories: CuratedInventories,
-    queueHighWaterMark: number,
-    workerCount: number
-  ) {
+  constructor(context: GenerationContext, inventories: CuratedInventories, queueHighWaterMark: number, workerCount: number) {
+    this.context = context;
+    this.inventories = inventories;
     this.queue = new BoundedAsyncQueue<GeneratedBatch>(queueHighWaterMark);
     this.workerCount = Math.max(1, workerCount);
     this.useWorkers = this.workerCount > 1;
+    this.maxInflightJobs = this.workerCount;
 
     const partitions = buildPartitions(context, inventories);
     partitions.forEach((partition) => {
@@ -62,14 +63,13 @@ export class CorpusOrchestrator {
         const state: WorkerState = { worker, busy: false };
         this.workers.push(state);
         worker.on('message', (message) => {
-          void this.handleWorkerMessage(state, message as GeneratedBatch | { error: string });
+          void this.handleWorkerMessage(state, message as WorkerGeneratedBatch | { error: string });
         });
         worker.on('error', (error) => {
           this.fail(error instanceof Error ? error : new Error(String(error)));
         });
       }
     }
-
   }
 
   private get nextJob(): SessionJob | null {
@@ -112,6 +112,9 @@ export class CorpusOrchestrator {
       if (this.closed || this.paused || this.fatalError) {
         return;
       }
+      if (this.activeJobs >= this.maxInflightJobs) {
+        return;
+      }
       if (state.busy) {
         continue;
       }
@@ -137,19 +140,46 @@ export class CorpusOrchestrator {
       includeVedic: this.context.includeVedic,
       includeExtendedConsonants: this.context.includeExtendedConsonants,
       includeGeneralCombiningMarks: this.context.includeGeneralCombiningMarks,
+      includeSymbols: this.context.includeSymbols,
       ordered: this.context.ordered,
       seed: this.context.seed,
     };
   }
 
-  private async handleWorkerMessage(state: WorkerState, message: GeneratedBatch | { error: string }) {
-    state.busy = false;
-    this.activeJobs = Math.max(0, this.activeJobs - 1);
+  private async handleWorkerMessage(state: WorkerState, message: WorkerGeneratedBatch | { error: string }) {
     if ('error' in message) {
+      state.busy = false;
+      this.activeJobs = Math.max(0, this.activeJobs - 1);
       this.fail(new Error(message.error));
       return;
     }
-    await this.handleGeneratedResult(message);
+    const partition = this.partitionsById.get(message.partitionId);
+    if (!partition) {
+      this.fail(new Error(`Unknown partition: ${message.partitionId}`));
+      return;
+    }
+
+    const result: GeneratedBatch = {
+      partitionId: message.partitionId,
+      partitionOrdinal: message.partitionOrdinal,
+      batchIndex: message.batchIndex,
+      batchId: message.batchId,
+      templateId: message.templateId,
+      items: message.items.map((item) =>
+        materializeEntry(item.text, message.templateId, partition, this.context.seed, this.inventories)
+      ),
+      hasMore: message.hasMore,
+      nextCursor: message.nextCursor,
+    };
+    try {
+      await this.handleGeneratedResult(result);
+    } catch (error) {
+      this.fail(error instanceof Error ? error : new Error(String(error)));
+      return;
+    } finally {
+      state.busy = false;
+      this.activeJobs = Math.max(0, this.activeJobs - 1);
+    }
     this.requestDispatch();
   }
 
@@ -164,10 +194,15 @@ export class CorpusOrchestrator {
     if (result.hasMore && result.nextCursor) {
       const partition = this.partitionsById.get(result.partitionId);
       if (partition) {
-        this.pendingJobs.push({
+        const nextJob: SessionJob = {
           partition,
           cursor: result.nextCursor,
-        });
+        };
+        if (this.context.ordered) {
+          this.pendingJobs.unshift(nextJob);
+        } else {
+          this.pendingJobs.push(nextJob);
+        }
       }
     }
 

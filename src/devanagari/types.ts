@@ -74,6 +74,7 @@ export interface BatchRequest {
   includeVedic?: boolean;
   includeExtendedConsonants?: boolean;
   includeGeneralCombiningMarks?: boolean;
+  includeSymbols?: boolean;
   ordered?: boolean;
   seed?: number;
 }
@@ -129,7 +130,23 @@ export interface GeneratedBatch {
   partitionOrdinal: number;
   batchIndex: number;
   batchId: string;
+  templateId: string;
   items: CorpusEntry[];
+  hasMore: boolean;
+  nextCursor?: BatchCursor;
+}
+
+export interface WorkerBatchItem {
+  text: string;
+}
+
+export interface WorkerGeneratedBatch {
+  partitionId: string;
+  partitionOrdinal: number;
+  batchIndex: number;
+  batchId: string;
+  templateId: string;
+  items: WorkerBatchItem[];
   hasMore: boolean;
   nextCursor?: BatchCursor;
 }
@@ -141,6 +158,7 @@ export interface GenerationContext {
   includeVedic: boolean;
   includeExtendedConsonants: boolean;
   includeGeneralCombiningMarks: boolean;
+  includeSymbols: boolean;
   ordered: boolean;
   seed: number;
 }

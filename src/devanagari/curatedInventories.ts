@@ -11,12 +11,14 @@ export interface CuratedInventories {
   binduSigns: string[];
   vedicSigns: string[];
   combiningMarks: string[];
+  symbols: string[];
 }
 
 export interface CuratedInventoryOptions {
   includeExtendedConsonants?: boolean;
   includeVedic?: boolean;
   includeGeneralCombiningMarks?: boolean;
+  includeSymbols?: boolean;
 }
 
 const uniq = (values: string[]) => [...new Set(values)];
@@ -33,6 +35,7 @@ export const buildCuratedInventories = (
   const dependentVowelSigns = uniq(SOURCE_INVENTORY.dependentVowelSigns);
   const binduSigns = uniq(SOURCE_INVENTORY.binduSigns);
   const vedicSigns = options.includeVedic ? uniq(SOURCE_INVENTORY.vedicSigns) : [];
+  const symbols = options.includeSymbols ? uniq(SOURCE_INVENTORY.symbols) : [];
   const combiningMarks = options.includeGeneralCombiningMarks
     ? uniq(
         report.nonDevanagariCombiningMarks.length > 0
@@ -55,5 +58,6 @@ export const buildCuratedInventories = (
     binduSigns,
     vedicSigns,
     combiningMarks,
+    symbols,
   };
 };

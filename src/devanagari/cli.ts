@@ -34,6 +34,7 @@ const main = async () => {
     includeExtendedConsonants: toBoolean(args['include-extended-consonants'], false),
     includeVedic: toBoolean(args['include-vedic'], false),
     includeGeneralCombiningMarks: toBoolean(args['include-general-combining-marks'], false),
+    includeSymbols: toBoolean(args['include-symbols'], false),
     recordDir: typeof args['record-dir'] === 'string' ? join(process.cwd(), String(args['record-dir'])) : undefined,
     replayDir: typeof args['replay-dir'] === 'string' ? join(process.cwd(), String(args['replay-dir'])) : undefined,
     templates:
@@ -60,6 +61,7 @@ const main = async () => {
         includeVedic: producerConfig.includeVedic,
         includeExtendedConsonants: producerConfig.includeExtendedConsonants,
         includeGeneralCombiningMarks: producerConfig.includeGeneralCombiningMarks,
+        includeSymbols: producerConfig.includeSymbols,
         ordered: producerConfig.ordered,
         seed: producerConfig.seed,
       });
