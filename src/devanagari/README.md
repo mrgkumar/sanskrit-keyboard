@@ -2,6 +2,10 @@
 
 This module builds a deterministic Devanagari test corpus for workflow and validator testing.
 
+For the non-negotiable transliteration and display rules that this corpus is meant to protect, see:
+
+- [Transliteration And Display Invariants](../../docs/transliteration-display-invariants.md)
+
 ## Primary Workflow
 
 The default path is stream-first:
@@ -55,4 +59,3 @@ Record mode writes:
 
 - `output/manifest.json`
 - `output/recordings/batch_000001.jsonl`
-
