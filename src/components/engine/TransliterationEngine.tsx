@@ -7,7 +7,6 @@ import { ReferenceSidePanel } from '@/components/ReferenceSidePanel'; // Import 
 import { ScriptText } from '@/components/ScriptText';
 import { 
   useFlowStore, 
-  readStoredSessionSnapshot, 
   getSessionStorageKey 
 } from '@/store/useFlowStore';
 import { 
@@ -38,6 +37,7 @@ import {
   OUTPUT_TARGET_VALUE_LABELS,
 } from '@/lib/vedic/mapping';
 import { TamilPrecisionRecovery } from './TamilPrecisionRecovery';
+import { LargeDocumentOperationOverlay } from './LargeDocumentOperationOverlay';
 
 const LEGACY_STORAGE_KEY = 'sanskrit-keyboard.sessions.v1';
 const LEXICAL_HISTORY_KEY = 'sanskrit-keyboard.lexical-history.v1';
@@ -121,7 +121,8 @@ export const TransliterationEngine: React.FC = () => {
     clearPersistedLexicalLearning,
     setShowItransInDocument,
     setAutoSwapVisargaSvarita,
-    loadSessionSnapshot,
+    restoreSessionAsync,
+    largeDocumentOperation,
     resetSession,
   } = useFlowStore();
   
@@ -477,35 +478,15 @@ export const TransliterationEngine: React.FC = () => {
     const currentSavedSessions = useFlowStore.getState().savedSessions;
     const latestSession = currentSavedSessions[0];
     if (latestSession && !hasLoadedSessions.current) {
-      const runRestore = () => {
-        const snapshot = readStoredSessionSnapshot(latestSession.sessionId);
-        if (snapshot) {
-          loadSessionSnapshot(snapshot);
-        }
-        hasLoadedSessions.current = true;
-      };
-
-      const idleWindow = window as Window & {
-        requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
-        cancelIdleCallback?: (handle: number) => void;
-      };
-
-      if (idleWindow.requestIdleCallback) {
-        const idleId = idleWindow.requestIdleCallback(runRestore, { timeout: 1500 });
-        hasLoadedSessions.current = true;
-        return () => idleWindow.cancelIdleCallback?.(idleId);
-      }
-
-      const timeoutId = window.setTimeout(runRestore, 0);
       hasLoadedSessions.current = true;
-      return () => window.clearTimeout(timeoutId);
+      void restoreSessionAsync(latestSession.sessionId);
     }
 
     hasLoadedSessions.current = true;
-  }, [loadSessionSnapshot, setSavedSessions]);
+  }, [restoreSessionAsync, setSavedSessions]);
 
   React.useEffect(() => {
-    if (!hasLoadedSessions.current) {
+    if (!hasLoadedSessions.current || largeDocumentOperation) {
       return;
     }
 
@@ -514,7 +495,7 @@ export const TransliterationEngine: React.FC = () => {
     }, 500);
 
     return () => window.clearTimeout(timeoutId);
-  }, [blocks, displaySettings, editorState, sessionId, sessionName, markSessionSaved]);
+  }, [blocks, displaySettings, editorState, largeDocumentOperation, sessionId, sessionName, markSessionSaved]);
 
   React.useEffect(() => {
     if (!hasLoadedLexicalLearning.current) {
@@ -579,7 +560,7 @@ export const TransliterationEngine: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 font-sans relative">
+    <div className="flex min-h-0 flex-1 flex-col bg-slate-50 font-sans relative">
       <div className="fixed left-4 top-4 z-[140] flex items-center gap-2 pointer-events-none">
         <button
           data-testid="workspace-toggle"
@@ -841,10 +822,13 @@ export const TransliterationEngine: React.FC = () => {
                             <div className="flex-1 min-w-0">
                               <button
                                 onClick={() => {
-                                  const snapshot = readStoredSessionSnapshot(session.sessionId);
-                                  if (snapshot) loadSessionSnapshot(snapshot);
-                                  setIsWorkspacePanelOpen(false);
+                                  void restoreSessionAsync(session.sessionId).then((restored) => {
+                                    if (restored) {
+                                      setIsWorkspacePanelOpen(false);
+                                    }
+                                  });
                                 }}
+                                disabled={Boolean(largeDocumentOperation)}
                                 className="w-full text-left"
                               >
                                 <p className="truncate text-sm font-bold text-slate-800 group-hover:text-blue-700 transition-colors">
@@ -1366,6 +1350,7 @@ export const TransliterationEngine: React.FC = () => {
       {viewMode !== 'immersive' && <StickyTopComposer />}
       <MainDocumentArea />
       <ReferenceSidePanel /> {/* Add the side panel here */}
+      <LargeDocumentOperationOverlay operation={largeDocumentOperation} />
     </div>
   );
 };

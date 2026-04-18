@@ -5,7 +5,10 @@ import {
   ChunkEditTarget,
   ChunkGroup,
   DisplaySettings,
+  DocumentAnnotation,
+  DocumentAnnotationKind,
   EditorState,
+  LargeDocumentOperation,
   SessionListItem,
   SessionSnapshot,
   Segment,
@@ -61,6 +64,7 @@ import {
   createSessionId,
   getSessionStorageKey,
   readSessionIndex,
+  readStoredSessionSnapshotRaw,
   writeSessionIndex,
 } from './flowStoreSessions';
 
@@ -164,6 +168,73 @@ interface DeletedBlockSnapshot {
   index: number;
 }
 
+const LARGE_DOCUMENT_SOURCE_LENGTH_THRESHOLD = 20_000;
+const LARGE_DOCUMENT_BLOCK_COUNT_THRESHOLD = 100;
+const LARGE_DOCUMENT_SERIALIZED_SIZE_THRESHOLD = 1_000_000;
+
+const waitForNextPaint = () =>
+  new Promise<void>((resolve) => {
+    if (typeof window === 'undefined') {
+      resolve();
+      return;
+    }
+
+    const schedule =
+      window.requestAnimationFrame ?? ((callback: FrameRequestCallback) => globalThis.setTimeout(callback, 0));
+    schedule(() => resolve());
+  });
+
+const getSessionSourceLength = (blocks: CanonicalBlock[]) =>
+  blocks.reduce((total, block) => total + block.source.length, 0);
+
+const isLargeDocumentSnapshot = (snapshot: SessionSnapshot, serializedSize: number) =>
+  serializedSize >= LARGE_DOCUMENT_SERIALIZED_SIZE_THRESHOLD ||
+  snapshot.blocks.length >= LARGE_DOCUMENT_BLOCK_COUNT_THRESHOLD ||
+  getSessionSourceLength(snapshot.blocks) >= LARGE_DOCUMENT_SOURCE_LENGTH_THRESHOLD;
+
+const createAnnotationId = () =>
+  `annotation-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+const createAnnotationEditWarning = (
+  annotations: DocumentAnnotation[],
+  blockIds: string[],
+) => {
+  const blockIdSet = new Set(blockIds);
+  const clearedCount = annotations.filter((annotation) => blockIdSet.has(annotation.blockId)).length;
+  return clearedCount > 0
+    ? {
+        clearedCount,
+        message:
+          clearedCount === 1
+            ? '1 annotation was cleared because its source block was edited.'
+            : `${clearedCount} annotations were cleared because their source blocks were edited.`,
+      }
+    : null;
+};
+
+const clearAnnotationsForBlocks = (
+  annotations: DocumentAnnotation[],
+  blockIds: string[],
+) => {
+  const blockIdSet = new Set(blockIds);
+  return annotations.filter((annotation) => !blockIdSet.has(annotation.blockId));
+};
+
+const createRestoreOperation = (
+  phase: LargeDocumentOperation['phase'],
+  message: string,
+  processed: number,
+  total: number,
+  canCancel = false
+): LargeDocumentOperation => ({
+  kind: 'restore',
+  phase,
+  processed,
+  total,
+  message,
+  canCancel,
+});
+
 
 // --- STORE DEFINITION ---
 
@@ -201,6 +272,11 @@ export interface SanskritKeyboardState {
   savedSessions: SessionListItem[];
   lastSavedAt: string | null;
   recentlyDeletedBlock: DeletedBlockSnapshot | null;
+  largeDocumentOperation: LargeDocumentOperation | null;
+  annotations: DocumentAnnotation[];
+  showAnnotationOverlay: boolean;
+  isAnnotationNavigatorOpen: boolean;
+  annotationEditWarning: { clearedCount: number; message: string } | null;
 
   // Actions
   setActiveBlockId: (id: string | null) => void;
@@ -271,7 +347,24 @@ export interface SanskritKeyboardState {
   renameSession: (sessionId: string, newName: string) => void;
   markSessionSaved: (savedAt?: string) => void;
   exportSessionSnapshot: () => SessionSnapshot;
-  loadSessionSnapshot: (snapshot: SessionSnapshot) => void;
+  loadSessionSnapshot: (
+    snapshot: SessionSnapshot,
+    options?: { deferDerivedUsage?: boolean }
+  ) => void;
+  restoreSessionAsync: (sessionId: string) => Promise<boolean>;
+  setLargeDocumentOperation: (operation: LargeDocumentOperation | null) => void;
+  upsertAnnotation: (annotation: {
+    blockId: string;
+    startOffset: number;
+    endOffset: number;
+    sourceText: string;
+    kind: DocumentAnnotationKind;
+    color?: DocumentAnnotation['color'];
+  }) => void;
+  removeAnnotation: (annotationId: string) => void;
+  setShowAnnotationOverlay: (show: boolean) => void;
+  setAnnotationNavigatorOpen: (open: boolean) => void;
+  dismissAnnotationEditWarning: () => void;
   resetSession: () => void;
   getRenderedDocumentText: () => string;
 
@@ -319,6 +412,11 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   savedSessions: readSessionIndex(),
   lastSavedAt: null,
   recentlyDeletedBlock: null,
+  largeDocumentOperation: null,
+  annotations: [],
+  showAnnotationOverlay: true,
+  isAnnotationNavigatorOpen: true,
+  annotationEditWarning: null,
 
   // --- ACTIONS ---
   setActiveBlockId: (id) => {
@@ -574,6 +672,10 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         blocks: state.blocks.map((block) =>
           block.id === newlyConvertedBlock.id ? newlyConvertedBlock : block
         ),
+        annotations: clearAnnotationsForBlocks(state.annotations, [newlyConvertedBlock.id]),
+        annotationEditWarning:
+          createAnnotationEditWarning(state.annotations, [newlyConvertedBlock.id]) ??
+          state.annotationEditWarning,
         editorState: {
           ...state.editorState,
           activeAnchorSegmentIndex: newAnchorSegmentIndex,
@@ -591,6 +693,15 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
             ? { ...block, source: newSource, rendered: transliterate(newSource, { inputScheme }).unicode }
             : block
         ),
+        annotations:
+          activeBlock!.source === newSource
+            ? state.annotations
+            : clearAnnotationsForBlocks(state.annotations, [activeBlock!.id]),
+        annotationEditWarning:
+          activeBlock!.source === newSource
+            ? state.annotationEditWarning
+            : createAnnotationEditWarning(state.annotations, [activeBlock!.id]) ??
+              state.annotationEditWarning,
         composerSelectionStart: nextSelectionStart,
         composerSelectionEnd: nextSelectionEnd,
       }));
@@ -620,13 +731,22 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       );
 
       // 3. Update state
-      set({
+      set((state) => ({
         blocks: nextBlocks,
+        annotations:
+          currentActiveBlock.source === nextFullSource
+            ? state.annotations
+            : clearAnnotationsForBlocks(state.annotations, [currentActiveBlock.id]),
+        annotationEditWarning:
+          currentActiveBlock.source === nextFullSource
+            ? state.annotationEditWarning
+            : createAnnotationEditWarning(state.annotations, [currentActiveBlock.id]) ??
+              state.annotationEditWarning,
         composerSelectionStart: nextSelectionStart,
         composerSelectionEnd: nextSelectionEnd,
         // We stay on the same anchor index, or adjust if needed.
         // For now, keeping the same start index is safest.
-      });
+      }));
     }
 
     // After updating the block (or after initial short block update), process suggestions for the new source
@@ -773,10 +893,17 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       nextBlocks.splice(currentIndex, 2, mergedBlock);
     }
 
-    set({ 
+    set((state) => {
+      const affectedBlockIds = [currentBlock.id, targetBlock.id];
+      return {
       blocks: nextBlocks,
+      annotations: clearAnnotationsForBlocks(state.annotations, affectedBlockIds),
+      annotationEditWarning:
+        createAnnotationEditWarning(state.annotations, affectedBlockIds) ??
+        state.annotationEditWarning,
       sessionLexicalUsage: deriveSessionLexicalUsageFromBlocks(nextBlocks),
       sessionExactFormUsage: deriveSessionExactFormUsageFromBlocks(nextBlocks),
+      };
     });
 
     // Activate the merged block and set caret
@@ -814,11 +941,15 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     const nextBlocks = [...blocks];
     nextBlocks.splice(currentIndex, 1, block1, block2);
 
-    set({ 
+    set((state) => ({
       blocks: nextBlocks,
+      annotations: clearAnnotationsForBlocks(state.annotations, [block.id]),
+      annotationEditWarning:
+        createAnnotationEditWarning(state.annotations, [block.id]) ??
+        state.annotationEditWarning,
       sessionLexicalUsage: deriveSessionLexicalUsageFromBlocks(nextBlocks),
       sessionExactFormUsage: deriveSessionExactFormUsageFromBlocks(nextBlocks),
-    });
+    }));
 
     // Activate the second block and set caret to start
     activateBlockChunk(block2.id, 0);
@@ -865,6 +996,10 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         ghostText: null,
         composerSelectionStart: 0,
         composerSelectionEnd: 0,
+        annotations: clearAnnotationsForBlocks(state.annotations, [targetId]),
+        annotationEditWarning:
+          createAnnotationEditWarning(state.annotations, [targetId]) ??
+          state.annotationEditWarning,
         recentlyDeletedBlock: {
           block: deletedBlock,
           index: blockIndex,
@@ -880,6 +1015,10 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
 
     set((state) => ({
       blocks: nextBlocks,
+      annotations: clearAnnotationsForBlocks(state.annotations, [targetId]),
+      annotationEditWarning:
+        createAnnotationEditWarning(state.annotations, [targetId]) ??
+        state.annotationEditWarning,
       editorState: {
         ...state.editorState,
         activeBlockId: shouldMoveFocus ? nextActiveBlock.id : state.editorState.activeBlockId,
@@ -1294,6 +1433,73 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   setSavedSessions: (sessions) => {
     set({ savedSessions: sessions });
   },
+  setLargeDocumentOperation: (operation) => {
+    set({ largeDocumentOperation: operation });
+  },
+  upsertAnnotation: (annotation) => {
+    const now = new Date().toISOString();
+    set((state) => {
+      const isSameRange = (item: DocumentAnnotation) =>
+        item.blockId === annotation.blockId &&
+        item.startOffset === annotation.startOffset &&
+        item.endOffset === annotation.endOffset;
+
+      const existingSameKind = state.annotations.find(
+        (item) => isSameRange(item) && item.kind === annotation.kind
+      );
+
+      if (annotation.kind === 'bookmark' && existingSameKind) {
+        return {
+          annotations: state.annotations.filter((item) => item.id !== existingSameKind.id),
+        };
+      }
+
+      if (existingSameKind) {
+        return {
+          annotations: state.annotations.map((item) =>
+            item.id === existingSameKind.id
+              ? {
+                  ...item,
+                  sourceText: annotation.sourceText,
+                  color: annotation.color,
+                  updatedAt: now,
+                }
+              : item
+          ),
+        };
+      }
+
+      const nextAnnotations = annotation.kind === 'highlight'
+        ? state.annotations.filter((item) => !(isSameRange(item) && item.kind === 'highlight'))
+        : state.annotations;
+
+      return {
+        annotations: [
+          ...nextAnnotations,
+          {
+            id: createAnnotationId(),
+            ...annotation,
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      };
+    });
+  },
+  removeAnnotation: (annotationId) => {
+    set((state) => ({
+      annotations: state.annotations.filter((annotation) => annotation.id !== annotationId),
+    }));
+  },
+  setShowAnnotationOverlay: (show) => {
+    set({ showAnnotationOverlay: show });
+  },
+  setAnnotationNavigatorOpen: (open) => {
+    set({ isAnnotationNavigatorOpen: open });
+  },
+  dismissAnnotationEditWarning: () => {
+    set({ annotationEditWarning: null });
+  },
   deleteSession: (sessionId) => {
     const { sessionId: currentSessionId, resetSession } = get();
     
@@ -1371,12 +1577,14 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       sessionId,
       sessionName,
       lastSavedAt,
+      annotations,
     } = get();
 
     return {
       sessionId,
       sessionName: sessionName.trim() || createDefaultSessionName(),
       blocks,
+      annotations,
       editorState,
       displaySettings: {
         ...displaySettings,
@@ -1385,7 +1593,9 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       updatedAt: lastSavedAt ?? new Date().toISOString(),
     };
   },
-  loadSessionSnapshot: (snapshot) => {
+  loadSessionSnapshot: (snapshot, options) => {
+    const deferDerivedUsage = options?.deferDerivedUsage ?? false;
+
     set({
       blocks: snapshot.blocks,
       editorState: {
@@ -1396,6 +1606,10 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       sessionId: snapshot.sessionId,
       sessionName: snapshot.sessionName,
       lastSavedAt: snapshot.updatedAt,
+      annotations: snapshot.annotations ?? [],
+      showAnnotationOverlay: true,
+      isAnnotationNavigatorOpen: (snapshot.annotations ?? []).length > 0,
+      annotationEditWarning: null,
       composerSelectionStart: 0,
       composerSelectionEnd: 0,
       deletedBuffer: null,
@@ -1405,10 +1619,90 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       isLexicalSuggestionsLoading: false,
       lexicalRequestSerial: 0,
       lexicalSelectedSuggestionIndex: 0,
-      sessionLexicalUsage: deriveSessionLexicalUsageFromBlocks(snapshot.blocks),
-      sessionExactFormUsage: deriveSessionExactFormUsageFromBlocks(snapshot.blocks),
+      sessionLexicalUsage: deferDerivedUsage ? {} : deriveSessionLexicalUsageFromBlocks(snapshot.blocks),
+      sessionExactFormUsage: deferDerivedUsage ? {} : deriveSessionExactFormUsageFromBlocks(snapshot.blocks),
       recentlyDeletedBlock: null,
     });
+
+    if (deferDerivedUsage) {
+      globalThis.setTimeout(() => {
+        const currentState = get();
+        if (currentState.sessionId !== snapshot.sessionId) {
+          return;
+        }
+
+        set({
+          sessionLexicalUsage: deriveSessionLexicalUsageFromBlocks(snapshot.blocks),
+          sessionExactFormUsage: deriveSessionExactFormUsageFromBlocks(snapshot.blocks),
+        });
+      }, 0);
+    }
+  },
+  restoreSessionAsync: async (sessionId) => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    set({
+      largeDocumentOperation: createRestoreOperation('reading', 'Reading session snapshot', 0, 1),
+    });
+
+    try {
+      await waitForNextPaint();
+      set({
+        largeDocumentOperation: createRestoreOperation('reading', 'Reading session snapshot', 0, 1),
+      });
+
+      const raw = readStoredSessionSnapshotRaw(sessionId);
+      if (!raw) {
+        set({
+          largeDocumentOperation: createRestoreOperation('error', 'Stored session was not found', 0, 1),
+        });
+        globalThis.setTimeout(() => set({ largeDocumentOperation: null }), 3000);
+        return false;
+      }
+
+      set({
+        largeDocumentOperation: createRestoreOperation('parsing', 'Parsing saved session', 0, 1),
+      });
+
+      const snapshot = JSON.parse(raw) as SessionSnapshot;
+      const isLargeDocument = isLargeDocumentSnapshot(snapshot, raw.length);
+
+      set({
+        largeDocumentOperation: createRestoreOperation(
+          'hydrating',
+          isLargeDocument ? 'Hydrating a large document in stages' : 'Hydrating session',
+          snapshot.blocks.length,
+          snapshot.blocks.length || 1
+        ),
+      });
+
+      get().loadSessionSnapshot(snapshot, { deferDerivedUsage: isLargeDocument });
+
+      set({
+        largeDocumentOperation: createRestoreOperation(
+          isLargeDocument ? 'indexing' : 'complete',
+          isLargeDocument ? 'Deferring lexical indexes to keep the UI responsive' : 'Session restored',
+          snapshot.blocks.length,
+          snapshot.blocks.length || 1
+        ),
+      });
+
+      if (isLargeDocument) {
+        await waitForNextPaint();
+      }
+
+      set({ largeDocumentOperation: null });
+      return true;
+    } catch (error) {
+      console.error('Failed to restore session snapshot:', error);
+      set({
+        largeDocumentOperation: createRestoreOperation('error', 'Failed to restore the saved session', 0, 1),
+      });
+      globalThis.setTimeout(() => set({ largeDocumentOperation: null }), 3000);
+      return false;
+    }
   },
   resetSession: () => {
     const blankBlock = createBlankBlock();
@@ -1445,6 +1739,11 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       sessionName: createDefaultSessionName(),
       lastSavedAt: null,
       recentlyDeletedBlock: null,
+      largeDocumentOperation: null,
+      annotations: [],
+      showAnnotationOverlay: true,
+      isAnnotationNavigatorOpen: true,
+      annotationEditWarning: null,
     });
   },
   getRenderedDocumentText: () => {

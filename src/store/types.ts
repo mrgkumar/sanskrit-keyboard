@@ -80,6 +80,21 @@ export interface EditorState {
   ghostAssistEnabled: boolean;
 }
 
+export type AnnotationColor = 'yellow' | 'red';
+export type DocumentAnnotationKind = 'highlight' | 'bookmark';
+
+export interface DocumentAnnotation {
+  id: string;
+  blockId: string;
+  startOffset: number;
+  endOffset: number;
+  sourceText: string;
+  kind: DocumentAnnotationKind;
+  color?: AnnotationColor;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface TypographySettings {
   composer: {
     itransFontSize: number;
@@ -149,6 +164,7 @@ export interface SessionSnapshot {
   sessionId: string;
   sessionName: string;
   blocks: CanonicalBlock[];
+  annotations?: DocumentAnnotation[];
   editorState: EditorState;
   displaySettings?: DisplaySettings;
   typography?: LegacyTypographySettings;
@@ -159,4 +175,23 @@ export interface SessionListItem {
   sessionId: string;
   sessionName: string;
   updatedAt: string;
+}
+
+export type LargeDocumentOperationPhase =
+  | 'reading'
+  | 'parsing'
+  | 'processing'
+  | 'hydrating'
+  | 'indexing'
+  | 'saving'
+  | 'complete'
+  | 'error';
+
+export interface LargeDocumentOperation {
+  kind: 'restore' | 'import';
+  phase: LargeDocumentOperationPhase;
+  processed: number;
+  total: number;
+  message: string;
+  canCancel: boolean;
 }

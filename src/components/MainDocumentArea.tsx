@@ -3,15 +3,35 @@
 
 import React from 'react';
 import { useFlowStore } from '@/store/useFlowStore';
-import { CanonicalBlock } from '@/store/types';
+import { AnnotationColor, CanonicalBlock, DocumentAnnotation } from '@/store/types';
 import { clsx } from 'clsx';
-import { Check, Copy, Trash2 } from 'lucide-react';
+import { Bookmark, Check, ChevronLeft, ChevronRight, Copy, Eye, EyeOff, Highlighter, Trash2, X } from 'lucide-react';
 import { formatSourceForScript, transliterate } from '@/lib/vedic/utils';
 import { ScriptText } from '@/components/ScriptText';
 import { ResizeHandle } from '@/components/VerticalResizeHandle';
 
 export const MainDocumentArea: React.FC = () => {
-  const { blocks, editorState, setActiveBlockId, activateBlockChunk, deleteBlock, getActiveChunkGroup, displaySettings, setViewMode, setComposerSelection, setTypography } = useFlowStore();
+  const {
+    blocks,
+    editorState,
+    setActiveBlockId,
+    activateBlockChunk,
+    deleteBlock,
+    getActiveChunkGroup,
+    displaySettings,
+    setViewMode,
+    setComposerSelection,
+    setTypography,
+    annotations,
+    showAnnotationOverlay,
+    isAnnotationNavigatorOpen,
+    annotationEditWarning,
+    upsertAnnotation,
+    removeAnnotation,
+    setShowAnnotationOverlay,
+    setAnnotationNavigatorOpen,
+    dismissAnnotationEditWarning,
+  } = useFlowStore();
   const { activeBlockId, viewMode, focusSpan } = editorState;
   const activeChunkGroup = getActiveChunkGroup(); // Get active chunk group
   const {
@@ -34,6 +54,15 @@ export const MainDocumentArea: React.FC = () => {
   );
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
   const [selectedReadBlockId, setSelectedReadBlockId] = React.useState<string | null>(null);
+  const [annotationTarget, setAnnotationTarget] = React.useState<{
+    blockId: string;
+    startOffset: number;
+    endOffset: number;
+    sourceText: string;
+    displayText: string;
+    left: number;
+    top: number;
+  } | null>(null);
   const documentContainerRef = React.useRef<HTMLDivElement | null>(null);
   const primaryPaneScrollRef = React.useRef<HTMLDivElement | null>(null);
   const readModeBlocks = React.useMemo(
@@ -53,6 +82,23 @@ export const MainDocumentArea: React.FC = () => {
         ? documentTypography.tamilFontSize
         : documentTypography.devanagariFontSize,
     [documentTypography.devanagariFontSize, documentTypography.tamilFontSize]
+  );
+  const blockOrder = React.useMemo(
+    () => new Map(blocks.map((block, index) => [block.id, index])),
+    [blocks]
+  );
+  const sortedAnnotations = React.useMemo(
+    () =>
+      [...annotations].sort((left, right) => {
+        const leftBlock = blockOrder.get(left.blockId) ?? Number.MAX_SAFE_INTEGER;
+        const rightBlock = blockOrder.get(right.blockId) ?? Number.MAX_SAFE_INTEGER;
+        if (leftBlock !== rightBlock) {
+          return leftBlock - rightBlock;
+        }
+
+        return left.startOffset - right.startOffset || left.endOffset - right.endOffset;
+      }),
+    [annotations, blockOrder]
   );
   React.useEffect(() => {
     if (!copiedId) {
@@ -123,6 +169,12 @@ export const MainDocumentArea: React.FC = () => {
   }, [viewMode]);
 
   React.useEffect(() => {
+    if (viewMode !== 'immersive') {
+      setAnnotationTarget(null);
+    }
+  }, [viewMode]);
+
+  React.useEffect(() => {
     if (viewMode !== 'read' || !selectedReadBlockId) {
       return;
     }
@@ -177,6 +229,102 @@ export const MainDocumentArea: React.FC = () => {
       setCopiedId(`error:${blockId}`);
     }
   };
+
+  const handleCopyWord = async (wordKey: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(wordKey);
+    } catch {
+      setCopiedId(`error:${wordKey}`);
+    }
+  };
+
+  const findAnnotationsForWord = React.useCallback(
+    (blockId: string, startOffset: number, endOffset: number) =>
+      annotations.filter(
+        (annotation) =>
+          annotation.blockId === blockId &&
+          annotation.startOffset === startOffset &&
+          annotation.endOffset === endOffset
+      ),
+    [annotations]
+  );
+
+  const getWordAnnotationClassName = React.useCallback(
+    (wordAnnotations: DocumentAnnotation[]) => {
+      if (viewMode !== 'immersive' || !showAnnotationOverlay || wordAnnotations.length === 0) {
+        return undefined;
+      }
+
+      const highlight = wordAnnotations.find((annotation) => annotation.kind === 'highlight' && annotation.color === 'red') ??
+        wordAnnotations.find((annotation) => annotation.kind === 'highlight');
+      const hasBookmark = wordAnnotations.some((annotation) => annotation.kind === 'bookmark');
+
+      return clsx(
+        'rounded-sm px-0.5',
+        highlight?.color === 'red' && 'bg-red-200/75 text-red-950 ring-1 ring-red-300/70',
+        highlight?.color === 'yellow' && 'bg-yellow-200/85 text-yellow-950 ring-1 ring-yellow-300/80',
+        hasBookmark && 'font-bold'
+      );
+    },
+    [showAnnotationOverlay, viewMode]
+  );
+
+  const applyAnnotationToTarget = (kind: 'highlight' | 'bookmark', color?: AnnotationColor) => {
+    if (!annotationTarget) {
+      return;
+    }
+
+    upsertAnnotation({
+      blockId: annotationTarget.blockId,
+      startOffset: annotationTarget.startOffset,
+      endOffset: annotationTarget.endOffset,
+      sourceText: annotationTarget.sourceText,
+      kind,
+      color,
+    });
+    setAnnotationTarget(null);
+    setAnnotationNavigatorOpen(true);
+    documentContainerRef.current?.focus();
+  };
+
+  const scrollToAnnotation = React.useCallback((annotation: DocumentAnnotation) => {
+    setSelectedReadBlockId(annotation.blockId);
+    const wordKey = `${annotation.blockId}:${annotation.startOffset}:${annotation.endOffset}`;
+    const target = documentContainerRef.current?.querySelector<HTMLElement>(
+      `[data-word-key="${CSS.escape(wordKey)}"]`
+    );
+
+    target?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    target?.focus({ preventScroll: true });
+  }, []);
+
+  const navigateAnnotation = (direction: 1 | -1) => {
+    if (sortedAnnotations.length === 0) {
+      return;
+    }
+
+    const currentIndex = Math.max(
+      0,
+      sortedAnnotations.findIndex((annotation) => annotation.blockId === selectedReadBlockId)
+    );
+    const nextIndex = (currentIndex + direction + sortedAnnotations.length) % sortedAnnotations.length;
+    scrollToAnnotation(sortedAnnotations[nextIndex]);
+  };
+
+  const getAnnotationPreviewWords = (annotation: DocumentAnnotation) => {
+    const block = blocks.find((item) => item.id === annotation.blockId);
+    const context = block?.source.slice(annotation.startOffset).trim() || annotation.sourceText;
+    return context.split(/\s+/).slice(0, 2).join(' ');
+  };
+
+  const getAnnotationPreviewDisplayText = (annotation: DocumentAnnotation) =>
+    formatSourceForScript(getAnnotationPreviewWords(annotation), primaryOutputScript, {
+      romanOutputStyle,
+      tamilOutputStyle,
+    }, {
+      sanskritFontPreset,
+    });
 
   const activateBlock = (blockId: string) => {
     setActiveBlockId(blockId);
@@ -325,7 +473,7 @@ export const MainDocumentArea: React.FC = () => {
   };
 
   const renderInteractiveSourceText = (
-    blockKey: string,
+    block: CanonicalBlock,
     paneRole: 'primary' | 'compare' | 'document',
     sourceText: string,
     script: typeof primaryOutputScript,
@@ -350,14 +498,47 @@ export const MainDocumentArea: React.FC = () => {
       }, {
         sanskritFontPreset,
       });
+      const wordKey = `${block.id}:${start}:${end}`;
+      const wordAnnotations = findAnnotationsForWord(block.id, start, end);
 
       nodes.push(
         <span
-          key={`${blockKey}-${paneRole}-${start}-${end}`}
+          key={`${block.id}-${paneRole}-${start}-${end}`}
           data-source-start={start}
           data-source-end={end}
           data-target-index={sourceToTargetMap?.[start] ?? start}
-          className="inline"
+          data-word-key={wordKey}
+          tabIndex={viewMode === 'immersive' && paneRole === 'primary' ? 0 : undefined}
+          className={clsx(
+            'inline transition-colors',
+            viewMode === 'immersive' && paneRole === 'primary' && 'cursor-pointer hover:bg-blue-100/70',
+            getWordAnnotationClassName(wordAnnotations)
+          )}
+          onClick={
+            viewMode === 'immersive' && paneRole === 'primary'
+              ? (event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  selectReadLine(block.id);
+
+                  if (event.ctrlKey || event.metaKey) {
+                    void handleCopyWord(`word:${wordKey}`, formattedSlice);
+                    setAnnotationTarget(null);
+                    return;
+                  }
+
+                  setAnnotationTarget({
+                    blockId: block.id,
+                    startOffset: start,
+                    endOffset: end,
+                    sourceText: sourceSlice,
+                    displayText: formattedSlice,
+                    left: event.clientX,
+                    top: event.clientY,
+                  });
+                }
+              : undefined
+          }
         >
           <ScriptText
             script={script}
@@ -486,7 +667,7 @@ export const MainDocumentArea: React.FC = () => {
             }
           >
             {renderInteractiveSourceText(
-              block.id,
+              block,
               paneRole,
               block.source,
               script,
@@ -574,7 +755,7 @@ export const MainDocumentArea: React.FC = () => {
           }
           >
           {renderInteractiveSourceText(
-            block.id,
+            block,
             paneRole,
             block.source,
             script,
@@ -591,84 +772,285 @@ export const MainDocumentArea: React.FC = () => {
   if (viewMode === 'read' || viewMode === 'immersive') {
     const viewTestIdPrefix = viewMode === 'immersive' ? 'document-immersive' : 'document-read';
     const isImmersive = viewMode === 'immersive';
-    const immersiveTopInsetClass = isImmersive ? 'pt-20 sm:pt-24' : 'py-3 sm:py-5';
+    const immersiveTopInsetClass = isImmersive ? 'pt-20 sm:pt-24' : 'pt-3 sm:pt-5';
 
     return (
-      <div
-        ref={documentContainerRef}
-        data-testid="main-document-scroll-container"
-        tabIndex={0}
-        className={clsx(
-          'flex-1 outline-none',
-          isImmersive ? `overflow-hidden px-2 ${immersiveTopInsetClass} sm:px-4` : 'overflow-y-auto px-4 py-3 sm:px-8 sm:py-5'
-        )}
-        style={isImmersive ? { height: 'calc(100dvh - 5rem)' } : undefined}
-        onKeyDown={handleReadModeKeyDown}
-        onMouseDown={() => {
-          if (viewMode === 'read' || viewMode === 'immersive') {
-            documentContainerRef.current?.focus();
-          }
-        }}
-      >
+      <>
         <div
+          ref={documentContainerRef}
+          data-testid="main-document-scroll-container"
+          tabIndex={0}
           className={clsx(
-            'mx-auto w-full max-w-none bg-transparent',
+            'flex-1 min-h-0 outline-none',
             isImmersive
-              ? 'flex h-full flex-col rounded-[1.5rem] px-0 py-0'
-              : 'rounded-[1.5rem] px-0 py-0'
+              ? `overflow-hidden px-2 ${immersiveTopInsetClass} sm:px-4`
+              : 'flex h-full flex-col overflow-hidden px-4 sm:px-8'
           )}
+          style={isImmersive ? { height: 'calc(100dvh - 5rem)' } : undefined}
+          onKeyDown={handleReadModeKeyDown}
+          onMouseDown={() => {
+            if (viewMode === 'read' || viewMode === 'immersive') {
+              documentContainerRef.current?.focus();
+            }
+          }}
         >
           <div
             className={clsx(
-              'font-serif text-slate-900',
-              isImmersive && 'flex h-full min-h-0 flex-col'
+              'mx-auto w-full max-w-none bg-transparent',
+              isImmersive
+                ? 'flex h-full flex-col rounded-[1.5rem] px-0 py-0'
+                : 'flex h-full min-h-0 flex-col rounded-[1.5rem] px-0 py-0'
             )}
-            data-testid={isImmersive ? 'document-immersive-mode' : 'document-read-mode'}
-            data-compare-mode="single"
-            data-compare-layout="single"
-            style={{
-              fontSize: `${documentTypography.devanagariFontSize}px`,
-              lineHeight: documentTypography.devanagariLineHeight,
-            }}
           >
             <div
               className={clsx(
-                'grid gap-3',
-                'grid-cols-1',
-                isImmersive && 'h-full min-h-0'
+                'font-serif text-slate-900',
+                isImmersive && 'flex h-full min-h-0 flex-col',
+                !isImmersive && 'flex h-full min-h-0 flex-col'
               )}
+              data-testid={isImmersive ? 'document-immersive-mode' : 'document-read-mode'}
+              data-compare-mode="single"
+              data-compare-layout="single"
+              style={{
+                fontSize: `${documentTypography.devanagariFontSize}px`,
+                lineHeight: documentTypography.devanagariLineHeight,
+              }}
             >
-              <section
-                data-testid={`${viewTestIdPrefix}-primary-pane`}
+              <div
                 className={clsx(
-                  'group relative overflow-hidden rounded-[1.25rem] border border-slate-100/70 bg-white/85 shadow-sm',
-                  isImmersive && 'flex min-h-0 flex-1 flex-col'
+                  'grid flex-1 min-h-0 gap-3',
+                  'grid-cols-1',
+                  isImmersive && 'h-full min-h-0'
                 )}
-                style={isImmersive ? undefined : { height: `${documentTypography.primaryPaneHeight}px` }}
               >
-                <div
-                  ref={primaryPaneScrollRef}
-                  className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto px-2.5 py-2.5 sm:px-4 sm:py-4"
+                <section
+                  data-testid={`${viewTestIdPrefix}-primary-pane`}
+                  className={clsx(
+                    'group relative overflow-hidden rounded-[1.25rem] border border-slate-100/70 bg-white/85 shadow-sm',
+                    'flex min-h-0 flex-1 flex-col'
+                  )}
+                  style={isImmersive ? undefined : { minHeight: `${documentTypography.primaryPaneHeight}px` }}
                 >
-                  {blocks
-                    .filter((block) => block.rendered.trim().length > 0)
-                    .map((block, index) => renderScriptBlock(block, primaryOutputScript, 'primary', viewTestIdPrefix, index + 1))}
-                </div>
-                {!isImmersive && (
-                  <ResizeHandle
-                    size={documentTypography.primaryPaneHeight}
-                    minSize={240}
-                    maxSize={700}
-                    ariaLabel="Resize primary read pane height"
-                    onSizeChange={updateDocumentHeight('primaryPaneHeight')}
-                    axis="y"
-                  />
-                )}
-              </section>
+                  <div
+                    ref={primaryPaneScrollRef}
+                    className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto px-2.5 py-2.5 sm:px-4 sm:py-4"
+                  >
+                    {blocks
+                      .filter((block) => block.rendered.trim().length > 0)
+                      .map((block, index) => renderScriptBlock(block, primaryOutputScript, 'primary', viewTestIdPrefix, index + 1))}
+                  </div>
+                  {!isImmersive && (
+                    <ResizeHandle
+                      size={documentTypography.primaryPaneHeight}
+                      minSize={240}
+                      maxSize={700}
+                      ariaLabel="Resize primary read pane height"
+                      onSizeChange={updateDocumentHeight('primaryPaneHeight')}
+                      axis="y"
+                    />
+                  )}
+                </section>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+        {isImmersive && annotationTarget && (
+          <div
+            className="fixed z-[150] flex items-center gap-1 rounded-xl border border-slate-200 bg-white/95 p-1 shadow-xl shadow-slate-200 backdrop-blur"
+            style={{
+              left: Math.min(
+                annotationTarget.left + 8,
+                (typeof window === 'undefined' ? 1024 : window.innerWidth) - 190
+              ),
+              top: Math.max(72, annotationTarget.top - 48),
+            }}
+            data-testid="annotation-floating-toolbar"
+          >
+            <span className="max-w-28 truncate px-2 text-xs font-bold text-slate-600">
+              {annotationTarget.displayText}
+            </span>
+            <button
+              type="button"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-200 text-yellow-950 ring-1 ring-yellow-300 hover:bg-yellow-300"
+              aria-label="Highlight yellow"
+              title="Highlight yellow"
+              onClick={() => applyAnnotationToTarget('highlight', 'yellow')}
+            >
+              <Highlighter className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-200 text-red-950 ring-1 ring-red-300 hover:bg-red-300"
+              aria-label="Highlight red"
+              title="Highlight red"
+              onClick={() => applyAnnotationToTarget('highlight', 'red')}
+            >
+              <Highlighter className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-blue-700 hover:bg-blue-50"
+              aria-label="Toggle bookmark"
+              title="Toggle bookmark"
+              onClick={() => applyAnnotationToTarget('bookmark')}
+            >
+              <Bookmark className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              aria-label="Close annotation toolbar"
+              title="Close"
+              onClick={() => setAnnotationTarget(null)}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        {isImmersive && annotationEditWarning && (
+          <div className="fixed bottom-4 left-4 z-[150] flex max-w-md items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900 shadow-lg">
+            <span>{annotationEditWarning.message}</span>
+            <button
+              type="button"
+              className="rounded-lg p-1 text-amber-700 hover:bg-amber-100"
+              aria-label="Dismiss annotation warning"
+              title="Dismiss"
+              onClick={dismissAnnotationEditWarning}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        {isImmersive && (
+          <aside
+            className={clsx(
+              'fixed right-4 top-20 bottom-4 z-[135] flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white/95 shadow-xl shadow-slate-200 backdrop-blur transition-all',
+              isAnnotationNavigatorOpen ? 'w-80' : 'w-12'
+            )}
+            data-testid="annotation-navigator"
+          >
+            <div className="flex items-center justify-between gap-2 border-b border-slate-100 p-2">
+              {isAnnotationNavigatorOpen && (
+                <span className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                  Annotations
+                </span>
+              )}
+              <button
+                type="button"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+                aria-label={isAnnotationNavigatorOpen ? 'Collapse annotation navigator' : 'Expand annotation navigator'}
+                title={isAnnotationNavigatorOpen ? 'Collapse annotations' : 'Expand annotations'}
+                onClick={() => setAnnotationNavigatorOpen(!isAnnotationNavigatorOpen)}
+              >
+                {isAnnotationNavigatorOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              </button>
+            </div>
+            {isAnnotationNavigatorOpen && (
+              <>
+                <div className="flex items-center gap-1 border-b border-slate-100 p-2">
+                  <button
+                    type="button"
+                    className="inline-flex h-8 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                    aria-label="Previous annotation"
+                    title="Previous annotation"
+                    disabled={sortedAnnotations.length === 0}
+                    onClick={() => navigateAnnotation(-1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex h-8 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                    aria-label="Next annotation"
+                    title="Next annotation"
+                    disabled={sortedAnnotations.length === 0}
+                    onClick={() => navigateAnnotation(1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex h-8 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    aria-label={showAnnotationOverlay ? 'Hide annotation overlay' : 'Show annotation overlay'}
+                    title={showAnnotationOverlay ? 'Hide overlay' : 'Show overlay'}
+                    onClick={() => setShowAnnotationOverlay(!showAnnotationOverlay)}
+                  >
+                    {showAnnotationOverlay ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </button>
+                </div>
+                <div className="min-h-0 flex-1 overflow-y-auto p-2">
+                  {sortedAnnotations.length === 0 ? (
+                    <p className="px-2 py-8 text-center text-xs font-semibold text-slate-400">
+                      No annotations
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {sortedAnnotations.map((annotation) => {
+                        const blockIndex = (blockOrder.get(annotation.blockId) ?? 0) + 1;
+                        const previewText = getAnnotationPreviewDisplayText(annotation);
+                        return (
+                          <button
+                            key={annotation.id}
+                            type="button"
+                            className="group flex w-full items-start gap-2 rounded-lg border border-slate-100 bg-slate-50 px-2 py-2 text-left hover:border-blue-200 hover:bg-blue-50"
+                            onClick={() => scrollToAnnotation(annotation)}
+                          >
+                            <span
+                              className={clsx(
+                                'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border',
+                                annotation.kind === 'bookmark' && 'border-blue-200 bg-blue-50 text-blue-700',
+                                annotation.color === 'yellow' && 'border-yellow-300 bg-yellow-200 text-yellow-950',
+                                annotation.color === 'red' && 'border-red-300 bg-red-200 text-red-950'
+                              )}
+                            >
+                              {annotation.kind === 'bookmark' ? <Bookmark className="h-3 w-3" /> : <Highlighter className="h-3 w-3" />}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-bold text-slate-800">
+                                <ScriptText
+                                  script={primaryOutputScript}
+                                  text={previewText}
+                                  sanskritFontPreset={sanskritFontPreset}
+                                  tamilFontPreset={tamilFontPreset}
+                                  className="text-sm font-bold"
+                                />
+                              </span>
+                              <span className="mt-0.5 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+                                Line {blockIndex}
+                              </span>
+                            </span>
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-300 opacity-0 hover:bg-white hover:text-rose-600 group-hover:opacity-100"
+                              aria-label="Remove annotation"
+                              title="Remove annotation"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                removeAnnotation(annotation.id);
+                              }}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  removeAnnotation(annotation.id);
+                                }
+                              }}
+                            >
+                              <X className="h-3 w-3" />
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </aside>
+        )}
+      </>
     );
   }
 
@@ -958,7 +1340,7 @@ export const MainDocumentArea: React.FC = () => {
                   )}
                   <div className="whitespace-pre-wrap break-words text-slate-900">
                     {renderInteractiveSourceText(
-                      block.id,
+                      block,
                       'document',
                       block.source,
                       primaryOutputScript,

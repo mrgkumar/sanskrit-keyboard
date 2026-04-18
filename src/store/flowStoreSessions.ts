@@ -7,9 +7,14 @@ export const INITIAL_SESSION_NAME = 'Current Session';
 
 export const getSessionStorageKey = (sessionId: string) => `sanskrit-keyboard.session.v2.${sessionId}`;
 
+export const readStoredSessionSnapshotRaw = (sessionId: string): string | null => {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage.getItem(getSessionStorageKey(sessionId));
+};
+
 export const readStoredSessionSnapshot = (sessionId: string): SessionSnapshot | null => {
   if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(getSessionStorageKey(sessionId));
+  const raw = readStoredSessionSnapshotRaw(sessionId);
   if (!raw) {
     return null;
   }

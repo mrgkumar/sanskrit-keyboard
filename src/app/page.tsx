@@ -44,7 +44,7 @@ export default function Home() {
   }
 
   return (
-    <main className="space-y-4">
+    <main className="flex min-h-0 flex-1 flex-col">
       <TransliterationEngine />
     </main>
   );

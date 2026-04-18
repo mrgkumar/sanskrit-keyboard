@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useFlowStore, readStoredSessionSnapshot } from '@/store/useFlowStore';
+import { useFlowStore } from '@/store/useFlowStore';
 import { 
   Plus, 
   Clock, 
@@ -11,6 +11,7 @@ import {
   Trash2,
   Edit2
 } from 'lucide-react';
+import { LargeDocumentOperationOverlay } from './LargeDocumentOperationOverlay';
 
 interface SessionLandingProps {
   onConfirm: () => void;
@@ -19,19 +20,19 @@ interface SessionLandingProps {
 export const SessionLanding: React.FC<SessionLandingProps> = ({ onConfirm }) => {
   const { 
     savedSessions, 
-    loadSessionSnapshot, 
     resetSession, 
     deleteSession,
-    renameSession 
+    renameSession,
+    restoreSessionAsync,
+    largeDocumentOperation,
   } = useFlowStore();
   
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editingName, setEditingName] = React.useState('');
 
-  const handleLoad = (id: string) => {
-    const snapshot = readStoredSessionSnapshot(id);
-    if (snapshot) {
-      loadSessionSnapshot(snapshot);
+  const handleLoad = async (id: string) => {
+    const restored = await restoreSessionAsync(id);
+    if (restored) {
       onConfirm();
     }
   };
@@ -70,6 +71,7 @@ export const SessionLanding: React.FC<SessionLandingProps> = ({ onConfirm }) => 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
             onClick={handleNew}
+            disabled={Boolean(largeDocumentOperation)}
             className="flex items-center justify-between p-6 bg-white border-2 border-dashed border-slate-200 rounded-3xl hover:border-blue-400 hover:bg-blue-50/30 transition-all group"
           >
             <div className="flex items-center gap-4">
@@ -86,7 +88,8 @@ export const SessionLanding: React.FC<SessionLandingProps> = ({ onConfirm }) => 
 
           {sortedSessions.length > 0 && (
             <button
-              onClick={() => handleLoad(sortedSessions[0].sessionId)}
+              onClick={() => void handleLoad(sortedSessions[0].sessionId)}
+              disabled={Boolean(largeDocumentOperation)}
               className="flex items-center justify-between p-6 bg-slate-900 border-2 border-slate-900 rounded-3xl hover:bg-slate-800 transition-all group shadow-xl shadow-slate-200"
             >
               <div className="flex items-center gap-4">
@@ -128,8 +131,9 @@ export const SessionLanding: React.FC<SessionLandingProps> = ({ onConfirm }) => 
                       </form>
                     ) : (
                       <button
-                        onClick={() => handleLoad(session.sessionId)}
+                        onClick={() => void handleLoad(session.sessionId)}
                         className="w-full text-left"
+                        disabled={Boolean(largeDocumentOperation)}
                       >
                         <p className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors truncate">
                           {session.sessionName}
@@ -181,6 +185,7 @@ export const SessionLanding: React.FC<SessionLandingProps> = ({ onConfirm }) => 
         </div>
 
       </div>
+      <LargeDocumentOperationOverlay operation={largeDocumentOperation} />
     </div>
   );
 };

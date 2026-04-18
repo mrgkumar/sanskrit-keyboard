@@ -193,7 +193,7 @@ It stores:
 - session index
 - lexical learning history
 
-On reload, the latest session can be restored automatically.
+On reload, the latest session can be restored automatically. Large session restores now run through an async restore path with a visible progress overlay, and large snapshots defer lexical-usage derivation so the UI stays responsive during hydration.
 
 The app provides session management features:
 - **Search:** Filter saved sessions by name.
@@ -213,6 +213,7 @@ The most important files for agent work are:
 - `app/src/components/reference/ReferenceLibrary.tsx`
 - `app/src/components/engine/WordPredictionTray.tsx`
 - `app/src/components/engine/ShortcutHUD.tsx`
+- `app/src/components/engine/LargeDocumentOperationOverlay.tsx`
 - `app/src/components/ScriptText.tsx`
 - `app/src/lib/vedic/mapping.ts`
 - `app/src/lib/vedic/utils.ts`
@@ -244,6 +245,7 @@ Useful commands from `app/`:
 - **Cursor Navigation Constraint:** The ITRANS composer is a transparent textarea over a visible mirror. Keep textarea and mirror typography, padding, wrapping, and scroll transforms aligned exactly. Do not use layout-changing active-word styles such as `font-bold` in the ITRANS mirror because they shift the visible cursor/highlight away from the real textarea selection.
 - **Programmatic Selection Constraint:** Preview/document click navigation must set the DOM selection and store selection together. Suppress stale `onFocus`/`onSelect` sync during programmatic focus changes; otherwise the old textarea selection can overwrite the intended clicked caret.
 - **Document Hit-Testing Constraint:** `MainDocumentArea` click navigation is separate from the top composer preview hit-testing. Document/read/document-canvas words need `data-source-start`/`data-source-end`, and clicks should compute an inside-word caret from the pointer X position instead of snapping to word start.
+- **Large Restore Constraint:** Restoring a large saved session should go through `restoreSessionAsync`, which sets `largeDocumentOperation`, hydrates the workspace, and defers derived lexical usage rather than blocking on a synchronous restore.
 - **Devanagari Note:** The same single-run visible-text pattern is safe to preserve for Devanagari previews as well, even though it did not materially improve current Devanagari rendering.
 - **Rendering:** Vedic accents following a visarga are automatically separated by a ZWNJ in the engine for correct rendering.
 - Treat `StickyTopComposer.tsx` as the top-half composer layout and output-target control surface.

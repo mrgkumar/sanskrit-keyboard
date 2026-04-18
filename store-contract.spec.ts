@@ -4,6 +4,7 @@ import {
   readStoredSessionSnapshot,
   useFlowStore,
 } from './src/store/useFlowStore';
+import { createSessionId } from './src/store/flowStoreSessions';
 
 type MockLocalStorage = {
   getItem: (key: string) => string | null;
@@ -261,6 +262,100 @@ test.describe('store session orchestration', () => {
     expect(nextState.sessionId).toBe(snapshot.sessionId);
     expect(nextState.sessionName).toBe('Reference Session');
     expect(nextState.blocks.map((block) => block.source)).toEqual(snapshot.blocks.map((block) => block.source));
+  });
+
+  test('session annotations persist and clear when their source block is edited', () => {
+    const store = useFlowStore.getState();
+    useFlowStore.setState({
+      blocks: [makeShortBlock('block-a', 'agnim ile')],
+      editorState: {
+        ...store.editorState,
+        activeBlockId: 'block-a',
+        activeAnchorSegmentIndex: 0,
+      },
+    });
+
+    store.upsertAnnotation({
+      blockId: 'block-a',
+      startOffset: 0,
+      endOffset: 5,
+      sourceText: 'agnim',
+      kind: 'highlight',
+      color: 'yellow',
+    });
+    store.upsertAnnotation({
+      blockId: 'block-a',
+      startOffset: 6,
+      endOffset: 9,
+      sourceText: 'ile',
+      kind: 'bookmark',
+    });
+
+    const snapshot = useFlowStore.getState().exportSessionSnapshot();
+    expect(snapshot.annotations).toHaveLength(2);
+
+    store.resetSession();
+    store.loadSessionSnapshot(snapshot);
+    expect(useFlowStore.getState().annotations.map((annotation) => annotation.sourceText)).toEqual(['agnim', 'ile']);
+
+    useFlowStore.getState().updateChunkSource('agnim ile purohitam', 20, 20);
+
+    const nextState = useFlowStore.getState();
+    expect(nextState.annotations).toEqual([]);
+    expect(nextState.annotationEditWarning?.clearedCount).toBe(2);
+  });
+
+  test('restoreSessionAsync loads a stored session snapshot without leaving restore state behind', async () => {
+    const store = useFlowStore.getState();
+    const sessionId = createSessionId();
+    const snapshot = {
+      ...JSON.parse(JSON.stringify(baseSnapshot)),
+      sessionId,
+      sessionName: 'Async Restore Session',
+      updatedAt: '2024-01-02T00:00:00.000Z',
+      blocks: [
+        makeShortBlock('block-restore-1', 'om namah'),
+        makeShortBlock('block-restore-2', 'harih om'),
+      ],
+      editorState: {
+        ...JSON.parse(JSON.stringify(baseSnapshot.editorState)),
+        activeBlockId: 'block-restore-1',
+      },
+    };
+
+    window.localStorage.setItem(`sanskrit-keyboard.session.v2.${sessionId}`, JSON.stringify(snapshot));
+
+    await store.restoreSessionAsync(sessionId);
+
+    const nextState = useFlowStore.getState();
+    expect(nextState.sessionId).toBe(sessionId);
+    expect(nextState.sessionName).toBe('Async Restore Session');
+    expect(nextState.blocks.map((block) => block.source)).toEqual(['om namah', 'harih om']);
+    expect(nextState.largeDocumentOperation).toBeNull();
+  });
+
+  test('loadSessionSnapshot can defer derived usage for large sessions', async () => {
+    const store = useFlowStore.getState();
+    const largeBlocks = Array.from({ length: 101 }, (_, index) =>
+      makeShortBlock(`block-large-${index}`, `om namah ${index}`)
+    );
+    const snapshot = {
+      ...JSON.parse(JSON.stringify(baseSnapshot)),
+      sessionId: createSessionId(),
+      sessionName: 'Large Session',
+      updatedAt: '2024-01-03T00:00:00.000Z',
+      blocks: largeBlocks,
+      editorState: {
+        ...JSON.parse(JSON.stringify(baseSnapshot.editorState)),
+        activeBlockId: largeBlocks[0].id,
+      },
+    };
+
+    store.loadSessionSnapshot(snapshot, { deferDerivedUsage: true });
+
+    expect(useFlowStore.getState().sessionLexicalUsage).toEqual({});
+    await waitForQueuedTimers();
+    expect(Object.keys(useFlowStore.getState().sessionLexicalUsage).length).toBeGreaterThan(0);
   });
 });
 
