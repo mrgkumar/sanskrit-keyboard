@@ -162,7 +162,7 @@ export const MainDocumentArea: React.FC = () => {
     }
 
     const rafId = window.requestAnimationFrame(() => {
-      documentContainerRef.current?.focus();
+      documentContainerRef.current?.focus({ preventScroll: true });
     });
 
     return () => window.cancelAnimationFrame(rafId);
@@ -173,30 +173,6 @@ export const MainDocumentArea: React.FC = () => {
       setAnnotationTarget(null);
     }
   }, [viewMode]);
-
-  React.useEffect(() => {
-    if (viewMode !== 'read' || !selectedReadBlockId) {
-      return;
-    }
-
-    const scrollSelectedReadLineIntoView = () => {
-      const container = documentContainerRef.current;
-      if (!container) {
-        return;
-      }
-
-      const target = container.querySelector<HTMLElement>(`[data-testid="document-read-block-${selectedReadBlockId}"]`);
-      if (!target) {
-        return;
-      }
-
-      // Bias the active line lower in the viewport so the sticky composer chrome does not cover it.
-      target.scrollIntoView({ block: 'end', behavior: 'auto' });
-    };
-
-    const rafId = window.requestAnimationFrame(scrollSelectedReadLineIntoView);
-    return () => window.cancelAnimationFrame(rafId);
-  }, [selectedReadBlockId, viewMode]);
 
   React.useEffect(() => {
     if (viewMode !== 'document' || !activeBlockId) {
@@ -336,7 +312,7 @@ export const MainDocumentArea: React.FC = () => {
 
   const selectReadLine = (blockId: string) => {
     setSelectedReadBlockId(blockId);
-    documentContainerRef.current?.focus();
+    documentContainerRef.current?.focus({ preventScroll: true });
   };
 
   const moveReadLineSelection = (direction: 1 | -1) => {
@@ -416,14 +392,37 @@ export const MainDocumentArea: React.FC = () => {
 
   const handleReadBlockClick = (block: CanonicalBlock, event: React.MouseEvent<HTMLElement>) => {
     selectReadLine(block.id);
+    const viewportTopBeforeEdit = event.currentTarget.getBoundingClientRect().top;
+    const restoreScrollAfterEdit = () => {
+      const restore = () => {
+        const target = document.querySelector<HTMLElement>(`[data-testid="document-read-block-${block.id}"]`);
+        if (!target) {
+          return;
+        }
+
+        const delta = target.getBoundingClientRect().top - viewportTopBeforeEdit;
+        if (Math.abs(delta) > 1) {
+          window.scrollBy(0, delta);
+        }
+      };
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(restore);
+      });
+      window.setTimeout(restore, 0);
+      window.setTimeout(restore, 80);
+      window.setTimeout(restore, 200);
+      window.setTimeout(restore, 500);
+    };
 
     const sourceHit = getSourceHitFromPointer(event);
     if (!sourceHit) {
       jumpToEditPosition(block, 0);
+      restoreScrollAfterEdit();
       return;
     }
 
     jumpToEditPosition(block, sourceHit.caret);
+    restoreScrollAfterEdit();
   };
 
   const jumpToEditPosition = (block: CanonicalBlock, sourceOffset: number) => {
@@ -500,6 +499,40 @@ export const MainDocumentArea: React.FC = () => {
       });
       const wordKey = `${block.id}:${start}:${end}`;
       const wordAnnotations = findAnnotationsForWord(block.id, start, end);
+      const handleReadWordMouseDown =
+        viewMode === 'read' && paneRole === 'primary'
+          ? (event: React.MouseEvent<HTMLSpanElement>) => {
+              event.preventDefault();
+              event.stopPropagation();
+              selectReadLine(block.id);
+              const blockElement = event.currentTarget.closest<HTMLElement>('[data-testid^="document-read-block-"]');
+              const viewportTopBeforeEdit = blockElement?.getBoundingClientRect().top ?? null;
+
+              const rect = event.currentTarget.getBoundingClientRect();
+              const ratio = rect.width > 0 ? Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)) : 0;
+              const caret = Math.round(start + (end - start) * ratio);
+              jumpToEditPosition(block, Math.max(start, Math.min(end, caret)));
+              const restore = () => {
+                if (viewportTopBeforeEdit === null) {
+                  return;
+                }
+
+                const target = document.querySelector<HTMLElement>(`[data-testid="document-read-block-${block.id}"]`);
+                if (!target) {
+                  return;
+                }
+
+                const delta = target.getBoundingClientRect().top - viewportTopBeforeEdit;
+                if (Math.abs(delta) > 1) {
+                  window.scrollBy(0, delta);
+                }
+              };
+              window.setTimeout(restore, 0);
+              window.setTimeout(restore, 80);
+              window.setTimeout(restore, 200);
+              window.setTimeout(restore, 500);
+            }
+          : undefined;
 
       nodes.push(
         <span
@@ -514,6 +547,7 @@ export const MainDocumentArea: React.FC = () => {
             viewMode === 'immersive' && paneRole === 'primary' && 'cursor-pointer hover:bg-blue-100/70',
             getWordAnnotationClassName(wordAnnotations)
           )}
+          onMouseDown={handleReadWordMouseDown}
           onClick={
             viewMode === 'immersive' && paneRole === 'primary'
               ? (event) => {
@@ -790,7 +824,7 @@ export const MainDocumentArea: React.FC = () => {
           onKeyDown={handleReadModeKeyDown}
           onMouseDown={() => {
             if (viewMode === 'read' || viewMode === 'immersive') {
-              documentContainerRef.current?.focus();
+              documentContainerRef.current?.focus({ preventScroll: true });
             }
           }}
         >
