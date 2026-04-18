@@ -6,7 +6,7 @@ import { useFlowStore } from '@/store/useFlowStore';
 import { CanonicalBlock } from '@/store/types';
 import { clsx } from 'clsx';
 import { Check, Copy, Trash2 } from 'lucide-react';
-import { formatSourceForScript, normalizeDevanagariDisplayResult, transliterate } from '@/lib/vedic/utils';
+import { formatSourceForScript } from '@/lib/vedic/utils';
 import { ScriptText } from '@/components/ScriptText';
 import { ResizeHandle } from '@/components/VerticalResizeHandle';
 
@@ -16,7 +16,6 @@ export const MainDocumentArea: React.FC = () => {
   const activeChunkGroup = getActiveChunkGroup(); // Get active chunk group
   const {
     typography,
-    inputScheme,
     primaryOutputScript,
     romanOutputStyle,
     tamilOutputStyle,
@@ -26,6 +25,7 @@ export const MainDocumentArea: React.FC = () => {
   } = displaySettings;
   const documentTypography = typography.document;
   const immersiveTypography = typography.immersive;
+  const readModeScrollMarginTop = '56vh';
   const updateDocumentHeight = React.useCallback(
     (key: 'primaryPaneHeight' | 'comparePaneHeight') => (nextHeight: number) => {
       setTypography('document', { [key]: nextHeight } as Partial<typeof documentTypography>);
@@ -138,8 +138,8 @@ export const MainDocumentArea: React.FC = () => {
         return;
       }
 
-      // Use 'nearest' for Read mode to avoid double-scroll jumps with the inner pane
-      target.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+      // Bias the active line lower in the viewport so the sticky composer chrome does not cover it.
+      target.scrollIntoView({ block: 'end', behavior: 'auto' });
     };
 
     const rafId = window.requestAnimationFrame(scrollSelectedReadLineIntoView);
@@ -231,41 +231,21 @@ export const MainDocumentArea: React.FC = () => {
     }
   };
 
-  const handleReadBlockClick = (
-    block: CanonicalBlock,
-    script: typeof primaryOutputScript,
-    event: React.MouseEvent<HTMLElement>
-  ) => {
+  const handleReadBlockClick = (block: CanonicalBlock, event: React.MouseEvent<HTMLElement>) => {
     selectReadLine(block.id);
-    if (script !== 'devanagari') {
-      jumpToEditPosition(block, 0);
-      return;
-    }
 
-    const target = (event.target as HTMLElement).closest<HTMLElement>('[data-target-index]');
+    const target = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-source-start]');
     if (!target) {
       jumpToEditPosition(block, 0);
       return;
     }
 
-    const targetIndex = Number(target.dataset.targetIndex);
-    if (Number.isNaN(targetIndex)) {
+    const sourceStart = Number(target.dataset.sourceStart);
+    if (Number.isNaN(sourceStart)) {
       return;
     }
 
-    const renderedBlock = normalizeDevanagariDisplayResult(
-      transliterate(block.source, { inputScheme }),
-      sanskritFontPreset,
-    );
-    const renderedChars = Array.from(renderedBlock.unicode);
-
-    let wordStart = targetIndex;
-    while (wordStart > 0 && /\S/.test(renderedChars[wordStart - 1] ?? '')) {
-      wordStart -= 1;
-    }
-
-    const sourceWordStart = renderedBlock.targetToSourceMap[wordStart] ?? 0;
-    jumpToEditPosition(block, sourceWordStart);
+    jumpToEditPosition(block, sourceStart);
   };
 
   const jumpToEditPosition = (block: CanonicalBlock, sourceOffset: number) => {
@@ -288,11 +268,13 @@ export const MainDocumentArea: React.FC = () => {
     setViewMode('review');
     const chunkLocalOffset = Math.max(0, clampedSourceOffset - chunkStartOffset);
     const applyComposerSelection = (attempt: number) => {
-      setComposerSelection(chunkLocalOffset, chunkLocalOffset);
       const composer = document.querySelector('[data-testid="sticky-itrans-input"]') as HTMLTextAreaElement | null;
       if (composer) {
         composer.focus({ preventScroll: true });
         composer.setSelectionRange(chunkLocalOffset, chunkLocalOffset);
+        window.requestAnimationFrame(() => {
+          setComposerSelection(chunkLocalOffset, chunkLocalOffset);
+        });
         return;
       }
 
@@ -310,6 +292,59 @@ export const MainDocumentArea: React.FC = () => {
   const handleImmersiveBlockDoubleClick = (block: CanonicalBlock) => {
     selectReadLine(block.id);
     setViewMode('read');
+  };
+
+  const renderInteractiveSourceText = (
+    blockKey: string,
+    paneRole: 'primary' | 'compare' | 'document',
+    sourceText: string,
+    script: typeof primaryOutputScript,
+    textStyle: React.CSSProperties,
+  ) => {
+    const nodes: React.ReactNode[] = [];
+    let cursor = 0;
+
+    for (const match of sourceText.matchAll(/\S+/g)) {
+      const start = match.index ?? 0;
+      const end = start + match[0].length;
+
+      if (cursor < start) {
+        nodes.push(sourceText.slice(cursor, start));
+      }
+
+      const sourceSlice = sourceText.slice(start, end);
+      const formattedSlice = formatSourceForScript(sourceSlice, script, {
+        romanOutputStyle,
+        tamilOutputStyle,
+      }, {
+        sanskritFontPreset,
+      });
+
+      nodes.push(
+        <span
+          key={`${blockKey}-${paneRole}-${start}-${end}`}
+          data-source-start={start}
+          data-source-end={end}
+          className="inline"
+        >
+          <ScriptText
+            script={script}
+            text={formattedSlice}
+            sanskritFontPreset={sanskritFontPreset}
+            tamilFontPreset={tamilFontPreset}
+            style={textStyle}
+          />
+        </span>
+      );
+
+      cursor = end;
+    }
+
+    if (cursor < sourceText.length) {
+      nodes.push(sourceText.slice(cursor));
+    }
+
+    return nodes;
   };
 
   const renderScriptBlock = (
@@ -339,16 +374,16 @@ export const MainDocumentArea: React.FC = () => {
     ) : null;
 
     if (script === 'devanagari') {
-      const renderedBlock = normalizeDevanagariDisplayResult(
-        transliterate(block.source, { inputScheme }),
-        sanskritFontPreset,
-      );
-
       return (
         <div
           key={`${block.id}-${paneRole}`}
           className={wrapperClassName}
-          style={lineNumber !== undefined ? { gridTemplateColumns: '2.5rem minmax(0, 1fr)' } : undefined}
+          style={{
+            ...(lineNumber !== undefined ? { gridTemplateColumns: '2.5rem minmax(0, 1fr)' } : undefined),
+            scrollMarginTop: (viewMode === 'read' || viewMode === 'immersive') && isPrimaryPane
+              ? readModeScrollMarginTop
+              : undefined,
+          }}
         >
           {lineGuide}
           <div
@@ -373,7 +408,7 @@ export const MainDocumentArea: React.FC = () => {
               isPrimaryPane
                 ? isImmersive
                   ? () => handleImmersiveBlockClick(block)
-                  : (event) => handleReadBlockClick(block, script, event)
+                  : (event) => handleReadBlockClick(block, event)
                 : undefined
             }
             onDoubleClick={
@@ -385,16 +420,16 @@ export const MainDocumentArea: React.FC = () => {
                 : undefined
             }
           >
-            <ScriptText
-              script={script}
-              text={renderedBlock.unicode}
-              sanskritFontPreset={sanskritFontPreset}
-              tamilFontPreset={tamilFontPreset}
-              style={{
-                fontSize: `${isImmersive ? immersiveTypography.devanagariFontSize : getRenderedFontSizeForScript(script)}px`,
-                lineHeight: isImmersive ? immersiveTypography.devanagariLineHeight : getRenderedLineHeightForScript(script),
-              }}
-            />
+            {renderInteractiveSourceText(
+              block.id,
+              paneRole,
+              block.source,
+              script,
+              {
+                fontSize: `${script === 'devanagari' && isImmersive ? immersiveTypography.devanagariFontSize : getRenderedFontSizeForScript(script)}px`,
+                lineHeight: script === 'devanagari' && isImmersive ? immersiveTypography.devanagariLineHeight : getRenderedLineHeightForScript(script),
+              }
+            )}
           </div>
         </div>
       );
@@ -411,7 +446,12 @@ export const MainDocumentArea: React.FC = () => {
       <div
         key={`${block.id}-${script}-${paneRole}`}
         className={wrapperClassName}
-        style={lineNumber !== undefined ? { gridTemplateColumns: '2.5rem minmax(0, 1fr)' } : undefined}
+        style={{
+          ...(lineNumber !== undefined ? { gridTemplateColumns: '2.5rem minmax(0, 1fr)' } : undefined),
+          scrollMarginTop: (viewMode === 'read' || viewMode === 'immersive') && isPrimaryPane
+            ? readModeScrollMarginTop
+            : undefined,
+        }}
       >
         {lineGuide}
         <div className="pointer-events-none absolute right-1 top-1 z-10 opacity-0 transition-opacity group-hover:opacity-100">
@@ -452,13 +492,13 @@ export const MainDocumentArea: React.FC = () => {
                 ? 'Click to select, double click to open read mode'
                 : 'Click to jump back into edit mode for this block'
           }
-          onClick={
-            isPrimaryPane
-              ? isImmersive
-                ? () => handleImmersiveBlockClick(block)
-                : (event) => handleReadBlockClick(block, script, event)
-              : undefined
-          }
+            onClick={
+              isPrimaryPane
+                ? isImmersive
+                  ? () => handleImmersiveBlockClick(block)
+                  : (event) => handleReadBlockClick(block, event)
+                : undefined
+            }
           onDoubleClick={
             isPrimaryPane && isImmersive
               ? (event) => {
@@ -467,17 +507,17 @@ export const MainDocumentArea: React.FC = () => {
                 }
               : undefined
           }
-        >
-          <ScriptText
-            script={script}
-            text={formatted}
-            sanskritFontPreset={sanskritFontPreset}
-            tamilFontPreset={tamilFontPreset}
-            style={{
+          >
+          {renderInteractiveSourceText(
+            block.id,
+            paneRole,
+            block.source,
+            script,
+            {
               fontSize: `${getRenderedFontSizeForScript(script)}px`,
               lineHeight: getRenderedLineHeightForScript(script),
-            }}
-          />
+            }
+          )}
         </p>
       </div>
     );
@@ -802,6 +842,14 @@ export const MainDocumentArea: React.FC = () => {
                   e.preventDefault();
                   activateBlock(block.id);
                 }}
+                onClick={(event) => {
+                  const target = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-source-start]');
+                  if (!target) {
+                    return;
+                  }
+
+                  handleReadBlockClick(block, event);
+                }}
                 data-testid={`document-canvas-block-${block.id}`}
                 className={clsx(
                   'group relative cursor-pointer transition-all',
@@ -843,16 +891,16 @@ export const MainDocumentArea: React.FC = () => {
                     </p>
                   )}
                   <div className="whitespace-pre-wrap break-words text-slate-900">
-                    <ScriptText
-                      script={primaryOutputScript}
-                      text={primaryOutputScript === 'devanagari' ? block.rendered : formatted}
-                      sanskritFontPreset={sanskritFontPreset}
-                      tamilFontPreset={tamilFontPreset}
-                      style={{
+                    {renderInteractiveSourceText(
+                      block.id,
+                      'document',
+                      block.source,
+                      primaryOutputScript,
+                      {
                         fontSize: `${getRenderedFontSizeForScript(primaryOutputScript)}px`,
                         lineHeight: getRenderedLineHeightForScript(primaryOutputScript),
-                      }}
-                    />
+                      }
+                    )}
                   </div>
                 </div>
               </div>

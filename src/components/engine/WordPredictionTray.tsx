@@ -79,7 +79,7 @@ export const WordPredictionTray: React.FC<WordPredictionTrayProps> = ({
     <section
       data-testid={`word-predictions-${variant}`}
       className={clsx(
-        'border border-slate-200 bg-white/95 backdrop-blur-md',
+        'pointer-events-none border border-slate-200 bg-white/95 backdrop-blur-md',
         isInline
           ? 'rounded-lg border-dashed px-2 py-1.5 shadow-sm bg-gradient-to-r from-blue-50 via-white to-blue-50/70'
           : isListbox
@@ -144,6 +144,7 @@ export const WordPredictionTray: React.FC<WordPredictionTrayProps> = ({
               data-testid={`lexical-suggestion-${variant}-${index}`}
               onClick={() => handleLexicalInsert(entry.itrans, index)}
               className={clsx(
+                'pointer-events-auto',
                 'text-left transition-all active:scale-[0.99]',
                 isInline
                   ? 'min-w-[9.5rem] shrink-0 rounded-xl border px-3 py-2'

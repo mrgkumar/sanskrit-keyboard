@@ -142,7 +142,7 @@ export const ShortcutHUD: React.FC = () => {
 
   return (
     <div
-      className="w-full shrink-0 min-h-0 max-w-5xl overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 md:max-h-[14vh]"
+      className="pointer-events-none w-full shrink-0 min-h-0 max-w-5xl overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 md:max-h-[14vh]"
       data-testid="sticky-shortcut-hud"
     >
       {(showLexicalSuggestions && showLexicalInHud) && <WordPredictionTray variant="footer" className="mb-2" />}
@@ -161,6 +161,7 @@ export const ShortcutHUD: React.FC = () => {
                 key={`alt-${i}`}
                 onClick={() => handleInsert(m.itrans, activeBuffer)}
                 className={clsx(
+                  'pointer-events-auto',
                   'group flex shrink-0 items-center gap-2 rounded-lg border py-1.5 pl-2 pr-3 transition-all active:scale-95',
                   i === selectedSuggestionIndex
                     ? 'bg-blue-600 text-white border-blue-500 shadow-lg'
@@ -186,6 +187,7 @@ export const ShortcutHUD: React.FC = () => {
                 key={`sug-${i}`}
                 onClick={() => handleInsert(m.itrans, activeBuffer)}
                 className={clsx(
+                  'pointer-events-auto',
                   'group flex shrink-0 items-center gap-2 rounded-lg border py-1.5 pl-2 pr-3 transition-all active:scale-95',
                   i === selectedSuggestionIndex
                     ? 'bg-blue-600 text-white border-blue-500 shadow-lg'
@@ -210,7 +212,7 @@ export const ShortcutHUD: React.FC = () => {
               <button
                 key={`comp-${i}`}
                 onClick={() => handleInsert(m.itrans, m.tail)}
-                className="group flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 transition-all active:scale-95 hover:border-blue-300 hover:bg-blue-50"
+                className="pointer-events-auto group flex shrink-0 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 transition-all active:scale-95 hover:border-blue-300 hover:bg-blue-50"
               >
                 <div className="text-xl font-serif text-slate-900 transition-transform group-hover:scale-110">
                   <ScriptText 
