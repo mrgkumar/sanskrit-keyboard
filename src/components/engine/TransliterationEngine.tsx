@@ -87,6 +87,7 @@ const migrateLegacySessionsIfNeeded = () => {
 export const TransliterationEngine: React.FC = () => {
   const {
     blocks,
+    annotations,
     editorState,
     displaySettings,
     sessionId,
@@ -495,7 +496,7 @@ export const TransliterationEngine: React.FC = () => {
     }, 500);
 
     return () => window.clearTimeout(timeoutId);
-  }, [blocks, displaySettings, editorState, largeDocumentOperation, sessionId, sessionName, markSessionSaved]);
+  }, [annotations, blocks, displaySettings, editorState, largeDocumentOperation, sessionId, sessionName, markSessionSaved]);
 
   React.useEffect(() => {
     if (!hasLoadedLexicalLearning.current) {
@@ -560,7 +561,10 @@ export const TransliterationEngine: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-slate-50 font-sans relative">
+    <div className={clsx(
+      "flex min-h-0 flex-1 flex-col bg-slate-50 font-sans relative",
+      viewMode === 'immersive' && "h-dvh max-h-dvh overflow-hidden"
+    )}>
       <div className="fixed left-4 top-4 z-[140] flex items-center gap-2 pointer-events-none">
         <button
           data-testid="workspace-toggle"
