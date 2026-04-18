@@ -53,6 +53,7 @@ export const StickyTopComposer: React.FC = () => {
   const primaryPreviewCaretRef = React.useRef<HTMLSpanElement>(null);
   const comparisonPreviewCaretRef = React.useRef<HTMLSpanElement>(null);
   const isPointerSelectingRef = React.useRef(false);
+  const isProgrammaticSelectionRef = React.useRef(false);
 
   const [showShiftEnterHint, setShowShiftEnterHint] = React.useState(false);
   const hintTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -483,7 +484,7 @@ export const StickyTopComposer: React.FC = () => {
             key={`itrans-caret-${start}`}
             ref={mirrorCaretRef}
             aria-hidden="true"
-            className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-slate-900 align-middle motion-safe:animate-caret"
+            className="inline-block h-0 w-0 overflow-hidden opacity-0 align-baseline"
             data-testid="itrans-mirror-caret"
           />
         );
@@ -509,9 +510,10 @@ export const StickyTopComposer: React.FC = () => {
           key={`itrans-fragment-${start}-${end}`}
           className={clsx(
             isSelectionVisible && 'rounded-[0.18em] bg-blue-200/80 text-blue-950',
-            isCurrentWordVisible && 'font-bold text-[#6b1f1f]'
+            isCurrentWordVisible && 'text-[#6b1f1f]'
           )}
           data-source-selection={isSelectionVisible ? 'true' : undefined}
+          data-current-source-word={isCurrentWordVisible ? 'true' : undefined}
         >
           {text}
         </span>
@@ -524,7 +526,7 @@ export const StickyTopComposer: React.FC = () => {
           key="itrans-caret-end"
           ref={mirrorCaretRef}
           aria-hidden="true"
-          className="mx-[1px] inline-block h-[1.1em] w-[2px] translate-y-[0.08em] rounded-full bg-slate-900 align-middle motion-safe:animate-caret"
+          className="inline-block h-0 w-0 overflow-hidden opacity-0 align-baseline"
           data-testid="itrans-mirror-caret"
         />
       );
@@ -809,10 +811,19 @@ export const StickyTopComposer: React.FC = () => {
   };
 
   const focusComposerAt = (nextCaret: number) => {
-    setComposerSelection(nextCaret, nextCaret);
     const applySelection = () => {
-      composerRef.current?.focus({ preventScroll: true });
-      composerRef.current?.setSelectionRange(nextCaret, nextCaret);
+      const composer = composerRef.current;
+      if (!composer) {
+        return;
+      }
+
+      isProgrammaticSelectionRef.current = true;
+      composer.focus({ preventScroll: true });
+      composer.setSelectionRange(nextCaret, nextCaret);
+      setComposerSelection(nextCaret, nextCaret);
+      window.requestAnimationFrame(() => {
+        isProgrammaticSelectionRef.current = false;
+      });
     };
 
     applySelection();
@@ -1494,7 +1505,7 @@ export const StickyTopComposer: React.FC = () => {
                     <textarea
                       ref={composerRef}
                       data-testid="sticky-itrans-input"
-                      className="relative z-10 h-full w-full overflow-y-auto rounded-[1rem] bg-transparent px-3 py-2.5 font-mono text-lg text-transparent caret-transparent outline-none selection:bg-blue-200/80 selection:text-transparent placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500"
+                      className="relative z-10 h-full w-full overflow-y-auto rounded-[1rem] bg-transparent py-2.5 pl-3 pr-7 font-mono text-lg text-transparent caret-slate-900 outline-none selection:bg-blue-200/80 selection:text-transparent placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 md:pr-8"
                       style={{
                         fontSize: `${composerTypography.itransFontSize}px`,
                         lineHeight: composerTypography.itransLineHeight,
@@ -1515,7 +1526,7 @@ export const StickyTopComposer: React.FC = () => {
                       onClick={(e) => finalizePointerSelection(e.currentTarget)}
                       onKeyUp={(e) => syncSelection(e.currentTarget)}
                       onFocus={(e) => {
-                        if (!isPointerSelectingRef.current) {
+                        if (!isPointerSelectingRef.current && !isProgrammaticSelectionRef.current) {
                           syncSelection(e.currentTarget);
                         }
                       }}

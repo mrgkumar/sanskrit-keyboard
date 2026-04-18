@@ -6,7 +6,7 @@ import { useFlowStore } from '@/store/useFlowStore';
 import { CanonicalBlock } from '@/store/types';
 import { clsx } from 'clsx';
 import { Check, Copy, Trash2 } from 'lucide-react';
-import { formatSourceForScript } from '@/lib/vedic/utils';
+import { formatSourceForScript, transliterate } from '@/lib/vedic/utils';
 import { ScriptText } from '@/components/ScriptText';
 import { ResizeHandle } from '@/components/VerticalResizeHandle';
 
@@ -231,21 +231,51 @@ export const MainDocumentArea: React.FC = () => {
     }
   };
 
+  const getSourceHitFromPointer = (event: React.MouseEvent<HTMLElement>) => {
+    const eventTarget = event.target instanceof HTMLElement ? event.target : null;
+    const target =
+      eventTarget?.closest<HTMLElement>('[data-source-start]') ??
+      Array.from(event.currentTarget.querySelectorAll<HTMLElement>('[data-source-start]')).find((candidate) => {
+        const rect = candidate.getBoundingClientRect();
+        return (
+          event.clientX >= rect.left &&
+          event.clientX <= rect.right &&
+          event.clientY >= rect.top &&
+          event.clientY <= rect.bottom
+        );
+      });
+
+    if (!target) {
+      return null;
+    }
+
+    const sourceStart = Number(target.dataset.sourceStart);
+    const sourceEnd = Number(target.dataset.sourceEnd);
+    if (Number.isNaN(sourceStart) || Number.isNaN(sourceEnd)) {
+      return null;
+    }
+
+    const rect = target.getBoundingClientRect();
+    const ratio = rect.width > 0 ? Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)) : 0;
+    const caret = Math.round(sourceStart + (sourceEnd - sourceStart) * ratio);
+
+    return {
+      start: sourceStart,
+      end: sourceEnd,
+      caret: Math.max(sourceStart, Math.min(sourceEnd, caret)),
+    };
+  };
+
   const handleReadBlockClick = (block: CanonicalBlock, event: React.MouseEvent<HTMLElement>) => {
     selectReadLine(block.id);
 
-    const target = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-source-start]');
-    if (!target) {
+    const sourceHit = getSourceHitFromPointer(event);
+    if (!sourceHit) {
       jumpToEditPosition(block, 0);
       return;
     }
 
-    const sourceStart = Number(target.dataset.sourceStart);
-    if (Number.isNaN(sourceStart)) {
-      return;
-    }
-
-    jumpToEditPosition(block, sourceStart);
+    jumpToEditPosition(block, sourceHit.caret);
   };
 
   const jumpToEditPosition = (block: CanonicalBlock, sourceOffset: number) => {
@@ -303,6 +333,7 @@ export const MainDocumentArea: React.FC = () => {
   ) => {
     const nodes: React.ReactNode[] = [];
     let cursor = 0;
+    const sourceToTargetMap = script === 'devanagari' ? transliterate(sourceText).sourceToTargetMap : null;
 
     for (const match of sourceText.matchAll(/\S+/g)) {
       const start = match.index ?? 0;
@@ -325,6 +356,7 @@ export const MainDocumentArea: React.FC = () => {
           key={`${blockKey}-${paneRole}-${start}-${end}`}
           data-source-start={start}
           data-source-end={end}
+          data-target-index={sourceToTargetMap?.[start] ?? start}
           className="inline"
         >
           <ScriptText
@@ -334,6 +366,39 @@ export const MainDocumentArea: React.FC = () => {
             tamilFontPreset={tamilFontPreset}
             style={textStyle}
           />
+        </span>
+      );
+
+      cursor = end;
+    }
+
+    if (cursor < sourceText.length) {
+      nodes.push(sourceText.slice(cursor));
+    }
+
+    return nodes;
+  };
+
+  const renderInteractiveItransText = (blockKey: string, sourceText: string) => {
+    const nodes: React.ReactNode[] = [];
+    let cursor = 0;
+
+    for (const match of sourceText.matchAll(/\S+/g)) {
+      const start = match.index ?? 0;
+      const end = start + match[0].length;
+
+      if (cursor < start) {
+        nodes.push(sourceText.slice(cursor, start));
+      }
+
+      nodes.push(
+        <span
+          key={`${blockKey}-itrans-${start}-${end}`}
+          data-source-start={start}
+          data-source-end={end}
+          className="inline"
+        >
+          {sourceText.slice(start, end)}
         </span>
       );
 
@@ -881,13 +946,14 @@ export const MainDocumentArea: React.FC = () => {
                 <div className="space-y-2">
                   {showItransInDocument && (
                     <p
+                      data-testid={`document-canvas-source-block-${block.id}`}
                       className="whitespace-pre-wrap break-words font-mono text-slate-400 mb-1 opacity-60 group-hover:opacity-100 transition-opacity"
                       style={{
                         fontSize: `${documentTypography.itransFontSize * 0.8}px`,
                         lineHeight: 1.2,
                       }}
                     >
-                      {block.source}
+                      {renderInteractiveItransText(block.id, block.source)}
                     </p>
                   )}
                   <div className="whitespace-pre-wrap break-words text-slate-900">

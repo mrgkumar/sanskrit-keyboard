@@ -241,7 +241,7 @@ test('dragging the compare split handle resizes both preview panes', async ({ pa
   await expect.poll(async () => comparePane.evaluate((node) => Number.parseFloat(getComputedStyle(node).height))).toBeLessThan(initialCompareHeight);
 });
 
-test('clicking roman and compare preview words places the cursor inside the clicked word', async ({ page }) => {
+test('clicking primary and roman compare preview words places the cursor inside the clicked word', async ({ page }) => {
   await loadDefaultSession(page);
 
   const textarea = page.getByTestId('sticky-itrans-input');
@@ -251,9 +251,9 @@ test('clicking roman and compare preview words places the cursor inside the clic
   const targetEnd = targetStart + targetWord.length;
 
   await textarea.fill(sample);
-  await setReadAs(page, 'roman');
+  await setReadAs(page, 'devanagari');
   await page.getByTestId('sticky-compare-chip').click();
-  await page.getByTestId('sticky-compare-option-devanagari').click();
+  await page.getByTestId('sticky-compare-option-roman').click();
 
   const primaryPane = page.getByTestId('sticky-preview-primary-pane');
   await primaryPane.locator(`[data-source-start="${targetStart}"]`).click();
@@ -264,6 +264,13 @@ test('clicking roman and compare preview words places the cursor inside the clic
   await comparePane.locator(`[data-source-start="${targetStart}"]`).click();
   await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeGreaterThanOrEqual(targetStart);
   await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeLessThanOrEqual(targetEnd);
+  await expect
+    .poll(async () =>
+      page.locator('[data-current-source-word="true"]').evaluateAll((nodes) =>
+        nodes.map((node) => node.textContent ?? '').join('')
+      )
+    )
+    .toBe(targetWord);
 });
 
 test('dragging the composer width handle resizes the input and preview columns', async ({ page }) => {
@@ -355,13 +362,14 @@ test('clicking Tamil preview text moves the edit cursor to the clicked chunk', a
   await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeGreaterThan(0);
 });
 
-test('clicking read or immersive text jumps back into edit mode at the clicked word', async ({ page }) => {
+test('clicking read text jumps back into edit mode inside the clicked word', async ({ page }) => {
   await loadDefaultSession(page);
   const textarea = page.getByTestId('sticky-itrans-input');
   const sample = 'agniM ile purohitaM yajnasya';
   const rendered = transliterate(sample);
   const clickedWord = 'yajnasya';
   const expectedSourceWordStart = sample.indexOf(clickedWord);
+  const expectedSourceWordEnd = expectedSourceWordStart + clickedWord.length;
   const clickedWordTargetIndex = rendered.sourceToTargetMap[expectedSourceWordStart] ?? 0;
 
   await textarea.fill(sample);
@@ -373,15 +381,29 @@ test('clicking read or immersive text jumps back into edit mode at the clicked w
   await readDocument.locator(`[data-target-index="${clickedWordTargetIndex}"]`).click();
 
   await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
-  await expect(textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).resolves.toBe(expectedSourceWordStart);
+  await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeGreaterThanOrEqual(expectedSourceWordStart);
+  await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeLessThanOrEqual(expectedSourceWordEnd);
+});
 
-  await page.getByRole('button', { name: 'Immersive mode' }).click();
-  const immersiveDocument = page.getByTestId('document-immersive-mode');
-  await expect(immersiveDocument).toBeVisible();
-  await immersiveDocument.locator(`[data-target-index="${clickedWordTargetIndex}"]`).click();
+test('clicking document canvas text places the edit cursor inside the clicked word', async ({ page }) => {
+  await loadDefaultSession(page);
+  const textarea = page.getByTestId('sticky-itrans-input');
+  const sample = 'agniM ile purohitaM yajnasya';
+  const targetWord = 'purohitaM';
+  const targetStart = sample.indexOf(targetWord);
+  const targetEnd = targetStart + targetWord.length;
 
-  await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
-  await expect(textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).resolves.toBe(expectedSourceWordStart);
+  await textarea.fill(sample);
+  await setReadAs(page, 'devanagari');
+
+  await page.getByRole('button', { name: 'Document mode' }).click();
+  const canvasBlock = page.locator('[data-testid^="document-canvas-block-"]').first();
+  await expect(canvasBlock).toBeVisible();
+
+  await canvasBlock.locator(`[data-source-start="${targetStart}"]`).click({ position: { x: 40, y: 12 } });
+
+  await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeGreaterThanOrEqual(targetStart);
+  await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeLessThanOrEqual(targetEnd);
 });
 
 test('read mode arrow keys move the selected line and highlight it', async ({ page }) => {
