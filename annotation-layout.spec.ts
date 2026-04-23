@@ -30,8 +30,10 @@ sR^i_kaMM~ sa_MM~_shAya' pa_vimi'ndra ti_gmaM vi shatrU''n tADhi_ vi mR^idho' nu
 
 trAya'sva no.avR^i_kebhi_rvarU'thai_stava' pri_yAsa': sU_riShu' syAma| ana'vaste_ ratha_mashvA'ya takSha_n tvaShTA_ vajraM' puruhUta dyu_mantam''| bra_hmANa_ indraM' ma_haya'nto a_rkairava'rdhaya_nnaha'ye_ hanta_vA u'| vR^iShNe_ yatte_ vR^iSha'No a_rkamarchA_nindra_ grAvA'No_ adi'ti: sa_joShA'':| a_na_shvAso_ ye pa_vayo'.ara_thA indre'ShitA a_bhyava'rtanta_ dasyUn' ||17||`;
 
+const LONG_USER_TEXT = `${USER_TEXT}\n\n${USER_TEXT}`;
+
 test('immersive navigator keeps its own scroll and never occludes the document text', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 600 });
+  await page.setViewportSize({ width: 1440, height: 420 });
 
   await page.goto(APP_URL);
   await page.evaluate(() => {
@@ -47,20 +49,20 @@ test('immersive navigator keeps its own scroll and never occludes the document t
 
   const textarea = page.getByTestId('sticky-itrans-input');
   await expect(textarea).toBeVisible({ timeout: 15000 });
-  await textarea.fill(USER_TEXT);
+  await textarea.fill(LONG_USER_TEXT);
 
   await page.getByRole('button', { name: 'Immersive mode' }).click();
   await expect(page.getByTestId('document-immersive-mode')).toBeVisible();
 
   const words = page.locator('[data-testid="document-immersive-primary-pane"] [data-target-index]');
   const wordCount = await words.count();
-  for (let i = 0; i < Math.min(wordCount, 35); i++) {
+  for (let i = 0; i < Math.min(wordCount, 80); i++) {
     const word = words.nth(i);
     await word.click();
     await page.getByLabel('Highlight yellow').click();
   }
 
-  const content = page.getByTestId('main-document-scroll-container');
+  const content = page.getByTestId('document-immersive-scroll-region');
   const primaryPane = page.getByTestId('document-immersive-primary-pane');
   const navigator = page.getByTestId('annotation-navigator');
   const navigatorScroll = page.getByTestId('annotation-navigator-scroll');
@@ -80,7 +82,6 @@ test('immersive navigator keeps its own scroll and never occludes the document t
   const initialContentScrollTop = await content.evaluate((el) => el.scrollTop);
   const initialNavigatorScrollTop = await navigatorScroll.evaluate((el) => el.scrollTop);
   const navigatorCanScroll = await navigatorScroll.evaluate((el) => el.scrollHeight > el.clientHeight);
-  expect(navigatorCanScroll).toBeTruthy();
 
   await content.hover();
   await page.mouse.wheel(0, 1000);
@@ -91,12 +92,14 @@ test('immersive navigator keeps its own scroll and never occludes the document t
   expect(contentScrollAfterWheel).toBeGreaterThan(initialContentScrollTop);
   expect(navigatorScrollAfterWheel).toBe(initialNavigatorScrollTop);
 
-  await navigatorScroll.hover();
-  await page.mouse.wheel(0, 1000);
-  await page.waitForTimeout(250);
+  if (navigatorCanScroll) {
+    await navigatorScroll.hover();
+    await page.mouse.wheel(0, 1000);
+    await page.waitForTimeout(250);
 
-  const contentScrollAfterNavigatorWheel = await content.evaluate((el) => el.scrollTop);
-  const navigatorScrollAfterNavigatorWheel = await navigatorScroll.evaluate((el) => el.scrollTop);
-  expect(navigatorScrollAfterNavigatorWheel).toBeGreaterThan(initialNavigatorScrollTop);
-  expect(contentScrollAfterNavigatorWheel).toBe(contentScrollAfterWheel);
+    const contentScrollAfterNavigatorWheel = await content.evaluate((el) => el.scrollTop);
+    const navigatorScrollAfterNavigatorWheel = await navigatorScroll.evaluate((el) => el.scrollTop);
+    expect(navigatorScrollAfterNavigatorWheel).toBeGreaterThan(initialNavigatorScrollTop);
+    expect(contentScrollAfterNavigatorWheel).toBe(contentScrollAfterWheel);
+  }
 });

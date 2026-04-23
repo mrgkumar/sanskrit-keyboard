@@ -847,21 +847,20 @@ export const MainDocumentArea: React.FC = () => {
 
     if (isImmersive) {
       return (
-        <div className="flex h-[calc(100dvh-5rem)] min-h-0 w-full overflow-hidden">
+        <div className="fixed inset-0 z-[130] flex min-h-0 w-full h-full overflow-hidden bg-slate-50">
           <div
             ref={documentContainerRef}
             data-testid="main-document-scroll-container"
             tabIndex={0}
             className={clsx(
-              'min-h-0 flex-1 min-w-0 outline-none overflow-y-scroll custom-scrollbar px-2 sm:px-4',
+              'min-h-0 flex-1 min-w-0 outline-none overflow-y-scroll custom-scrollbar px-2 pr-[4px] sm:px-4 sm:pr-[4px]',
               immersiveTopInsetClass
             )}
-            style={{ scrollbarGutter: 'stable' }}
             onKeyDown={handleReadModeKeyDown}
           >
-            <div className="mx-auto flex w-full max-w-none flex-col rounded-[1.5rem] px-0 py-0 pb-32">
+            <div className="mx-auto flex h-full w-full max-w-none flex-1 flex-col rounded-[1.5rem] px-0 py-0">
               <div
-                className="font-serif text-slate-900 flex flex-col"
+                className="font-serif text-slate-900 flex min-h-0 flex-1 flex-col"
                 data-testid="document-immersive-mode"
                 data-compare-mode="single"
                 data-compare-layout="single"
@@ -872,12 +871,12 @@ export const MainDocumentArea: React.FC = () => {
               >
                 <section
                   data-testid="document-immersive-primary-pane"
-                  className="group relative flex min-h-0 flex-col rounded-[1.25rem] border border-slate-100/70 bg-white/85 shadow-sm"
+                  className="group relative flex min-h-0 flex-1 flex-col rounded-[1.25rem] border border-slate-100/70 bg-white/85 shadow-sm"
                 >
                   <div
                     ref={primaryPaneScrollRef}
+                    data-testid="document-immersive-scroll-region"
                     className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-scroll custom-scrollbar py-2.5 sm:py-4"
-                    style={{ scrollbarGutter: 'stable' }}
                   >
                     {blocks
                       .filter((block) => block.rendered.trim().length > 0)
@@ -932,7 +931,7 @@ export const MainDocumentArea: React.FC = () => {
               </div>
             </div>
             {isAnnotationNavigatorOpen && (
-              <div className="flex flex-col h-[calc(100%-5rem)] min-h-0">
+              <div className="flex flex-col flex-1 min-h-0">
                 <div className="flex items-center gap-1 p-2 border-b border-slate-100 shrink-0">
                   <button type="button" className="inline-flex h-8 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40" aria-label="Previous annotation" title="Previous annotation" disabled={sortedAnnotations.length === 0} onClick={() => navigateAnnotation(-1)}><ChevronLeft className="h-4 w-4" /></button>
                   <button type="button" className="inline-flex h-8 flex-1 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40" aria-label="Next annotation" title="Next annotation" disabled={sortedAnnotations.length === 0} onClick={() => navigateAnnotation(1)}><ChevronRight className="h-4 w-4" /></button>
@@ -941,7 +940,6 @@ export const MainDocumentArea: React.FC = () => {
                 <div
                   data-testid="annotation-navigator-scroll"
                   className="min-h-0 flex-1 overflow-y-scroll custom-scrollbar p-2 pb-20"
-                  style={{ scrollbarGutter: 'stable' }}
                 >
                   {sortedAnnotations.length === 0 ? (
                     <p className="px-2 py-8 text-center text-xs font-semibold text-slate-400">No annotations</p>
@@ -978,7 +976,7 @@ export const MainDocumentArea: React.FC = () => {
             <div className="font-serif text-slate-900 flex h-full min-h-0 flex-col" data-testid="document-read-mode" data-compare-mode="single" data-compare-layout="single" style={{ fontSize: `${documentTypography.devanagariFontSize}px`, lineHeight: documentTypography.devanagariLineHeight }}>
               <div className="grid flex-1 min-h-0 gap-3 grid-cols-1">
                 <section data-testid={`${viewTestIdPrefix}-primary-pane`} className="group relative overflow-hidden rounded-[1.25rem] border border-slate-100/70 bg-white/85 shadow-sm flex min-h-0 flex-1 flex-col" style={{ minHeight: `${documentTypography.primaryPaneHeight}px` }}>
-                  <div ref={primaryPaneScrollRef} className="flex h-full min-h-0 flex-col gap-3 overflow-y-scroll custom-scrollbar px-2.5 py-2.5 sm:px-4 sm:py-4" style={{ scrollbarGutter: 'stable' }}>
+                  <div ref={primaryPaneScrollRef} className="flex h-full min-h-0 flex-col gap-3 overflow-y-scroll custom-scrollbar px-2.5 py-2.5 sm:px-4 sm:py-4">
                     {blocks.filter((block) => block.rendered.trim().length > 0).map((block, index) => renderScriptBlock(block, primaryOutputScript, 'primary', viewTestIdPrefix, index + 1))}
                   </div>
                   <ResizeHandle size={documentTypography.primaryPaneHeight} minSize={240} maxSize={700} ariaLabel="Resize primary read pane height" onSizeChange={updateDocumentHeight('primaryPaneHeight')} axis="y" />
@@ -992,7 +990,7 @@ export const MainDocumentArea: React.FC = () => {
   }
 
   return (
-    <div ref={documentContainerRef} className="flex-1 overflow-y-scroll custom-scrollbar py-8 px-4" data-testid="main-document-scroll-container" style={{ scrollbarGutter: 'stable' }}>
+    <div ref={documentContainerRef} className="flex-1 overflow-y-scroll custom-scrollbar py-8 px-4" data-testid="main-document-scroll-container">
       {viewMode === 'document' ? (
         renderDocumentCanvas()
       ) : (
