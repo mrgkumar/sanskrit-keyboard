@@ -235,6 +235,44 @@ const createRestoreOperation = (
   canCancel,
 });
 
+const findSegmentIndexForSourceOffset = (block: CanonicalBlock, sourceOffset: number) => {
+  if (block.type !== 'long' || !block.segments?.length) {
+    return 0;
+  }
+
+  const clampedOffset = Math.max(0, Math.min(sourceOffset, block.source.length));
+  const matchedSegmentIndex = block.segments.findIndex((segment, index) => {
+    const isLast = index === block.segments!.length - 1;
+    return clampedOffset >= segment.startOffset && (clampedOffset < segment.endOffset || isLast);
+  });
+
+  return Math.max(0, matchedSegmentIndex);
+};
+
+const replaceBlockSourceRange = (
+  block: CanonicalBlock,
+  startOffset: number,
+  endOffset: number,
+  replacementSource: string,
+  inputScheme: InputScheme
+) => {
+  const start = Math.max(0, Math.min(startOffset, block.source.length));
+  const end = Math.max(start, Math.min(endOffset, block.source.length));
+  const nextSource = block.source.slice(0, start) + replacementSource + block.source.slice(end);
+  if (nextSource === block.source) {
+    return block;
+  }
+
+  const shouldRemainLong = !block.disableAutoSegmentation && isLongBlockSource(nextSource);
+  return {
+    ...block,
+    type: shouldRemainLong ? 'long' : 'short',
+    source: nextSource,
+    rendered: transliterate(nextSource, { inputScheme }).unicode,
+    segments: shouldRemainLong ? createSegments(nextSource) : undefined,
+  } satisfies CanonicalBlock;
+};
+
 
 // --- STORE DEFINITION ---
 
@@ -280,6 +318,8 @@ export interface SanskritKeyboardState {
   immersiveFindOpen: boolean;
   immersiveFindQuery: string;
   immersiveFindActiveMatchIndex: number;
+  immersiveReplaceOpen: boolean;
+  immersiveReplaceQuery: string;
 
   // Actions
   setActiveBlockId: (id: string | null) => void;
@@ -371,6 +411,14 @@ export interface SanskritKeyboardState {
   setImmersiveFindOpen: (open: boolean) => void;
   setImmersiveFindQuery: (query: string) => void;
   setImmersiveFindActiveMatchIndex: (index: number) => void;
+  setImmersiveReplaceOpen: (open: boolean) => void;
+  setImmersiveReplaceQuery: (query: string) => void;
+  replaceSourceRangeInBlock: (
+    blockId: string,
+    startOffset: number,
+    endOffset: number,
+    replacementSource: string
+  ) => void;
   resetSession: () => void;
   getRenderedDocumentText: () => string;
 
@@ -426,6 +474,8 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   immersiveFindOpen: false,
   immersiveFindQuery: '',
   immersiveFindActiveMatchIndex: 0,
+  immersiveReplaceOpen: false,
+  immersiveReplaceQuery: '',
 
   // --- ACTIONS ---
   setActiveBlockId: (id) => {
@@ -1513,6 +1563,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
     set((state) => ({
       immersiveFindOpen: open,
       immersiveFindActiveMatchIndex: open ? state.immersiveFindActiveMatchIndex : 0,
+      immersiveReplaceOpen: open ? state.immersiveReplaceOpen : false,
     }));
   },
   setImmersiveFindQuery: (query) => {
@@ -1520,6 +1571,51 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   },
   setImmersiveFindActiveMatchIndex: (index) => {
     set({ immersiveFindActiveMatchIndex: index });
+  },
+  setImmersiveReplaceOpen: (open) => {
+    set({ immersiveReplaceOpen: open });
+  },
+  setImmersiveReplaceQuery: (query) => {
+    set({ immersiveReplaceQuery: query });
+  },
+  replaceSourceRangeInBlock: (blockId, startOffset, endOffset, replacementSource) => {
+    const { blocks, displaySettings } = get();
+    const blockIndex = blocks.findIndex((block) => block.id === blockId);
+    if (blockIndex === -1) {
+      return;
+    }
+
+    const block = blocks[blockIndex];
+    const canonicalReplacementSource = canonicalizeAcceptedInputToken(
+      replacementSource,
+      displaySettings.inputScheme
+    );
+    const nextBlock = replaceBlockSourceRange(
+      block,
+      startOffset,
+      endOffset,
+      canonicalReplacementSource,
+      displaySettings.inputScheme
+    );
+    if (nextBlock === block) {
+      return;
+    }
+
+    set((state) => ({
+      blocks: state.blocks.map((currentBlock, currentIndex) =>
+        currentIndex === blockIndex ? nextBlock : currentBlock
+      ),
+      annotations: clearAnnotationsForBlocks(state.annotations, [blockId]),
+      annotationEditWarning:
+        createAnnotationEditWarning(state.annotations, [blockId]) ?? state.annotationEditWarning,
+      editorState:
+        state.editorState.activeBlockId === blockId
+          ? {
+              ...state.editorState,
+              activeAnchorSegmentIndex: findSegmentIndexForSourceOffset(nextBlock, startOffset),
+            }
+          : state.editorState,
+    }));
   },
   deleteSession: (sessionId) => {
     const { sessionId: currentSessionId, resetSession } = get();
@@ -1634,6 +1730,8 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       immersiveFindOpen: false,
       immersiveFindQuery: '',
       immersiveFindActiveMatchIndex: 0,
+      immersiveReplaceOpen: false,
+      immersiveReplaceQuery: '',
       composerSelectionStart: 0,
       composerSelectionEnd: 0,
       deletedBuffer: null,
@@ -1771,6 +1869,8 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       immersiveFindOpen: false,
       immersiveFindQuery: '',
       immersiveFindActiveMatchIndex: 0,
+      immersiveReplaceOpen: false,
+      immersiveReplaceQuery: '',
     });
   },
   getRenderedDocumentText: () => {

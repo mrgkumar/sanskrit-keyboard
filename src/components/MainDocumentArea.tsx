@@ -7,6 +7,13 @@ import { AnnotationColor, CanonicalBlock, DocumentAnnotation } from '@/store/typ
 import { clsx } from 'clsx';
 import { Bookmark, Check, ChevronLeft, ChevronRight, Copy, Eye, EyeOff, Highlighter, Search, Trash2, X } from 'lucide-react';
 import { formatSourceForScript, transliterate } from '@/lib/vedic/utils';
+import {
+  buildImmersiveFindMatches,
+  buildImmersiveFindPreviewText,
+  buildImmersiveFindWordSpans,
+  selectNonOverlappingImmersiveFindMatches,
+  type ImmersiveFindMatch,
+} from '@/lib/immersiveFind';
 import { ScriptText } from '@/components/ScriptText';
 import { ResizeHandle } from '@/components/VerticalResizeHandle';
 
@@ -34,9 +41,14 @@ export const MainDocumentArea: React.FC = () => {
     immersiveFindOpen,
     immersiveFindQuery,
     immersiveFindActiveMatchIndex,
+    immersiveReplaceOpen,
+    immersiveReplaceQuery,
     setImmersiveFindOpen,
     setImmersiveFindQuery,
     setImmersiveFindActiveMatchIndex,
+    setImmersiveReplaceOpen,
+    setImmersiveReplaceQuery,
+    replaceSourceRangeInBlock,
   } = useFlowStore();
   const { activeBlockId, viewMode, focusSpan } = editorState;
   const activeChunkGroup = getActiveChunkGroup(); 
@@ -81,122 +93,41 @@ export const MainDocumentArea: React.FC = () => {
     [blocks]
   );
 
-  const normalizeFindText = React.useCallback(
-    (text: string) =>
-      text
-        .normalize('NFC')
-        .replaceAll('\uF176', '\u1CDA')
-        .replace(/\s+/g, ' ')
-        .trim(),
-    []
-  );
-
   const immersiveFindPreviewText = React.useMemo(() => {
     if (!immersiveFindQuery.trim()) return '';
-    return formatSourceForScript(
-      immersiveFindQuery,
+    return buildImmersiveFindPreviewText(immersiveFindQuery, {
       primaryOutputScript,
-      {
-        romanOutputStyle,
-        tamilOutputStyle,
-      },
-      {
-        sanskritFontPreset,
-      }
-    );
-  }, [immersiveFindQuery, primaryOutputScript, romanOutputStyle, tamilOutputStyle, sanskritFontPreset]);
+      romanOutputStyle,
+      tamilOutputStyle,
+      sanskritFontPreset,
+    });
+  }, [immersiveFindQuery, primaryOutputScript, romanOutputStyle, sanskritFontPreset, tamilOutputStyle]);
 
-  type FindWordSpan = {
-    wordKey: string;
-    start: number;
-    end: number;
-    sourceText: string;
-    renderedText: string;
-  };
-
-  type ImmersiveFindMatch = {
-    blockId: string;
-    startWordIndex: number;
-    endWordIndex: number;
-    wordKeys: string[];
-    firstWordKey: string;
-  };
+  const immersiveReplacePreviewText = React.useMemo(() => {
+    if (!immersiveReplaceQuery.trim()) return '';
+    return buildImmersiveFindPreviewText(immersiveReplaceQuery, {
+      primaryOutputScript,
+      romanOutputStyle,
+      tamilOutputStyle,
+      sanskritFontPreset,
+    });
+  }, [immersiveReplaceQuery, primaryOutputScript, romanOutputStyle, sanskritFontPreset, tamilOutputStyle]);
 
   const blockWordSpans = React.useMemo(
     () =>
-      blocks.map((block) => {
-        const words: FindWordSpan[] = [];
-        for (const match of block.source.matchAll(/\S+/g)) {
-          const start = match.index ?? 0;
-          const end = start + match[0].length;
-          const sourceText = block.source.slice(start, end);
-          words.push({
-            wordKey: `${block.id}:${start}:${end}`,
-            start,
-            end,
-            sourceText,
-            renderedText: formatSourceForScript(
-              sourceText,
-              primaryOutputScript,
-              {
-                romanOutputStyle,
-                tamilOutputStyle,
-              },
-              {
-                sanskritFontPreset,
-              }
-            ),
-          });
-        }
-        return {
-          blockId: block.id,
-          words,
-        };
+      buildImmersiveFindWordSpans(blocks, {
+        primaryOutputScript,
+        romanOutputStyle,
+        tamilOutputStyle,
+        sanskritFontPreset,
       }),
-    [blocks, primaryOutputScript, romanOutputStyle, sanskritFontPreset, tamilOutputStyle]
+    [blocks, primaryOutputScript, romanOutputStyle, tamilOutputStyle, sanskritFontPreset]
   );
 
   const immersiveFindMatches = React.useMemo<ImmersiveFindMatch[]>(() => {
     if (!immersiveFindOpen) return [];
-    const queryTokens = normalizeFindText(immersiveFindPreviewText).split(' ').filter(Boolean);
-    if (queryTokens.length === 0) return [];
-
-    const matches: ImmersiveFindMatch[] = [];
-    for (const block of blockWordSpans) {
-      const words = block.words;
-      if (words.length === 0) continue;
-
-      for (let startWordIndex = 0; startWordIndex < words.length; startWordIndex += 1) {
-        let matched = true;
-        for (let tokenIndex = 0; tokenIndex < queryTokens.length; tokenIndex += 1) {
-          const word = words[startWordIndex + tokenIndex];
-          if (!word) {
-            matched = false;
-            break;
-          }
-
-          const wordText = normalizeFindText(word.renderedText);
-          if (!wordText.includes(queryTokens[tokenIndex])) {
-            matched = false;
-            break;
-          }
-        }
-
-        if (!matched) continue;
-
-        const matchedWords = words.slice(startWordIndex, startWordIndex + queryTokens.length);
-        matches.push({
-          blockId: block.blockId,
-          startWordIndex,
-          endWordIndex: startWordIndex + matchedWords.length - 1,
-          wordKeys: matchedWords.map((word) => word.wordKey),
-          firstWordKey: matchedWords[0]?.wordKey ?? words[startWordIndex].wordKey,
-        });
-      }
-    }
-
-    return matches;
-  }, [blockWordSpans, immersiveFindOpen, immersiveFindPreviewText, normalizeFindText]);
+    return buildImmersiveFindMatches(blockWordSpans, immersiveFindPreviewText);
+  }, [blockWordSpans, immersiveFindOpen, immersiveFindPreviewText]);
 
   const activeImmersiveFindMatch = immersiveFindMatches[immersiveFindActiveMatchIndex] ?? null;
   const immersiveFindMatchWordKeys = React.useMemo(
@@ -1039,6 +970,32 @@ export const MainDocumentArea: React.FC = () => {
     [immersiveFindActiveMatchIndex, immersiveFindMatches.length, setImmersiveFindActiveMatchIndex]
   );
 
+  const replaceImmersiveFindMatch = React.useCallback(
+    (replaceAll: boolean) => {
+      if (immersiveFindMatches.length === 0) {
+        return;
+      }
+
+      const replacement = immersiveReplaceQuery;
+      const matchesToReplace = replaceAll
+        ? selectNonOverlappingImmersiveFindMatches(immersiveFindMatches)
+        : [immersiveFindMatches[Math.max(0, Math.min(immersiveFindActiveMatchIndex, immersiveFindMatches.length - 1))]];
+
+      if (matchesToReplace.length === 0) {
+        return;
+      }
+
+      for (const match of [...matchesToReplace].reverse()) {
+        replaceSourceRangeInBlock(match.blockId, match.startOffset, match.endOffset, replacement);
+      }
+
+      setImmersiveFindActiveMatchIndex(
+        Math.min(immersiveFindActiveMatchIndex, Math.max(0, immersiveFindMatches.length - 1))
+      );
+    },
+    [immersiveFindActiveMatchIndex, immersiveFindMatches, immersiveReplaceQuery, replaceSourceRangeInBlock, setImmersiveFindActiveMatchIndex]
+  );
+
   const handleImmersiveFindInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -1128,7 +1085,7 @@ export const MainDocumentArea: React.FC = () => {
           </div>
           {immersiveFindOpen && (
             <div
-              className="fixed left-4 top-16 z-[170] w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-2xl shadow-slate-200 backdrop-blur"
+              className="fixed left-4 top-16 z-[170] w-[24rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-2xl shadow-slate-200 backdrop-blur"
               data-testid="immersive-find-overlay"
             >
               <div className="flex items-center gap-2">
@@ -1148,6 +1105,20 @@ export const MainDocumentArea: React.FC = () => {
                   className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-500/10"
                   data-testid="immersive-find-input"
                 />
+                <button
+                  type="button"
+                  onClick={() => setImmersiveReplaceOpen(!immersiveReplaceOpen)}
+                  className={clsx(
+                    'inline-flex h-9 items-center justify-center rounded-xl border px-3 text-xs font-black uppercase tracking-[0.08em]',
+                    immersiveReplaceOpen
+                      ? 'border-blue-200 bg-blue-50 text-blue-800'
+                      : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                  )}
+                  aria-label={immersiveReplaceOpen ? 'Hide replace field' : 'Show replace field'}
+                  title={immersiveReplaceOpen ? 'Hide replace' : 'Show replace'}
+                >
+                  Replace
+                </button>
                 <button
                   type="button"
                   onClick={() => setImmersiveFindOpen(false)}
@@ -1174,6 +1145,63 @@ export const MainDocumentArea: React.FC = () => {
                   )}
                 </div>
               </div>
+              {immersiveReplaceOpen && (
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <label className="sr-only" htmlFor="immersive-replace-input">
+                      Replace with Roman/ITRANS
+                    </label>
+                    <input
+                      id="immersive-replace-input"
+                      value={immersiveReplaceQuery}
+                      onChange={(event) => setImmersiveReplaceQuery(event.target.value)}
+                      placeholder="Replace with Roman/ITRANS"
+                      autoComplete="off"
+                      spellCheck={false}
+                      className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-500/10"
+                      data-testid="immersive-replace-input"
+                    />
+                  </div>
+                  <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2" data-testid="immersive-replace-preview">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Replacement Preview</p>
+                    <div className="mt-1 text-sm text-slate-700">
+                      {immersiveReplacePreviewText ? (
+                        <ScriptText
+                          script={primaryOutputScript}
+                          text={immersiveReplacePreviewText}
+                          sanskritFontPreset={sanskritFontPreset}
+                          tamilFontPreset={tamilFontPreset}
+                          className="text-sm font-semibold text-slate-800"
+                        />
+                      ) : (
+                        <span className="text-slate-400">Replacement preview appears here.</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => replaceImmersiveFindMatch(false)}
+                      className="inline-flex h-9 flex-1 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-sm font-bold text-blue-800 hover:bg-blue-100 disabled:opacity-40"
+                      aria-label="Replace current match"
+                      title="Replace current match"
+                      disabled={immersiveFindMatches.length === 0}
+                    >
+                      Replace
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => replaceImmersiveFindMatch(true)}
+                      className="inline-flex h-9 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                      aria-label="Replace all matches"
+                      title="Replace all matches"
+                      disabled={immersiveFindMatches.length === 0}
+                    >
+                      Replace All
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="mt-2 flex items-center gap-2">
                 <button
                   type="button"
