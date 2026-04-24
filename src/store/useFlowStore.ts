@@ -277,6 +277,9 @@ export interface SanskritKeyboardState {
   showAnnotationOverlay: boolean;
   isAnnotationNavigatorOpen: boolean;
   annotationEditWarning: { clearedCount: number; message: string } | null;
+  immersiveFindOpen: boolean;
+  immersiveFindQuery: string;
+  immersiveFindActiveMatchIndex: number;
 
   // Actions
   setActiveBlockId: (id: string | null) => void;
@@ -365,6 +368,9 @@ export interface SanskritKeyboardState {
   setShowAnnotationOverlay: (show: boolean) => void;
   setAnnotationNavigatorOpen: (open: boolean) => void;
   dismissAnnotationEditWarning: () => void;
+  setImmersiveFindOpen: (open: boolean) => void;
+  setImmersiveFindQuery: (query: string) => void;
+  setImmersiveFindActiveMatchIndex: (index: number) => void;
   resetSession: () => void;
   getRenderedDocumentText: () => string;
 
@@ -417,6 +423,9 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   showAnnotationOverlay: true,
   isAnnotationNavigatorOpen: true,
   annotationEditWarning: null,
+  immersiveFindOpen: false,
+  immersiveFindQuery: '',
+  immersiveFindActiveMatchIndex: 0,
 
   // --- ACTIONS ---
   setActiveBlockId: (id) => {
@@ -1500,6 +1509,18 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
   dismissAnnotationEditWarning: () => {
     set({ annotationEditWarning: null });
   },
+  setImmersiveFindOpen: (open) => {
+    set((state) => ({
+      immersiveFindOpen: open,
+      immersiveFindActiveMatchIndex: open ? state.immersiveFindActiveMatchIndex : 0,
+    }));
+  },
+  setImmersiveFindQuery: (query) => {
+    set({ immersiveFindQuery: query, immersiveFindActiveMatchIndex: 0 });
+  },
+  setImmersiveFindActiveMatchIndex: (index) => {
+    set({ immersiveFindActiveMatchIndex: index });
+  },
   deleteSession: (sessionId) => {
     const { sessionId: currentSessionId, resetSession } = get();
     
@@ -1610,6 +1631,9 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       showAnnotationOverlay: true,
       isAnnotationNavigatorOpen: (snapshot.annotations ?? []).length > 0,
       annotationEditWarning: null,
+      immersiveFindOpen: false,
+      immersiveFindQuery: '',
+      immersiveFindActiveMatchIndex: 0,
       composerSelectionStart: 0,
       composerSelectionEnd: 0,
       deletedBuffer: null,
@@ -1744,6 +1768,9 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
       showAnnotationOverlay: true,
       isAnnotationNavigatorOpen: true,
       annotationEditWarning: null,
+      immersiveFindOpen: false,
+      immersiveFindQuery: '',
+      immersiveFindActiveMatchIndex: 0,
     });
   },
   getRenderedDocumentText: () => {

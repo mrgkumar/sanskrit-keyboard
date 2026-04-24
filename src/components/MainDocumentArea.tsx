@@ -5,7 +5,7 @@ import React from 'react';
 import { useFlowStore } from '@/store/useFlowStore';
 import { AnnotationColor, CanonicalBlock, DocumentAnnotation } from '@/store/types';
 import { clsx } from 'clsx';
-import { Bookmark, Check, ChevronLeft, ChevronRight, Copy, Eye, EyeOff, Highlighter, Trash2, X } from 'lucide-react';
+import { Bookmark, Check, ChevronLeft, ChevronRight, Copy, Eye, EyeOff, Highlighter, Search, Trash2, X } from 'lucide-react';
 import { formatSourceForScript, transliterate } from '@/lib/vedic/utils';
 import { ScriptText } from '@/components/ScriptText';
 import { ResizeHandle } from '@/components/VerticalResizeHandle';
@@ -31,6 +31,12 @@ export const MainDocumentArea: React.FC = () => {
     setShowAnnotationOverlay,
     setAnnotationNavigatorOpen,
     dismissAnnotationEditWarning,
+    immersiveFindOpen,
+    immersiveFindQuery,
+    immersiveFindActiveMatchIndex,
+    setImmersiveFindOpen,
+    setImmersiveFindQuery,
+    setImmersiveFindActiveMatchIndex,
   } = useFlowStore();
   const { activeBlockId, viewMode, focusSpan } = editorState;
   const activeChunkGroup = getActiveChunkGroup(); 
@@ -68,10 +74,130 @@ export const MainDocumentArea: React.FC = () => {
   
   const documentContainerRef = React.useRef<HTMLDivElement | null>(null);
   const primaryPaneScrollRef = React.useRef<HTMLDivElement | null>(null);
+  const immersiveFindInputRef = React.useRef<HTMLInputElement | null>(null);
   
   const readModeBlocks = React.useMemo(
     () => blocks.filter((block) => block.rendered.trim().length > 0),
     [blocks]
+  );
+
+  const normalizeFindText = React.useCallback((text: string) => text.normalize('NFC').replace(/\s+/g, ' ').trim(), []);
+
+  const immersiveFindPreviewText = React.useMemo(() => {
+    if (!immersiveFindQuery.trim()) return '';
+    return formatSourceForScript(
+      immersiveFindQuery,
+      primaryOutputScript,
+      {
+        romanOutputStyle,
+        tamilOutputStyle,
+      },
+      {
+        sanskritFontPreset,
+      }
+    );
+  }, [immersiveFindQuery, primaryOutputScript, romanOutputStyle, tamilOutputStyle, sanskritFontPreset]);
+
+  type FindWordSpan = {
+    wordKey: string;
+    start: number;
+    end: number;
+    sourceText: string;
+    renderedText: string;
+  };
+
+  type ImmersiveFindMatch = {
+    blockId: string;
+    startWordIndex: number;
+    endWordIndex: number;
+    wordKeys: string[];
+    firstWordKey: string;
+  };
+
+  const blockWordSpans = React.useMemo(
+    () =>
+      blocks.map((block) => {
+        const words: FindWordSpan[] = [];
+        for (const match of block.source.matchAll(/\S+/g)) {
+          const start = match.index ?? 0;
+          const end = start + match[0].length;
+          const sourceText = block.source.slice(start, end);
+          words.push({
+            wordKey: `${block.id}:${start}:${end}`,
+            start,
+            end,
+            sourceText,
+            renderedText: formatSourceForScript(
+              sourceText,
+              primaryOutputScript,
+              {
+                romanOutputStyle,
+                tamilOutputStyle,
+              },
+              {
+                sanskritFontPreset,
+              }
+            ),
+          });
+        }
+        return {
+          blockId: block.id,
+          words,
+        };
+      }),
+    [blocks, primaryOutputScript, romanOutputStyle, sanskritFontPreset, tamilOutputStyle]
+  );
+
+  const immersiveFindMatches = React.useMemo<ImmersiveFindMatch[]>(() => {
+    if (!immersiveFindOpen) return [];
+    const queryTokens = normalizeFindText(immersiveFindPreviewText).split(' ').filter(Boolean);
+    if (queryTokens.length === 0) return [];
+
+    const matches: ImmersiveFindMatch[] = [];
+    for (const block of blockWordSpans) {
+      const words = block.words;
+      if (words.length === 0) continue;
+
+      for (let startWordIndex = 0; startWordIndex < words.length; startWordIndex += 1) {
+        let matched = true;
+        for (let tokenIndex = 0; tokenIndex < queryTokens.length; tokenIndex += 1) {
+          const word = words[startWordIndex + tokenIndex];
+          if (!word) {
+            matched = false;
+            break;
+          }
+
+          const wordText = normalizeFindText(word.renderedText);
+          if (!wordText.includes(queryTokens[tokenIndex])) {
+            matched = false;
+            break;
+          }
+        }
+
+        if (!matched) continue;
+
+        const matchedWords = words.slice(startWordIndex, startWordIndex + queryTokens.length);
+        matches.push({
+          blockId: block.blockId,
+          startWordIndex,
+          endWordIndex: startWordIndex + matchedWords.length - 1,
+          wordKeys: matchedWords.map((word) => word.wordKey),
+          firstWordKey: matchedWords[0]?.wordKey ?? words[startWordIndex].wordKey,
+        });
+      }
+    }
+
+    return matches;
+  }, [blockWordSpans, immersiveFindOpen, immersiveFindPreviewText, normalizeFindText]);
+
+  const activeImmersiveFindMatch = immersiveFindMatches[immersiveFindActiveMatchIndex] ?? null;
+  const immersiveFindMatchWordKeys = React.useMemo(
+    () => new Set(immersiveFindMatches.flatMap((match) => match.wordKeys)),
+    [immersiveFindMatches]
+  );
+  const activeImmersiveFindWordKeys = React.useMemo(
+    () => new Set(activeImmersiveFindMatch?.wordKeys ?? []),
+    [activeImmersiveFindMatch]
   );
 
   const getRenderedLineHeightForScript = React.useCallback(
@@ -151,6 +277,84 @@ export const MainDocumentArea: React.FC = () => {
   React.useEffect(() => {
     if (viewMode !== 'immersive') setAnnotationTarget(null);
   }, [viewMode]);
+
+  React.useEffect(() => {
+    if (viewMode === 'immersive') return;
+    if (immersiveFindOpen) {
+      setImmersiveFindOpen(false);
+    }
+  }, [immersiveFindOpen, setImmersiveFindOpen, viewMode]);
+
+  React.useEffect(() => {
+    if (viewMode !== 'immersive' || !immersiveFindOpen) return;
+    const rafId = window.requestAnimationFrame(() => {
+      immersiveFindInputRef.current?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [immersiveFindOpen, viewMode]);
+
+  React.useEffect(() => {
+    if (viewMode !== 'immersive') return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isFindShortcut = (event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'f';
+      if (isFindShortcut) {
+        event.preventDefault();
+        event.stopPropagation();
+        setImmersiveFindOpen(true);
+        window.requestAnimationFrame(() => {
+          immersiveFindInputRef.current?.focus({ preventScroll: true });
+        });
+        return;
+      }
+
+      if (event.key === 'Escape' && immersiveFindOpen) {
+        const target = event.target as HTMLElement | null;
+        const isTypingSurface =
+          target?.tagName === 'INPUT' ||
+          target?.tagName === 'TEXTAREA' ||
+          target?.isContentEditable;
+        if (isTypingSurface || immersiveFindOpen) {
+          event.preventDefault();
+          event.stopPropagation();
+          setImmersiveFindOpen(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, [immersiveFindOpen, setImmersiveFindOpen, viewMode]);
+
+  React.useEffect(() => {
+    if (viewMode !== 'immersive' || !immersiveFindOpen) return;
+    if (immersiveFindMatches.length === 0) {
+      if (immersiveFindActiveMatchIndex !== 0) {
+        setImmersiveFindActiveMatchIndex(0);
+      }
+      return;
+    }
+
+    if (immersiveFindActiveMatchIndex >= immersiveFindMatches.length) {
+      setImmersiveFindActiveMatchIndex(0);
+    }
+  }, [
+    immersiveFindActiveMatchIndex,
+    immersiveFindMatches.length,
+    immersiveFindOpen,
+    setImmersiveFindActiveMatchIndex,
+    viewMode,
+  ]);
+
+  React.useEffect(() => {
+    if (viewMode !== 'immersive' || !immersiveFindOpen || immersiveFindMatches.length === 0) return;
+    const activeMatch = immersiveFindMatches[
+      Math.max(0, Math.min(immersiveFindActiveMatchIndex, immersiveFindMatches.length - 1))
+    ];
+    const target = documentContainerRef.current?.querySelector<HTMLElement>(
+      `[data-immersive-find-word-key="${CSS.escape(activeMatch.firstWordKey)}"]`
+    );
+    target?.scrollIntoView({ block: 'center', behavior: 'auto' });
+  }, [immersiveFindActiveMatchIndex, immersiveFindMatches, immersiveFindOpen, viewMode]);
 
   React.useEffect(() => {
     if (viewMode !== 'document' || !activeBlockId) return;
@@ -408,6 +612,8 @@ export const MainDocumentArea: React.FC = () => {
       });
       const wordKey = `${block.id}:${start}:${end}`;
       const wordAnnotations = findAnnotationsForWord(block.id, start, end);
+      const isImmersiveFindMatch = viewMode === 'immersive' && immersiveFindMatchWordKeys.has(wordKey);
+      const isActiveImmersiveFindWord = viewMode === 'immersive' && activeImmersiveFindWordKeys.has(wordKey);
       const handleReadWordMouseDown =
         viewMode === 'read' && paneRole === 'primary'
           ? (event: React.MouseEvent<HTMLSpanElement>) => {
@@ -440,10 +646,13 @@ export const MainDocumentArea: React.FC = () => {
           data-source-end={end}
           data-target-index={sourceToTargetMap?.[start] ?? start}
           data-word-key={wordKey}
+          data-immersive-find-word-key={viewMode === 'immersive' ? wordKey : undefined}
           tabIndex={viewMode === 'immersive' && paneRole === 'primary' ? 0 : undefined}
           className={clsx(
             'inline transition-colors',
             viewMode === 'immersive' && paneRole === 'primary' && 'cursor-pointer hover:bg-blue-100/70',
+            isImmersiveFindMatch && 'rounded-[0.2rem] bg-amber-200/70 text-slate-950',
+            isActiveImmersiveFindWord && 'ring-2 ring-amber-500/70 bg-amber-300/80',
             getWordAnnotationClassName(wordAnnotations)
           )}
           onMouseDown={handleReadWordMouseDown}
@@ -812,6 +1021,29 @@ export const MainDocumentArea: React.FC = () => {
     return null;
   };
 
+  const goToImmersiveFindMatch = React.useCallback(
+    (direction: 1 | -1) => {
+      if (!immersiveFindMatches.length) return;
+      const nextIndex =
+        (immersiveFindActiveMatchIndex + direction + immersiveFindMatches.length) % immersiveFindMatches.length;
+      setImmersiveFindActiveMatchIndex(nextIndex);
+    },
+    [immersiveFindActiveMatchIndex, immersiveFindMatches.length, setImmersiveFindActiveMatchIndex]
+  );
+
+  const handleImmersiveFindInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      goToImmersiveFindMatch(event.shiftKey ? -1 : 1);
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setImmersiveFindOpen(false);
+    }
+  };
+
   const renderDocumentCanvas = () => {
     return (
       <div className="mx-auto w-full max-w-none overflow-x-hidden rounded-[1.5rem] bg-transparent px-6 py-0 sm:px-10">
@@ -886,6 +1118,86 @@ export const MainDocumentArea: React.FC = () => {
               </div>
             </div>
           </div>
+          {immersiveFindOpen && (
+            <div
+              className="fixed left-4 top-16 z-[170] w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-2xl shadow-slate-200 backdrop-blur"
+              data-testid="immersive-find-overlay"
+            >
+              <div className="flex items-center gap-2">
+                <label className="sr-only" htmlFor="immersive-find-input">
+                  Find in immersive view
+                </label>
+                <Search className="h-4 w-4 shrink-0 text-slate-400" />
+                <input
+                  id="immersive-find-input"
+                  ref={immersiveFindInputRef}
+                  value={immersiveFindQuery}
+                  onChange={(event) => setImmersiveFindQuery(event.target.value)}
+                  onKeyDown={handleImmersiveFindInputKeyDown}
+                  placeholder="Search Roman/ITRANS"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-500/10"
+                  data-testid="immersive-find-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => setImmersiveFindOpen(false)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 hover:bg-slate-50 hover:text-slate-700"
+                  aria-label="Close find overlay"
+                  title="Close find"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="mt-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2" data-testid="immersive-find-preview">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Preview</p>
+                <div className="mt-1 text-sm text-slate-700">
+                  {immersiveFindPreviewText ? (
+                    <ScriptText
+                      script={primaryOutputScript}
+                      text={immersiveFindPreviewText}
+                      sanskritFontPreset={sanskritFontPreset}
+                      tamilFontPreset={tamilFontPreset}
+                      className="text-sm font-semibold text-slate-800"
+                    />
+                  ) : (
+                    <span className="text-slate-400">Transliterated result appears here.</span>
+                  )}
+                </div>
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => goToImmersiveFindMatch(-1)}
+                  className="inline-flex h-9 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                  aria-label="Previous match"
+                  title="Previous match"
+                  disabled={immersiveFindMatches.length === 0}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => goToImmersiveFindMatch(1)}
+                  className="inline-flex h-9 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                  aria-label="Next match"
+                  title="Next match"
+                  disabled={immersiveFindMatches.length === 0}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+                <div
+                  className="min-w-16 rounded-xl border border-slate-200 bg-white px-3 py-2 text-center text-xs font-black tabular-nums text-slate-500"
+                  data-testid="immersive-find-counter"
+                >
+                  {immersiveFindMatches.length === 0
+                    ? 'No matches'
+                    : `${Math.min(immersiveFindActiveMatchIndex, immersiveFindMatches.length - 1) + 1} / ${immersiveFindMatches.length}`}
+                </div>
+              </div>
+            </div>
+          )}
           {annotationTarget && (
             <div
               className="fixed z-[150] flex items-center gap-1 rounded-xl border border-slate-200 bg-white/95 p-1 shadow-xl shadow-slate-200 backdrop-blur"

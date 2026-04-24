@@ -125,6 +125,7 @@ export const TransliterationEngine: React.FC = () => {
     restoreSessionAsync,
     largeDocumentOperation,
     resetSession,
+    setImmersiveFindOpen,
   } = useFlowStore();
   
   const [isWorkspacePanelOpen, setIsWorkspacePanelOpen] = React.useState(false);
@@ -575,6 +576,18 @@ export const TransliterationEngine: React.FC = () => {
           {isWorkspacePanelOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           Workspace
         </button>
+        {viewMode === 'immersive' && (
+          <button
+            type="button"
+            onClick={() => setImmersiveFindOpen(true)}
+            className="pointer-events-auto touch-manipulation inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white/95 px-3 py-2 text-xs font-bold uppercase text-slate-700 shadow-sm backdrop-blur hover:bg-white transition-all active:scale-95"
+            aria-label="Find in immersive view"
+            title="Find in immersive view"
+          >
+            <Search className="h-4 w-4" />
+            Find
+          </button>
+        )}
         <div className="pointer-events-auto inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white/95 p-1 shadow-sm backdrop-blur">
           <button
             type="button"
