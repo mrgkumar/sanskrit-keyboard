@@ -149,6 +149,7 @@ test.describe('transliteration and display invariants', () => {
     expect(normalizeDevanagariDisplayText('नम॑ः', 'sanskrit2003')).toBe('नमः॑');
     expect(normalizeDevanagariDisplayText('नम॑ः', 'chandas')).toBe('नम॑ः');
     expect(normalizeDevanagariDisplayText('नम॑ः', 'sampradaya')).toBe('नम॑ः');
+    expect(normalizeDevanagariDisplayText('नमः', 'sanskrit2003')).toBe('नमः᳚');
   });
 
   test('Siddhanta renders उदकशान्ति-मन्त्राः without forced shaping artifacts', async ({ page }) => {

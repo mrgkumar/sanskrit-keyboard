@@ -81,7 +81,15 @@ export const MainDocumentArea: React.FC = () => {
     [blocks]
   );
 
-  const normalizeFindText = React.useCallback((text: string) => text.normalize('NFC').replace(/\s+/g, ' ').trim(), []);
+  const normalizeFindText = React.useCallback(
+    (text: string) =>
+      text
+        .normalize('NFC')
+        .replaceAll('\uF176', '\u1CDA')
+        .replace(/\s+/g, ' ')
+        .trim(),
+    []
+  );
 
   const immersiveFindPreviewText = React.useMemo(() => {
     if (!immersiveFindQuery.trim()) return '';

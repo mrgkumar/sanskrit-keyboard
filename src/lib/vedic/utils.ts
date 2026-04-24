@@ -330,6 +330,8 @@ const shouldRewriteDevanagariPraGlyph = (preset?: SanskritFontPreset) =>
 
 const isDevanagariDisplayMark = (char: string) => DEVANAGARI_VEDIC_MARKS.has(char);
 
+const normalizeDevanagariDoubleSvaritaText = (text: string) => text.replaceAll('\uF176', '\u1CDA');
+
 const rewriteDevanagariPraGlyphText = (text: string) =>
   text.replaceAll(DEVANAGARI_COMPAT_PRA_SOURCE, DEVANAGARI_COMPAT_PRA_TARGET);
 
@@ -417,7 +419,7 @@ export const normalizeDevanagariDisplayText = (text: string, sanskritFontPreset?
     }
   }
 
-  const normalizedText = normalized.join('');
+  const normalizedText = normalizeDevanagariDoubleSvaritaText(normalized.join(''));
   return rewritePraGlyph ? rewriteDevanagariPraGlyphText(normalizedText) : normalizedText;
 };
 
@@ -473,7 +475,7 @@ export const normalizeDevanagariDisplayResult = (
     }
   }
 
-  const normalizedUnicode = normalized.join('');
+  const normalizedUnicode = normalizeDevanagariDoubleSvaritaText(normalized.join(''));
   const normalizedResult: TransliterationResult = {
     ...result,
     unicode: normalizedUnicode,
@@ -1539,6 +1541,9 @@ for (const [uni, itrans] of Object.entries(overrides)) {
   addReverse(uni, itrans, 'special', { force: true });
 }
 
+addReverse('\u0903\u200C\u1CDA', ":''", 'special', { force: true });
+addReverse('\u0903\u200C\uF176', ":''", 'special', { force: true });
+addReverse('\u0903\u1CDA', ":''", 'special', { force: true });
 addReverse('\u0903\uF176', ":''", 'special', { force: true });
 addReverse('\u0952\uF156\u0952', '_M~_', 'special', { force: true });
 addReverse('\u0952\uF156\u0902\u0952', '_M~M_', 'special', { force: true });

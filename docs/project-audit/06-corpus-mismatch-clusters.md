@@ -10,7 +10,7 @@ Scope of review:
 
 Normalization used for comparison:
 - NFC normalization
-- `\u1CDA` normalized to `\uF176` for display comparison
+- `\uF176` normalized to `\u1CDA` for legacy display comparison
 - ZWNJ ignored for the corpus comparison pass
 
 ## Current Status After Fixes

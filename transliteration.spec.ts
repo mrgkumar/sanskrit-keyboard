@@ -86,7 +86,7 @@ import {
   TAMIL_REVERSE_VOCALIC_FIXTURES,
 } from './test-support/tamilReverseFixtures';
 
-const normalize = (value: string) => value.normalize('NFC').replaceAll('\u1CDA', '\uF176').replaceAll('\u200C', '');
+const normalize = (value: string) => value.normalize('NFC').replaceAll('\uF176', '\u1CDA').replaceAll('\u200C', '');
 const BARAHA_ALIAS_TOKENS = ['Ru', 'RU', '~lu', '~lU', 'K', 'G', 'c', 'C', 'J', 'P', 'B', 'ee', 'oo', 'ou', 'oum', '&', '~g', '~j'] as const;
 const TAMIL_PRECISION_GATE4_MIXED_FIXTURES = [
   ['ka', 'க'],
@@ -193,16 +193,18 @@ const tokenizeTamilPrecision = (value: string) =>
 test('Accent scheme maps forward with the new canonical inputs', () => {
   expect(transliterate("ga'").unicode).toBe('ग॑');
   expect(transliterate('ga_').unicode).toBe('ग॒');
-  expect(transliterate("ga''").unicode).toBe('ग');
-  expect(transliterate('ga"').unicode).toBe('ग');
-  expect(transliterate("ga:''").unicode).toBe('गः\u200C');
+  expect(transliterate("ga''").unicode).toBe('ग᳚');
+  expect(transliterate('ga"').unicode).toBe('ग᳚');
+  expect(transliterate("ga:''").unicode).toBe('गः\u200C᳚');
 });
 
 test('Accent scheme maps backward with canonical outputs', () => {
   expect(detransliterate('ग॑')).toBe("ga'");
   expect(detransliterate('ग॒')).toBe('ga_');
+  expect(detransliterate('ग᳚')).toBe("ga''");
   expect(detransliterate('ग')).toBe("ga''");
   expect(detransliterate('ग᳖')).toBe("ga''");
+  expect(detransliterate('गः\u200C᳚')).toBe("ga:''");
   expect(detransliterate('गः\u200C')).toBe("ga:''");
 });
 
@@ -210,7 +212,7 @@ test('Devanagari display normalization preserves visarga ordering and pra glyph 
   expect(normalizeDevanagariDisplayText('नम॑ः', 'sanskrit2003')).toBe('नमः॑');
   expect(normalizeDevanagariDisplayText('नम॒ः', 'sanskrit2003')).toBe('नमः॒');
   expect(normalizeDevanagariDisplayText('नम᳚ः', 'sanskrit2003')).toBe('नमः᳚');
-  expect(normalizeDevanagariDisplayText('नमः', 'sanskrit2003')).toBe('नमः');
+  expect(normalizeDevanagariDisplayText('नमः', 'sanskrit2003')).toBe('नमः᳚');
   expect(normalizeDevanagariDisplayText('नमः॑', 'sanskrit2003')).toBe('नमः॑');
   expect(normalizeDevanagariDisplayText('नम॑ः', 'siddhanta')).toBe('नमः॑');
   expect(normalizeDevanagariDisplayText('नम॑ः', 'chandas')).toBe('नम॑ः');
