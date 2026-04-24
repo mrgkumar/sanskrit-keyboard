@@ -207,6 +207,18 @@ export const MainDocumentArea: React.FC = () => {
 
   React.useEffect(() => {
     if (viewMode !== 'read' && viewMode !== 'immersive') return;
+    if (!selectedReadBlockId) return;
+    const rafId = window.requestAnimationFrame(() => {
+      const target = documentContainerRef.current?.querySelector<HTMLElement>(
+        `[data-testid="document-read-block-${selectedReadBlockId}"], [data-testid="document-immersive-block-${selectedReadBlockId}"]`
+      );
+      target?.scrollIntoView({ block: 'center', behavior: 'auto' });
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [selectedReadBlockId, viewMode]);
+
+  React.useEffect(() => {
+    if (viewMode !== 'read' && viewMode !== 'immersive') return;
     const rafId = window.requestAnimationFrame(() => {
       documentContainerRef.current?.focus({ preventScroll: true });
     });
@@ -484,15 +496,19 @@ export const MainDocumentArea: React.FC = () => {
     };
     const sourceHit = getSourceHitFromPointer(event);
     if (!sourceHit) {
-      jumpToEditPosition(block, 0);
+      focusComposerAtSourceOffset(block, 0, 'review');
       restoreScrollAfterEdit();
       return;
     }
-    jumpToEditPosition(block, sourceHit.caret);
+    focusComposerAtSourceOffset(block, sourceHit.caret, 'review');
     restoreScrollAfterEdit();
   };
 
-  const jumpToEditPosition = (block: CanonicalBlock, sourceOffset: number) => {
+  const focusComposerAtSourceOffset = (
+    block: CanonicalBlock,
+    sourceOffset: number,
+    nextViewMode: 'read' | 'review',
+  ) => {
     const clampedSourceOffset = Math.max(0, Math.min(sourceOffset, block.source.length));
     let targetSegmentIndex = 0;
     let chunkStartOffset = 0;
@@ -507,7 +523,7 @@ export const MainDocumentArea: React.FC = () => {
       chunkStartOffset = block.segments[startSegmentIndex]?.startOffset ?? 0;
     }
     activateChunk(block.id, targetSegmentIndex);
-    setViewMode('review');
+    setViewMode(nextViewMode);
     const chunkLocalOffset = Math.max(0, clampedSourceOffset - chunkStartOffset);
     const applyComposerSelection = (attempt: number) => {
       const composer = document.querySelector('[data-testid="sticky-itrans-input"]') as HTMLTextAreaElement | null;
@@ -523,9 +539,10 @@ export const MainDocumentArea: React.FC = () => {
   };
 
   const handleImmersiveBlockClick = (block: CanonicalBlock) => selectReadLine(block.id);
-  const handleImmersiveBlockDoubleClick = (block: CanonicalBlock) => {
+  const handleImmersiveBlockDoubleClick = (block: CanonicalBlock, event: React.MouseEvent<HTMLElement>) => {
     selectReadLine(block.id);
-    setViewMode('read');
+    const sourceHit = getSourceHitFromPointer(event);
+    focusComposerAtSourceOffset(block, sourceHit?.caret ?? 0, 'read');
   };
 
   const renderInteractiveSourceText = (
@@ -564,7 +581,7 @@ export const MainDocumentArea: React.FC = () => {
               const rect = event.currentTarget.getBoundingClientRect();
               const ratio = rect.width > 0 ? Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)) : 0;
               const caret = Math.round(start + (end - start) * ratio);
-              jumpToEditPosition(block, Math.max(start, Math.min(end, caret)));
+              focusComposerAtSourceOffset(block, Math.max(start, Math.min(end, caret)), 'review');
               const restore = () => {
                 if (viewportTopBeforeEdit === null) return;
                 const target = document.querySelector<HTMLElement>(`[data-testid="document-read-block-${block.id}"]`);
@@ -725,7 +742,7 @@ export const MainDocumentArea: React.FC = () => {
               isPrimaryPane && isImmersive
                 ? (event) => {
                     event.preventDefault();
-                    handleImmersiveBlockDoubleClick(block);
+                    handleImmersiveBlockDoubleClick(block, event);
                   }
                 : undefined
             }
@@ -813,7 +830,7 @@ export const MainDocumentArea: React.FC = () => {
             isPrimaryPane && isImmersive
               ? (event) => {
                   event.preventDefault();
-                  handleImmersiveBlockDoubleClick(block);
+                  handleImmersiveBlockDoubleClick(block, event);
                 }
               : undefined
           }
