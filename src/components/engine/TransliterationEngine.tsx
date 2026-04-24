@@ -565,7 +565,7 @@ export const TransliterationEngine: React.FC = () => {
       "flex min-h-0 flex-1 flex-col bg-slate-50 font-sans relative",
       viewMode === 'immersive' && "h-dvh max-h-dvh overflow-hidden"
     )}>
-      <div className="fixed left-4 top-4 z-[140] flex items-center gap-2 pointer-events-none">
+      <div className="fixed left-4 top-4 z-[160] flex items-center gap-2 pointer-events-none">
         <button
           data-testid="workspace-toggle"
           type="button"
@@ -659,7 +659,8 @@ export const TransliterationEngine: React.FC = () => {
       <div
         data-testid="workspace-panel"
         className={clsx(
-          'fixed left-0 top-0 z-[75] flex h-full w-[32rem] max-w-[90vw] overflow-hidden border-r border-slate-200 bg-white shadow-2xl transition-transform duration-500 ease-in-out',
+          'fixed left-0 top-0 flex h-full w-[32rem] max-w-[90vw] overflow-hidden border-r border-slate-200 bg-white shadow-2xl transition-transform duration-500 ease-in-out',
+          viewMode === 'immersive' ? 'z-[150]' : 'z-[75]',
           isWorkspacePanelOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
