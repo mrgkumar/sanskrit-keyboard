@@ -3,35 +3,40 @@
 import React from 'react';
 import { StickyTopComposer } from '@/components/StickyTopComposer';
 import { MainDocumentArea } from '@/components/MainDocumentArea';
-import { ReferenceSidePanel } from '@/components/ReferenceSidePanel'; // Import the side panel
+import { ReferenceSidePanel } from '@/components/ReferenceSidePanel';
 import { ScriptText } from '@/components/ScriptText';
-import { 
-  useFlowStore, 
-  getSessionStorageKey 
-} from '@/store/useFlowStore';
-import { 
-  BookText, 
-  Copy, 
-  Check, 
-  Edit2, 
-  Eye, 
-  Menu, 
-  RefreshCw, 
-  Save, 
-  Search, 
-  SlidersHorizontal, 
-  Trash2, 
+import { useFlowStore, getSessionStorageKey } from '@/store/useFlowStore';
+import {
+  BookText,
+  Copy,
+  Check,
+  Edit2,
+  Eye,
+  Menu,
+  RefreshCw,
+  Save,
+  Search,
+  SlidersHorizontal,
+  Trash2,
   X,
   History,
   Zap,
   Info,
   Download,
+  Upload,
   Wrench
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { SessionSnapshot, SanskritFontPreset, TamilFontPreset, TypographySettings, SessionListItem } from '@/store/types';
 import { formatSourceForScript } from '@/lib/vedic/utils';
 import { BUILD_VERSION, BUILD_TIME } from '@/lib/version';
+import {
+  createSessionTransferFilename,
+  createSessionTransferPayload,
+  parseSessionTransferPayload,
+  serializeSessionTransferPayload,
+  type PersistedLexicalLearningSnapshot,
+} from '@/lib/sessionTransfer';
 import {
   OUTPUT_TARGET_CONTROL_LABELS,
   OUTPUT_TARGET_VALUE_LABELS,
@@ -42,13 +47,6 @@ import { LargeDocumentOperationOverlay } from './LargeDocumentOperationOverlay';
 const LEGACY_STORAGE_KEY = 'sanskrit-keyboard.sessions.v1';
 const LEXICAL_HISTORY_KEY = 'sanskrit-keyboard.lexical-history.v1';
 const LEGACY_AUTOLOAD_BYTES_LIMIT = 1_000_000;
-
-interface PersistedLexicalLearningSnapshot {
-  version: 1;
-  swaraPredictionEnabled: boolean;
-  userLexicalUsage: Record<string, number>;
-  userExactFormUsage: Record<string, Record<string, number>>;
-}
 
 const migrateLegacySessionsIfNeeded = () => {
   if (window.localStorage.getItem('sanskrit-keyboard.session-index.v2')) {
@@ -113,9 +111,11 @@ export const TransliterationEngine: React.FC = () => {
     setSessionName,
     setSessionSearchQuery,
     setSavedSessions,
+    loadSessionSnapshot,
     deleteSession,
     renameSession,
     setSwaraPredictionEnabled,
+    exportSessionSnapshot,
     markSessionSaved,
     hydratePersistedLexicalLearning,
     clearSessionLexicalLearning,
@@ -132,8 +132,11 @@ export const TransliterationEngine: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState<'sessions' | 'display' | 'intelligence' | 'utility' | 'info'>('sessions');
   const [editingSessionId, setEditingSessionId] = React.useState<string | null>(null);
   const [editingName, setEditingName] = React.useState('');
+  const [transferStatus, setTransferStatus] = React.useState<string | null>(null);
+  const [transferError, setTransferError] = React.useState<string | null>(null);
   const hasLoadedSessions = React.useRef(true); // Disable auto-load here
   const hasLoadedLexicalLearning = React.useRef(false);
+  const importInputRef = React.useRef<HTMLInputElement | null>(null);
   
   const {
     composerLayout,
@@ -561,6 +564,67 @@ export const TransliterationEngine: React.FC = () => {
     window.localStorage.removeItem(LEXICAL_HISTORY_KEY);
   };
 
+  const handleExportCurrentSession = () => {
+    const sessionSnapshot = exportSessionSnapshot();
+    const lexicalLearning: PersistedLexicalLearningSnapshot = {
+      version: 1,
+      swaraPredictionEnabled,
+      userLexicalUsage,
+      userExactFormUsage,
+    };
+    const payload = createSessionTransferPayload(sessionSnapshot, lexicalLearning, BUILD_VERSION);
+    const blob = new Blob([serializeSessionTransferPayload(payload)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = createSessionTransferFilename(sessionSnapshot.sessionName, sessionSnapshot.sessionId);
+    anchor.rel = 'noreferrer';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    globalThis.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTransferError(null);
+    setTransferStatus(`Exported ${sessionSnapshot.sessionName || 'current session'}.`);
+  };
+
+  const handleImportButtonClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportSessionFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    setTransferError(null);
+    setTransferStatus(null);
+
+    try {
+      const raw = await file.text();
+      const parsed = parseSessionTransferPayload(raw);
+
+      if (!window.confirm(`Import "${parsed.session.sessionName}" and replace the current workspace?`)) {
+        return;
+      }
+
+      if (parsed.lexicalLearning) {
+        hydratePersistedLexicalLearning(parsed.lexicalLearning);
+        window.localStorage.setItem(LEXICAL_HISTORY_KEY, JSON.stringify(parsed.lexicalLearning));
+      }
+
+      loadSessionSnapshot(parsed.session);
+      markSessionSaved(parsed.session.updatedAt);
+      setIsWorkspacePanelOpen(false);
+      setTransferStatus(`Imported ${parsed.session.sessionName}.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to import the selected file.';
+      setTransferError(message);
+    }
+  };
+
   return (
     <div className={clsx(
       "flex min-h-0 flex-1 flex-col bg-slate-50 font-sans relative",
@@ -914,6 +978,53 @@ export const TransliterationEngine: React.FC = () => {
                     New Blank
                   </button>
                 </div>
+
+                <section className="space-y-4 pt-2">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Session Portability</p>
+                  <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm space-y-3">
+                    <p className="text-[11px] leading-relaxed text-slate-500">
+                      Export the current session and its learning state as a versioned JSON file, then import it on another computer to continue working.
+                    </p>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <button
+                        onClick={handleExportCurrentSession}
+                        className="flex items-center justify-center gap-2 rounded-2xl border-2 border-blue-100 bg-blue-50 px-4 py-4 text-xs font-black uppercase tracking-widest text-blue-700 hover:bg-blue-100 transition-all active:scale-[0.97]"
+                        type="button"
+                      >
+                        <Download className="h-4 w-4" />
+                        Export Session
+                      </button>
+                      <button
+                        onClick={handleImportButtonClick}
+                        className="flex items-center justify-center gap-2 rounded-2xl border-2 border-slate-100 bg-white px-4 py-4 text-xs font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 transition-all active:scale-[0.97]"
+                        type="button"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Import Session
+                      </button>
+                    </div>
+                    <input
+                      ref={importInputRef}
+                      data-testid="session-import-input"
+                      accept=".json,application/json"
+                      className="sr-only"
+                      type="file"
+                      onChange={handleImportSessionFile}
+                    />
+                    <div className="space-y-2">
+                      {transferStatus && (
+                        <p className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-700">
+                          {transferStatus}
+                        </p>
+                      )}
+                      {transferError && (
+                        <p className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-[11px] font-bold text-rose-700">
+                          {transferError}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </section>
               </div>
             )}
 
