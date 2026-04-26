@@ -5,6 +5,7 @@ import type {
   MantraDocument,
   ReaderDisplayScript,
   ReaderMode,
+  ReaderPageSize,
   ReaderPreferences,
   ReaderTheme,
   VedaManifest,
@@ -40,6 +41,7 @@ interface ReaderStoreState extends ReaderPreferences {
   setDisplayScript: (displayScript: ReaderDisplayScript) => void;
   setSanskritFontPreset: (preset: SanskritFontPreset) => void;
   setTamilFontPreset: (preset: TamilFontPreset) => void;
+  setPageSize: (pageSize: ReaderPageSize) => void;
   setTheme: (theme: ReaderTheme) => void;
   setTypography: (settings: { fontSize?: number; lineHeight?: number }) => void;
   setSidebarOpen: (open: boolean) => void;
@@ -89,11 +91,13 @@ const selectPreferences = (state: Pick<
   'readerMode' | 'displayScript' | 'theme' | 'fontSize' | 'lineHeight' | 'sidebarOpen' | 'diagnosticsOpen' | 'searchQuery'
   | 'sanskritFontPreset'
   | 'tamilFontPreset'
+  | 'pageSize'
 >) => ({
   readerMode: state.readerMode,
   displayScript: state.displayScript,
   sanskritFontPreset: state.sanskritFontPreset,
   tamilFontPreset: state.tamilFontPreset,
+  pageSize: state.pageSize,
   theme: state.theme,
   fontSize: state.fontSize,
   lineHeight: state.lineHeight,
@@ -158,6 +162,10 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
     },
     setTamilFontPreset: (tamilFontPreset) => {
       set({ tamilFontPreset });
+      persistPreferences(selectPreferences(get()));
+    },
+    setPageSize: (pageSize) => {
+      set({ pageSize });
       persistPreferences(selectPreferences(get()));
     },
     setTheme: (theme) => {

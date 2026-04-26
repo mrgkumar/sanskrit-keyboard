@@ -9,6 +9,7 @@ import {
   detectReaderSourceScript,
   deriveDocumentOutline,
   formatReaderDisplayText,
+  getReaderPageSizeWidth,
 } from '@/lib/veda-book/renderText';
 import type { ReaderDisplayScript } from '@/lib/veda-book/types';
 import { useReaderStore } from '@/store/useReaderStore';
@@ -96,11 +97,13 @@ export function MantraDocumentView({ document, documentStatus, displayScriptOver
   const displayScript = useReaderStore((state) => state.displayScript);
   const sanskritFontPreset = useReaderStore((state) => state.sanskritFontPreset);
   const tamilFontPreset = useReaderStore((state) => state.tamilFontPreset);
+  const pageSize = useReaderStore((state) => state.pageSize);
   const documentSearchQuery = useReaderStore((state) => state.documentSearchQuery);
   const documentSearchActiveIndex = useReaderStore((state) => state.documentSearchActiveIndex);
   const activeDisplayScript = displayScriptOverride ?? displayScript;
   const outline = document ? deriveDocumentOutline(document.nodes) : [];
   const sourceScript = document ? detectReaderSourceScript(document.rawTex) : 'unknown';
+  const pageWidth = getReaderPageSizeWidth(pageSize);
   const searchHits = document
     ? collectReaderSearchHits(document, documentSearchQuery, activeDisplayScript, DEFAULT_OUTPUT_TARGET_SETTINGS, {
         sanskritFontPreset,
@@ -139,7 +142,7 @@ export function MantraDocumentView({ document, documentStatus, displayScriptOver
       data-testid="reader-document-scroll"
       style={{ maxHeight: 'calc(100dvh - 9rem)' }}
     >
-      <article className="mx-auto flex w-full max-w-4xl flex-col gap-5">
+      <article className="mx-auto flex w-full flex-col gap-5" style={{ maxWidth: pageWidth }}>
         <header
           id="reader-document-title"
           data-reader-search-hit={searchHits.some((hit) => hit.nodeId === 'reader-document-title') ? 'true' : undefined}

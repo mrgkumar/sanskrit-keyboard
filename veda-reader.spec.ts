@@ -287,6 +287,12 @@ test.describe('Veda Reader', () => {
     await expect(page.locator('aside').getByRole('button', { name: /पुरुषसूक्तम्/ }).first()).toBeVisible();
     await expect(page.locator('main article > header').getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Source' })).toBeVisible();
+    await expect(page.getByText('Page: A4')).toBeVisible();
+    await expect(page.locator('main article').first()).toHaveAttribute('style', /max-width:\s*8\.27in/);
+
+    await page.getByRole('button', { name: 'Letter' }).click();
+    await expect(page.getByText('Page: Letter')).toBeVisible();
+    await expect(page.locator('main article').first()).toHaveAttribute('style', /max-width:\s*8\.5in/);
 
     await page.getByRole('button', { name: 'Chandas' }).click();
     await expect(page.locator('main article > header [data-font-preset="chandas"]').first()).toBeVisible();

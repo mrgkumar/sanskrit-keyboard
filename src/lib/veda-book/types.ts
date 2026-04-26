@@ -4,6 +4,7 @@ import type { SanskritFontPreset, TamilFontPreset } from '@/store/types';
 export type ReaderMode = 'reader' | 'source' | 'split' | 'compare';
 export type ReaderTheme = 'light' | 'sepia' | 'dark';
 export type ReaderDisplayScript = 'original' | OutputScript;
+export type ReaderPageSize = 'a4' | 'letter' | 'legal';
 export type LoadStatus = 'idle' | 'loading' | 'ready' | 'refreshing' | 'error';
 
 export type ParserDiagnosticLevel = 'info' | 'warning' | 'error';
@@ -65,6 +66,7 @@ export interface ReaderPreferences {
   theme: ReaderTheme;
   fontSize: number;
   lineHeight: number;
+  pageSize: ReaderPageSize;
   displayScript: ReaderDisplayScript;
   sanskritFontPreset: SanskritFontPreset;
   tamilFontPreset: TamilFontPreset;
@@ -78,6 +80,7 @@ export const DEFAULT_READER_PREFERENCES: ReaderPreferences = {
   theme: 'sepia',
   fontSize: 19,
   lineHeight: 1.75,
+  pageSize: 'a4',
   displayScript: 'original',
   sanskritFontPreset: 'siddhanta',
   tamilFontPreset: 'anek',

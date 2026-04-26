@@ -5,6 +5,7 @@ import {
   detectReaderSourceScript,
   formatReaderSourceScriptLabel,
   getReaderDisplayScriptLabel,
+  getReaderPageSizeLabel,
 } from '@/lib/veda-book/renderText';
 
 export function ReaderStatusBar() {
@@ -13,6 +14,7 @@ export function ReaderStatusBar() {
   const documentStatus = useReaderStore((state) => state.documentStatus);
   const manifest = useReaderStore((state) => state.manifest);
   const manifestStatus = useReaderStore((state) => state.manifestStatus);
+  const pageSize = useReaderStore((state) => state.pageSize);
   const sourceScript = activeDocument ? detectReaderSourceScript(activeDocument.rawTex) : 'unknown';
 
   return (
@@ -27,6 +29,7 @@ export function ReaderStatusBar() {
         <span>Branch: {activeDocument?.sourceBranch ?? 'n/a'}</span>
         <span>Script: {formatReaderSourceScriptLabel(sourceScript)}</span>
         <span>Display: {getReaderDisplayScriptLabel(displayScript)}</span>
+        <span>Page: {getReaderPageSizeLabel(pageSize)}</span>
       </div>
     </footer>
   );

@@ -1,7 +1,7 @@
 import type { OutputScript, OutputTargetSettings } from '@/lib/vedic/mapping';
 import { detransliterate, formatSourceForScript, normalizeDevanagariDisplayText, reverseTamilInput } from '@/lib/vedic/utils';
 import type { SanskritFontPreset } from '@/store/types';
-import type { MantraDocument, MantraNode } from './types';
+import type { MantraDocument, MantraNode, ReaderPageSize } from './types';
 
 const CAMEL_BOUNDARY_PATTERN = /([a-z0-9])([A-Z])/g;
 const NON_ALNUM_BOUNDARY_PATTERN = /[_-]+/g;
@@ -169,6 +169,17 @@ export const formatReaderDisplayText = (
 
 export const getReaderDisplayScriptLabel = (script: ReaderDisplayScript) =>
   script === 'original' ? 'Original' : formatReaderSourceScriptLabel(script);
+
+const READER_PAGE_SIZE_WIDTHS: Record<ReaderPageSize, string> = {
+  a4: '8.27in',
+  letter: '8.5in',
+  legal: '8.5in',
+};
+
+export const getReaderPageSizeLabel = (pageSize: ReaderPageSize) =>
+  pageSize === 'a4' ? 'A4' : pageSize === 'letter' ? 'Letter' : 'Legal';
+
+export const getReaderPageSizeWidth = (pageSize: ReaderPageSize) => READER_PAGE_SIZE_WIDTHS[pageSize];
 
 export const formatReaderSearchText = (
   text: string,
