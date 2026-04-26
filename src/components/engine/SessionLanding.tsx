@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { useFlowStore } from '@/store/useFlowStore';
 import { 
   Plus, 
@@ -9,7 +10,8 @@ import {
   AlertTriangle,
   History,
   Trash2,
-  Edit2
+  Edit2,
+  BookOpen
 } from 'lucide-react';
 import { LargeDocumentOperationOverlay } from './LargeDocumentOperationOverlay';
 
@@ -106,6 +108,17 @@ export const SessionLanding: React.FC<SessionLandingProps> = ({ onConfirm }) => 
               <ChevronRight className="w-5 h-5 text-white/30 group-hover:translate-x-1 transition-all" />
             </button>
           )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 text-sm">
+          <span className="text-slate-400 font-medium">Need to read a source text?</span>
+          <Link
+            href="/reader"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-200 bg-white text-slate-700 font-bold hover:text-blue-700 hover:border-blue-200 hover:bg-blue-50 transition-colors"
+          >
+            <BookOpen className="w-4 h-4 text-blue-600" />
+            Open Reader
+          </Link>
         </div>
 
         {/* Session List */}

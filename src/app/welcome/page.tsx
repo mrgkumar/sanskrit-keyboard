@@ -205,14 +205,24 @@ export default function WelcomePage() {
         <section className="text-center py-12 space-y-8">
           <h2 className="text-3xl font-black text-slate-900">Ready to enter the flow?</h2>
           <div className="flex flex-col items-center gap-4">
-            <Link 
-              href="/"
-              onClick={markAsVisited}
-              className="flex items-center gap-3 px-12 py-5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-[2rem] shadow-2xl transition-all hover:scale-105 active:scale-95 group text-lg"
-            >
-              <span>Launch Engine</span>
-              <Sparkles className="w-5 h-5 text-amber-400 group-hover:rotate-12 transition-transform" />
-            </Link>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <Link 
+                href="/"
+                onClick={markAsVisited}
+                className="flex items-center justify-center gap-3 px-12 py-5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-[2rem] shadow-2xl transition-all hover:scale-105 active:scale-95 group text-lg"
+              >
+                <span>Launch Engine</span>
+                <Sparkles className="w-5 h-5 text-amber-400 group-hover:rotate-12 transition-transform" />
+              </Link>
+              <Link
+                href="/reader"
+                onClick={markAsVisited}
+                className="flex items-center justify-center gap-3 px-12 py-5 bg-white hover:bg-slate-50 text-slate-900 font-bold rounded-[2rem] border border-slate-200 shadow-lg transition-all hover:scale-105 active:scale-95 group text-lg"
+              >
+                <span>Open Reader</span>
+                <BookOpen className="w-5 h-5 text-blue-600 group-hover:rotate-[-6deg] transition-transform" />
+              </Link>
+            </div>
             <p className="text-slate-400 text-sm flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
               Settings are saved automatically
