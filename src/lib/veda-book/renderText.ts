@@ -36,3 +36,22 @@ export const deriveDocumentTitleFromNodes = (nodes: MantraNode[], fallbackTitle:
 
   return titleNode?.text.trim() || fallbackTitle;
 };
+
+export interface DocumentOutlineEntry {
+  id: string;
+  label: string;
+  level: 1 | 2 | 3;
+}
+
+export const deriveDocumentOutline = (nodes: MantraNode[]) =>
+  nodes
+    .filter(
+      (node): node is Extract<MantraNode, { type: 'chapter' | 'section' | 'subsection' }> =>
+        node.type === 'chapter' || node.type === 'section' || node.type === 'subsection',
+    )
+    .map((node) => ({
+      id: node.id,
+      label: node.text.trim(),
+      level: node.type === 'chapter' ? 1 : node.type === 'section' ? 2 : 3,
+    }))
+    .filter((entry) => Boolean(entry.label));

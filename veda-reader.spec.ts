@@ -4,6 +4,7 @@ import { deriveDocumentTitleFromNodes } from '@/lib/veda-book/renderText';
 
 const MANTRAS_INDEX = String.raw`\input{mantras/PurushaSuktam.tex}
 \input{mantras/AnotherMantra.tex}
+\input{mantras/OutlineMantra.tex}
 `;
 
 const PURUSHA_SUKTAM = String.raw`\chapt{पुरुषसूक्तम्}
@@ -18,6 +19,51 @@ const PURUSHA_SUKTAM = String.raw`\chapt{पुरुषसूक्तम्}
 const ANOTHER_MANTRA = String.raw`\chapt{अन्य मन्‍त्रः}
 
 द्वितीयं परीक्षणम्।
+`;
+
+const OUTLINE_MANTRA = String.raw`\chapt{दीर्घपाठम्}
+
+प्रथमं अनुच्छेदम्।
+
+प्रथमं अनुवर्तनम्।
+
+द्वितीयं अनुच्छेदम्।
+
+तृतीयं अनुच्छेदम्।
+
+चतुर्थं अनुच्छेदम्।
+
+पञ्चमं अनुच्छेदम्।
+
+षष्ठं अनुच्छेदम्।
+
+सप्तमं अनुच्छेदम्।
+
+\section{द्वितीयः विभागः}
+
+अनेके अनुच्छेदाः।
+
+अनेके अनुच्छेदाः।
+
+अनेके अनुच्छेदाः।
+
+अनेके अनुच्छेदाः।
+
+अनेके अनुच्छेदाः।
+
+अनेके अनुच्छेदाः।
+
+अनेके अनुच्छेदाः।
+
+अनेके अनुच्छेदाः।
+
+अनेके अनुच्छेदाः।
+
+अनेके अनुच्छेदाः।
+
+\subsection{सूक्ष्मः उपविभागः}
+
+अन्तिमं पङ्क्तिः।
 `;
 
 const mockReaderSources = async (page: Parameters<typeof test>[0]['page']) => {
@@ -47,6 +93,15 @@ const mockReaderSources = async (page: Parameters<typeof test>[0]['page']) => {
         status: 200,
         contentType: 'text/plain; charset=utf-8',
         body: ANOTHER_MANTRA,
+      });
+      return;
+    }
+
+    if (url.includes('OutlineMantra.tex')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/plain; charset=utf-8',
+        body: OUTLINE_MANTRA,
       });
       return;
     }
@@ -151,6 +206,28 @@ test.describe('Veda Reader', () => {
     await expect(page.locator('main article > header').getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
     await expect(page.getByText('stotrasamhita/vedamantra-book · master', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Split' })).toBeVisible();
+  });
+
+  test('renders a document outline and jumps to the selected section', async ({ page }) => {
+    await mockReaderSources(page);
+    await clearReaderStorage(page);
+    await page.setViewportSize({ width: 1280, height: 520 });
+
+    const outlineDocument = parseTexDocument(OUTLINE_MANTRA, { sourcePath: 'mantras/OutlineMantra.tex' });
+    const subsectionNode = outlineDocument.nodes.find((node) => node.type === 'subsection');
+
+    await page.goto('/reader?path=mantras/OutlineMantra.tex');
+
+    await expect(page.getByRole('navigation', { name: 'Document outline' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'द्वितीयः विभागः' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'सूक्ष्मः उपविभागः' })).toBeVisible();
+
+    const targetNode = page.locator(`#${subsectionNode?.id ?? 'subsection-1'}`);
+
+    await page.getByRole('link', { name: 'सूक्ष्मः उपविभागः' }).click();
+
+    await expect(targetNode).toBeInViewport();
+    await expect(page.getByTestId('reader-document-scroll')).toBeVisible();
   });
 
   test('manual live upstream verification only', async ({ page }) => {

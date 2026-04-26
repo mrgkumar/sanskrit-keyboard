@@ -1,6 +1,7 @@
 'use client';
 
 import type { MantraDocument, MantraNode } from '@/lib/veda-book/types';
+import { deriveDocumentOutline } from '@/lib/veda-book/renderText';
 
 interface MantraDocumentViewProps {
   document: MantraDocument | null;
@@ -56,8 +57,14 @@ export function MantraDocumentView({ document, documentStatus }: MantraDocumentV
     );
   }
 
+  const outline = deriveDocumentOutline(document.nodes);
+
   return (
-    <section className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3">
+    <section
+      className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3"
+      data-testid="reader-document-scroll"
+      style={{ maxHeight: 'calc(100dvh - 9rem)' }}
+    >
       <article className="mx-auto flex w-full max-w-4xl flex-col gap-5">
         <header className="border-b border-stone-300/70 pb-4">
           <div className="text-[0.7rem] uppercase tracking-[0.22em] text-stone-500">{document.sourcePath}</div>
@@ -67,9 +74,34 @@ export function MantraDocumentView({ document, documentStatus }: MantraDocumentV
           </div>
         </header>
 
+        {outline.length > 1 ? (
+          <nav className="rounded-xl border border-stone-300/70 bg-white/60 p-3" aria-label="Document outline">
+            <div className="text-[0.7rem] uppercase tracking-[0.22em] text-stone-500">Outline</div>
+            <div className="mt-3 space-y-1">
+              {outline.map((entry) => (
+                <a
+                  key={entry.id}
+                  href={`#${entry.id}`}
+                  className={[
+                    'block w-full rounded-md px-3 py-2 text-left text-sm transition',
+                    entry.level === 1
+                      ? 'font-semibold text-stone-900'
+                      : entry.level === 2
+                        ? 'pl-5 text-stone-800'
+                        : 'pl-8 text-stone-700',
+                    'hover:bg-stone-100',
+                  ].join(' ')}
+                >
+                  {entry.label}
+                </a>
+              ))}
+            </div>
+          </nav>
+        ) : null}
+
         <div className="space-y-5">
           {document.nodes.map((node) => (
-            <div key={node.id} className="space-y-2">
+            <div key={node.id} id={node.id} className="space-y-2 scroll-mt-24">
               {renderNode(node)}
             </div>
           ))}
