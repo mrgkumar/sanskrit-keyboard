@@ -81,7 +81,7 @@ export interface EditorState {
 }
 
 export type AnnotationColor = 'yellow' | 'red';
-export type DocumentAnnotationKind = 'highlight' | 'bookmark';
+export type DocumentAnnotationKind = 'highlight' | 'bookmark' | 'youtube';
 
 export interface DocumentAnnotation {
   id: string;
@@ -91,6 +91,7 @@ export interface DocumentAnnotation {
   sourceText: string;
   kind: DocumentAnnotationKind;
   color?: AnnotationColor;
+  url?: string;
   createdAt: string;
   updatedAt: string;
 }

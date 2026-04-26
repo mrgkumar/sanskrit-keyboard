@@ -5,7 +5,7 @@ import React from 'react';
 import { useFlowStore } from '@/store/useFlowStore';
 import { AnnotationColor, CanonicalBlock, DocumentAnnotation } from '@/store/types';
 import { clsx } from 'clsx';
-import { Bookmark, Check, ChevronLeft, ChevronRight, Copy, Eye, EyeOff, Highlighter, Search, Trash2, X } from 'lucide-react';
+import { Bookmark, Check, ChevronLeft, ChevronRight, Copy, ExternalLink, Eye, EyeOff, Highlighter, Link2, Pencil, Search, Trash2, X } from 'lucide-react';
 import { formatSourceForScript, transliterate } from '@/lib/vedic/utils';
 import {
   buildImmersiveFindMatches,
@@ -35,6 +35,7 @@ export const MainDocumentArea: React.FC = () => {
     annotationEditWarning,
     upsertAnnotation,
     removeAnnotation,
+    markSessionSaved,
     setShowAnnotationOverlay,
     setAnnotationNavigatorOpen,
     dismissAnnotationEditWarning,
@@ -85,6 +86,12 @@ export const MainDocumentArea: React.FC = () => {
     endOffset: number;
     sourceText: string;
     displayText: string;
+    left: number;
+    top: number;
+  } | null>(null);
+  const [paragraphLinkTarget, setParagraphLinkTarget] = React.useState<{
+    blockId: string;
+    url: string;
     left: number;
     top: number;
   } | null>(null);
@@ -177,6 +184,16 @@ export const MainDocumentArea: React.FC = () => {
     [blocks]
   );
 
+  const paragraphLinksByBlock = React.useMemo(
+    () =>
+      new Map(
+        annotations
+          .filter((annotation) => annotation.kind === 'youtube')
+          .map((annotation) => [annotation.blockId, annotation])
+      ),
+    [annotations]
+  );
+
   const sortedAnnotations = React.useMemo(
     () =>
       [...annotations].sort((left, right) => {
@@ -189,6 +206,34 @@ export const MainDocumentArea: React.FC = () => {
       }),
     [annotations, blockOrder]
   );
+
+  const normalizeParagraphLinkUrl = React.useCallback((value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+
+    const withScheme = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmed) ? trimmed : `https://${trimmed}`;
+    try {
+      const parsed = new URL(withScheme);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '';
+      return parsed.toString();
+    } catch {
+      return '';
+    }
+  }, []);
+
+  const readClipboardParagraphLinkUrl = React.useCallback(async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      return normalizeParagraphLinkUrl(text);
+    } catch {
+      return '';
+    }
+  }, [normalizeParagraphLinkUrl]);
+
+  const openParagraphLink = React.useCallback((url: string) => {
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }, []);
 
   React.useEffect(() => {
     if (!copiedId) return;
@@ -257,7 +302,10 @@ export const MainDocumentArea: React.FC = () => {
   }, [viewMode]);
 
   React.useEffect(() => {
-    if (viewMode !== 'immersive') setAnnotationTarget(null);
+    if (viewMode !== 'immersive') {
+      setAnnotationTarget(null);
+      setParagraphLinkTarget(null);
+    }
   }, [viewMode]);
 
   React.useEffect(() => {
@@ -411,15 +459,90 @@ export const MainDocumentArea: React.FC = () => {
     documentContainerRef.current?.focus();
   };
 
+  const openParagraphLinkEditor = React.useCallback(
+    async (block: CanonicalBlock, anchor: HTMLElement | null) => {
+      setSelectedReadBlockId(block.id);
+      documentContainerRef.current?.focus({ preventScroll: true });
+      const existing = paragraphLinksByBlock.get(block.id);
+      const rect = anchor?.getBoundingClientRect();
+      setParagraphLinkTarget({
+        blockId: block.id,
+        url: existing?.url ?? '',
+        left: rect ? Math.min(rect.left + rect.width / 2, window.innerWidth - 240) : 0,
+        top: rect ? Math.max(72, rect.bottom + 8) : 0,
+      });
+
+      if (existing?.url) {
+        return;
+      }
+
+      const clipboardUrl = await readClipboardParagraphLinkUrl();
+      if (!clipboardUrl) return;
+      setParagraphLinkTarget((current) =>
+        current?.blockId === block.id && !current.url.trim()
+          ? { ...current, url: clipboardUrl }
+          : current
+      );
+    },
+    [paragraphLinksByBlock, readClipboardParagraphLinkUrl]
+  );
+
+  const saveParagraphLink = React.useCallback(
+    (blockId: string, url: string) => {
+      const block = blocks.find((item) => item.id === blockId);
+      if (!block) return;
+      const normalizedUrl = normalizeParagraphLinkUrl(url);
+      const existing = paragraphLinksByBlock.get(blockId);
+
+      if (!normalizedUrl) {
+        if (existing) {
+          removeAnnotation(existing.id);
+        }
+        setParagraphLinkTarget(null);
+        return;
+      }
+
+      upsertAnnotation({
+        blockId,
+        startOffset: 0,
+        endOffset: block.source.length,
+        sourceText: block.source,
+        kind: 'youtube',
+        url: normalizedUrl,
+      });
+      markSessionSaved();
+      setParagraphLinkTarget(null);
+    },
+    [blocks, markSessionSaved, normalizeParagraphLinkUrl, paragraphLinksByBlock, removeAnnotation, upsertAnnotation]
+  );
+
+  const removeParagraphLink = React.useCallback(
+    (blockId: string) => {
+      const existing = paragraphLinksByBlock.get(blockId);
+      if (existing) {
+        removeAnnotation(existing.id);
+        markSessionSaved();
+      }
+      setParagraphLinkTarget(null);
+    },
+    [markSessionSaved, paragraphLinksByBlock, removeAnnotation]
+  );
+
   const scrollToAnnotation = React.useCallback((annotation: DocumentAnnotation) => {
     setSelectedReadBlockId(annotation.blockId);
+    if (annotation.kind === 'youtube') {
+      if (annotation.url) {
+        openParagraphLink(annotation.url);
+      }
+      return;
+    }
     const wordKey = `${annotation.blockId}:${annotation.startOffset}:${annotation.endOffset}`;
     const target = documentContainerRef.current?.querySelector<HTMLElement>(
       `[data-word-key="${CSS.escape(wordKey)}"]`
     );
     target?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     target?.focus({ preventScroll: true });
-  }, []);
+  }, [openParagraphLink]);
 
   const navigateAnnotation = (direction: 1 | -1) => {
     if (sortedAnnotations.length === 0) return;
@@ -447,10 +570,10 @@ export const MainDocumentArea: React.FC = () => {
 
   const activateBlock = (blockId: string) => setActiveBlockId(blockId);
   const activateChunk = (blockId: string, segmentIndex: number) => activateBlockChunk(blockId, segmentIndex);
-  const selectReadLine = (blockId: string) => {
+  const selectReadLine = React.useCallback((blockId: string) => {
     setSelectedReadBlockId(blockId);
     documentContainerRef.current?.focus({ preventScroll: true });
-  };
+  }, []);
 
   const moveReadLineSelection = (direction: 1 | -1) => {
     if (readModeBlocks.length === 0) return;
@@ -749,18 +872,69 @@ export const MainDocumentArea: React.FC = () => {
     const isComparePane = paneRole === 'compare';
     const isPrimaryPane = paneRole === 'primary';
     const isImmersive = viewMode === 'immersive';
+    const paragraphLinkAnnotation = paragraphLinksByBlock.get(block.id) ?? null;
     const wrapperClassName = clsx(
       'group relative grid items-start gap-3 rounded-md px-1 py-1 transition-colors',
       (viewMode === 'read' || viewMode === 'immersive') && 'hover:bg-slate-50',
       isSelectedReadLine && 'bg-blue-50/80 ring-1 ring-blue-200'
     );
     const lineGuide = lineNumber !== undefined ? (
-      <span
-        aria-hidden="true"
-        className="pointer-events-none mt-0.5 inline-flex h-6 min-w-6 select-none items-center justify-center rounded-full bg-slate-100 px-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500"
-      >
-        {lineNumber}
-      </span>
+      <div className="group/line mt-0.5 flex w-max flex-col items-start gap-1">
+        <span
+          aria-hidden="true"
+          className="pointer-events-none inline-flex h-6 min-w-6 select-none items-center justify-center rounded-full bg-slate-100 px-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500"
+        >
+          {lineNumber}
+        </span>
+        {isPrimaryPane && isImmersive && (
+          paragraphLinkAnnotation ? (
+            <div className="inline-flex items-center gap-1">
+              <a
+                href={paragraphLinkAnnotation.url ?? '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-6 items-center gap-1 rounded-full border border-blue-300 bg-blue-100 px-2 text-[10px] font-black uppercase tracking-[0.14em] text-blue-800 shadow-sm transition hover:bg-blue-200 hover:text-blue-900"
+                aria-label="Open paragraph web link"
+                title="Open paragraph link"
+                onClick={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+              >
+                <ExternalLink className="h-3 w-3" />
+                <span>Link</span>
+              </a>
+              <button
+                type="button"
+                className="inline-flex h-6 items-center gap-1 rounded-full border border-slate-200 bg-white px-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-600 shadow-sm transition opacity-0 group-hover/line:opacity-100 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
+                aria-label="Edit paragraph web link"
+                title="Edit paragraph link"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  void openParagraphLinkEditor(block, event.currentTarget);
+                }}
+              >
+                <Pencil className="h-3 w-3" />
+                <span>Edit</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="inline-flex h-6 items-center gap-1 rounded-full border border-slate-300 bg-white px-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 shadow-sm transition opacity-0 group-hover/line:opacity-100 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800"
+              aria-label="Add paragraph web link"
+              title="Add paragraph link"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                void openParagraphLinkEditor(block, event.currentTarget);
+              }}
+            >
+              <Link2 className="h-3 w-3" />
+              <span>Link</span>
+            </button>
+          )
+        )}
+      </div>
     ) : null;
 
     if (script === 'devanagari') {
@@ -769,7 +943,7 @@ export const MainDocumentArea: React.FC = () => {
           key={`${block.id}-${paneRole}`}
           className={wrapperClassName}
           style={{
-            ...(lineNumber !== undefined ? { gridTemplateColumns: '2.5rem minmax(0, 1fr)' } : undefined),
+            ...(lineNumber !== undefined ? { gridTemplateColumns: '5.25rem minmax(0, 1fr)' } : undefined),
             scrollMarginTop: (viewMode === 'read' || viewMode === 'immersive') && isPrimaryPane
               ? readModeScrollMarginTop
               : undefined,
@@ -837,7 +1011,7 @@ export const MainDocumentArea: React.FC = () => {
         key={`${block.id}-${script}-${paneRole}`}
         className={wrapperClassName}
         style={{
-          ...(lineNumber !== undefined ? { gridTemplateColumns: '2.5rem minmax(0, 1fr)' } : undefined),
+          ...(lineNumber !== undefined ? { gridTemplateColumns: '5.25rem minmax(0, 1fr)' } : undefined),
           scrollMarginTop: (viewMode === 'read' || viewMode === 'immersive') && isPrimaryPane
             ? readModeScrollMarginTop
             : undefined,
@@ -1332,7 +1506,104 @@ export const MainDocumentArea: React.FC = () => {
               <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-200 text-yellow-950 ring-1 ring-yellow-300 hover:bg-yellow-300" aria-label="Highlight yellow" title="Highlight yellow" onClick={() => applyAnnotationToTarget('highlight', 'yellow')}><Highlighter className="h-4 w-4" /></button>
               <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-red-200 text-red-950 ring-1 ring-red-300 hover:bg-red-300" aria-label="Highlight red" title="Highlight red" onClick={() => applyAnnotationToTarget('highlight', 'red')}><Highlighter className="h-4 w-4" /></button>
               <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-blue-700 hover:bg-blue-50" aria-label="Toggle bookmark" title="Toggle bookmark" onClick={() => applyAnnotationToTarget('bookmark')}><Bookmark className="h-4 w-4" /></button>
+              <button
+                type="button"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                aria-label="Add paragraph web link"
+                title="Add paragraph link"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  const block = blocks.find((item) => item.id === annotationTarget.blockId);
+                  if (!block) return;
+                  void openParagraphLinkEditor(block, event.currentTarget);
+                }}
+              >
+                <Link2 className="h-4 w-4" />
+              </button>
               <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Close annotation toolbar" title="Close" onClick={() => setAnnotationTarget(null)}><X className="h-4 w-4" /></button>
+            </div>
+          )}
+          {paragraphLinkTarget && (
+            <div
+              className="fixed z-[155] w-[19rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-2xl shadow-slate-200 backdrop-blur"
+              style={{
+                left: Math.min(
+                  paragraphLinkTarget.left,
+                  (typeof window === 'undefined' ? 1024 : window.innerWidth) - 308
+                ),
+                top: Math.max(72, paragraphLinkTarget.top),
+              }}
+              data-testid="paragraph-link-popover"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                    Paragraph link
+                  </p>
+                  <p className="mt-0.5 text-xs font-semibold text-slate-600">
+                    Line {(blockOrder.get(paragraphLinkTarget.blockId) ?? 0) + 1}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  aria-label="Close paragraph link editor"
+                  title="Close"
+                  onClick={() => setParagraphLinkTarget(null)}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <label className="mt-3 block text-[10px] font-black uppercase tracking-[0.14em] text-slate-400" htmlFor="paragraph-link-input">
+                Web URL
+              </label>
+              <input
+                id="paragraph-link-input"
+                value={paragraphLinkTarget.url}
+                onChange={(event) =>
+                  setParagraphLinkTarget((current) =>
+                    current?.blockId === paragraphLinkTarget.blockId
+                      ? { ...current, url: event.target.value }
+                      : current
+                  )
+                }
+                placeholder="Paste web URL"
+                autoComplete="off"
+                spellCheck={false}
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-500/10"
+              />
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  className="inline-flex h-9 flex-1 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-sm font-bold text-blue-800 hover:bg-blue-100 disabled:opacity-40"
+                  onClick={() => saveParagraphLink(paragraphLinkTarget.blockId, paragraphLinkTarget.url)}
+                  disabled={!normalizeParagraphLinkUrl(paragraphLinkTarget.url)}
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                  onClick={() => {
+                    const saved = paragraphLinksByBlock.get(paragraphLinkTarget.blockId);
+                    const url = normalizeParagraphLinkUrl(paragraphLinkTarget.url) || saved?.url || '';
+                    if (!url) return;
+                    openParagraphLink(url);
+                  }}
+                  disabled={!normalizeParagraphLinkUrl(paragraphLinkTarget.url) && !paragraphLinksByBlock.get(paragraphLinkTarget.blockId)?.url}
+                >
+                  Open
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex h-9 items-center justify-center rounded-xl border border-rose-200 bg-white px-3 text-sm font-bold text-rose-700 hover:bg-rose-50 disabled:opacity-40"
+                  onClick={() => removeParagraphLink(paragraphLinkTarget.blockId)}
+                  disabled={!paragraphLinksByBlock.get(paragraphLinkTarget.blockId)}
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           )}
           {annotationEditWarning && (
@@ -1376,9 +1647,10 @@ export const MainDocumentArea: React.FC = () => {
                       {sortedAnnotations.map((annotation) => {
                         const blockIndex = (blockOrder.get(annotation.blockId) ?? 0) + 1;
                         const previewText = getAnnotationPreviewDisplayText(annotation);
+                        const isYouTubeLink = annotation.kind === 'youtube';
                         return (
                           <button key={annotation.id} type="button" className="group flex w-full items-start gap-2 rounded-lg border border-slate-100 bg-slate-50 px-2 py-2 text-left hover:border-blue-200 hover:bg-blue-50" onClick={() => scrollToAnnotation(annotation)}>
-                            <span className={clsx('mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border', annotation.kind === 'bookmark' && 'border-blue-200 bg-blue-50 text-blue-700', annotation.color === 'yellow' && 'border-yellow-300 bg-yellow-200 text-yellow-950', annotation.color === 'red' && 'border-red-300 bg-red-200 text-red-950')}>{annotation.kind === 'bookmark' ? <Bookmark className="h-3 w-3" /> : <Highlighter className="h-3 w-3" />}</span>
+                            <span className={clsx('mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border', isYouTubeLink && 'border-slate-300 bg-slate-100 text-slate-700', annotation.kind === 'bookmark' && 'border-blue-200 bg-blue-50 text-blue-700', annotation.color === 'yellow' && 'border-yellow-300 bg-yellow-200 text-yellow-950', annotation.color === 'red' && 'border-red-300 bg-red-200 text-red-950')}>{isYouTubeLink ? <ExternalLink className="h-3 w-3" /> : annotation.kind === 'bookmark' ? <Bookmark className="h-3 w-3" /> : <Highlighter className="h-3 w-3" />}</span>
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-sm font-bold text-slate-800"><ScriptText script={primaryOutputScript} text={previewText} sanskritFontPreset={sanskritFontPreset} tamilFontPreset={tamilFontPreset} className="text-sm font-bold" /></span>
                               <span className="mt-0.5 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">Line {blockIndex}</span>

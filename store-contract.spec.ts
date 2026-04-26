@@ -305,6 +305,44 @@ test.describe('store session orchestration', () => {
     expect(nextState.annotationEditWarning?.clearedCount).toBe(2);
   });
 
+  test('youtube annotations persist in snapshots and keep only one link per block', () => {
+    const store = useFlowStore.getState();
+    useFlowStore.setState({
+      blocks: [makeShortBlock('block-a', 'om namah')],
+      editorState: {
+        ...store.editorState,
+        activeBlockId: 'block-a',
+        activeAnchorSegmentIndex: 0,
+      },
+    });
+
+    store.upsertAnnotation({
+      blockId: 'block-a',
+      startOffset: 0,
+      endOffset: 8,
+      sourceText: 'om namah',
+      kind: 'youtube',
+      url: 'https://youtu.be/first',
+    });
+    store.upsertAnnotation({
+      blockId: 'block-a',
+      startOffset: 0,
+      endOffset: 8,
+      sourceText: 'om namah',
+      kind: 'youtube',
+      url: 'https://youtu.be/second',
+    });
+
+    const nextState = useFlowStore.getState();
+    const youtubeAnnotations = nextState.annotations.filter((annotation) => annotation.kind === 'youtube');
+    expect(youtubeAnnotations).toHaveLength(1);
+    expect(youtubeAnnotations[0].url).toBe('https://youtu.be/second');
+
+    const snapshot = nextState.exportSessionSnapshot();
+    expect(snapshot.annotations?.filter((annotation) => annotation.kind === 'youtube')).toHaveLength(1);
+    expect(snapshot.annotations?.find((annotation) => annotation.kind === 'youtube')?.url).toBe('https://youtu.be/second');
+  });
+
   test('restoreSessionAsync loads a stored session snapshot without leaving restore state behind', async () => {
     const store = useFlowStore.getState();
     const sessionId = createSessionId();
