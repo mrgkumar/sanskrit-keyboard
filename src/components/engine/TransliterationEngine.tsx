@@ -627,8 +627,7 @@ export const TransliterationEngine: React.FC = () => {
 
   return (
     <div className={clsx(
-      "flex min-h-0 flex-1 flex-col bg-slate-50 font-sans relative",
-      viewMode === 'immersive' && "h-dvh max-h-dvh overflow-hidden"
+      "flex min-h-0 flex-1 flex-col bg-slate-50 font-sans relative h-dvh max-h-dvh overflow-hidden"
     )}>
       <div className="fixed left-4 top-4 z-[160] flex items-center gap-2 pointer-events-none">
         <button

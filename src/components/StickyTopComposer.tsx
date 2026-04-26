@@ -67,6 +67,8 @@ export const StickyTopComposer: React.FC = () => {
   }, []);
   const scrollSyncSourceRef = React.useRef<'source' | 'preview' | null>(null);
   const programmaticScrollTargetRef = React.useRef<HTMLElement | null>(null);
+  const manualSourceScrollAtRef = React.useRef(0);
+  const manualSourceScrollHoldMs = 2000;
   type CopyState = 'idle' | 'copied' | 'error';
   type CopyStateMap = {
     source: CopyState;
@@ -870,17 +872,53 @@ export const StickyTopComposer: React.FC = () => {
       return;
     }
 
+    manualSourceScrollAtRef.current = window.performance.now();
     scrollSyncSourceRef.current = 'source';
     if (composerHighlightRef.current) {
       composerHighlightRef.current.style.transform = `translateY(-${event.currentTarget.scrollTop}px)`;
     }
     syncPaneScroll(event.currentTarget, [previewRef.current, comparePreviewRef.current]);
     window.requestAnimationFrame(() => {
+      if (window.performance.now() - manualSourceScrollAtRef.current < manualSourceScrollHoldMs) {
+        return;
+      }
       scrollAnchorIntoView(previewRef.current);
       if (isComposerCompareMode) {
         scrollAnchorIntoView(comparePreviewRef.current);
       }
     });
+  };
+
+  const handleContainedWheelCapture = (event: React.WheelEvent<HTMLElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleContainedWheel = (event: React.WheelEvent<HTMLElement>) => {
+    const element = event.currentTarget;
+    const maxScrollTop = Math.max(0, element.scrollHeight - element.clientHeight);
+    const deltaY = event.deltaY;
+    const deltaMode = event.deltaMode;
+    const lineHeight = (() => {
+      const value = Number.parseFloat(getComputedStyle(element).lineHeight);
+      return Number.isFinite(value) && value > 0 ? value : 16;
+    })();
+    const scrollAmount =
+      deltaMode === WheelEvent.DOM_DELTA_LINE
+        ? deltaY * lineHeight
+        : deltaMode === WheelEvent.DOM_DELTA_PAGE
+          ? deltaY * element.clientHeight
+          : deltaY;
+    const scrollTop = element.scrollTop;
+    const nextScrollTop = Math.max(0, Math.min(maxScrollTop, scrollTop + scrollAmount));
+
+    if (nextScrollTop !== scrollTop) {
+      if (element === composerRef.current) {
+        manualSourceScrollAtRef.current = window.performance.now();
+        scrollSyncSourceRef.current = 'source';
+      }
+      element.scrollTop = nextScrollTop;
+    }
   };
 
   const handlePreviewScroll = (event: React.UIEvent<HTMLDivElement>) => {
@@ -949,6 +987,10 @@ export const StickyTopComposer: React.FC = () => {
 
   React.useEffect(() => {
     if (!syncComposerScroll || document.activeElement !== composerRef.current) {
+      return;
+    }
+
+    if (window.performance.now() - manualSourceScrollAtRef.current < manualSourceScrollHoldMs) {
       return;
     }
 
@@ -1421,6 +1463,7 @@ export const StickyTopComposer: React.FC = () => {
 
           <div
             ref={composerSplitContainerRef}
+            onWheelCapture={(event) => event.stopPropagation()}
             className={clsx(
               'grid min-h-0 flex-1 overflow-hidden rounded-[1.4rem] border border-slate-200/50 bg-white/85 shadow-[0_18px_42px_-36px_rgba(15,23,42,0.4)]',
               isStackedComposer
@@ -1435,6 +1478,7 @@ export const StickyTopComposer: React.FC = () => {
                 'group relative flex min-h-0 flex-col gap-3 overflow-hidden rounded-[1.15rem] border border-slate-100/70 bg-white/92 p-2.5 shadow-sm sm:p-3',
                 isStackedComposer ? 'flex-auto min-h-[12rem]' : 'flex-1 min-h-0'
               )}
+              style={{ overscrollBehavior: 'contain' }}
             >
               <div className="flex items-start justify-between gap-3 px-1">
                 <div className="flex flex-1 flex-wrap items-center justify-between gap-2">
@@ -1467,7 +1511,7 @@ export const StickyTopComposer: React.FC = () => {
                 ref={itransPanelRef}
                 className="relative flex-none overflow-hidden rounded-[1rem] border border-slate-200/40 bg-white/98 shadow-[0_6px_16px_-10px_rgba(15,23,42,0.35)]"
                 data-testid="sticky-itrans-panel"
-                style={{ height: `${composerInputHeight}px` }}
+                style={{ height: `${composerInputHeight}px`, overscrollBehavior: 'contain' }}
               >
                 <div className="pointer-events-none absolute right-2 top-2 z-20 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                   <button
@@ -1505,10 +1549,14 @@ export const StickyTopComposer: React.FC = () => {
                     <textarea
                       ref={composerRef}
                       data-testid="sticky-itrans-input"
+                      onWheelCapture={handleContainedWheelCapture}
+                      onWheel={handleContainedWheel}
                       className="relative z-10 h-full w-full overflow-y-auto rounded-[1rem] bg-transparent py-2.5 pl-3 pr-7 font-mono text-lg text-transparent caret-slate-900 outline-none selection:bg-blue-200/80 selection:text-transparent placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 md:pr-8"
                       style={{
                         fontSize: `${composerTypography.itransFontSize}px`,
                         lineHeight: composerTypography.itransLineHeight,
+                        overscrollBehavior: 'contain',
+                        overscrollBehaviorY: 'contain',
                       }}
                       value={activeChunkGroup?.source || ''}
                       onChange={(e) => updateChunkSource(e.target.value, e.target.selectionStart, e.target.selectionEnd, currentEditTarget)}
@@ -1617,6 +1665,8 @@ export const StickyTopComposer: React.FC = () => {
                 >
                   <div
                     ref={previewRef}
+                    onWheelCapture={handleContainedWheelCapture}
+                    onWheel={handleContainedWheel}
                     className="overflow-y-auto rounded-[1rem] bg-white/70 px-2.5 pb-2.5 pt-2 shadow-none sm:px-3 sm:pb-3 sm:pt-2.5"
                     data-testid="sticky-preview-primary-pane"
                     onPointerDownCapture={handlePreviewPointerDown}
@@ -1625,6 +1675,8 @@ export const StickyTopComposer: React.FC = () => {
                       height: `${composerPrimaryPreviewHeight}px`,
                       fontSize: `${getRenderedFontSizeForScript(primaryOutputScript)}px`,
                       lineHeight: getRenderedLineHeightForScript(primaryOutputScript),
+                      overscrollBehavior: 'contain',
+                      overscrollBehaviorY: 'contain',
                     }}
                   >
                     {primaryOutputScript === 'devanagari' ? (
@@ -1794,6 +1846,8 @@ export const StickyTopComposer: React.FC = () => {
                   {isComposerCompareMode && (
                     <div
                       ref={comparePreviewRef}
+                      onWheelCapture={handleContainedWheelCapture}
+                      onWheel={handleContainedWheel}
                       className="relative overflow-y-auto rounded-[1rem] bg-slate-50/85 px-2.5 pb-2.5 pt-2 text-slate-700 shadow-none sm:px-3 sm:pb-3 sm:pt-2.5"
                       data-testid="sticky-preview-compare-pane"
                       onPointerDownCapture={handlePreviewPointerDown}
@@ -1802,6 +1856,8 @@ export const StickyTopComposer: React.FC = () => {
                         height: `${composerComparePreviewHeight}px`,
                         fontSize: `${Math.max(getRenderedFontSizeForScript(activeComparisonScript ?? primaryOutputScript) - 2, 14)}px`,
                         lineHeight: getRenderedLineHeightForScript(activeComparisonScript ?? primaryOutputScript),
+                        overscrollBehavior: 'contain',
+                        overscrollBehaviorY: 'contain',
                       }}
                     >
                       <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">

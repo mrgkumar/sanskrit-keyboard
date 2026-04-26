@@ -74,6 +74,11 @@ export const MainDocumentArea: React.FC = () => {
   
   const [copiedId, setCopiedId] = React.useState<string | null>(null);
   const [selectedReadBlockId, setSelectedReadBlockId] = React.useState<string | null>(null);
+  const [selectedReadAnchor, setSelectedReadAnchor] = React.useState<{
+    blockId: string;
+    startOffset: number;
+    endOffset: number;
+  } | null>(null);
   const [annotationTarget, setAnnotationTarget] = React.useState<{
     blockId: string;
     startOffset: number;
@@ -87,6 +92,18 @@ export const MainDocumentArea: React.FC = () => {
   const documentContainerRef = React.useRef<HTMLDivElement | null>(null);
   const primaryPaneScrollRef = React.useRef<HTMLDivElement | null>(null);
   const immersiveFindInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const getScrollableAncestor = React.useCallback((startNode: HTMLElement | null) => {
+    let node = startNode;
+    while (node) {
+      const style = window.getComputedStyle(node);
+      if (/(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight) {
+        return node;
+      }
+      node = node.parentElement;
+    }
+    return documentContainerRef.current;
+  }, []);
   
   const readModeBlocks = React.useMemo(
     () => blocks.filter((block) => block.rendered.trim().length > 0),
@@ -216,6 +233,20 @@ export const MainDocumentArea: React.FC = () => {
     });
     return () => window.cancelAnimationFrame(rafId);
   }, [selectedReadBlockId, viewMode]);
+
+  React.useEffect(() => {
+    if (viewMode !== 'read' && viewMode !== 'immersive') {
+      return;
+    }
+
+    if (!selectedReadAnchor) {
+      return;
+    }
+
+    if (selectedReadAnchor.blockId !== selectedReadBlockId) {
+      setSelectedReadAnchor(null);
+    }
+  }, [selectedReadAnchor, selectedReadBlockId, viewMode]);
 
   React.useEffect(() => {
     if (viewMode !== 'read' && viewMode !== 'immersive') return;
@@ -480,21 +511,35 @@ export const MainDocumentArea: React.FC = () => {
 
   const handleReadBlockClick = (block: CanonicalBlock, event: React.MouseEvent<HTMLElement>) => {
     selectReadLine(block.id);
-    const viewportTopBeforeEdit = event.currentTarget.getBoundingClientRect().top;
+    const sourceHit = getSourceHitFromPointer(event);
+    const scrollContainer = getScrollableAncestor(event.currentTarget);
+    const scrollTopBeforeEdit = scrollContainer?.scrollTop ?? null;
+    if (sourceHit) {
+      setSelectedReadAnchor({
+        blockId: block.id,
+        startOffset: sourceHit.start,
+        endOffset: sourceHit.end,
+      });
+    } else {
+      setSelectedReadAnchor(null);
+    }
+
     const restoreScrollAfterEdit = () => {
       const restore = () => {
-        const target = document.querySelector<HTMLElement>(`[data-testid="document-read-block-${block.id}"]`);
-        if (!target) return;
-        const delta = target.getBoundingClientRect().top - viewportTopBeforeEdit;
-        if (Math.abs(delta) > 1) window.scrollBy(0, delta);
+        if (!scrollContainer || scrollTopBeforeEdit === null) {
+          return;
+        }
+
+        scrollContainer.scrollTop = scrollTopBeforeEdit;
       };
+
       window.requestAnimationFrame(() => window.requestAnimationFrame(restore));
       window.setTimeout(restore, 0);
       window.setTimeout(restore, 80);
       window.setTimeout(restore, 200);
       window.setTimeout(restore, 500);
     };
-    const sourceHit = getSourceHitFromPointer(event);
+
     if (!sourceHit) {
       focusComposerAtSourceOffset(block, 0, 'review');
       restoreScrollAfterEdit();
@@ -538,10 +583,22 @@ export const MainDocumentArea: React.FC = () => {
     window.setTimeout(() => applyComposerSelection(0), 0);
   };
 
-  const handleImmersiveBlockClick = (block: CanonicalBlock) => selectReadLine(block.id);
+  const handleImmersiveBlockClick = (block: CanonicalBlock) => {
+    selectReadLine(block.id);
+    setSelectedReadAnchor(null);
+  };
   const handleImmersiveBlockDoubleClick = (block: CanonicalBlock, event: React.MouseEvent<HTMLElement>) => {
     selectReadLine(block.id);
     const sourceHit = getSourceHitFromPointer(event);
+    if (sourceHit) {
+      setSelectedReadAnchor({
+        blockId: block.id,
+        startOffset: sourceHit.start,
+        endOffset: sourceHit.end,
+      });
+    } else {
+      setSelectedReadAnchor(null);
+    }
     focusComposerAtSourceOffset(block, sourceHit?.caret ?? 0, 'read');
   };
 
@@ -568,6 +625,11 @@ export const MainDocumentArea: React.FC = () => {
       });
       const wordKey = `${block.id}:${start}:${end}`;
       const wordAnnotations = findAnnotationsForWord(block.id, start, end);
+      const isSelectedReadWord =
+        (viewMode === 'read' || viewMode === 'immersive') &&
+        selectedReadAnchor?.blockId === block.id &&
+        selectedReadAnchor.startOffset === start &&
+        selectedReadAnchor.endOffset === end;
       const isImmersiveFindMatch = viewMode === 'immersive' && immersiveFindMatchWordKeys.has(wordKey);
       const isActiveImmersiveFindWord = viewMode === 'immersive' && activeImmersiveFindWordKeys.has(wordKey);
       const handleReadWordMouseDown =
@@ -576,18 +638,17 @@ export const MainDocumentArea: React.FC = () => {
               event.preventDefault();
               event.stopPropagation();
               selectReadLine(block.id);
+              setSelectedReadAnchor({ blockId: block.id, startOffset: start, endOffset: end });
               const blockElement = event.currentTarget.closest<HTMLElement>('[data-testid^="document-read-block-"]');
-              const viewportTopBeforeEdit = blockElement?.getBoundingClientRect().top ?? null;
+              const scrollContainer = getScrollableAncestor(blockElement ?? event.currentTarget);
+              const scrollTopBeforeEdit = scrollContainer?.scrollTop ?? null;
               const rect = event.currentTarget.getBoundingClientRect();
               const ratio = rect.width > 0 ? Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)) : 0;
               const caret = Math.round(start + (end - start) * ratio);
               focusComposerAtSourceOffset(block, Math.max(start, Math.min(end, caret)), 'review');
               const restore = () => {
-                if (viewportTopBeforeEdit === null) return;
-                const target = document.querySelector<HTMLElement>(`[data-testid="document-read-block-${block.id}"]`);
-                if (!target) return;
-                const delta = target.getBoundingClientRect().top - viewportTopBeforeEdit;
-                if (Math.abs(delta) > 1) window.scrollBy(0, delta);
+                if (!scrollContainer || scrollTopBeforeEdit === null) return;
+                scrollContainer.scrollTop = scrollTopBeforeEdit;
               };
               window.setTimeout(restore, 0);
               window.setTimeout(restore, 80);
@@ -602,11 +663,13 @@ export const MainDocumentArea: React.FC = () => {
           data-source-end={end}
           data-target-index={sourceToTargetMap?.[start] ?? start}
           data-word-key={wordKey}
+          data-selected-read-word={isSelectedReadWord ? 'true' : undefined}
           data-immersive-find-word-key={viewMode === 'immersive' ? wordKey : undefined}
           tabIndex={viewMode === 'immersive' && paneRole === 'primary' ? 0 : undefined}
           className={clsx(
             'inline transition-colors',
             viewMode === 'immersive' && paneRole === 'primary' && 'cursor-pointer hover:bg-blue-100/70',
+            isSelectedReadWord && 'rounded-[0.18rem] bg-blue-200/80 text-blue-950 ring-1 ring-blue-400/40',
             isImmersiveFindMatch && 'rounded-[0.2rem] bg-amber-200/70 text-slate-950',
             isActiveImmersiveFindWord && 'ring-2 ring-amber-500/70 bg-amber-300/80',
             getWordAnnotationClassName(wordAnnotations)
@@ -1087,10 +1150,10 @@ export const MainDocumentArea: React.FC = () => {
                   data-testid="document-immersive-primary-pane"
                   className="group relative flex min-h-0 flex-1 flex-col rounded-[1.25rem] border border-slate-100/70 bg-white/85 shadow-sm"
                 >
-                  <div
-                    ref={primaryPaneScrollRef}
-                    data-testid="document-immersive-scroll-region"
-                    className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-scroll custom-scrollbar py-2.5 sm:py-4"
+          <div
+            ref={primaryPaneScrollRef}
+            data-testid="document-immersive-scroll-region"
+            className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-scroll custom-scrollbar py-2.5 sm:py-4"
                   >
                     {blocks
                       .filter((block) => block.rendered.trim().length > 0)
@@ -1341,7 +1404,7 @@ export const MainDocumentArea: React.FC = () => {
             <div className="font-serif text-slate-900 flex h-full min-h-0 flex-col" data-testid="document-read-mode" data-compare-mode="single" data-compare-layout="single" style={{ fontSize: `${documentTypography.devanagariFontSize}px`, lineHeight: documentTypography.devanagariLineHeight }}>
               <div className="grid flex-1 min-h-0 gap-3 grid-cols-1">
                 <section data-testid={`${viewTestIdPrefix}-primary-pane`} className="group relative overflow-hidden rounded-[1.25rem] border border-slate-100/70 bg-white/85 shadow-sm flex min-h-0 flex-1 flex-col" style={{ minHeight: `${documentTypography.primaryPaneHeight}px` }}>
-                  <div ref={primaryPaneScrollRef} className="flex h-full min-h-0 flex-col gap-3 overflow-y-scroll custom-scrollbar px-2.5 py-2.5 sm:px-4 sm:py-4">
+                  <div ref={primaryPaneScrollRef} data-testid="document-read-scroll-region" className="flex h-full min-h-0 flex-col gap-3 overflow-y-scroll custom-scrollbar px-2.5 py-2.5 sm:px-4 sm:py-4">
                     {blocks.filter((block) => block.rendered.trim().length > 0).map((block, index) => renderScriptBlock(block, primaryOutputScript, 'primary', viewTestIdPrefix, index + 1))}
                   </div>
                   <ResizeHandle size={documentTypography.primaryPaneHeight} minSize={240} maxSize={700} ariaLabel="Resize primary read pane height" onSizeChange={updateDocumentHeight('primaryPaneHeight')} axis="y" />

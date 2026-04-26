@@ -86,6 +86,8 @@ const pasteText = async (page: Page, text: string) => {
 const LONG_SNIPPET =
   "a_rya_mNo vaa e_tannakSha'ttram | yatpuurve_ phalgu'nii | a_rya_meti_ tamaa'hu_ryo dadaa'ti | daana'kaamaa asmai pra_jaa bha'vanti | ya kaa_maye'ta bha_gii syaa_miti' | sa utta'rayo_ phalgu'nyora_gnimaada'dhiita | bhaga'sya_ vaa e_tannakSha'ttram | yadutta're_ phalgu'nii | bha_gye'va bha'vati | kaa_la_ka_~njaa vai naamaasu'raa Asann || 9 || still the font size is large gaaya_triiM gaNeshkumaar shanti shanti gani vidv surya ravi naraayana swami gaNeshkumaar vishveshvari aruna tachCha_myai' shami_tvam | yachCha'mii_maya'ssambhaa_ro bhava'ti | shaantyaa_ apra'daahaaya | a_gnessR^i_STasya' ya_ta: | vika'~NkataM_ bhaa A''rchChat | yada_shani'hatasya vR^i_kShasya' sambhaa_ro bhava'ti | sahR^i'dayame_vaagnimaa dha'tte || 25 ||";
 
+const WHEEL_STRESS_TEXT = `mamA''gne_ varcho' viha_veShva'stu va_yaM tvendhA'nAsta_nuvaM' puShema| mahyaM' namantAM pra_disha_shchata'sra_stvayA.adhya'kSheNa_ pR^ita'nA jayema| mama' de_vA vi'ha_ve sa'ntu_ sarva_ indrA'vanto ma_ruto_ viShNu'ra_gni:| mamA_ntari'kShamu_ru go_pama'stu_ mahyaM_ vAta': pavatAM_ kAme' a_smin| mayi' de_vA dravi'Na_mA ya'jantAM_ mayyA_shIra'stu_ mayi' de_vahU'ti:| daivyA_ hotA'rA vaniShanta_ pUrve.ari'ShTA: syAma ta_nuvA' su_vIrA'':| mahyaM' yajantu_ mama_ yAni' ha_vyA..akU'ti: sa_tyA mana'so me astu| eno_ mA ni gAM'' kata_machcha_nAhaM vishve' devAso_ adhi' vochatA me| devI'': ShaDurvIru_ru Na': kR^iNota_ vishve' devAsa i_ha vI'rayadhvam| mA hA''smahi pra_jayA_ mA ta_nUbhi_rmA ra'dhAma dviSha_te so'ma rAjan| a_gnirma_nyuM pra'tinu_dan pu_rastA_dada'bdho go_pA: pari' pAhi na_stvam| pra_tya~ncho' yantu ni_guta_: puna_ste'.amaiShAM'' chi_ttaM pra_budhA_ vi ne'shat| dhA_tA dhA'tR^i_NAM bhuva'nasya_ yaspati'rde_vaMM~ sa'vi_tAra'mabhimAti_ShA.aham''| i_maM ya_j~nama_shvino_bhA bR^iha_spati'rde_vA: pA''ntu_ yaja'mAnaM nya_rthAt| u_ru_vyachA' no mahi_Sha: sharma' yaMM~sada_smin have' puruhU_ta: pu'ru_kShu| sa na': pra_jAyai' haryashva mR^iDa_yendra_ mA no' rIriSho_ mA parA' dA:| ye na': sa_patnA_ apa_ te bha'vantvindrA_gnibhyA_mava' bAdhAmahe_ tAn| vasa'vo ru_drA A'di_tyA u'pari_spR^ishaM' mo_graM chettA'ramadhirA_jama'kran| a_rvA~ncha_mindra'ma_muto' havAmahe_ yo go_jiddha'na_jida'shva_jidya:| i_maM no' ya_j~naM vi'ha_ve ju'ShasvA_sya ku'rmo harivo me_dinaM' tvA||`;
+
 test('delete toast auto-dismisses after a short timeout', async ({ page }) => {
   await loadDefaultSession(page);
 
@@ -383,6 +385,82 @@ test('clicking read text jumps back into edit mode inside the clicked word', asy
   await expect(page.getByTestId('sticky-composer-shell')).toBeVisible();
   await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeGreaterThanOrEqual(expectedSourceWordStart);
   await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeLessThanOrEqual(expectedSourceWordEnd);
+});
+
+test('clicking a word in a large read block anchors the exact word and keeps the cursor in range', async ({ page }) => {
+  await loadDefaultSession(page);
+  const textarea = page.getByTestId('sticky-itrans-input');
+  const paragraph = Array.from(
+    { length: 90 },
+    (_, index) => `agniM ile purohitaM yajnasya devasya probe${index + 1}`
+  ).join(' ');
+
+  await textarea.fill(paragraph);
+  await setReadAs(page, 'devanagari');
+  await page.getByRole('button', { name: 'Read mode' }).click();
+
+  const readScrollRegion = page.getByTestId('document-read-scroll-region');
+  await readScrollRegion.evaluate((node) => {
+    const element = node as HTMLElement;
+    element.scrollTop = Math.floor(element.scrollHeight * 0.35);
+  });
+
+  const readBlock = page.locator('[data-testid^="document-read-block-"]').first();
+  const targetWord = readBlock.locator('[data-source-start]').nth(14);
+  const wordMeta = await targetWord.evaluate((node) => ({
+    text: (node.textContent ?? '').trim(),
+    start: Number((node as HTMLElement).dataset.sourceStart),
+    end: Number((node as HTMLElement).dataset.sourceEnd),
+  }));
+  const scrollTopBeforeClick = await readScrollRegion.evaluate((node) => (node as HTMLElement).scrollTop);
+
+  await targetWord.click({ position: { x: 4, y: 4 } });
+
+  await expect(page.locator('[data-selected-read-word="true"]')).toHaveCount(1);
+  await expect(page.locator('[data-selected-read-word="true"]')).toContainText(wordMeta.text);
+  await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeGreaterThanOrEqual(wordMeta.start);
+  await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.selectionStart)).toBeLessThanOrEqual(wordMeta.end);
+  await expect.poll(async () => readScrollRegion.evaluate((node) => (node as HTMLElement).scrollTop)).toBe(scrollTopBeforeClick);
+});
+
+test('mouse wheel inside the ITRANS pane does not leak into the read document across viewport sizes', async ({ page }) => {
+  const viewports = [
+    { width: 960, height: 720 },
+    { width: 1440, height: 920 },
+  ];
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await loadDefaultSession(page);
+
+    const textarea = page.getByTestId('sticky-itrans-input');
+    await textarea.fill(WHEEL_STRESS_TEXT);
+    await setReadAs(page, 'devanagari');
+    await page.getByRole('button', { name: 'Read mode' }).click();
+
+    const readScrollRegion = page.getByTestId('document-read-scroll-region');
+    const textareaScrollBefore = await textarea.evaluate((node: HTMLTextAreaElement) => {
+      node.scrollTop = 0;
+      return node.scrollTop;
+    });
+    const readScrollBefore = await readScrollRegion.evaluate((node: HTMLElement) => {
+      node.scrollTop = Math.floor(node.scrollHeight * 0.3);
+      return node.scrollTop;
+    });
+
+    const box = await textarea.boundingBox();
+    if (!box) {
+      throw new Error('Expected the ITRANS textarea to be visible');
+    }
+
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.wheel(0, 540);
+
+    await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.scrollTop)).toBeGreaterThan(textareaScrollBefore);
+    await page.waitForTimeout(2500);
+    await expect.poll(async () => textarea.evaluate((node: HTMLTextAreaElement) => node.scrollTop)).toBeGreaterThan(textareaScrollBefore);
+    await expect.poll(async () => readScrollRegion.evaluate((node: HTMLElement) => node.scrollTop)).toBe(readScrollBefore);
+  }
 });
 
 test('clicking document canvas text places the edit cursor inside the clicked word', async ({ page }) => {
