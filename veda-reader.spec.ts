@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { parseTexDocument } from '@/lib/veda-book/parseTex';
 import { deriveDocumentTitleFromNodes } from '@/lib/veda-book/renderText';
+import { detransliterate, formatSourceForScript } from '@/lib/vedic/utils';
+import { DEFAULT_OUTPUT_TARGET_SETTINGS } from '@/lib/vedic/mapping';
 
 const MANTRAS_INDEX = String.raw`\input{mantras/PurushaSuktam.tex}
 \input{mantras/AnotherMantra.tex}
@@ -185,6 +187,23 @@ test.describe('Veda Reader', () => {
     await page.getByRole('button', { name: 'Split' }).click();
     await expect(page.locator('main article > header').getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
     await expect(page.getByText('\\centerline{ॐ तत्सत्}')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Reader' }).click();
+    await expect(page.getByText('Display: Original')).toBeVisible();
+
+    const romanHeading = detransliterate('पुरुषसूक्तम्');
+    await page.getByRole('button', { name: 'Roman' }).click();
+    await expect(page.getByText('Display: Roman')).toBeVisible();
+    await expect(page.locator('main article > header').getByRole('heading', { name: romanHeading })).toBeVisible();
+
+    const tamilHeading = formatSourceForScript(
+      romanHeading,
+      'tamil',
+      DEFAULT_OUTPUT_TARGET_SETTINGS,
+    );
+    await page.getByRole('button', { name: 'Tamil' }).click();
+    await expect(page.getByText('Display: Tamil')).toBeVisible();
+    await expect(page.locator('main article > header').getByRole('heading', { name: tamilHeading })).toBeVisible();
 
     await page.getByRole('button', { name: 'Diagnostics' }).click();
     await expect(page.getByTestId('reader-diagnostics-panel').getByText('L7:1').first()).toBeVisible();

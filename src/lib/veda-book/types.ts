@@ -1,5 +1,8 @@
+import type { OutputScript } from '@/lib/vedic/mapping';
+
 export type ReaderMode = 'reader' | 'source' | 'split';
 export type ReaderTheme = 'light' | 'sepia' | 'dark';
+export type ReaderDisplayScript = 'original' | OutputScript;
 export type LoadStatus = 'idle' | 'loading' | 'ready' | 'refreshing' | 'error';
 
 export type ParserDiagnosticLevel = 'info' | 'warning' | 'error';
@@ -60,6 +63,7 @@ export interface ReaderPreferences {
   theme: ReaderTheme;
   fontSize: number;
   lineHeight: number;
+  displayScript: ReaderDisplayScript;
   sidebarOpen: boolean;
   diagnosticsOpen: boolean;
   searchQuery: string;
@@ -70,6 +74,7 @@ export const DEFAULT_READER_PREFERENCES: ReaderPreferences = {
   theme: 'sepia',
   fontSize: 19,
   lineHeight: 1.75,
+  displayScript: 'original',
   sidebarOpen: true,
   diagnosticsOpen: false,
   searchQuery: '',

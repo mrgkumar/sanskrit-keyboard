@@ -1,28 +1,61 @@
 'use client';
 
+import { ScriptText } from '@/components/ScriptText';
+import { DEFAULT_OUTPUT_TARGET_SETTINGS } from '@/lib/vedic/mapping';
 import type { MantraDocument, MantraNode } from '@/lib/veda-book/types';
-import { deriveDocumentOutline } from '@/lib/veda-book/renderText';
+import { detectReaderSourceScript, deriveDocumentOutline, formatReaderDisplayText } from '@/lib/veda-book/renderText';
+import type { ReaderDisplayScript } from '@/lib/veda-book/types';
+import { useReaderStore } from '@/store/useReaderStore';
 
 interface MantraDocumentViewProps {
   document: MantraDocument | null;
   documentStatus: 'idle' | 'loading' | 'ready' | 'refreshing' | 'error';
 }
 
-const renderNode = (node: MantraNode) => {
+const renderTextNode = (
+  text: string,
+  sourceScript: ReturnType<typeof detectReaderSourceScript>,
+  displayScript: ReaderDisplayScript,
+) => {
+  const renderedText =
+    displayScript === 'original'
+      ? text
+      : formatReaderDisplayText(text, displayScript, sourceScript, DEFAULT_OUTPUT_TARGET_SETTINGS, {
+          sanskritFontPreset: 'siddhanta',
+        });
+
+  if (sourceScript === 'mixed' || sourceScript === 'unknown') {
+    return <span className="whitespace-pre-wrap break-words">{renderedText}</span>;
+  }
+
+  const effectiveScript = displayScript === 'original' ? sourceScript : displayScript;
+
+  return (
+    <ScriptText
+      script={effectiveScript}
+      text={renderedText}
+      sanskritFontPreset="siddhanta"
+      tamilFontPreset="anek"
+      className="whitespace-pre-wrap break-words"
+    />
+  );
+};
+
+const renderNode = (node: MantraNode, sourceScript: ReturnType<typeof detectReaderSourceScript>, displayScript: ReaderDisplayScript) => {
   switch (node.type) {
     case 'chapter':
-      return <h1 className="text-balance text-3xl font-semibold tracking-tight">{node.text}</h1>;
+      return <h1 className="text-balance text-3xl font-semibold tracking-tight">{renderTextNode(node.text, sourceScript, displayScript)}</h1>;
     case 'section':
-      return <h2 className="text-2xl font-semibold tracking-tight">{node.text}</h2>;
+      return <h2 className="text-2xl font-semibold tracking-tight">{renderTextNode(node.text, sourceScript, displayScript)}</h2>;
     case 'subsection':
-      return <h3 className="text-xl font-semibold tracking-tight">{node.text}</h3>;
+      return <h3 className="text-xl font-semibold tracking-tight">{renderTextNode(node.text, sourceScript, displayScript)}</h3>;
     case 'center':
-      return <div className="text-center text-lg font-medium">{node.text}</div>;
+      return <div className="text-center text-lg font-medium">{renderTextNode(node.text, sourceScript, displayScript)}</div>;
     case 'sourceRef':
       return (
         <div className="inline-flex items-center gap-2 rounded-full border border-stone-300/70 bg-white/70 px-3 py-1 text-xs uppercase tracking-[0.16em] text-stone-600">
           <span>{node.source}</span>
-          <span>{node.values.join(' · ')}</span>
+          <span>{renderTextNode(node.values.join(' · '), sourceScript, displayScript)}</span>
         </div>
       );
     case 'pageBreak':
@@ -34,14 +67,15 @@ const renderNode = (node: MantraNode) => {
         </div>
       );
     case 'raw':
-      return <pre className="whitespace-pre-wrap text-base leading-8">{node.text}</pre>;
+      return <pre className="whitespace-pre-wrap text-base leading-8">{renderTextNode(node.text, sourceScript, displayScript)}</pre>;
     case 'paragraph':
     default:
-      return <p className="whitespace-pre-wrap text-lg leading-8">{node.text}</p>;
+      return <p className="whitespace-pre-wrap text-lg leading-8">{renderTextNode(node.text, sourceScript, displayScript)}</p>;
   }
 };
 
 export function MantraDocumentView({ document, documentStatus }: MantraDocumentViewProps) {
+  const displayScript = useReaderStore((state) => state.displayScript);
   if (!document) {
     return (
       <section className="flex min-h-0 flex-1 items-center justify-center px-4 py-10">
@@ -58,6 +92,7 @@ export function MantraDocumentView({ document, documentStatus }: MantraDocumentV
   }
 
   const outline = deriveDocumentOutline(document.nodes);
+  const sourceScript = detectReaderSourceScript(document.rawTex);
 
   return (
     <section
@@ -68,7 +103,9 @@ export function MantraDocumentView({ document, documentStatus }: MantraDocumentV
       <article className="mx-auto flex w-full max-w-4xl flex-col gap-5">
         <header className="border-b border-stone-300/70 pb-4">
           <div className="text-[0.7rem] uppercase tracking-[0.22em] text-stone-500">{document.sourcePath}</div>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-balance">{document.title}</h1>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-balance">
+            {renderTextNode(document.title, sourceScript, displayScript)}
+          </h1>
           <div className="mt-2 text-sm text-stone-600">
             {document.sourceRepo} · {document.sourceBranch}
           </div>
@@ -92,7 +129,7 @@ export function MantraDocumentView({ document, documentStatus }: MantraDocumentV
                     'hover:bg-stone-100',
                   ].join(' ')}
                 >
-                  {entry.label}
+                  {renderTextNode(entry.label, sourceScript, displayScript)}
                 </a>
               ))}
             </div>
@@ -102,7 +139,7 @@ export function MantraDocumentView({ document, documentStatus }: MantraDocumentV
         <div className="space-y-5">
           {document.nodes.map((node) => (
             <div key={node.id} id={node.id} className="space-y-2 scroll-mt-24">
-              {renderNode(node)}
+              {renderNode(node, sourceScript, displayScript)}
             </div>
           ))}
         </div>

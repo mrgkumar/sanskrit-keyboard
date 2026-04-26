@@ -1,3 +1,6 @@
+import type { OutputScript, OutputTargetSettings } from '@/lib/vedic/mapping';
+import { detransliterate, formatSourceForScript, normalizeDevanagariDisplayText, reverseTamilInput } from '@/lib/vedic/utils';
+import type { SanskritFontPreset } from '@/store/types';
 import type { MantraNode } from './types';
 
 const CAMEL_BOUNDARY_PATTERN = /([a-z0-9])([A-Z])/g;
@@ -103,3 +106,66 @@ export const formatReaderSourceScriptLabel = (script: ReaderSourceScript) => {
       return 'Unknown';
   }
 };
+
+export type ReaderDisplayScript = 'original' | OutputScript;
+
+const isRenderableReaderScript = (script: ReaderDisplayScript | ReaderSourceScript): script is OutputScript =>
+  script === 'roman' || script === 'devanagari' || script === 'tamil';
+
+const getCanonicalReaderSourceText = (text: string, sourceScript: ReaderSourceScript) => {
+  if (!text) {
+    return text;
+  }
+
+  if (sourceScript === 'devanagari') {
+    return detransliterate(text);
+  }
+
+  if (sourceScript === 'roman') {
+    return text;
+  }
+
+  if (sourceScript === 'tamil') {
+    const reversed = reverseTamilInput(text, { inputMode: 'tamil-precision', outputMode: 'canonical' });
+    return reversed.status === 'success' ? reversed.canonicalRoman : null;
+  }
+
+  return null;
+};
+
+export const formatReaderDisplayText = (
+  text: string,
+  displayScript: ReaderDisplayScript,
+  sourceScript: ReaderSourceScript,
+  settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
+  options?: { sanskritFontPreset?: SanskritFontPreset },
+) => {
+  if (!text) {
+    return text;
+  }
+
+  if (displayScript === 'original' || !isRenderableReaderScript(displayScript)) {
+    return text;
+  }
+
+  const canonicalSource = getCanonicalReaderSourceText(text, sourceScript);
+  if (canonicalSource === null) {
+    if (sourceScript === 'devanagari' && displayScript === 'devanagari') {
+      return normalizeDevanagariDisplayText(text, options?.sanskritFontPreset);
+    }
+
+    return text;
+  }
+
+  if (displayScript === 'devanagari') {
+    return normalizeDevanagariDisplayText(
+      formatSourceForScript(canonicalSource, 'devanagari', settings, options),
+      options?.sanskritFontPreset,
+    );
+  }
+
+  return formatSourceForScript(canonicalSource, displayScript, settings, options);
+};
+
+export const getReaderDisplayScriptLabel = (script: ReaderDisplayScript) =>
+  script === 'original' ? 'Original' : formatReaderSourceScriptLabel(script);

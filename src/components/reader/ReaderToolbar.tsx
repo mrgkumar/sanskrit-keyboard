@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import {
   BookOpenText,
   FileText,
+  Languages,
   Menu,
   RefreshCw,
   SplitSquareHorizontal,
@@ -12,7 +13,8 @@ import {
   Plus,
 } from 'lucide-react';
 import { useReaderStore } from '@/store/useReaderStore';
-import type { ReaderMode } from '@/lib/veda-book/types';
+import type { ReaderDisplayScript, ReaderMode } from '@/lib/veda-book/types';
+import { getReaderDisplayScriptLabel } from '@/lib/veda-book/renderText';
 
 const modeOptions: Array<{ mode: ReaderMode; label: string; icon: ReactNode }> = [
   { mode: 'reader', label: 'Reader', icon: <BookOpenText className="h-4 w-4" /> },
@@ -20,14 +22,17 @@ const modeOptions: Array<{ mode: ReaderMode; label: string; icon: ReactNode }> =
   { mode: 'split', label: 'Split', icon: <SplitSquareHorizontal className="h-4 w-4" /> },
 ];
 
+const displayScriptOptions: ReaderDisplayScript[] = ['original', 'devanagari', 'roman', 'tamil'];
 const themeOrder = ['sepia', 'light', 'dark'] as const;
 
 export function ReaderToolbar() {
   const {
+    displayScript,
     diagnosticsOpen,
     fontSize,
     loadManifest,
     readerMode,
+    setDisplayScript,
     setDiagnosticsOpen,
     setReaderMode,
     setSidebarOpen,
@@ -78,6 +83,33 @@ export function ReaderToolbar() {
               </button>
             );
           })}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-stone-300/70 bg-white/55 px-2 py-1">
+          <Languages className="h-4 w-4 text-stone-500" />
+          <span className="text-xs uppercase tracking-[0.18em] text-stone-500">Display</span>
+          <div className="flex flex-wrap gap-1">
+            {displayScriptOptions.map((script) => {
+              const active = displayScript === script;
+              return (
+                <button
+                  key={script}
+                  type="button"
+                  onClick={() => setDisplayScript(script)}
+                  className={[
+                    'rounded-md border px-2 py-1 text-xs transition',
+                    active
+                      ? 'border-stone-900 bg-stone-900 text-stone-50'
+                      : 'border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white',
+                  ].join(' ')}
+                  aria-pressed={active}
+                  title={`Display as ${getReaderDisplayScriptLabel(script)}`}
+                >
+                  {getReaderDisplayScriptLabel(script)}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-2">

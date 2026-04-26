@@ -1,10 +1,14 @@
 'use client';
 
 import { useReaderStore } from '@/store/useReaderStore';
-import { detectReaderSourceScript, formatReaderSourceScriptLabel } from '@/lib/veda-book/renderText';
+import {
+  detectReaderSourceScript,
+  formatReaderSourceScriptLabel,
+  getReaderDisplayScriptLabel,
+} from '@/lib/veda-book/renderText';
 
 export function ReaderStatusBar() {
-  const { activeDocument, documentStatus, manifest, manifestStatus } = useReaderStore();
+  const { activeDocument, displayScript, documentStatus, manifest, manifestStatus } = useReaderStore();
   const sourceScript = activeDocument ? detectReaderSourceScript(activeDocument.rawTex) : 'unknown';
 
   return (
@@ -18,6 +22,7 @@ export function ReaderStatusBar() {
         <span>Source: {activeDocument?.sourceRepo ?? 'n/a'}</span>
         <span>Branch: {activeDocument?.sourceBranch ?? 'n/a'}</span>
         <span>Script: {formatReaderSourceScriptLabel(sourceScript)}</span>
+        <span>Display: {getReaderDisplayScriptLabel(displayScript)}</span>
       </div>
     </footer>
   );

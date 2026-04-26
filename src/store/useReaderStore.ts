@@ -1,7 +1,14 @@
 'use client';
 
 import { create } from 'zustand';
-import type { MantraDocument, ReaderMode, ReaderPreferences, ReaderTheme, VedaManifest } from '@/lib/veda-book/types';
+import type {
+  MantraDocument,
+  ReaderDisplayScript,
+  ReaderMode,
+  ReaderPreferences,
+  ReaderTheme,
+  VedaManifest,
+} from '@/lib/veda-book/types';
 import { DEFAULT_READER_PREFERENCES } from '@/lib/veda-book/types';
 import { READER_PREFERENCES_STORAGE_KEY } from '@/lib/veda-book/constants';
 import { buildManifestFromMantrasTex } from '@/lib/veda-book/buildManifest';
@@ -26,6 +33,7 @@ interface ReaderStoreState extends ReaderPreferences {
   documentStatus: 'idle' | 'loading' | 'ready' | 'refreshing' | 'error';
   documentError: string | null;
   setReaderMode: (mode: ReaderMode) => void;
+  setDisplayScript: (displayScript: ReaderDisplayScript) => void;
   setTheme: (theme: ReaderTheme) => void;
   setTypography: (settings: { fontSize?: number; lineHeight?: number }) => void;
   setSidebarOpen: (open: boolean) => void;
@@ -70,9 +78,10 @@ const persistPreferences = (preferences: ReaderPreferences) => {
 
 const selectPreferences = (state: Pick<
   ReaderStoreState,
-  'readerMode' | 'theme' | 'fontSize' | 'lineHeight' | 'sidebarOpen' | 'diagnosticsOpen' | 'searchQuery'
+  'readerMode' | 'displayScript' | 'theme' | 'fontSize' | 'lineHeight' | 'sidebarOpen' | 'diagnosticsOpen' | 'searchQuery'
 >) => ({
   readerMode: state.readerMode,
+  displayScript: state.displayScript,
   theme: state.theme,
   fontSize: state.fontSize,
   lineHeight: state.lineHeight,
@@ -123,6 +132,10 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
     documentError: null,
     setReaderMode: (readerMode) => {
       set({ readerMode });
+      persistPreferences(selectPreferences(get()));
+    },
+    setDisplayScript: (displayScript) => {
+      set({ displayScript });
       persistPreferences(selectPreferences(get()));
     },
     setTheme: (theme) => {
