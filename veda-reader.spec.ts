@@ -98,7 +98,9 @@ test.describe('Veda Reader', () => {
     await expect(page.getByRole('button', { name: 'Split' })).toBeVisible();
   });
 
-  test.skip(process.env.LIVE_UPSTREAM !== '1', 'manual live upstream verification only', async ({ page }) => {
+  test('manual live upstream verification only', async ({ page }) => {
+    test.skip(process.env.LIVE_UPSTREAM !== '1', 'manual live upstream verification only');
+
     await page.goto('/reader?path=mantras/PurushaSuktam.tex');
 
     await expect(page.getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible({

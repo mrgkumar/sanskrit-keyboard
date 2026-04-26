@@ -2,8 +2,8 @@ import type { MantraNode, ParserDiagnostic } from './types';
 import { createReaderNodeId } from './renderText';
 
 const LINE_BREAK_PATTERN = /\r\n?/g;
-const NEWLINE_BLOCK_PATTERN = /\n\s*\n+/;
-const UNKNOWN_COMMAND_PATTERN = /\\([a-zA-Z@]+)/g;
+const COMMENT_DIRECTIVE_PATTERN = /^\s*%\s*!TeX[^\n]*$/gim;
+const STRUCTURAL_SEPARATOR_PATTERN = /\s*%\s*/g;
 
 const stripTeXComments = (input: string) =>
   input
@@ -156,71 +156,87 @@ const nodeFromMacro = (command: string, args: string[], index: number): MantraNo
   return null;
 };
 
-const parseParagraphBlocks = (source: string, diagnostics: ParserDiagnostic[]) => {
-  const normalized = source.replace(LINE_BREAK_PATTERN, '\n');
-  const stripped = stripTeXComments(normalized);
-  const blocks = stripped.split(NEWLINE_BLOCK_PATTERN);
-  const nodes: MantraNode[] = [];
+const buildUnsupportedMacroWarning = (macroNames: string[]) =>
+  `Unsupported macro(s): ${Array.from(new Set(macroNames)).map((command) => `\\${command}`).join(', ')}`;
 
-  blocks.forEach((block) => {
-    const text = block.trim();
-    if (!text) {
-      return;
-    }
+const parseFragment = (fragment: string, diagnostics: ParserDiagnostic[], nodes: MantraNode[]) => {
+  let cursor = 0;
 
-    const standaloneMacro = parseStandaloneMacro(text);
-    if (standaloneMacro && standaloneMacro.kind === 'macro') {
-      const node = nodeFromMacro(standaloneMacro.command, standaloneMacro.args, nodes.length);
-      if (node && !standaloneMacro.tail) {
-        nodes.push(node);
-        return;
-      }
-
-      if (node && standaloneMacro.tail) {
-        diagnostics.push(
-          makeDiagnostic('warning', `Macro \\${standaloneMacro.command} had trailing text and was preserved as raw text.`, text),
-        );
-      }
-    }
-
-    if (standaloneMacro && standaloneMacro.kind === 'malformed') {
-      diagnostics.push(makeDiagnostic('error', `Could not parse \\${standaloneMacro.command} arguments.`, text));
-      nodes.push({
-        type: 'warning',
-        id: createReaderNodeId('warning', nodes.length),
-        message: `Malformed command: \\${standaloneMacro.command}`,
-        source: text,
-      });
-      return;
-    }
-
-    const commands = [...text.matchAll(UNKNOWN_COMMAND_PATTERN)].map((match) => match[1]);
-    const unsupported = commands.filter(
-      (command) => !['chapt', 'section', 'subsection', 'centerline', 'clearpage', 'newpage', 'ta', 'tb', 'ts'].includes(command),
-    );
-
-    if (unsupported.length > 0) {
-      diagnostics.push(
-        makeDiagnostic(
-          'warning',
-          `Unsupported macro(s): ${Array.from(new Set(unsupported)).map((command) => `\\${command}`).join(', ')}`,
-          text,
-        ),
-      );
-      nodes.push({
-        type: 'warning',
-        id: createReaderNodeId('warning', nodes.length),
-        message: `Unsupported macro(s): ${Array.from(new Set(unsupported)).map((command) => `\\${command}`).join(', ')}`,
-        source: text,
-      });
+  const flushText = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) {
       return;
     }
 
     nodes.push({
       type: 'paragraph',
       id: createReaderNodeId('paragraph', nodes.length),
-      text,
+      text: trimmed,
     });
+  };
+
+  while (cursor < fragment.length) {
+    const nextCommandIndex = fragment.indexOf('\\', cursor);
+    const textEnd = nextCommandIndex === -1 ? fragment.length : nextCommandIndex;
+    flushText(fragment.slice(cursor, textEnd));
+
+    if (nextCommandIndex === -1) {
+      break;
+    }
+
+    const commandSlice = fragment.slice(nextCommandIndex);
+    const macro = parseStandaloneMacro(commandSlice);
+    if (!macro) {
+      cursor = nextCommandIndex + 1;
+      continue;
+    }
+
+    if (macro.kind === 'malformed') {
+      diagnostics.push(makeDiagnostic('error', `Could not parse \\${macro.command} arguments.`, fragment));
+      nodes.push({
+        type: 'warning',
+        id: createReaderNodeId('warning', nodes.length),
+        message: `Malformed command: \\${macro.command}`,
+        source: fragment,
+      });
+      return;
+    }
+
+    const supportedNode = nodeFromMacro(macro.command, macro.args, nodes.length);
+    if (supportedNode) {
+      nodes.push(supportedNode);
+      cursor = nextCommandIndex + commandSlice.length - macro.tail.length;
+      if (macro.tail) {
+        flushText(macro.tail);
+        cursor = nextCommandIndex + commandSlice.length;
+      }
+      continue;
+    }
+
+    diagnostics.push(makeDiagnostic('warning', buildUnsupportedMacroWarning([macro.command]), fragment));
+    nodes.push({
+      type: 'warning',
+      id: createReaderNodeId('warning', nodes.length),
+      message: buildUnsupportedMacroWarning([macro.command]),
+      source: fragment,
+    });
+    return;
+  }
+};
+
+const parseParagraphBlocks = (source: string, diagnostics: ParserDiagnostic[]) => {
+  const normalized = source.replace(LINE_BREAK_PATTERN, '\n');
+  const stripped = stripTeXComments(normalized).replace(COMMENT_DIRECTIVE_PATTERN, '');
+  const structuralSource = stripped.replace(STRUCTURAL_SEPARATOR_PATTERN, '\n');
+  const blocks = structuralSource.split(/\n{2,}/);
+  const nodes: MantraNode[] = [];
+
+  blocks.forEach((block) => {
+    const fragment = block.trim();
+    if (!fragment) {
+      return;
+    }
+    parseFragment(fragment, diagnostics, nodes);
   });
 
   return nodes;
