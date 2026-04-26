@@ -218,6 +218,13 @@ test.describe('Veda Reader', () => {
     await expect(page.getByText('\\centerline{ॐ तत्सत्}')).toBeVisible();
 
     await page.getByRole('button', { name: 'Reader' }).click();
+    await page.getByRole('button', { name: 'Devanagari' }).click();
+    await page.getByRole('textbox', { name: 'Search document' }).fill('tasya');
+    await expect(page.getByText('1/1')).toBeVisible();
+    await expect(page.locator('[data-reader-search-hit="true"]').first()).toContainText('न तस्य कार्यं करणं च विद्यते');
+
+    await page.getByRole('button', { name: 'Reader' }).click();
+    await page.getByRole('button', { name: 'Original' }).click();
     await expect(page.getByText('Display: Original')).toBeVisible();
 
     const romanHeading = detransliterate('पुरुषसूक्तम्');

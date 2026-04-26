@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ReaderToolbar } from './ReaderToolbar';
 import { ReaderSidebar } from './ReaderSidebar';
@@ -9,6 +9,8 @@ import { SourcePanel } from './SourcePanel';
 import { DiagnosticsPanel } from './DiagnosticsPanel';
 import { ReaderStatusBar } from './ReaderStatusBar';
 import { useReaderStore } from '@/store/useReaderStore';
+import { DEFAULT_OUTPUT_TARGET_SETTINGS } from '@/lib/vedic/mapping';
+import { collectReaderSearchHits } from '@/lib/veda-book/renderText';
 
 const themeClassName = {
   light: 'bg-stone-50 text-stone-950',
@@ -28,6 +30,9 @@ export function ReaderShell() {
     manifest,
     openDocument,
     readerMode,
+    documentSearchQuery,
+    displayScript,
+    sanskritFontPreset,
     setSidebarOpen,
     sidebarOpen,
     theme,
@@ -48,11 +53,20 @@ export function ReaderShell() {
   const currentThemeClass = themeClassName[theme];
   const splitMode = readerMode === 'split';
   const compareMode = readerMode === 'compare';
+  const documentSearchHitCount = useMemo(() => {
+    if (!activeDocument || !documentSearchQuery.trim()) {
+      return 0;
+    }
+
+    return collectReaderSearchHits(activeDocument, documentSearchQuery, displayScript, DEFAULT_OUTPUT_TARGET_SETTINGS, {
+      sanskritFontPreset,
+    }).length;
+  }, [activeDocument, documentSearchQuery, displayScript, sanskritFontPreset]);
 
   return (
     <div className={`${currentThemeClass} min-h-dvh`}>
       <div className="flex min-h-dvh flex-col">
-        <ReaderToolbar />
+        <ReaderToolbar documentSearchHitCount={documentSearchHitCount} />
         <div className="flex min-h-0 flex-1">
           <aside
             className={[

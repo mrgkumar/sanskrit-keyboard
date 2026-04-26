@@ -6,9 +6,12 @@ import {
   BookOpenText,
   Copy,
   FileText,
+  ChevronLeft,
+  ChevronRight,
   Languages,
   Menu,
   RefreshCw,
+  Search,
   SplitSquareHorizontal,
   SunMoon,
   Minus,
@@ -41,11 +44,17 @@ const tamilFontOptions: Array<{ value: TamilFontPreset; label: string }> = [
   { value: 'hybrid', label: 'Hybrid' },
 ];
 
-export function ReaderToolbar() {
+interface ReaderToolbarProps {
+  documentSearchHitCount?: number;
+}
+
+export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps) {
   const {
     activeDocument,
     displayScript,
     diagnosticsOpen,
+    documentSearchActiveIndex,
+    documentSearchQuery,
     fontSize,
     loadManifest,
     readerMode,
@@ -59,6 +68,8 @@ export function ReaderToolbar() {
     setSidebarOpen,
     setTheme,
     setTypography,
+    setDocumentSearchActiveIndex,
+    setDocumentSearchQuery,
     sidebarOpen,
     theme,
   } = useReaderStore();
@@ -67,6 +78,8 @@ export function ReaderToolbar() {
   const currentThemeIndex = themeOrder.indexOf(theme);
   const nextTheme = themeOrder[(currentThemeIndex + 1) % themeOrder.length];
   const copyLabel = copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Copy failed' : 'Copy text';
+  const hasDocumentSearchHits = documentSearchHitCount > 0;
+  const activeDocumentSearchIndex = hasDocumentSearchHits ? Math.min(documentSearchActiveIndex, documentSearchHitCount - 1) + 1 : 0;
 
   useEffect(() => {
     if (copyStatus !== 'copied') {
@@ -160,6 +173,50 @@ export function ReaderToolbar() {
               );
             })}
           </div>
+        </div>
+
+        <div className="flex min-w-[18rem] flex-1 items-center gap-2 rounded-md border border-stone-300/70 bg-white/55 px-2 py-1">
+          <Search className="h-4 w-4 text-stone-500" />
+          <label className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="sr-only">Search document</span>
+            <input
+              value={documentSearchQuery}
+              onChange={(event) => setDocumentSearchQuery(event.target.value)}
+              placeholder="Search document"
+              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-stone-400"
+            />
+          </label>
+          <span className="whitespace-nowrap text-[0.72rem] uppercase tracking-[0.14em] text-stone-500">
+            {activeDocumentSearchIndex}/{documentSearchHitCount}
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              setDocumentSearchActiveIndex(
+                documentSearchHitCount > 0
+                  ? (documentSearchActiveIndex - 1 + documentSearchHitCount) % documentSearchHitCount
+                  : 0,
+              )
+            }
+            disabled={!hasDocumentSearchHits}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Previous document match"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setDocumentSearchActiveIndex(
+                documentSearchHitCount > 0 ? (documentSearchActiveIndex + 1) % documentSearchHitCount : 0,
+              )
+            }
+            disabled={!hasDocumentSearchHits}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Next document match"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-stone-300/70 bg-white/55 px-2 py-1">

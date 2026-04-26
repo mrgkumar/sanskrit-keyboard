@@ -34,6 +34,8 @@ interface ReaderStoreState extends ReaderPreferences {
   activeDocument: MantraDocument | null;
   documentStatus: 'idle' | 'loading' | 'ready' | 'refreshing' | 'error';
   documentError: string | null;
+  documentSearchQuery: string;
+  documentSearchActiveIndex: number;
   setReaderMode: (mode: ReaderMode) => void;
   setDisplayScript: (displayScript: ReaderDisplayScript) => void;
   setSanskritFontPreset: (preset: SanskritFontPreset) => void;
@@ -43,6 +45,8 @@ interface ReaderStoreState extends ReaderPreferences {
   setSidebarOpen: (open: boolean) => void;
   setDiagnosticsOpen: (open: boolean) => void;
   setSearchQuery: (query: string) => void;
+  setDocumentSearchQuery: (query: string) => void;
+  setDocumentSearchActiveIndex: (index: number) => void;
   loadManifest: (options?: { force?: boolean }) => Promise<void>;
   refreshManifest: () => Promise<void>;
   openDocument: (path: string, options?: { force?: boolean }) => Promise<void>;
@@ -138,6 +142,8 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
     activeDocument: null,
     documentStatus: 'idle',
     documentError: null,
+    documentSearchQuery: '',
+    documentSearchActiveIndex: 0,
     setReaderMode: (readerMode) => {
       set({ readerMode });
       persistPreferences(selectPreferences(get()));
@@ -178,6 +184,15 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
     setSearchQuery: (searchQuery) => {
       set({ searchQuery });
       persistPreferences(selectPreferences(get()));
+    },
+    setDocumentSearchQuery: (documentSearchQuery) => {
+      set({
+        documentSearchQuery,
+        documentSearchActiveIndex: 0,
+      });
+    },
+    setDocumentSearchActiveIndex: (documentSearchActiveIndex) => {
+      set({ documentSearchActiveIndex });
     },
     loadManifest: async (options) => {
       const cachedManifest = options?.force ? null : await getCachedManifest();
@@ -242,6 +257,7 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
         activePath: path,
         documentStatus: options?.force ? 'refreshing' : 'loading',
         documentError: null,
+        documentSearchActiveIndex: 0,
       });
 
       try {

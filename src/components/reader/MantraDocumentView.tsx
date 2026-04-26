@@ -1,9 +1,15 @@
 'use client';
 
+import { useEffect } from 'react';
 import { ScriptText } from '@/components/ScriptText';
 import { DEFAULT_OUTPUT_TARGET_SETTINGS } from '@/lib/vedic/mapping';
 import type { MantraDocument, MantraNode } from '@/lib/veda-book/types';
-import { detectReaderSourceScript, deriveDocumentOutline, formatReaderDisplayText } from '@/lib/veda-book/renderText';
+import {
+  collectReaderSearchHits,
+  detectReaderSourceScript,
+  deriveDocumentOutline,
+  formatReaderDisplayText,
+} from '@/lib/veda-book/renderText';
 import type { ReaderDisplayScript } from '@/lib/veda-book/types';
 import { useReaderStore } from '@/store/useReaderStore';
 
@@ -12,6 +18,8 @@ interface MantraDocumentViewProps {
   documentStatus: 'idle' | 'loading' | 'ready' | 'refreshing' | 'error';
   displayScriptOverride?: ReaderDisplayScript;
   panelLabel?: string;
+  searchHitCount?: number;
+  activeSearchHitIndex?: number;
 }
 
 const renderTextNode = (
@@ -88,7 +96,28 @@ export function MantraDocumentView({ document, documentStatus, displayScriptOver
   const displayScript = useReaderStore((state) => state.displayScript);
   const sanskritFontPreset = useReaderStore((state) => state.sanskritFontPreset);
   const tamilFontPreset = useReaderStore((state) => state.tamilFontPreset);
+  const documentSearchQuery = useReaderStore((state) => state.documentSearchQuery);
+  const documentSearchActiveIndex = useReaderStore((state) => state.documentSearchActiveIndex);
   const activeDisplayScript = displayScriptOverride ?? displayScript;
+  const outline = document ? deriveDocumentOutline(document.nodes) : [];
+  const sourceScript = document ? detectReaderSourceScript(document.rawTex) : 'unknown';
+  const searchHits = document
+    ? collectReaderSearchHits(document, documentSearchQuery, activeDisplayScript, DEFAULT_OUTPUT_TARGET_SETTINGS, {
+        sanskritFontPreset,
+      })
+    : [];
+  const activeSearchHit = searchHits[documentSearchActiveIndex] ?? null;
+
+  useEffect(() => {
+    const targetId = activeSearchHit?.nodeId;
+    if (!targetId) {
+      return;
+    }
+
+    const element = window.document.getElementById(targetId);
+    element?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [activeSearchHit?.nodeId, documentSearchActiveIndex]);
+
   if (!document) {
     return (
       <section className="flex min-h-0 flex-1 items-center justify-center px-4 py-10">
@@ -104,9 +133,6 @@ export function MantraDocumentView({ document, documentStatus, displayScriptOver
     );
   }
 
-  const outline = deriveDocumentOutline(document.nodes);
-  const sourceScript = detectReaderSourceScript(document.rawTex);
-
   return (
     <section
       className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3"
@@ -114,7 +140,16 @@ export function MantraDocumentView({ document, documentStatus, displayScriptOver
       style={{ maxHeight: 'calc(100dvh - 9rem)' }}
     >
       <article className="mx-auto flex w-full max-w-4xl flex-col gap-5">
-        <header className="border-b border-stone-300/70 pb-4">
+        <header
+          id="reader-document-title"
+          data-reader-search-hit={searchHits.some((hit) => hit.nodeId === 'reader-document-title') ? 'true' : undefined}
+          className={[
+            'border-b border-stone-300/70 pb-4',
+            searchHits.some((hit) => hit.nodeId === 'reader-document-title')
+              ? 'rounded-xl bg-amber-50/80 p-3 ring-1 ring-amber-300/70'
+              : '',
+          ].join(' ')}
+        >
           <div className="text-[0.7rem] uppercase tracking-[0.22em] text-stone-500">{document.sourcePath}</div>
           {panelLabel ? (
             <div className="mt-1 text-[0.7rem] uppercase tracking-[0.22em] text-stone-400">{panelLabel}</div>
@@ -154,7 +189,15 @@ export function MantraDocumentView({ document, documentStatus, displayScriptOver
 
         <div className="space-y-5">
           {document.nodes.map((node) => (
-            <div key={node.id} id={node.id} className="space-y-2 scroll-mt-24">
+            <div
+              key={node.id}
+              id={node.id}
+              data-reader-search-hit={searchHits.some((hit) => hit.nodeId === node.id) ? 'true' : undefined}
+              className={[
+                'space-y-2 scroll-mt-24 rounded-xl',
+                searchHits.some((hit) => hit.nodeId === node.id) ? 'bg-amber-50/70 p-3 ring-1 ring-amber-300/70' : '',
+              ].join(' ')}
+            >
               {renderNode(node, sourceScript, activeDisplayScript, sanskritFontPreset, tamilFontPreset)}
             </div>
           ))}

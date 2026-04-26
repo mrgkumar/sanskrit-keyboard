@@ -112,7 +112,7 @@ export type ReaderDisplayScript = 'original' | OutputScript;
 const isRenderableReaderScript = (script: ReaderDisplayScript | ReaderSourceScript): script is OutputScript =>
   script === 'roman' || script === 'devanagari' || script === 'tamil';
 
-const getCanonicalReaderSourceText = (text: string, sourceScript: ReaderSourceScript) => {
+export const getCanonicalReaderSourceText = (text: string, sourceScript: ReaderSourceScript) => {
   if (!text) {
     return text;
   }
@@ -169,6 +169,93 @@ export const formatReaderDisplayText = (
 
 export const getReaderDisplayScriptLabel = (script: ReaderDisplayScript) =>
   script === 'original' ? 'Original' : formatReaderSourceScriptLabel(script);
+
+export const formatReaderSearchText = (
+  text: string,
+  displayScript: ReaderDisplayScript,
+  sourceScript: ReaderSourceScript,
+  settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
+  options?: { sanskritFontPreset?: SanskritFontPreset },
+) => {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  if (displayScript === 'original') {
+    return normalizeReaderSearchText(trimmed);
+  }
+
+  const queryScript = detectReaderSourceScript(trimmed);
+  const canonicalSource = getCanonicalReaderSourceText(trimmed, queryScript);
+  if (canonicalSource === null) {
+    return normalizeReaderSearchText(trimmed);
+  }
+
+  const renderedQuery =
+    displayScript === 'devanagari'
+      ? normalizeDevanagariDisplayText(
+          formatSourceForScript(canonicalSource, 'devanagari', settings, options),
+          options?.sanskritFontPreset,
+        )
+      : formatSourceForScript(canonicalSource, displayScript, settings, options);
+
+  return normalizeReaderSearchText(renderedQuery);
+};
+
+export interface ReaderSearchHit {
+  nodeId: string;
+  text: string;
+  isTitle?: boolean;
+}
+
+export const collectReaderSearchHits = (
+  document: MantraDocument,
+  query: string,
+  displayScript: ReaderDisplayScript,
+  settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
+  options?: { sanskritFontPreset?: SanskritFontPreset },
+) => {
+  const normalizedQuery = formatReaderSearchText(query, displayScript, detectReaderSourceScript(document.rawTex), settings, options);
+  if (!normalizedQuery) {
+    return [] as ReaderSearchHit[];
+  }
+
+  const sourceScript = detectReaderSourceScript(document.rawTex);
+  const hits: ReaderSearchHit[] = [];
+
+  const addIfMatch = (nodeId: string, text: string, isTitle = false) => {
+    const normalizedText = normalizeReaderSearchText(text);
+    if (normalizedText.includes(normalizedQuery)) {
+      hits.push({ nodeId, text, isTitle });
+    }
+  };
+
+  addIfMatch('reader-document-title', formatReaderDisplayText(document.title, displayScript, sourceScript, settings, options), true);
+
+  for (const node of document.nodes) {
+    switch (node.type) {
+      case 'chapter':
+      case 'section':
+      case 'subsection':
+      case 'paragraph':
+      case 'center':
+      case 'raw':
+        addIfMatch(node.id, formatReaderDisplayText(node.text, displayScript, sourceScript, settings, options));
+        break;
+      case 'sourceRef':
+        addIfMatch(node.id, formatReaderDisplayText(node.values.join(' · '), displayScript, sourceScript, settings, options));
+        break;
+      case 'warning':
+        addIfMatch(node.id, normalizeReaderSearchText(node.message));
+        break;
+      default:
+        break;
+    }
+  }
+
+  return hits;
+};
 
 const formatReaderNodeText = (
   text: string,
