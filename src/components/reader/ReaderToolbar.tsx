@@ -6,8 +6,6 @@ import {
   BookOpenText,
   Copy,
   FileText,
-  ChevronLeft,
-  ChevronRight,
   Languages,
   Menu,
   RefreshCw,
@@ -57,9 +55,9 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
   const activeDocument = useReaderStore((state) => state.activeDocument);
   const displayScript = useReaderStore((state) => state.displayScript);
   const diagnosticsOpen = useReaderStore((state) => state.diagnosticsOpen);
-  const documentSearchActiveIndex = useReaderStore((state) => state.documentSearchActiveIndex);
-  const documentSearchQuery = useReaderStore((state) => state.documentSearchQuery);
+  const documentSearchOpen = useReaderStore((state) => state.documentSearchOpen);
   const fontSize = useReaderStore((state) => state.fontSize);
+  const lineHeight = useReaderStore((state) => state.lineHeight);
   const loadManifest = useReaderStore((state) => state.loadManifest);
   const pageSize = useReaderStore((state) => state.pageSize);
   const readerMode = useReaderStore((state) => state.readerMode);
@@ -71,11 +69,10 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
   const setDiagnosticsOpen = useReaderStore((state) => state.setDiagnosticsOpen);
   const setReaderMode = useReaderStore((state) => state.setReaderMode);
   const setPageSize = useReaderStore((state) => state.setPageSize);
+  const setDocumentSearchOpen = useReaderStore((state) => state.setDocumentSearchOpen);
   const setSidebarOpen = useReaderStore((state) => state.setSidebarOpen);
   const setTheme = useReaderStore((state) => state.setTheme);
   const setTypography = useReaderStore((state) => state.setTypography);
-  const setDocumentSearchActiveIndex = useReaderStore((state) => state.setDocumentSearchActiveIndex);
-  const setDocumentSearchQuery = useReaderStore((state) => state.setDocumentSearchQuery);
   const sidebarOpen = useReaderStore((state) => state.sidebarOpen);
   const theme = useReaderStore((state) => state.theme);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
@@ -84,8 +81,6 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
   const nextTheme = themeOrder[(currentThemeIndex + 1) % themeOrder.length];
   const copyLabel = copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Copy failed' : 'Copy text';
   const hasDocumentSearchHits = documentSearchHitCount > 0;
-  const activeDocumentSearchIndex = hasDocumentSearchHits ? Math.min(documentSearchActiveIndex, documentSearchHitCount - 1) + 1 : 0;
-
   useEffect(() => {
     if (copyStatus !== 'copied') {
       return undefined;
@@ -180,50 +175,6 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
           </div>
         </div>
 
-        <div className="flex min-w-[18rem] flex-1 items-center gap-2 rounded-md border border-stone-300/70 bg-white/55 px-2 py-1">
-          <Search className="h-4 w-4 text-stone-500" />
-          <label className="flex min-w-0 flex-1 items-center gap-2">
-            <span className="sr-only">Search document</span>
-            <input
-              value={documentSearchQuery}
-              onChange={(event) => setDocumentSearchQuery(event.target.value)}
-              placeholder="Search document"
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-stone-400"
-            />
-          </label>
-          <span className="whitespace-nowrap text-[0.72rem] uppercase tracking-[0.14em] text-stone-500">
-            {activeDocumentSearchIndex}/{documentSearchHitCount}
-          </span>
-          <button
-            type="button"
-            onClick={() =>
-              setDocumentSearchActiveIndex(
-                documentSearchHitCount > 0
-                  ? (documentSearchActiveIndex - 1 + documentSearchHitCount) % documentSearchHitCount
-                  : 0,
-              )
-            }
-            disabled={!hasDocumentSearchHits}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label="Previous document match"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              setDocumentSearchActiveIndex(
-                documentSearchHitCount > 0 ? (documentSearchActiveIndex + 1) % documentSearchHitCount : 0,
-              )
-            }
-            disabled={!hasDocumentSearchHits}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label="Next document match"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-stone-300/70 bg-white/55 px-2 py-1">
           <span className="text-xs uppercase tracking-[0.18em] text-stone-500">Fonts</span>
           <span className="text-[0.68rem] uppercase tracking-[0.16em] text-stone-400">Sanskrit</span>
@@ -301,6 +252,20 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <button
             type="button"
+            onClick={() => setDocumentSearchOpen(true)}
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white"
+            aria-label="Open document search"
+            title="Open document search"
+          >
+            <Search className={['h-4 w-4', documentSearchOpen ? 'text-stone-950' : 'text-stone-700'].join(' ')} />
+            {hasDocumentSearchHits ? (
+              <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold leading-5 text-white">
+                {documentSearchHitCount > 9 ? '9+' : documentSearchHitCount}
+              </span>
+            ) : null}
+          </button>
+          <button
+            type="button"
             onClick={() => setTypography({ fontSize: Math.max(15, fontSize - 1) })}
             className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white"
             aria-label="Decrease font size"
@@ -315,6 +280,26 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
           >
             <Plus className="h-4 w-4" />
           </button>
+          <div className="flex items-center gap-1 rounded-md border border-stone-300/70 bg-white/70 px-2 py-1">
+            <span className="text-[0.68rem] uppercase tracking-[0.16em] text-stone-400">Leading</span>
+            <button
+              type="button"
+              onClick={() => setTypography({ lineHeight: Math.max(1.2, Number((lineHeight - 0.1).toFixed(2))) })}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-300/70 bg-white/80 text-stone-700 hover:bg-white"
+              aria-label="Decrease line height"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <div className="min-w-12 text-center text-xs font-medium text-stone-700">{lineHeight.toFixed(2)}</div>
+            <button
+              type="button"
+              onClick={() => setTypography({ lineHeight: Math.min(2.4, Number((lineHeight + 0.1).toFixed(2))) })}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-300/70 bg-white/80 text-stone-700 hover:bg-white"
+              aria-label="Increase line height"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => setTheme(nextTheme)}

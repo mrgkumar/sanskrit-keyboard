@@ -27,6 +27,19 @@ const IGNORED_COMMANDS = new Set([
   'circ',
   'EightFlowerPetal',
   'ip',
+  'medskip',
+  'smallskip',
+  'bigskip',
+  'vspace',
+  'vfill',
+  'newline',
+  'linebreak',
+  'pagebreak',
+  'par',
+  'allowdisplaybreaks',
+  'raggedright',
+  'centering',
+  'sloppy',
 ]);
 
 const stripInlineTeXComments = (line: string) => {
@@ -208,7 +221,7 @@ const nodeFromMacro = (command: string, args: string[], index: number): MantraNo
     };
   }
 
-  if (command === 'clearpage' || command === 'newpage') {
+  if (command === 'clearpage' || command === 'newpage' || command === 'pagebreak') {
     return { type: 'pageBreak', id: createReaderNodeId('page-break', index) };
   }
 

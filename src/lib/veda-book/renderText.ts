@@ -1,5 +1,10 @@
 import type { OutputScript, OutputTargetSettings } from '@/lib/vedic/mapping';
-import { detransliterate, formatSourceForScript, normalizeDevanagariDisplayText, reverseTamilInput } from '@/lib/vedic/utils';
+import {
+  detransliterate,
+  formatSourceForScript,
+  normalizeDevanagariDisplayText,
+  reverseTamilInput,
+} from '@/lib/vedic/utils';
 import type { SanskritFontPreset } from '@/store/types';
 import type { MantraDocument, MantraNode, ReaderPageSize } from './types';
 
@@ -112,13 +117,34 @@ export type ReaderDisplayScript = 'original' | OutputScript;
 const isRenderableReaderScript = (script: ReaderDisplayScript | ReaderSourceScript): script is OutputScript =>
   script === 'roman' || script === 'devanagari' || script === 'tamil';
 
-export const getCanonicalReaderSourceText = (text: string, sourceScript: ReaderSourceScript) => {
+export const normalizeReaderSourceText = (
+  text: string,
+  sourceScript: ReaderSourceScript,
+  options?: { sanskritFontPreset?: SanskritFontPreset },
+) => {
   if (!text) {
     return text;
   }
 
   if (sourceScript === 'devanagari') {
-    return detransliterate(text);
+    return normalizeDevanagariDisplayText(text, options?.sanskritFontPreset)
+      .replace(/(\u0903)\u200C?([\u0951\u0952\u1CDA])/gu, '$2$1');
+  }
+
+  return text;
+};
+
+export const getCanonicalReaderSourceText = (
+  text: string,
+  sourceScript: ReaderSourceScript,
+  options?: { sanskritFontPreset?: SanskritFontPreset },
+) => {
+  if (!text) {
+    return text;
+  }
+
+  if (sourceScript === 'devanagari') {
+    return detransliterate(normalizeReaderSourceText(text, sourceScript, options));
   }
 
   if (sourceScript === 'roman') {
@@ -148,24 +174,20 @@ export const formatReaderDisplayText = (
     return text;
   }
 
-  const canonicalSource = getCanonicalReaderSourceText(text, sourceScript);
+  const canonicalSource = getCanonicalReaderSourceText(text, sourceScript, options);
   if (canonicalSource === null) {
-    if (sourceScript === 'devanagari' && displayScript === 'devanagari') {
-      return normalizeDevanagariDisplayText(text, options?.sanskritFontPreset);
-    }
-
     return text;
-  }
-
-  if (displayScript === 'devanagari') {
-    return normalizeDevanagariDisplayText(
-      formatSourceForScript(canonicalSource, 'devanagari', settings, options),
-      options?.sanskritFontPreset,
-    );
   }
 
   return formatSourceForScript(canonicalSource, displayScript, settings, options);
 };
+
+export const formatReaderNodeDisplayText = (
+  text: string,
+  displayScript: ReaderDisplayScript,
+  settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
+  options?: { sanskritFontPreset?: SanskritFontPreset },
+) => formatReaderDisplayText(text, displayScript, detectReaderSourceScript(text), settings, options);
 
 export const getReaderDisplayScriptLabel = (script: ReaderDisplayScript) =>
   script === 'original' ? 'Original' : formatReaderSourceScriptLabel(script);
@@ -180,10 +202,19 @@ export const getReaderPageSizeLabel = (pageSize: ReaderPageSize) =>
 
 export const getReaderPageSizeWidth = (pageSize: ReaderPageSize) => READER_PAGE_SIZE_WIDTHS[pageSize];
 
+const encodePathSegments = (path: string) =>
+  path
+    .split('/')
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+
+export const buildReaderSourceDocumentUrl = (sourceRepo: string, sourceBranch: string, sourcePath: string) =>
+  `https://github.com/${sourceRepo}/blob/${encodeURIComponent(sourceBranch)}/${encodePathSegments(sourcePath)}`;
+
 export const formatReaderSearchText = (
   text: string,
   displayScript: ReaderDisplayScript,
-  sourceScript: ReaderSourceScript,
   settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
   options?: { sanskritFontPreset?: SanskritFontPreset },
 ) => {
@@ -197,18 +228,12 @@ export const formatReaderSearchText = (
   }
 
   const queryScript = detectReaderSourceScript(trimmed);
-  const canonicalSource = getCanonicalReaderSourceText(trimmed, queryScript);
+  const canonicalSource = getCanonicalReaderSourceText(trimmed, queryScript, options);
   if (canonicalSource === null) {
     return normalizeReaderSearchText(trimmed);
   }
 
-  const renderedQuery =
-    displayScript === 'devanagari'
-      ? normalizeDevanagariDisplayText(
-          formatSourceForScript(canonicalSource, 'devanagari', settings, options),
-          options?.sanskritFontPreset,
-        )
-      : formatSourceForScript(canonicalSource, displayScript, settings, options);
+  const renderedQuery = formatReaderDisplayText(trimmed, displayScript, queryScript, settings, options);
 
   return normalizeReaderSearchText(renderedQuery);
 };
@@ -226,12 +251,10 @@ export const collectReaderSearchHits = (
   settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
   options?: { sanskritFontPreset?: SanskritFontPreset },
 ) => {
-  const normalizedQuery = formatReaderSearchText(query, displayScript, detectReaderSourceScript(document.rawTex), settings, options);
+  const normalizedQuery = formatReaderSearchText(query, displayScript, settings, options);
   if (!normalizedQuery) {
     return [] as ReaderSearchHit[];
   }
-
-  const sourceScript = detectReaderSourceScript(document.rawTex);
   const hits: ReaderSearchHit[] = [];
 
   const addIfMatch = (nodeId: string, text: string, isTitle = false) => {
@@ -241,7 +264,7 @@ export const collectReaderSearchHits = (
     }
   };
 
-  addIfMatch('reader-document-title', formatReaderDisplayText(document.title, displayScript, sourceScript, settings, options), true);
+  addIfMatch('reader-document-title', formatReaderNodeDisplayText(document.title, displayScript, settings, options), true);
 
   for (const node of document.nodes) {
     switch (node.type) {
@@ -251,10 +274,10 @@ export const collectReaderSearchHits = (
       case 'paragraph':
       case 'center':
       case 'raw':
-        addIfMatch(node.id, formatReaderDisplayText(node.text, displayScript, sourceScript, settings, options));
+        addIfMatch(node.id, formatReaderNodeDisplayText(node.text, displayScript, settings, options));
         break;
       case 'sourceRef':
-        addIfMatch(node.id, formatReaderDisplayText(node.values.join(' · '), displayScript, sourceScript, settings, options));
+        addIfMatch(node.id, formatReaderNodeDisplayText(node.values.join(' · '), displayScript, settings, options));
         break;
       case 'warning':
         addIfMatch(node.id, normalizeReaderSearchText(node.message));
@@ -270,10 +293,9 @@ export const collectReaderSearchHits = (
 const formatReaderNodeText = (
   text: string,
   displayScript: ReaderDisplayScript,
-  sourceScript: ReaderSourceScript,
   settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
   options?: { sanskritFontPreset?: SanskritFontPreset },
-) => formatReaderDisplayText(text, displayScript, sourceScript, settings, options);
+) => formatReaderNodeDisplayText(text, displayScript, settings, options);
 
 export const serializeReaderDocumentText = (
   document: MantraDocument,
@@ -281,7 +303,6 @@ export const serializeReaderDocumentText = (
   settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
   options?: { sanskritFontPreset?: SanskritFontPreset },
 ) => {
-  const sourceScript = detectReaderSourceScript(document.rawTex);
   const lines: string[] = [];
 
   const appendBlock = (text: string, blankLineBefore = false) => {
@@ -297,7 +318,7 @@ export const serializeReaderDocumentText = (
     lines.push(trimmed);
   };
 
-  appendBlock(formatReaderNodeText(document.title, displayScript, sourceScript, settings, options));
+  appendBlock(formatReaderNodeText(document.title, displayScript, settings, options));
 
   for (const node of document.nodes) {
     switch (node.type) {
@@ -307,11 +328,11 @@ export const serializeReaderDocumentText = (
       case 'paragraph':
       case 'center':
       case 'raw':
-        appendBlock(formatReaderNodeText(node.text, displayScript, sourceScript, settings, options), true);
+        appendBlock(formatReaderNodeText(node.text, displayScript, settings, options), true);
         break;
       case 'sourceRef':
         appendBlock(
-          `${node.source}: ${formatReaderNodeText(node.values.join(' · '), displayScript, sourceScript, settings, options)}`,
+          `${node.source}: ${formatReaderNodeText(node.values.join(' · '), displayScript, settings, options)}`,
           true,
         );
         break;

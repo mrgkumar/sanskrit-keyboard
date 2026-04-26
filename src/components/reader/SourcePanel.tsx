@@ -1,6 +1,6 @@
 'use client';
 
-import { getReaderPageSizeWidth } from '@/lib/veda-book/renderText';
+import { getReaderPageSizeWidth, buildReaderSourceDocumentUrl } from '@/lib/veda-book/renderText';
 import type { MantraDocument } from '@/lib/veda-book/types';
 import { useReaderStore } from '@/store/useReaderStore';
 
@@ -11,7 +11,10 @@ interface SourcePanelProps {
 
 export function SourcePanel({ document, documentStatus }: SourcePanelProps) {
   const pageSize = useReaderStore((state) => state.pageSize);
+  const fontSize = useReaderStore((state) => state.fontSize);
+  const lineHeight = useReaderStore((state) => state.lineHeight);
   const pageWidth = getReaderPageSizeWidth(pageSize);
+  const sourceUrl = document ? buildReaderSourceDocumentUrl(document.sourceRepo, document.sourceBranch, document.sourcePath) : null;
 
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-none border border-stone-300/70 bg-white/60">
@@ -20,11 +23,25 @@ export function SourcePanel({ document, documentStatus }: SourcePanelProps) {
         <div className="mt-1 text-sm text-stone-600">
           {documentStatus === 'loading' || documentStatus === 'refreshing' ? 'Loading raw source...' : 'Original .tex source'}
         </div>
+        {sourceUrl ? (
+          <a
+            href={sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-flex text-xs uppercase tracking-[0.18em] text-blue-700 underline decoration-dotted underline-offset-4 hover:text-blue-800"
+          >
+            Open original source document
+          </a>
+        ) : null}
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-4">
         <div className="mx-auto w-full" style={{ maxWidth: pageWidth }}>
-          <pre className="whitespace-pre-wrap break-words font-mono text-[0.95rem] leading-7 text-stone-800">
-          {document?.rawTex ?? 'Open a document to view its raw source.'}
+          <pre
+            className="script-text-devanagari whitespace-pre-wrap break-words text-stone-800"
+            data-font-preset="chandas"
+            style={{ fontSize: `${fontSize}px`, lineHeight }}
+          >
+            {document?.rawTex ?? 'Open a document to view its raw source.'}
           </pre>
         </div>
       </div>

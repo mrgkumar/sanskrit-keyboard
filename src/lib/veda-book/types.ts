@@ -48,6 +48,7 @@ export interface VedaManifestEntry {
   path: string;
   title: string;
   category: string;
+  folderPath: string;
   order: number;
   sourceRepo: string;
   branch: string;
@@ -71,6 +72,7 @@ export interface ReaderPreferences {
   sanskritFontPreset: SanskritFontPreset;
   tamilFontPreset: TamilFontPreset;
   sidebarOpen: boolean;
+  sidebarCollapsed: boolean;
   diagnosticsOpen: boolean;
   searchQuery: string;
 }
@@ -85,6 +87,7 @@ export const DEFAULT_READER_PREFERENCES: ReaderPreferences = {
   sanskritFontPreset: 'siddhanta',
   tamilFontPreset: 'anek',
   sidebarOpen: true,
+  sidebarCollapsed: false,
   diagnosticsOpen: false,
   searchQuery: '',
 };

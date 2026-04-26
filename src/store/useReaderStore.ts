@@ -40,6 +40,7 @@ interface ReaderStoreState extends ReaderPreferences {
   documentError: string | null;
   documentSearchQuery: string;
   documentSearchActiveIndex: number;
+  documentSearchOpen: boolean;
   lastReadPositions: Record<string, number>;
   setReaderMode: (mode: ReaderMode) => void;
   setDisplayScript: (displayScript: ReaderDisplayScript) => void;
@@ -49,10 +50,12 @@ interface ReaderStoreState extends ReaderPreferences {
   setTheme: (theme: ReaderTheme) => void;
   setTypography: (settings: { fontSize?: number; lineHeight?: number }) => void;
   setSidebarOpen: (open: boolean) => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
   setDiagnosticsOpen: (open: boolean) => void;
   setSearchQuery: (query: string) => void;
   setDocumentSearchQuery: (query: string) => void;
   setDocumentSearchActiveIndex: (index: number) => void;
+  setDocumentSearchOpen: (open: boolean) => void;
   setLastReadPosition: (path: string, scrollTop: number) => void;
   loadManifest: (options?: { force?: boolean }) => Promise<void>;
   refreshManifest: () => Promise<void>;
@@ -126,6 +129,7 @@ const persistLastReadPositions = (positions: Record<string, number>) => {
 const selectPreferences = (state: Pick<
   ReaderStoreState,
   'readerMode' | 'displayScript' | 'theme' | 'fontSize' | 'lineHeight' | 'sidebarOpen' | 'diagnosticsOpen' | 'searchQuery'
+  | 'sidebarCollapsed'
   | 'sanskritFontPreset'
   | 'tamilFontPreset'
   | 'pageSize'
@@ -139,6 +143,7 @@ const selectPreferences = (state: Pick<
   fontSize: state.fontSize,
   lineHeight: state.lineHeight,
   sidebarOpen: state.sidebarOpen,
+  sidebarCollapsed: state.sidebarCollapsed,
   diagnosticsOpen: state.diagnosticsOpen,
   searchQuery: state.searchQuery,
 });
@@ -185,6 +190,7 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
     documentError: null,
     documentSearchQuery: '',
     documentSearchActiveIndex: 0,
+    documentSearchOpen: false,
     lastReadPositions: readStoredLastReadPositions(),
     setReaderMode: (readerMode) => {
       set({ readerMode });
@@ -223,6 +229,10 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
       set({ sidebarOpen });
       persistPreferences(selectPreferences(get()));
     },
+    setSidebarCollapsed: (sidebarCollapsed) => {
+      set({ sidebarCollapsed });
+      persistPreferences(selectPreferences(get()));
+    },
     setDiagnosticsOpen: (diagnosticsOpen) => {
       set({ diagnosticsOpen });
       persistPreferences(selectPreferences(get()));
@@ -239,6 +249,9 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
     },
     setDocumentSearchActiveIndex: (documentSearchActiveIndex) => {
       set({ documentSearchActiveIndex });
+    },
+    setDocumentSearchOpen: (documentSearchOpen) => {
+      set({ documentSearchOpen });
     },
     setLastReadPosition: (path, scrollTop) => {
       set((state) => {
