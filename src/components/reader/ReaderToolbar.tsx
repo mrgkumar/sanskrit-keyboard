@@ -20,6 +20,7 @@ import { getReaderDisplayScriptLabel, serializeReaderDocumentText } from '@/lib/
 
 const modeOptions: Array<{ mode: ReaderMode; label: string; icon: ReactNode }> = [
   { mode: 'reader', label: 'Reader', icon: <BookOpenText className="h-4 w-4" /> },
+  { mode: 'compare', label: 'Compare', icon: <Languages className="h-4 w-4" /> },
   { mode: 'source', label: 'Source', icon: <FileText className="h-4 w-4" /> },
   { mode: 'split', label: 'Split', icon: <SplitSquareHorizontal className="h-4 w-4" /> },
 ];

@@ -47,6 +47,7 @@ export function ReaderShell() {
 
   const currentThemeClass = themeClassName[theme];
   const splitMode = readerMode === 'split';
+  const compareMode = readerMode === 'compare';
 
   return (
     <div className={`${currentThemeClass} min-h-dvh`}>
@@ -86,6 +87,20 @@ export function ReaderShell() {
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               {readerMode === 'source' ? (
                 <SourcePanel document={activeDocument} documentStatus={documentStatus} />
+              ) : compareMode ? (
+                <div className="grid min-h-0 flex-1 gap-4 px-4 pb-4 pt-3 lg:grid-cols-2">
+                  <MantraDocumentView
+                    document={activeDocument}
+                    documentStatus={documentStatus}
+                    displayScriptOverride="original"
+                    panelLabel="Original"
+                  />
+                  <MantraDocumentView
+                    document={activeDocument}
+                    documentStatus={documentStatus}
+                    panelLabel="Selected display"
+                  />
+                </div>
               ) : splitMode ? (
                 <div className="grid min-h-0 flex-1 gap-4 px-4 pb-4 pt-3 lg:grid-cols-2">
                   <MantraDocumentView document={activeDocument} documentStatus={documentStatus} />

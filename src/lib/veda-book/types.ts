@@ -1,6 +1,6 @@
 import type { OutputScript } from '@/lib/vedic/mapping';
 
-export type ReaderMode = 'reader' | 'source' | 'split';
+export type ReaderMode = 'reader' | 'source' | 'split' | 'compare';
 export type ReaderTheme = 'light' | 'sepia' | 'dark';
 export type ReaderDisplayScript = 'original' | OutputScript;
 export type LoadStatus = 'idle' | 'loading' | 'ready' | 'refreshing' | 'error';

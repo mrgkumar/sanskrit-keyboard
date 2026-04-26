@@ -206,6 +206,10 @@ test.describe('Veda Reader', () => {
     await page.getByRole('button', { name: 'Source' }).click();
     await expect(page.getByText('\\chapt{पुरुषसूक्तम्}')).toBeVisible();
 
+    await page.getByRole('button', { name: 'Compare' }).click();
+    await expect(page.getByText('Original')).toBeVisible();
+    await expect(page.getByText('Selected display')).toBeVisible();
+
     await page.getByRole('button', { name: 'Split' }).click();
     await expect(page.locator('main article > header').getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
     await expect(page.getByText('\\centerline{ॐ तत्सत्}')).toBeVisible();

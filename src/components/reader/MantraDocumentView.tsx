@@ -10,6 +10,8 @@ import { useReaderStore } from '@/store/useReaderStore';
 interface MantraDocumentViewProps {
   document: MantraDocument | null;
   documentStatus: 'idle' | 'loading' | 'ready' | 'refreshing' | 'error';
+  displayScriptOverride?: ReaderDisplayScript;
+  panelLabel?: string;
 }
 
 const renderTextNode = (
@@ -74,8 +76,9 @@ const renderNode = (node: MantraNode, sourceScript: ReturnType<typeof detectRead
   }
 };
 
-export function MantraDocumentView({ document, documentStatus }: MantraDocumentViewProps) {
+export function MantraDocumentView({ document, documentStatus, displayScriptOverride, panelLabel }: MantraDocumentViewProps) {
   const displayScript = useReaderStore((state) => state.displayScript);
+  const activeDisplayScript = displayScriptOverride ?? displayScript;
   if (!document) {
     return (
       <section className="flex min-h-0 flex-1 items-center justify-center px-4 py-10">
@@ -103,8 +106,11 @@ export function MantraDocumentView({ document, documentStatus }: MantraDocumentV
       <article className="mx-auto flex w-full max-w-4xl flex-col gap-5">
         <header className="border-b border-stone-300/70 pb-4">
           <div className="text-[0.7rem] uppercase tracking-[0.22em] text-stone-500">{document.sourcePath}</div>
+          {panelLabel ? (
+            <div className="mt-1 text-[0.7rem] uppercase tracking-[0.22em] text-stone-400">{panelLabel}</div>
+          ) : null}
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-balance">
-            {renderTextNode(document.title, sourceScript, displayScript)}
+            {renderTextNode(document.title, sourceScript, activeDisplayScript)}
           </h1>
           <div className="mt-2 text-sm text-stone-600">
             {document.sourceRepo} · {document.sourceBranch}
@@ -129,7 +135,7 @@ export function MantraDocumentView({ document, documentStatus }: MantraDocumentV
                     'hover:bg-stone-100',
                   ].join(' ')}
                 >
-                  {renderTextNode(entry.label, sourceScript, displayScript)}
+                  {renderTextNode(entry.label, sourceScript, activeDisplayScript)}
                 </a>
               ))}
             </div>
@@ -139,7 +145,7 @@ export function MantraDocumentView({ document, documentStatus }: MantraDocumentV
         <div className="space-y-5">
           {document.nodes.map((node) => (
             <div key={node.id} id={node.id} className="space-y-2 scroll-mt-24">
-              {renderNode(node, sourceScript, displayScript)}
+              {renderNode(node, sourceScript, activeDisplayScript)}
             </div>
           ))}
         </div>
