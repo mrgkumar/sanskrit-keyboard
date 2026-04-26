@@ -59,6 +59,29 @@ const mockReaderSources = async (page: Parameters<typeof test>[0]['page']) => {
   });
 };
 
+const clearReaderStorage = async (page: Parameters<typeof test>[0]['page']) => {
+  await page.addInitScript(async () => {
+    window.localStorage.clear();
+
+    if ('databases' in indexedDB) {
+      const databases = await indexedDB.databases();
+      await Promise.all(
+        databases
+          .map((database) => database.name)
+          .filter((name): name is string => Boolean(name))
+          .map(async (name) => {
+            await new Promise<void>((resolve) => {
+              const request = indexedDB.deleteDatabase(name);
+              request.onsuccess = () => resolve();
+              request.onerror = () => resolve();
+              request.onblocked = () => resolve();
+            });
+          }),
+      );
+    }
+  });
+};
+
 test.describe('Veda Reader', () => {
   test('parser preserves visible percent-prefixed verse lines and ignores boilerplate wrappers', async () => {
     const source = String.raw`
@@ -85,13 +108,14 @@ test.describe('Veda Reader', () => {
   test('derives document titles from parsed header nodes', async () => {
     const parsed = parseTexDocument(PURUSHA_SUKTAM, { sourcePath: 'mantras/PurushaSuktam.tex' });
     expect(deriveDocumentTitleFromNodes(parsed.nodes, 'Purusha Suktam')).toBe('पुरुषसूक्तम्');
+    const unsupported = parsed.diagnostics.find((diagnostic) => diagnostic.message.includes('\\foo'));
+    expect(unsupported?.line).toBe(7);
+    expect(unsupported?.column).toBe(1);
   });
 
   test('loads the manifest, renders a document, and supports mode switching', async ({ page }) => {
     await mockReaderSources(page);
-    await page.addInitScript(() => {
-      window.localStorage.clear();
-    });
+    await clearReaderStorage(page);
 
     await page.goto('/reader');
 
@@ -108,7 +132,8 @@ test.describe('Veda Reader', () => {
     await expect(page.getByText('\\centerline{ॐ तत्सत्}')).toBeVisible();
 
     await page.getByRole('button', { name: 'Diagnostics' }).click();
-    await expect(page.getByTestId('reader-diagnostics-panel').getByText('Unsupported macro(s): \\foo')).toBeVisible();
+    await expect(page.getByTestId('reader-diagnostics-panel').getByText('L7:1').first()).toBeVisible();
+    await expect(page.getByTestId('reader-diagnostics-panel').getByText('Unsupported macro(s): \\foo').first()).toBeVisible();
 
     await page.getByPlaceholder('Search titles or paths').fill('Another');
     await page.getByRole('button', { name: 'Another Mantra' }).click();
@@ -119,9 +144,7 @@ test.describe('Veda Reader', () => {
 
   test('opens a specific document from the route path', async ({ page }) => {
     await mockReaderSources(page);
-    await page.addInitScript(() => {
-      window.localStorage.clear();
-    });
+    await clearReaderStorage(page);
 
     await page.goto('/reader?path=mantras/PurushaSuktam.tex');
 

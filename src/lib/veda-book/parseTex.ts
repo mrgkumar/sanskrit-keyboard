@@ -60,12 +60,19 @@ const normalizeTeXLine = (line: string) => {
 const makeDiagnostic = (
   level: ParserDiagnostic['level'],
   message: string,
-  source?: string,
+  options?: {
+    source?: string;
+    line?: number;
+    column?: number;
+    command?: string;
+  },
 ): ParserDiagnostic => ({
   id: `diag-${level}-${Math.random().toString(36).slice(2, 8)}`,
   level,
   message,
-  source,
+  source: options?.source,
+  line: options?.line,
+  column: options?.column,
 });
 
 const readBalancedGroup = (input: string, startIndex: number) => {
@@ -191,7 +198,22 @@ const nodeFromMacro = (command: string, args: string[], index: number): MantraNo
 const buildUnsupportedMacroWarning = (macroNames: string[]) =>
   `Unsupported macro(s): ${Array.from(new Set(macroNames)).map((command) => `\\${command}`).join(', ')}`;
 
-const parseFragment = (fragment: string, diagnostics: ParserDiagnostic[], nodes: MantraNode[]) => {
+const getLineColumnAtIndex = (fragment: string, index: number, baseLine: number) => {
+  const fragmentBeforeIndex = fragment.slice(0, index);
+  const lineOffset = fragmentBeforeIndex.split('\n').length - 1;
+  const lastLineBreak = fragmentBeforeIndex.lastIndexOf('\n');
+  return {
+    line: baseLine + lineOffset,
+    column: index - (lastLineBreak === -1 ? -1 : lastLineBreak),
+  };
+};
+
+const parseFragment = (
+  fragment: string,
+  diagnostics: ParserDiagnostic[],
+  nodes: MantraNode[],
+  baseLine: number,
+) => {
   let cursor = 0;
 
   const flushText = (text: string) => {
@@ -224,7 +246,15 @@ const parseFragment = (fragment: string, diagnostics: ParserDiagnostic[], nodes:
     }
 
     if (macro.kind === 'malformed') {
-      diagnostics.push(makeDiagnostic('error', `Could not parse \\${macro.command} arguments.`, fragment));
+      const location = getLineColumnAtIndex(fragment, nextCommandIndex, baseLine);
+      diagnostics.push(
+        makeDiagnostic('error', `Could not parse \\${macro.command} arguments.`, {
+          source: fragment,
+          line: location.line,
+          column: location.column,
+          command: macro.command,
+        }),
+      );
       nodes.push({
         type: 'warning',
         id: createReaderNodeId('warning', nodes.length),
@@ -238,19 +268,29 @@ const parseFragment = (fragment: string, diagnostics: ParserDiagnostic[], nodes:
     if (supportedNode) {
       nodes.push(supportedNode);
       if (macro.tail) {
-        parseFragment(macro.tail, diagnostics, nodes);
+        const tailLocation = getLineColumnAtIndex(fragment, nextCommandIndex, baseLine);
+        parseFragment(macro.tail, diagnostics, nodes, tailLocation.line);
       }
       return;
     }
 
     if (IGNORED_COMMANDS.has(macro.command)) {
       if (macro.tail) {
-        parseFragment(macro.tail, diagnostics, nodes);
+        const tailLocation = getLineColumnAtIndex(fragment, nextCommandIndex, baseLine);
+        parseFragment(macro.tail, diagnostics, nodes, tailLocation.line);
       }
       return;
     }
 
-    diagnostics.push(makeDiagnostic('warning', buildUnsupportedMacroWarning([macro.command]), fragment));
+    const location = getLineColumnAtIndex(fragment, nextCommandIndex, baseLine);
+    diagnostics.push(
+      makeDiagnostic('warning', buildUnsupportedMacroWarning([macro.command]), {
+        source: fragment,
+        line: location.line,
+        column: location.column,
+        command: macro.command,
+      }),
+    );
     nodes.push({
       type: 'warning',
       id: createReaderNodeId('warning', nodes.length),
@@ -261,21 +301,78 @@ const parseFragment = (fragment: string, diagnostics: ParserDiagnostic[], nodes:
   }
 };
 
+const recordStandaloneMacroDiagnostic = (
+  fragment: string,
+  diagnostics: ParserDiagnostic[],
+  baseLine: number,
+) => {
+  const trimmed = fragment.trim();
+  if (!trimmed.startsWith('\\')) {
+    return;
+  }
+
+  const macro = parseStandaloneMacro(trimmed);
+  if (!macro || macro.kind !== 'macro') {
+    return;
+  }
+
+  const supportedNode = nodeFromMacro(macro.command, macro.args, 0);
+  if (supportedNode || IGNORED_COMMANDS.has(macro.command)) {
+    return;
+  }
+
+  const location = getLineColumnAtIndex(trimmed, trimmed.indexOf('\\'), baseLine);
+  diagnostics.push(
+    makeDiagnostic('warning', buildUnsupportedMacroWarning([macro.command]), {
+      source: fragment,
+      line: location.line,
+      column: location.column,
+      command: macro.command,
+    }),
+  );
+};
+
 const parseParagraphBlocks = (source: string, diagnostics: ParserDiagnostic[]) => {
   const normalized = source.replace(LINE_BREAK_PATTERN, '\n');
-  const stripped = normalized
-    .split('\n')
-    .map((line) => normalizeTeXLine(line))
-    .join('\n');
-  const blocks = stripped.split(/\n{2,}/);
   const nodes: MantraNode[] = [];
+  const lines = normalized.split('\n');
+  const blocks: Array<{ lines: Array<{ text: string; lineNumber: number }>; startLine: number }> = [];
+  let currentBlock: Array<{ text: string; lineNumber: number }> = [];
+
+  const flushBlock = () => {
+    if (currentBlock.length === 0) {
+      return;
+    }
+
+    blocks.push({
+      lines: currentBlock,
+      startLine: currentBlock[0]?.lineNumber ?? 1,
+    });
+    currentBlock = [];
+  };
+
+  lines.forEach((line, index) => {
+    const normalizedLine = normalizeTeXLine(line);
+    if (!normalizedLine.trim()) {
+      flushBlock();
+      return;
+    }
+
+    currentBlock.push({
+      text: normalizedLine,
+      lineNumber: index + 1,
+    });
+  });
+
+  flushBlock();
 
   blocks.forEach((block) => {
-    const fragment = block.trim();
+    const fragment = block.lines.map((line) => line.text).join('\n').trim();
     if (!fragment) {
       return;
     }
-    parseFragment(fragment, diagnostics, nodes);
+    recordStandaloneMacroDiagnostic(fragment, diagnostics, block.startLine);
+    parseFragment(fragment, diagnostics, nodes, block.startLine);
   });
 
   return nodes;
@@ -293,7 +390,9 @@ export const parseTexDocument = (
       makeDiagnostic(
         'info',
         'Document did not contain supported layout commands. Raw text remains available in Source Mode.',
-        options?.sourcePath,
+        {
+          source: options?.sourcePath,
+        },
       ),
     );
     nodes.push({
