@@ -225,6 +225,10 @@ test.describe('Veda Reader', () => {
 \dnsub{उपनिषत्}
 द्वितीयः परिच्छेदः।
 
+\sep
+\small
+\hspace{1em}
+\circ
 \anuvakamend
 \prashnaend
 `;

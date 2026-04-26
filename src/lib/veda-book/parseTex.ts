@@ -212,7 +212,7 @@ const nodeFromMacro = (command: string, args: string[], index: number): MantraNo
     return { type: 'pageBreak', id: createReaderNodeId('page-break', index) };
   }
 
-  if (command === 'anuvakamend' || command === 'prashnaend') {
+  if (command === 'sep' || command === 'anuvakamend' || command === 'prashnaend') {
     return { type: 'pageBreak', id: createReaderNodeId('page-break', index) };
   }
 
