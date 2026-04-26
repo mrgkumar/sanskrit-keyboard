@@ -248,12 +248,24 @@ test.describe('Veda Reader', () => {
 \dnsub{उपनिषत्}
 द्वितीयः परिच्छेदः।
 
-\sep
-\small
-\hspace{1em}
-\circ
-\anuvakamend
-\prashnaend
+    \sep
+    \small
+    \hspace{1em}
+    \circ
+    \medskip
+    \smallskip
+    \bigskip
+    \newline
+    \linebreak
+    \pagebreak
+    \vspace{1em}
+    \vfill
+    \par
+    \raggedright
+    \centering
+    \sloppy
+    \anuvakamend
+    \prashnaend
 `;
 
     const parsed = parseTexDocument(source, { sourcePath: 'mantras/Mahanarayanopanishat.tex' });
