@@ -203,15 +203,15 @@ test.describe('Veda Reader', () => {
     await expect(page.locator('main article > header').getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Source' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Source' }).click();
-    await expect(page.getByText('\\chapt{पुरुषसूक्तम्}')).toBeVisible();
-
     await page.getByRole('button', { name: 'Chandas' }).click();
     await expect(page.locator('main article > header [data-font-preset="chandas"]').first()).toBeVisible();
 
+    await page.getByRole('button', { name: 'Source' }).click();
+    await expect(page.getByText('\\chapt{पुरुषसूक्तम्}')).toBeVisible();
+
     await page.getByRole('button', { name: 'Compare' }).click();
-    await expect(page.getByText('Original')).toBeVisible();
-    await expect(page.getByText('Selected display')).toBeVisible();
+    await expect(page.locator('main article header').getByText('Original', { exact: true })).toBeVisible();
+    await expect(page.locator('main article header').getByText('Selected display', { exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: 'Split' }).click();
     await expect(page.locator('main article > header').getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
@@ -240,7 +240,8 @@ test.describe('Veda Reader', () => {
 
     await page.getByPlaceholder('Search titles or paths').fill('Another');
     await page.getByRole('button', { name: 'Another Mantra' }).click();
-    await expect(page.locator('main article > header').getByRole('heading', { name: 'अन्य मन्‍त्रः' })).toBeVisible();
+    const anotherTamilHeading = formatSourceForScript('अन्य मन्‍त्रः', 'tamil', DEFAULT_OUTPUT_TARGET_SETTINGS);
+    await expect(page.locator('main article > header').getByRole('heading', { name: anotherTamilHeading })).toBeVisible();
     await expect(page.locator('aside').getByRole('button', { name: 'अन्य मन्‍त्रः' })).toBeVisible();
     await expect(page).toHaveURL(/\/reader\/\?path=mantras%2FAnotherMantra\.tex$/);
   });

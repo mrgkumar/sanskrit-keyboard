@@ -85,11 +85,9 @@ const renderNode = (
 };
 
 export function MantraDocumentView({ document, documentStatus, displayScriptOverride, panelLabel }: MantraDocumentViewProps) {
-  const { displayScript, sanskritFontPreset, tamilFontPreset } = useReaderStore((state) => ({
-    displayScript: state.displayScript,
-    sanskritFontPreset: state.sanskritFontPreset,
-    tamilFontPreset: state.tamilFontPreset,
-  }));
+  const displayScript = useReaderStore((state) => state.displayScript);
+  const sanskritFontPreset = useReaderStore((state) => state.sanskritFontPreset);
+  const tamilFontPreset = useReaderStore((state) => state.tamilFontPreset);
   const activeDisplayScript = displayScriptOverride ?? displayScript;
   if (!document) {
     return (
