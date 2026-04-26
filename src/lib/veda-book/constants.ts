@@ -1,0 +1,12 @@
+export const VEDA_BOOK_REPO = 'stotrasamhita/vedamantra-book';
+export const VEDA_BOOK_BRANCH = 'master';
+export const VEDA_BOOK_RAW_BASE =
+  'https://raw.githubusercontent.com/stotrasamhita/vedamantra-book/master';
+export const VEDA_BOOK_MANTRAS_INDEX_PATH = 'mantras.tex';
+
+export const READER_PREFERENCES_STORAGE_KEY = 'veda-reader-preferences-v1';
+
+export const READER_CACHE_PREFIX = 'veda-reader';
+export const READER_MANIFEST_CACHE_KEY = `${READER_CACHE_PREFIX}:manifest`;
+export const READER_RAW_DOCUMENT_CACHE_PREFIX = `${READER_CACHE_PREFIX}:raw`;
+export const READER_PARSED_DOCUMENT_CACHE_PREFIX = `${READER_CACHE_PREFIX}:parsed`;
