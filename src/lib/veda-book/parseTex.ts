@@ -10,6 +10,7 @@ const IGNORED_COMMANDS = new Set([
   'newcommand',
   'renewcommand',
   'setcounter',
+  'setmainfont',
   'pagenumbering',
   'setlength',
   'fontspec',
@@ -17,6 +18,15 @@ const IGNORED_COMMANDS = new Set([
   'rhead',
   'fancyfoot',
   'chaptertitle',
+  'noindent',
+  'label',
+  'hyperref',
+  'mbox',
+  'small',
+  'hspace',
+  'circ',
+  'EightFlowerPetal',
+  'ip',
 ]);
 
 const stripInlineTeXComments = (line: string) => {
@@ -151,11 +161,19 @@ const nodeFromMacro = (command: string, args: string[], index: number): MantraNo
     return { type: 'chapter', id: createReaderNodeId('chapter', index), text: args[0].trim() };
   }
 
+  if (command === 'sect' && args[0] !== undefined) {
+    return { type: 'chapter', id: createReaderNodeId('chapter', index), text: args[0].trim() };
+  }
+
   if (command === 'section' && args[0] !== undefined) {
     return { type: 'section', id: createReaderNodeId('section', index), text: args[0].trim() };
   }
 
   if (command === 'subsection' && args[0] !== undefined) {
+    return { type: 'subsection', id: createReaderNodeId('subsection', index), text: args[0].trim() };
+  }
+
+  if (command === 'dnsub' && args[0] !== undefined) {
     return { type: 'subsection', id: createReaderNodeId('subsection', index), text: args[0].trim() };
   }
 
@@ -191,6 +209,10 @@ const nodeFromMacro = (command: string, args: string[], index: number): MantraNo
   }
 
   if (command === 'clearpage' || command === 'newpage') {
+    return { type: 'pageBreak', id: createReaderNodeId('page-break', index) };
+  }
+
+  if (command === 'anuvakamend' || command === 'prashnaend') {
     return { type: 'pageBreak', id: createReaderNodeId('page-break', index) };
   }
 

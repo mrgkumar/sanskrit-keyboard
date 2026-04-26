@@ -213,6 +213,30 @@ test.describe('Veda Reader', () => {
     expect(parsed.diagnostics.some((diagnostic) => diagnostic.message.includes('begingroup'))).toBeFalsy();
   });
 
+  test('parser supports corpus chapter, subsection, and page break macros', async () => {
+    const source = String.raw`
+\sect{महानारायणोपनिषत्}
+\noindent
+\mbox{शान्तिः}
+\ip
+
+प्रथमः परिच्छेदः।
+
+\dnsub{उपनिषत्}
+द्वितीयः परिच्छेदः।
+
+\anuvakamend
+\prashnaend
+`;
+
+    const parsed = parseTexDocument(source, { sourcePath: 'mantras/Mahanarayanopanishat.tex' });
+
+    expect(parsed.nodes.some((node) => node.type === 'chapter' && node.text === 'महानारायणोपनिषत्')).toBeTruthy();
+    expect(parsed.nodes.some((node) => node.type === 'subsection' && node.text === 'उपनिषत्')).toBeTruthy();
+    expect(parsed.nodes.some((node) => node.type === 'pageBreak')).toBeTruthy();
+    expect(parsed.diagnostics.some((diagnostic) => diagnostic.message.includes('Unsupported macro'))).toBeFalsy();
+  });
+
   test('uses versioned cache keys for reader data', async () => {
     expect(READER_MANIFEST_CACHE_KEY).toContain(':v2:');
     expect(READER_RAW_DOCUMENT_CACHE_PREFIX).toContain(':v2:');
