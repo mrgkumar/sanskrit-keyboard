@@ -403,6 +403,7 @@ export interface SanskritKeyboardState {
     sourceText: string;
     kind: DocumentAnnotationKind;
     color?: DocumentAnnotation['color'];
+    url?: string;
   }) => void;
   removeAnnotation: (annotationId: string) => void;
   setShowAnnotationOverlay: (show: boolean) => void;
@@ -1502,14 +1503,35 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
         item.blockId === annotation.blockId &&
         item.startOffset === annotation.startOffset &&
         item.endOffset === annotation.endOffset;
+      const isSameBlockAndKind = (item: DocumentAnnotation) =>
+        item.blockId === annotation.blockId &&
+        item.kind === annotation.kind;
 
       const existingSameKind = state.annotations.find(
-        (item) => isSameRange(item) && item.kind === annotation.kind
+        (item) =>
+          (annotation.kind === 'youtube' ? isSameBlockAndKind(item) : isSameRange(item)) &&
+          item.kind === annotation.kind
       );
 
       if (annotation.kind === 'bookmark' && existingSameKind) {
         return {
           annotations: state.annotations.filter((item) => item.id !== existingSameKind.id),
+        };
+      }
+
+      if (annotation.kind === 'youtube' && existingSameKind) {
+        return {
+          annotations: state.annotations.map((item) =>
+            item.id === existingSameKind.id
+              ? {
+                  ...item,
+                  sourceText: annotation.sourceText,
+                  color: annotation.color,
+                  url: annotation.url,
+                  updatedAt: now,
+                }
+              : item
+          ),
         };
       }
 
@@ -1521,6 +1543,7 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
                   ...item,
                   sourceText: annotation.sourceText,
                   color: annotation.color,
+                  url: annotation.url,
                   updatedAt: now,
                 }
               : item
@@ -1530,6 +1553,8 @@ export const useFlowStore = create<SanskritKeyboardState>((set, get) => ({
 
       const nextAnnotations = annotation.kind === 'highlight'
         ? state.annotations.filter((item) => !(isSameRange(item) && item.kind === 'highlight'))
+        : annotation.kind === 'youtube'
+          ? state.annotations.filter((item) => !(item.blockId === annotation.blockId && item.kind === 'youtube'))
         : state.annotations;
 
       return {
