@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { BookMarked, Search } from 'lucide-react';
 import { useReaderStore } from '@/store/useReaderStore';
 import { filterManifestEntries } from '@/lib/veda-book/buildManifest';
@@ -9,6 +10,7 @@ interface ReaderSidebarProps {
 }
 
 export function ReaderSidebar({ onSelectDocument }: ReaderSidebarProps) {
+  const router = useRouter();
   const {
     activePath,
     manifest,
@@ -56,6 +58,7 @@ export function ReaderSidebar({ onSelectDocument }: ReaderSidebarProps) {
                 key={entry.id}
                 type="button"
                 onClick={async () => {
+                  router.replace(`/reader?path=${encodeURIComponent(entry.path)}`);
                   await openDocument(entry.path);
                   onSelectDocument?.();
                 }}

@@ -106,6 +106,7 @@ test.describe('Veda Reader', () => {
     await page.getByPlaceholder('Search titles or paths').fill('Another');
     await page.getByRole('button', { name: 'Another Mantra' }).click();
     await expect(page.getByRole('heading', { name: 'अन्य मन्‍त्रः' })).toBeVisible();
+    await expect(page).toHaveURL(/\/reader\/\?path=mantras%2FAnotherMantra\.tex$/);
   });
 
   test('opens a specific document from the route path', async ({ page }) => {
