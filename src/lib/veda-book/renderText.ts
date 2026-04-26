@@ -32,9 +32,9 @@ export const createReaderNodeId = (prefix: string, index: number) => `${prefix}-
 
 export const deriveDocumentTitleFromNodes = (nodes: MantraNode[], fallbackTitle: string) => {
   const titleNode = nodes.find(
-    (node) =>
+    (node): node is Extract<MantraNode, { type: 'chapter' | 'section' | 'subsection' }> =>
       (node.type === 'chapter' || node.type === 'section' || node.type === 'subsection') &&
-      node.text.trim(),
+      Boolean(node.text.trim()),
   );
 
   return titleNode?.text.trim() || fallbackTitle;

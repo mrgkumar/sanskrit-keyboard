@@ -16,6 +16,7 @@ import {
   getCachedManifest,
   getCachedParsedDocument,
   getCachedRawDocument,
+  setCachedManifest,
   setCachedParsedDocument,
   setCachedRawDocument,
 } from '@/lib/veda-book/cache';

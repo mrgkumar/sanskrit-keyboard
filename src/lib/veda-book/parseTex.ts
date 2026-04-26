@@ -264,7 +264,7 @@ const parseFragment = (
       return;
     }
 
-    const supportedNode = nodeFromMacro(macro.command, macro.args, nodes.length);
+    const supportedNode = nodeFromMacro(macro.command, macro.args ?? [], nodes.length);
     if (supportedNode) {
       nodes.push(supportedNode);
       if (macro.tail) {
@@ -316,7 +316,7 @@ const recordStandaloneMacroDiagnostic = (
     return;
   }
 
-  const supportedNode = nodeFromMacro(macro.command, macro.args, 0);
+  const supportedNode = nodeFromMacro(macro.command, macro.args ?? [], 0);
   if (supportedNode || IGNORED_COMMANDS.has(macro.command)) {
     return;
   }
