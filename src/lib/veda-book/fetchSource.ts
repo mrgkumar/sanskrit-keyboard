@@ -1,4 +1,4 @@
-import { VEDA_BOOK_RAW_BASE } from './constants';
+import { VEDA_BOOK_GITHUB_API_BASE, VEDA_BOOK_RAW_BASE } from './constants';
 
 const buildCacheBustingUrl = (url: string, force?: boolean) => {
   if (!force) {
@@ -37,4 +37,38 @@ export const fetchMantrasIndex = async (options?: { force?: boolean }) => {
     cache: options?.force ? 'reload' : 'no-store',
   });
   return readTextResponse(response, 'Fetching mantras.tex');
+};
+
+export interface GitHubTreeEntry {
+  path: string;
+  mode: string;
+  type: 'blob' | 'tree' | 'commit';
+  sha: string;
+  size?: number;
+  url: string;
+}
+
+export interface GitHubTreeResponse {
+  sha: string;
+  url: string;
+  truncated: boolean;
+  tree: GitHubTreeEntry[];
+}
+
+export const fetchRepoTree = async (options?: { force?: boolean }) => {
+  const response = await fetch(
+    buildCacheBustingUrl(`${VEDA_BOOK_GITHUB_API_BASE}/git/trees/master?recursive=1`, options?.force),
+    {
+      cache: options?.force ? 'reload' : 'no-store',
+      headers: {
+        Accept: 'application/vnd.github+json',
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Fetching repository tree failed with HTTP ${response.status}`);
+  }
+
+  return response.json() as Promise<GitHubTreeResponse>;
 };

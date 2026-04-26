@@ -60,6 +60,7 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
   const documentSearchActiveIndex = useReaderStore((state) => state.documentSearchActiveIndex);
   const documentSearchQuery = useReaderStore((state) => state.documentSearchQuery);
   const fontSize = useReaderStore((state) => state.fontSize);
+  const lineHeight = useReaderStore((state) => state.lineHeight);
   const loadManifest = useReaderStore((state) => state.loadManifest);
   const pageSize = useReaderStore((state) => state.pageSize);
   const readerMode = useReaderStore((state) => state.readerMode);
@@ -315,6 +316,26 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
           >
             <Plus className="h-4 w-4" />
           </button>
+          <div className="flex items-center gap-1 rounded-md border border-stone-300/70 bg-white/70 px-2 py-1">
+            <span className="text-[0.68rem] uppercase tracking-[0.16em] text-stone-400">Leading</span>
+            <button
+              type="button"
+              onClick={() => setTypography({ lineHeight: Math.max(1.2, Number((lineHeight - 0.1).toFixed(2))) })}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-300/70 bg-white/80 text-stone-700 hover:bg-white"
+              aria-label="Decrease line height"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <div className="min-w-12 text-center text-xs font-medium text-stone-700">{lineHeight.toFixed(2)}</div>
+            <button
+              type="button"
+              onClick={() => setTypography({ lineHeight: Math.min(2.4, Number((lineHeight + 0.1).toFixed(2))) })}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-300/70 bg-white/80 text-stone-700 hover:bg-white"
+              aria-label="Increase line height"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => setTheme(nextTheme)}

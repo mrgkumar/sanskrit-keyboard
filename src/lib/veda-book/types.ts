@@ -48,6 +48,7 @@ export interface VedaManifestEntry {
   path: string;
   title: string;
   category: string;
+  folderPath: string;
   order: number;
   sourceRepo: string;
   branch: string;

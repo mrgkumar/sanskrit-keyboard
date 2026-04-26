@@ -15,6 +15,8 @@ export function ReaderStatusBar() {
   const manifest = useReaderStore((state) => state.manifest);
   const manifestStatus = useReaderStore((state) => state.manifestStatus);
   const pageSize = useReaderStore((state) => state.pageSize);
+  const fontSize = useReaderStore((state) => state.fontSize);
+  const lineHeight = useReaderStore((state) => state.lineHeight);
   const sourceScript = activeDocument ? detectReaderSourceScript(activeDocument.rawTex) : 'unknown';
 
   return (
@@ -29,6 +31,7 @@ export function ReaderStatusBar() {
         <span>Branch: {activeDocument?.sourceBranch ?? 'n/a'}</span>
         <span>Script: {formatReaderSourceScriptLabel(sourceScript)}</span>
         <span>Display: {getReaderDisplayScriptLabel(displayScript)}</span>
+        <span>Type: {fontSize}px / {lineHeight.toFixed(2)}</span>
         <span>Page: {getReaderPageSizeLabel(pageSize)}</span>
       </div>
     </footer>

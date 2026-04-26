@@ -48,7 +48,11 @@ export function ReaderShell() {
       return;
     }
 
-    void openDocument(initialPath ?? manifest.entries[0].path);
+    const preferredEntry =
+      manifest.entries.find((entry) => entry.path === 'mantras/PurushaSuktam.tex') ??
+      manifest.entries.find((entry) => entry.path !== 'mantras.tex') ??
+      manifest.entries[0];
+    void openDocument(initialPath ?? preferredEntry?.path ?? manifest.entries[0].path);
   }, [activePath, initialPath, manifest, openDocument]);
 
   const currentThemeClass = themeClassName[theme];
@@ -116,7 +120,7 @@ export function ReaderShell() {
           <aside
             className={[
               sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-              'fixed inset-y-0 left-0 z-30 mt-16 w-[22rem] max-w-[88vw] border-r border-stone-300/70 bg-inherit/95 backdrop-blur md:static md:mt-0 md:block',
+              'fixed inset-y-0 left-0 z-30 mt-16 w-[22rem] max-w-[88vw] overflow-hidden border-r border-stone-300/70 bg-inherit/95 backdrop-blur md:static md:mt-0 md:block',
             ].join(' ')}
           >
             <div className="flex h-full min-h-0 flex-col">
