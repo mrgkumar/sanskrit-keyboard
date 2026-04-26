@@ -5,20 +5,42 @@ import {
   READER_RAW_DOCUMENT_CACHE_PREFIX,
 } from '@/lib/veda-book/constants';
 import { parseTexDocument } from '@/lib/veda-book/parseTex';
-import { deriveDocumentTitleFromNodes, serializeReaderDocumentText } from '@/lib/veda-book/renderText';
+import { deriveDocumentTitleFromNodes, formatReaderDisplayText, serializeReaderDocumentText } from '@/lib/veda-book/renderText';
 import { detransliterate, formatSourceForScript } from '@/lib/vedic/utils';
 import { DEFAULT_OUTPUT_TARGET_SETTINGS } from '@/lib/vedic/mapping';
 
-const MANTRAS_INDEX = String.raw`\input{mantras/PurushaSuktam.tex}
-\input{mantras/AnotherMantra.tex}
-\input{mantras/OutlineMantra.tex}
-`;
+const REPO_TREE = {
+  sha: 'tree-sha',
+  url: 'https://api.github.com/repos/stotrasamhita/vedamantra-book/git/trees/tree-sha',
+  truncated: false,
+  tree: [
+    { path: 'mantras.tex', mode: '100644', type: 'blob', sha: 'sha-mantras-index', url: 'https://api.github.com/repos/stotrasamhita/vedamantra-book/git/blobs/sha-mantras-index', size: 120 },
+    { path: 'mantras/AnotherMantra.tex', mode: '100644', type: 'blob', sha: 'sha-another', url: 'https://api.github.com/repos/stotrasamhita/vedamantra-book/git/blobs/sha-another', size: 120 },
+    { path: 'mantras/OutlineMantra.tex', mode: '100644', type: 'blob', sha: 'sha-outline', url: 'https://api.github.com/repos/stotrasamhita/vedamantra-book/git/blobs/sha-outline', size: 120 },
+    { path: 'mantras/PurushaSuktam.tex', mode: '100644', type: 'blob', sha: 'sha-purusha', url: 'https://api.github.com/repos/stotrasamhita/vedamantra-book/git/blobs/sha-purusha', size: 120 },
+    { path: 'mantras/nested/DeepMantra.tex', mode: '100644', type: 'blob', sha: 'sha-deep', url: 'https://api.github.com/repos/stotrasamhita/vedamantra-book/git/blobs/sha-deep', size: 120 },
+    ...Array.from({ length: 40 }, (_, index) => {
+      const number = String(index + 1).padStart(2, '0');
+      return {
+        path: `mantras/series/Series${number}.tex`,
+        mode: '100644',
+        type: 'blob',
+        sha: `sha-series-${number}`,
+        url: `https://api.github.com/repos/stotrasamhita/vedamantra-book/git/blobs/sha-series-${number}`,
+        size: 120,
+      } as const;
+    }),
+  ],
+};
 
-const MANTRAS_INDEX_REFRESHED = String.raw`\input{mantras/PurushaSuktam.tex}
-\input{mantras/AnotherMantra.tex}
-\input{mantras/OutlineMantra.tex}
-\input{mantras/RefreshedMantra.tex}
-`;
+const REPO_TREE_REFRESHED = {
+  ...REPO_TREE,
+  sha: 'tree-sha-refreshed',
+  tree: [
+    ...REPO_TREE.tree,
+    { path: 'mantras/RefreshedMantra.tex', mode: '100644', type: 'blob', sha: 'sha-refresh', url: 'https://api.github.com/repos/stotrasamhita/vedamantra-book/git/blobs/sha-refresh', size: 120 },
+  ],
+};
 
 const APP_URL = process.env.APP_URL ?? 'http://127.0.0.1:3000';
 const APP_BASE_PATH = new URL(APP_URL).pathname.replace(/\/$/, '');
@@ -121,21 +143,25 @@ const REFRESHED_MANTRA = String.raw`\chapt{नवीनः ग्रन्थः
 अयं तु अद्यतनः पाठः।
 `;
 
+const DEEP_MANTRA = String.raw`\chapt{गूढः पाठः}
+
+अयं गुह्यः मन्‍त्रः।
+`;
+
 const mockReaderSources = async (page: Parameters<typeof test>[0]['page']) => {
-  let mantrasIndexRequests = 0;
+  let treeRequests = 0;
+
+  await page.route('**/api.github.com/repos/stotrasamhita/vedamantra-book/git/trees/master**', async (route) => {
+    treeRequests += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json; charset=utf-8',
+      body: JSON.stringify(treeRequests > 1 ? REPO_TREE_REFRESHED : REPO_TREE),
+    });
+  });
 
   await page.route('**/raw.githubusercontent.com/**', async (route) => {
     const url = route.request().url();
-
-    if (url.includes('mantras.tex')) {
-      mantrasIndexRequests += 1;
-      await route.fulfill({
-        status: 200,
-        contentType: 'text/plain; charset=utf-8',
-        body: mantrasIndexRequests > 1 ? MANTRAS_INDEX_REFRESHED : MANTRAS_INDEX,
-      });
-      return;
-    }
 
     if (url.includes('PurushaSuktam.tex')) {
       await route.fulfill({
@@ -182,6 +208,28 @@ const mockReaderSources = async (page: Parameters<typeof test>[0]['page']) => {
       return;
     }
 
+    if (url.includes('DeepMantra.tex')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/plain; charset=utf-8',
+        body: DEEP_MANTRA,
+      });
+      return;
+    }
+
+    if (url.includes('Series')) {
+      const filename = url.split('/').pop()?.split('?')[0]?.replace(/\.tex$/, '') ?? 'Series';
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/plain; charset=utf-8',
+        body: String.raw`\chapt{${filename}}
+
+अयं श्रेणीगतः पाठः।
+`,
+      });
+      return;
+    }
+
     await route.fulfill({
       status: 404,
       contentType: 'text/plain; charset=utf-8',
@@ -194,22 +242,12 @@ const clearReaderStorage = async (page: Parameters<typeof test>[0]['page']) => {
   await page.addInitScript(async () => {
     window.localStorage.clear();
 
-    if ('databases' in indexedDB) {
-      const databases = await indexedDB.databases();
-      await Promise.all(
-        databases
-          .map((database) => database.name)
-          .filter((name): name is string => Boolean(name))
-          .map(async (name) => {
-            await new Promise<void>((resolve) => {
-              const request = indexedDB.deleteDatabase(name);
-              request.onsuccess = () => resolve();
-              request.onerror = () => resolve();
-              request.onblocked = () => resolve();
-            });
-          }),
-      );
-    }
+    await new Promise<void>((resolve) => {
+      const request = indexedDB.deleteDatabase('veda-reader-cache');
+      request.onsuccess = () => resolve();
+      request.onerror = () => resolve();
+      request.onblocked = () => resolve();
+    });
   });
 };
 
@@ -277,9 +315,9 @@ test.describe('Veda Reader', () => {
   });
 
   test('uses versioned cache keys for reader data', async () => {
-    expect(READER_MANIFEST_CACHE_KEY).toContain(':v2:');
-    expect(READER_RAW_DOCUMENT_CACHE_PREFIX).toContain(':v2:');
-    expect(READER_PARSED_DOCUMENT_CACHE_PREFIX).toContain(':v2:');
+    expect(READER_MANIFEST_CACHE_KEY).toContain(':v3:');
+    expect(READER_RAW_DOCUMENT_CACHE_PREFIX).toContain(':v3:');
+    expect(READER_PARSED_DOCUMENT_CACHE_PREFIX).toContain(':v3:');
   });
 
   test('derives document titles from parsed header nodes', async () => {
@@ -312,6 +350,16 @@ test.describe('Veda Reader', () => {
     expect(tamilText).not.toContain('पुरुषसूक्तम्');
   });
 
+  test('normalizes same-script reader text through the shared display pipeline', async () => {
+    const devanagariText = String.raw`स॒ह॑स्र॒शीर्‌षा॑`;
+    const tamilText = String.raw`ஶாந்தி:‌॒`;
+
+    expect(
+      formatReaderDisplayText(devanagariText, 'devanagari', 'devanagari', DEFAULT_OUTPUT_TARGET_SETTINGS),
+    ).toBe(devanagariText);
+    expect(formatReaderDisplayText(tamilText, 'tamil', 'tamil', DEFAULT_OUTPUT_TARGET_SETTINGS)).toBe('ஶாந்தி॒:');
+  });
+
   test('loads the manifest, renders a document, and supports mode switching', async ({ page }) => {
     await mockReaderSources(page);
     await clearReaderStorage(page);
@@ -320,10 +368,24 @@ test.describe('Veda Reader', () => {
 
     await expect(page.getByText('Veda Reader')).toBeVisible();
     await expect(page.locator('aside').getByRole('button', { name: /पुरुषसूक्तम्/ }).first()).toBeVisible();
+    await expect(page.getByText('mantras', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('nested', { exact: true }).first()).toBeVisible();
     await expect(page.locator('main article > header').getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Source' })).toBeVisible();
     await expect(page.getByText('Page: A4')).toBeVisible();
+    await expect(page.getByText('Type: 19px / 1.75')).toBeVisible();
     await expect(page.locator('main article').first()).toHaveAttribute('style', /max-width:\s*8\.27in/);
+    await expect(page.locator('main article').first()).toHaveAttribute('style', /font-size:\s*19px/);
+    await expect(page.locator('main article').first()).toHaveAttribute('style', /line-height:\s*1\.75/);
+    await expect(page.getByRole('link', { name: 'Open source document' })).toHaveAttribute(
+      'href',
+      /github\.com\/stotrasamhita\/vedamantra-book\/blob\/master\/mantras\/PurushaSuktam\.tex$/,
+    );
+
+    await page.getByRole('button', { name: 'Increase font size' }).click();
+    await page.getByRole('button', { name: 'Increase line height' }).click();
+    await expect(page.locator('main article').first()).toHaveAttribute('style', /font-size:\s*20px/);
+    await expect(page.locator('main article').first()).toHaveAttribute('style', /line-height:\s*1\.85/);
 
     await page.getByRole('button', { name: 'Web' }).click();
     await expect(page.getByText('Page: Web')).toBeVisible();
@@ -379,6 +441,62 @@ test.describe('Veda Reader', () => {
     await expect(page).toHaveURL(/\/reader\/\?path=mantras%2FAnotherMantra\.tex$/);
   });
 
+  test('keeps the sidebar scroll position stable when opening a document', async ({ page }) => {
+    await mockReaderSources(page);
+    await clearReaderStorage(page);
+    await page.setViewportSize({ width: 1280, height: 320 });
+
+    await page.goto(withAppBasePath('/reader?path=mantras/OutlineMantra.tex'));
+
+    const sidebarScroll = page.getByTestId('reader-sidebar-scroll');
+    await sidebarScroll.evaluate((element) => {
+      const sidebarElement = element as HTMLElement;
+      sidebarElement.style.height = '80px';
+      sidebarElement.style.maxHeight = '80px';
+    });
+
+    const scrollMetrics = await sidebarScroll.evaluate((element) => ({
+      clientHeight: (element as HTMLElement).clientHeight,
+      scrollHeight: (element as HTMLElement).scrollHeight,
+    }));
+    expect(scrollMetrics.scrollHeight).toBeGreaterThan(scrollMetrics.clientHeight);
+
+    await sidebarScroll.evaluate((element) => {
+      (element as HTMLElement).scrollTop = 240;
+    });
+
+    const initialScrollTop = await sidebarScroll.evaluate((element) => (element as HTMLElement).scrollTop);
+    expect(initialScrollTop).toBeGreaterThan(0);
+
+    const seriesButton = page.getByRole('button', { name: 'Series08' });
+    await seriesButton.evaluate((button) => {
+      button.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+    });
+
+    await expect
+      .poll(async () => sidebarScroll.evaluate((element) => (element as HTMLElement).scrollTop), {
+        timeout: 2000,
+      })
+      .toBe(initialScrollTop);
+  });
+
+  test('collapses and expands reader folders without flattening the tree', async ({ page }) => {
+    await mockReaderSources(page);
+    await clearReaderStorage(page);
+
+    await page.goto(withAppBasePath('/reader?path=mantras/OutlineMantra.tex'));
+
+    const folderToggle = page.getByTestId('reader-folder-toggle-mantras');
+    await expect(folderToggle).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Series08' })).toBeVisible();
+
+    await folderToggle.click();
+    await expect(page.getByRole('button', { name: 'Series08' })).toHaveCount(0);
+
+    await folderToggle.click();
+    await expect(page.getByRole('button', { name: 'Series08' })).toBeVisible();
+  });
+
   test('opens a specific document from the route path', async ({ page }) => {
     await mockReaderSources(page);
     await clearReaderStorage(page);
@@ -387,6 +505,10 @@ test.describe('Veda Reader', () => {
 
     await expect(page.locator('main article > header').getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
     await expect(page.getByText('stotrasamhita/vedamantra-book · master', { exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Open source document' })).toHaveAttribute(
+      'href',
+      /github\.com\/stotrasamhita\/vedamantra-book\/blob\/master\/mantras\/PurushaSuktam\.tex$/,
+    );
     await expect(page.getByRole('button', { name: 'Split' })).toBeVisible();
     await expect(page.getByText('Script: Devanagari')).toBeVisible();
   });

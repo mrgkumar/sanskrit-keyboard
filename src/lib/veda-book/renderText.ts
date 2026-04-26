@@ -1,5 +1,10 @@
 import type { OutputScript, OutputTargetSettings } from '@/lib/vedic/mapping';
-import { detransliterate, formatSourceForScript, normalizeDevanagariDisplayText, reverseTamilInput } from '@/lib/vedic/utils';
+import {
+  detransliterate,
+  formatSourceForScript,
+  normalizeDevanagariDisplayText,
+  reverseTamilInput,
+} from '@/lib/vedic/utils';
 import type { SanskritFontPreset } from '@/store/types';
 import type { MantraDocument, MantraNode, ReaderPageSize } from './types';
 
@@ -150,10 +155,6 @@ export const formatReaderDisplayText = (
 
   const canonicalSource = getCanonicalReaderSourceText(text, sourceScript);
   if (canonicalSource === null) {
-    if (sourceScript === 'devanagari' && displayScript === 'devanagari') {
-      return normalizeDevanagariDisplayText(text, options?.sanskritFontPreset);
-    }
-
     return text;
   }
 
@@ -167,6 +168,13 @@ export const formatReaderDisplayText = (
   return formatSourceForScript(canonicalSource, displayScript, settings, options);
 };
 
+export const formatReaderNodeDisplayText = (
+  text: string,
+  displayScript: ReaderDisplayScript,
+  settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
+  options?: { sanskritFontPreset?: SanskritFontPreset },
+) => formatReaderDisplayText(text, displayScript, detectReaderSourceScript(text), settings, options);
+
 export const getReaderDisplayScriptLabel = (script: ReaderDisplayScript) =>
   script === 'original' ? 'Original' : formatReaderSourceScriptLabel(script);
 
@@ -179,6 +187,16 @@ export const getReaderPageSizeLabel = (pageSize: ReaderPageSize) =>
   pageSize === 'a4' ? 'A4' : 'Web';
 
 export const getReaderPageSizeWidth = (pageSize: ReaderPageSize) => READER_PAGE_SIZE_WIDTHS[pageSize];
+
+const encodePathSegments = (path: string) =>
+  path
+    .split('/')
+    .filter(Boolean)
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+
+export const buildReaderSourceDocumentUrl = (sourceRepo: string, sourceBranch: string, sourcePath: string) =>
+  `https://github.com/${sourceRepo}/blob/${encodeURIComponent(sourceBranch)}/${encodePathSegments(sourcePath)}`;
 
 export const formatReaderSearchText = (
   text: string,
@@ -230,8 +248,6 @@ export const collectReaderSearchHits = (
   if (!normalizedQuery) {
     return [] as ReaderSearchHit[];
   }
-
-  const sourceScript = detectReaderSourceScript(document.rawTex);
   const hits: ReaderSearchHit[] = [];
 
   const addIfMatch = (nodeId: string, text: string, isTitle = false) => {
@@ -241,7 +257,7 @@ export const collectReaderSearchHits = (
     }
   };
 
-  addIfMatch('reader-document-title', formatReaderDisplayText(document.title, displayScript, sourceScript, settings, options), true);
+  addIfMatch('reader-document-title', formatReaderNodeDisplayText(document.title, displayScript, settings, options), true);
 
   for (const node of document.nodes) {
     switch (node.type) {
@@ -251,10 +267,10 @@ export const collectReaderSearchHits = (
       case 'paragraph':
       case 'center':
       case 'raw':
-        addIfMatch(node.id, formatReaderDisplayText(node.text, displayScript, sourceScript, settings, options));
+        addIfMatch(node.id, formatReaderNodeDisplayText(node.text, displayScript, settings, options));
         break;
       case 'sourceRef':
-        addIfMatch(node.id, formatReaderDisplayText(node.values.join(' · '), displayScript, sourceScript, settings, options));
+        addIfMatch(node.id, formatReaderNodeDisplayText(node.values.join(' · '), displayScript, settings, options));
         break;
       case 'warning':
         addIfMatch(node.id, normalizeReaderSearchText(node.message));
@@ -270,10 +286,9 @@ export const collectReaderSearchHits = (
 const formatReaderNodeText = (
   text: string,
   displayScript: ReaderDisplayScript,
-  sourceScript: ReaderSourceScript,
   settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
   options?: { sanskritFontPreset?: SanskritFontPreset },
-) => formatReaderDisplayText(text, displayScript, sourceScript, settings, options);
+) => formatReaderNodeDisplayText(text, displayScript, settings, options);
 
 export const serializeReaderDocumentText = (
   document: MantraDocument,
@@ -281,7 +296,6 @@ export const serializeReaderDocumentText = (
   settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
   options?: { sanskritFontPreset?: SanskritFontPreset },
 ) => {
-  const sourceScript = detectReaderSourceScript(document.rawTex);
   const lines: string[] = [];
 
   const appendBlock = (text: string, blankLineBefore = false) => {
@@ -297,7 +311,7 @@ export const serializeReaderDocumentText = (
     lines.push(trimmed);
   };
 
-  appendBlock(formatReaderNodeText(document.title, displayScript, sourceScript, settings, options));
+  appendBlock(formatReaderNodeText(document.title, displayScript, settings, options));
 
   for (const node of document.nodes) {
     switch (node.type) {
@@ -307,11 +321,11 @@ export const serializeReaderDocumentText = (
       case 'paragraph':
       case 'center':
       case 'raw':
-        appendBlock(formatReaderNodeText(node.text, displayScript, sourceScript, settings, options), true);
+        appendBlock(formatReaderNodeText(node.text, displayScript, settings, options), true);
         break;
       case 'sourceRef':
         appendBlock(
-          `${node.source}: ${formatReaderNodeText(node.values.join(' · '), displayScript, sourceScript, settings, options)}`,
+          `${node.source}: ${formatReaderNodeText(node.values.join(' · '), displayScript, settings, options)}`,
           true,
         );
         break;

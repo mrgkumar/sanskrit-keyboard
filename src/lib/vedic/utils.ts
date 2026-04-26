@@ -499,6 +499,8 @@ const normalizeTamilPrecisionInput = (value: string) => {
     normalized = normalized.replaceAll(fallback, rich);
   }
 
+  normalized = normalized.replace(/:(\u200C?)([॒॑᳚])/gu, '$2:');
+
   normalized = normalized.replace(
     /([\p{Script=Tamil}]+)్\^([234])/gu,
     (_match, base: string, marker: string) => {
@@ -673,6 +675,20 @@ const formatTamilPrecisionSource = (itrans: string, asciiFallback: boolean) => {
     }
 
     if (current === '\u0903') {
+      const nextToken = unicode[index + 1] ?? '';
+      const nextNextToken = unicode[index + 2] ?? '';
+      if (nextToken === '\u200C' && ['\u0951', '\u0952', '\u1CDA'].includes(nextNextToken)) {
+        formatted += `${nextNextToken}:`;
+        index += 3;
+        continue;
+      }
+
+      if (['\u0951', '\u0952', '\u1CDA'].includes(nextToken)) {
+        formatted += `${nextToken}:`;
+        index += 2;
+        continue;
+      }
+
       formatted += ':';
       continue;
     }
