@@ -11,7 +11,10 @@ import type {
   VedaManifest,
 } from '@/lib/veda-book/types';
 import { DEFAULT_READER_PREFERENCES } from '@/lib/veda-book/types';
-import { READER_PREFERENCES_STORAGE_KEY } from '@/lib/veda-book/constants';
+import {
+  READER_LAST_READ_POSITIONS_STORAGE_KEY,
+  READER_PREFERENCES_STORAGE_KEY,
+} from '@/lib/veda-book/constants';
 import { buildManifestFromMantrasTex } from '@/lib/veda-book/buildManifest';
 import {
   getCachedManifest,
@@ -37,6 +40,7 @@ interface ReaderStoreState extends ReaderPreferences {
   documentError: string | null;
   documentSearchQuery: string;
   documentSearchActiveIndex: number;
+  lastReadPositions: Record<string, number>;
   setReaderMode: (mode: ReaderMode) => void;
   setDisplayScript: (displayScript: ReaderDisplayScript) => void;
   setSanskritFontPreset: (preset: SanskritFontPreset) => void;
@@ -49,6 +53,7 @@ interface ReaderStoreState extends ReaderPreferences {
   setSearchQuery: (query: string) => void;
   setDocumentSearchQuery: (query: string) => void;
   setDocumentSearchActiveIndex: (index: number) => void;
+  setLastReadPosition: (path: string, scrollTop: number) => void;
   loadManifest: (options?: { force?: boolean }) => Promise<void>;
   refreshManifest: () => Promise<void>;
   openDocument: (path: string, options?: { force?: boolean }) => Promise<void>;
@@ -86,6 +91,36 @@ const persistPreferences = (preferences: ReaderPreferences) => {
   }
 
   window.localStorage.setItem(READER_PREFERENCES_STORAGE_KEY, JSON.stringify(preferences));
+};
+
+const readStoredLastReadPositions = (): Record<string, number> => {
+  if (!hasWindow()) {
+    return {};
+  }
+
+  try {
+    const raw = window.localStorage.getItem(READER_LAST_READ_POSITIONS_STORAGE_KEY);
+    if (!raw) {
+      return {};
+    }
+
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(parsed)
+        .filter(([, value]) => typeof value === 'number' && Number.isFinite(value))
+        .map(([path, value]) => [path, value as number]),
+    );
+  } catch {
+    return {};
+  }
+};
+
+const persistLastReadPositions = (positions: Record<string, number>) => {
+  if (!hasWindow()) {
+    return;
+  }
+
+  window.localStorage.setItem(READER_LAST_READ_POSITIONS_STORAGE_KEY, JSON.stringify(positions));
 };
 
 const selectPreferences = (state: Pick<
@@ -150,6 +185,7 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
     documentError: null,
     documentSearchQuery: '',
     documentSearchActiveIndex: 0,
+    lastReadPositions: readStoredLastReadPositions(),
     setReaderMode: (readerMode) => {
       set({ readerMode });
       persistPreferences(selectPreferences(get()));
@@ -203,6 +239,18 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
     },
     setDocumentSearchActiveIndex: (documentSearchActiveIndex) => {
       set({ documentSearchActiveIndex });
+    },
+    setLastReadPosition: (path, scrollTop) => {
+      set((state) => {
+        const nextPositions = {
+          ...state.lastReadPositions,
+          [path]: scrollTop,
+        };
+        persistLastReadPositions(nextPositions);
+        return {
+          lastReadPositions: nextPositions,
+        };
+      });
     },
     loadManifest: async (options) => {
       const cachedManifest = options?.force ? null : await getCachedManifest();

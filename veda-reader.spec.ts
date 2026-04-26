@@ -412,6 +412,40 @@ test.describe('Veda Reader', () => {
     await expect(page.getByTestId('reader-document-scroll')).toBeVisible();
   });
 
+  test('restores the last read position when reopening a document', async ({ page }) => {
+    await mockReaderSources(page);
+    await clearReaderStorage(page);
+    await page.setViewportSize({ width: 1280, height: 520 });
+
+    await page.goto(withAppBasePath('/reader?path=mantras/OutlineMantra.tex'));
+
+    const scrollRegion = page.getByTestId('reader-document-scroll');
+    await scrollRegion.hover();
+    await page.mouse.wheel(0, 1800);
+    await page.waitForTimeout(150);
+
+    const initialScrollTop = await scrollRegion.evaluate((element) => (element as HTMLElement).scrollTop);
+
+    await expect(initialScrollTop).toBeGreaterThan(0);
+
+    const storedPositions = await page.evaluate(() => window.localStorage.getItem('veda-reader-last-read-positions-v1'));
+    expect(storedPositions ?? '').toContain('mantras/OutlineMantra.tex');
+
+    await page.getByRole('button', { name: 'Another Mantra' }).click();
+    await page.getByRole('button', { name: 'दीर्घपाठम्' }).click();
+
+    await expect(scrollRegion).toBeVisible();
+
+    await expect
+      .poll(async () => scrollRegion.evaluate((element) => (element as HTMLElement).scrollTop), {
+        timeout: 5000,
+      })
+      .toBeGreaterThan(0);
+
+    const restoredScrollTop = await scrollRegion.evaluate((element) => (element as HTMLElement).scrollTop);
+    expect(Math.abs(restoredScrollTop - initialScrollTop)).toBeLessThan(20);
+  });
+
   test('manual live upstream verification only', async ({ page }) => {
     test.skip(process.env.LIVE_UPSTREAM !== '1', 'manual live upstream verification only');
 

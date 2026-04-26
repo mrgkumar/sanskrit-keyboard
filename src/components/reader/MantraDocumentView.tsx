@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { ScriptText } from '@/components/ScriptText';
 import { DEFAULT_OUTPUT_TARGET_SETTINGS } from '@/lib/vedic/mapping';
 import type { MantraDocument, MantraNode } from '@/lib/veda-book/types';
@@ -94,12 +94,16 @@ const renderNode = (
 };
 
 export function MantraDocumentView({ document, documentStatus, displayScriptOverride, panelLabel }: MantraDocumentViewProps) {
+  const scrollRegionRef = useRef<HTMLElement | null>(null);
+  const sourcePath = document?.sourcePath ?? null;
   const displayScript = useReaderStore((state) => state.displayScript);
   const sanskritFontPreset = useReaderStore((state) => state.sanskritFontPreset);
   const tamilFontPreset = useReaderStore((state) => state.tamilFontPreset);
   const pageSize = useReaderStore((state) => state.pageSize);
   const documentSearchQuery = useReaderStore((state) => state.documentSearchQuery);
   const documentSearchActiveIndex = useReaderStore((state) => state.documentSearchActiveIndex);
+  const lastReadPosition = useReaderStore((state) => (sourcePath ? state.lastReadPositions[sourcePath] ?? 0 : 0));
+  const setLastReadPosition = useReaderStore((state) => state.setLastReadPosition);
   const activeDisplayScript = displayScriptOverride ?? displayScript;
   const outline = document ? deriveDocumentOutline(document.nodes) : [];
   const sourceScript = document ? detectReaderSourceScript(document.rawTex) : 'unknown';
@@ -121,6 +125,55 @@ export function MantraDocumentView({ document, documentStatus, displayScriptOver
     element?.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }, [activeSearchHit?.nodeId, documentSearchActiveIndex]);
 
+  useEffect(() => {
+    const element = scrollRegionRef.current;
+    if (!element || !sourcePath) {
+      return undefined;
+    }
+
+    const handleScroll = () => {
+      if (element.scrollTop <= 0) {
+        return;
+      }
+
+      setLastReadPosition(sourcePath, element.scrollTop);
+    };
+
+    element.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      element.removeEventListener('scroll', handleScroll);
+    };
+  }, [sourcePath, setLastReadPosition]);
+
+  useLayoutEffect(() => {
+    if (!sourcePath || documentStatus !== 'ready' || documentSearchQuery.trim() || lastReadPosition <= 0) {
+      return;
+    }
+
+    let attempts = 0;
+    let frame = 0;
+
+    const restore = () => {
+      const element = scrollRegionRef.current;
+      if (!element) {
+        return;
+      }
+
+      const hasRoomToRestore = element.scrollHeight > lastReadPosition + 8;
+      if (!hasRoomToRestore && attempts < 10) {
+        attempts += 1;
+        frame = window.requestAnimationFrame(restore);
+        return;
+      }
+
+      element.scrollTop = lastReadPosition;
+    };
+
+    frame = window.requestAnimationFrame(restore);
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [documentStatus, sourcePath, documentSearchQuery, lastReadPosition]);
+
   if (!document) {
     return (
       <section className="flex min-h-0 flex-1 items-center justify-center px-4 py-10">
@@ -138,9 +191,11 @@ export function MantraDocumentView({ document, documentStatus, displayScriptOver
 
   return (
     <section
+      key={sourcePath ?? 'reader-document'}
       className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-3"
       data-testid="reader-document-scroll"
       style={{ maxHeight: 'calc(100dvh - 9rem)' }}
+      ref={scrollRegionRef}
     >
       <article className="mx-auto flex w-full flex-col gap-5" style={{ maxWidth: pageWidth }}>
         <header

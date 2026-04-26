@@ -5,6 +5,7 @@ export const VEDA_BOOK_RAW_BASE =
 export const VEDA_BOOK_MANTRAS_INDEX_PATH = 'mantras.tex';
 
 export const READER_PREFERENCES_STORAGE_KEY = 'veda-reader-preferences-v1';
+export const READER_LAST_READ_POSITIONS_STORAGE_KEY = 'veda-reader-last-read-positions-v1';
 
 export const READER_CACHE_PREFIX = 'veda-reader';
 export const READER_CACHE_SCHEMA_VERSION = 'v2';
