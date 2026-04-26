@@ -1,4 +1,5 @@
 import type { OutputScript } from '@/lib/vedic/mapping';
+import type { SanskritFontPreset, TamilFontPreset } from '@/store/types';
 
 export type ReaderMode = 'reader' | 'source' | 'split' | 'compare';
 export type ReaderTheme = 'light' | 'sepia' | 'dark';
@@ -64,6 +65,8 @@ export interface ReaderPreferences {
   fontSize: number;
   lineHeight: number;
   displayScript: ReaderDisplayScript;
+  sanskritFontPreset: SanskritFontPreset;
+  tamilFontPreset: TamilFontPreset;
   sidebarOpen: boolean;
   diagnosticsOpen: boolean;
   searchQuery: string;
@@ -75,6 +78,8 @@ export const DEFAULT_READER_PREFERENCES: ReaderPreferences = {
   fontSize: 19,
   lineHeight: 1.75,
   displayScript: 'original',
+  sanskritFontPreset: 'siddhanta',
+  tamilFontPreset: 'anek',
   sidebarOpen: true,
   diagnosticsOpen: false,
   searchQuery: '',

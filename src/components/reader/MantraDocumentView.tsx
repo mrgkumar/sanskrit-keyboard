@@ -18,12 +18,14 @@ const renderTextNode = (
   text: string,
   sourceScript: ReturnType<typeof detectReaderSourceScript>,
   displayScript: ReaderDisplayScript,
+  sanskritFontPreset: 'noto-sans' | 'chandas' | 'sampradaya' | 'sanskrit2003' | 'siddhanta',
+  tamilFontPreset: 'hybrid' | 'noto-serif' | 'anek',
 ) => {
   const renderedText =
     displayScript === 'original'
       ? text
       : formatReaderDisplayText(text, displayScript, sourceScript, DEFAULT_OUTPUT_TARGET_SETTINGS, {
-          sanskritFontPreset: 'siddhanta',
+          sanskritFontPreset,
         });
 
   if (sourceScript === 'mixed' || sourceScript === 'unknown') {
@@ -36,28 +38,34 @@ const renderTextNode = (
     <ScriptText
       script={effectiveScript}
       text={renderedText}
-      sanskritFontPreset="siddhanta"
-      tamilFontPreset="anek"
+      sanskritFontPreset={sanskritFontPreset}
+      tamilFontPreset={tamilFontPreset}
       className="whitespace-pre-wrap break-words"
     />
   );
 };
 
-const renderNode = (node: MantraNode, sourceScript: ReturnType<typeof detectReaderSourceScript>, displayScript: ReaderDisplayScript) => {
+const renderNode = (
+  node: MantraNode,
+  sourceScript: ReturnType<typeof detectReaderSourceScript>,
+  displayScript: ReaderDisplayScript,
+  sanskritFontPreset: 'noto-sans' | 'chandas' | 'sampradaya' | 'sanskrit2003' | 'siddhanta',
+  tamilFontPreset: 'hybrid' | 'noto-serif' | 'anek',
+) => {
   switch (node.type) {
     case 'chapter':
-      return <h1 className="text-balance text-3xl font-semibold tracking-tight">{renderTextNode(node.text, sourceScript, displayScript)}</h1>;
+      return <h1 className="text-balance text-3xl font-semibold tracking-tight">{renderTextNode(node.text, sourceScript, displayScript, sanskritFontPreset, tamilFontPreset)}</h1>;
     case 'section':
-      return <h2 className="text-2xl font-semibold tracking-tight">{renderTextNode(node.text, sourceScript, displayScript)}</h2>;
+      return <h2 className="text-2xl font-semibold tracking-tight">{renderTextNode(node.text, sourceScript, displayScript, sanskritFontPreset, tamilFontPreset)}</h2>;
     case 'subsection':
-      return <h3 className="text-xl font-semibold tracking-tight">{renderTextNode(node.text, sourceScript, displayScript)}</h3>;
+      return <h3 className="text-xl font-semibold tracking-tight">{renderTextNode(node.text, sourceScript, displayScript, sanskritFontPreset, tamilFontPreset)}</h3>;
     case 'center':
-      return <div className="text-center text-lg font-medium">{renderTextNode(node.text, sourceScript, displayScript)}</div>;
+      return <div className="text-center text-lg font-medium">{renderTextNode(node.text, sourceScript, displayScript, sanskritFontPreset, tamilFontPreset)}</div>;
     case 'sourceRef':
       return (
         <div className="inline-flex items-center gap-2 rounded-full border border-stone-300/70 bg-white/70 px-3 py-1 text-xs uppercase tracking-[0.16em] text-stone-600">
           <span>{node.source}</span>
-          <span>{renderTextNode(node.values.join(' · '), sourceScript, displayScript)}</span>
+          <span>{renderTextNode(node.values.join(' · '), sourceScript, displayScript, sanskritFontPreset, tamilFontPreset)}</span>
         </div>
       );
     case 'pageBreak':
@@ -69,15 +77,19 @@ const renderNode = (node: MantraNode, sourceScript: ReturnType<typeof detectRead
         </div>
       );
     case 'raw':
-      return <pre className="whitespace-pre-wrap text-base leading-8">{renderTextNode(node.text, sourceScript, displayScript)}</pre>;
+      return <pre className="whitespace-pre-wrap text-base leading-8">{renderTextNode(node.text, sourceScript, displayScript, sanskritFontPreset, tamilFontPreset)}</pre>;
     case 'paragraph':
     default:
-      return <p className="whitespace-pre-wrap text-lg leading-8">{renderTextNode(node.text, sourceScript, displayScript)}</p>;
+      return <p className="whitespace-pre-wrap text-lg leading-8">{renderTextNode(node.text, sourceScript, displayScript, sanskritFontPreset, tamilFontPreset)}</p>;
   }
 };
 
 export function MantraDocumentView({ document, documentStatus, displayScriptOverride, panelLabel }: MantraDocumentViewProps) {
-  const displayScript = useReaderStore((state) => state.displayScript);
+  const { displayScript, sanskritFontPreset, tamilFontPreset } = useReaderStore((state) => ({
+    displayScript: state.displayScript,
+    sanskritFontPreset: state.sanskritFontPreset,
+    tamilFontPreset: state.tamilFontPreset,
+  }));
   const activeDisplayScript = displayScriptOverride ?? displayScript;
   if (!document) {
     return (
@@ -110,7 +122,7 @@ export function MantraDocumentView({ document, documentStatus, displayScriptOver
             <div className="mt-1 text-[0.7rem] uppercase tracking-[0.22em] text-stone-400">{panelLabel}</div>
           ) : null}
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-balance">
-            {renderTextNode(document.title, sourceScript, activeDisplayScript)}
+            {renderTextNode(document.title, sourceScript, activeDisplayScript, sanskritFontPreset, tamilFontPreset)}
           </h1>
           <div className="mt-2 text-sm text-stone-600">
             {document.sourceRepo} · {document.sourceBranch}
@@ -135,7 +147,7 @@ export function MantraDocumentView({ document, documentStatus, displayScriptOver
                     'hover:bg-stone-100',
                   ].join(' ')}
                 >
-                  {renderTextNode(entry.label, sourceScript, activeDisplayScript)}
+                  {renderTextNode(entry.label, sourceScript, activeDisplayScript, sanskritFontPreset, tamilFontPreset)}
                 </a>
               ))}
             </div>
@@ -145,7 +157,7 @@ export function MantraDocumentView({ document, documentStatus, displayScriptOver
         <div className="space-y-5">
           {document.nodes.map((node) => (
             <div key={node.id} id={node.id} className="space-y-2 scroll-mt-24">
-              {renderNode(node, sourceScript, activeDisplayScript)}
+              {renderNode(node, sourceScript, activeDisplayScript, sanskritFontPreset, tamilFontPreset)}
             </div>
           ))}
         </div>

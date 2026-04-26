@@ -206,6 +206,9 @@ test.describe('Veda Reader', () => {
     await page.getByRole('button', { name: 'Source' }).click();
     await expect(page.getByText('\\chapt{पुरुषसूक्तम्}')).toBeVisible();
 
+    await page.getByRole('button', { name: 'Chandas' }).click();
+    await expect(page.locator('main article > header [data-font-preset="chandas"]').first()).toBeVisible();
+
     await page.getByRole('button', { name: 'Compare' }).click();
     await expect(page.getByText('Original')).toBeVisible();
     await expect(page.getByText('Selected display')).toBeVisible();

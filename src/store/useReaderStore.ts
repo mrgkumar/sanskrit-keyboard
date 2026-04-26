@@ -22,6 +22,7 @@ import {
 import { fetchRawTex } from '@/lib/veda-book/fetchSource';
 import { parseTexDocument } from '@/lib/veda-book/parseTex';
 import { deriveDocumentTitleFromNodes } from '@/lib/veda-book/renderText';
+import type { SanskritFontPreset, TamilFontPreset } from '@/store/types';
 
 interface ReaderStoreState extends ReaderPreferences {
   manifest: VedaManifest | null;
@@ -34,6 +35,8 @@ interface ReaderStoreState extends ReaderPreferences {
   documentError: string | null;
   setReaderMode: (mode: ReaderMode) => void;
   setDisplayScript: (displayScript: ReaderDisplayScript) => void;
+  setSanskritFontPreset: (preset: SanskritFontPreset) => void;
+  setTamilFontPreset: (preset: TamilFontPreset) => void;
   setTheme: (theme: ReaderTheme) => void;
   setTypography: (settings: { fontSize?: number; lineHeight?: number }) => void;
   setSidebarOpen: (open: boolean) => void;
@@ -79,9 +82,13 @@ const persistPreferences = (preferences: ReaderPreferences) => {
 const selectPreferences = (state: Pick<
   ReaderStoreState,
   'readerMode' | 'displayScript' | 'theme' | 'fontSize' | 'lineHeight' | 'sidebarOpen' | 'diagnosticsOpen' | 'searchQuery'
+  | 'sanskritFontPreset'
+  | 'tamilFontPreset'
 >) => ({
   readerMode: state.readerMode,
   displayScript: state.displayScript,
+  sanskritFontPreset: state.sanskritFontPreset,
+  tamilFontPreset: state.tamilFontPreset,
   theme: state.theme,
   fontSize: state.fontSize,
   lineHeight: state.lineHeight,
@@ -136,6 +143,14 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
     },
     setDisplayScript: (displayScript) => {
       set({ displayScript });
+      persistPreferences(selectPreferences(get()));
+    },
+    setSanskritFontPreset: (sanskritFontPreset) => {
+      set({ sanskritFontPreset });
+      persistPreferences(selectPreferences(get()));
+    },
+    setTamilFontPreset: (tamilFontPreset) => {
+      set({ tamilFontPreset });
       persistPreferences(selectPreferences(get()));
     },
     setTheme: (theme) => {

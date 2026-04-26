@@ -17,6 +17,7 @@ import {
 import { useReaderStore } from '@/store/useReaderStore';
 import type { ReaderDisplayScript, ReaderMode } from '@/lib/veda-book/types';
 import { getReaderDisplayScriptLabel, serializeReaderDocumentText } from '@/lib/veda-book/renderText';
+import type { SanskritFontPreset, TamilFontPreset } from '@/store/types';
 
 const modeOptions: Array<{ mode: ReaderMode; label: string; icon: ReactNode }> = [
   { mode: 'reader', label: 'Reader', icon: <BookOpenText className="h-4 w-4" /> },
@@ -27,6 +28,18 @@ const modeOptions: Array<{ mode: ReaderMode; label: string; icon: ReactNode }> =
 
 const displayScriptOptions: ReaderDisplayScript[] = ['original', 'devanagari', 'roman', 'tamil'];
 const themeOrder = ['sepia', 'light', 'dark'] as const;
+const sanskritFontOptions: Array<{ value: SanskritFontPreset; label: string }> = [
+  { value: 'siddhanta', label: 'Siddhanta' },
+  { value: 'noto-sans', label: 'Noto Sans' },
+  { value: 'chandas', label: 'Chandas' },
+  { value: 'sampradaya', label: 'Sampradaya' },
+  { value: 'sanskrit2003', label: 'Sanskrit 2003' },
+];
+const tamilFontOptions: Array<{ value: TamilFontPreset; label: string }> = [
+  { value: 'anek', label: 'Anek' },
+  { value: 'noto-serif', label: 'Noto Serif' },
+  { value: 'hybrid', label: 'Hybrid' },
+];
 
 export function ReaderToolbar() {
   const {
@@ -36,6 +49,10 @@ export function ReaderToolbar() {
     fontSize,
     loadManifest,
     readerMode,
+    sanskritFontPreset,
+    tamilFontPreset,
+    setSanskritFontPreset,
+    setTamilFontPreset,
     setDisplayScript,
     setDiagnosticsOpen,
     setReaderMode,
@@ -139,6 +156,54 @@ export function ReaderToolbar() {
                   title={`Display as ${getReaderDisplayScriptLabel(script)}`}
                 >
                   {getReaderDisplayScriptLabel(script)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-stone-300/70 bg-white/55 px-2 py-1">
+          <span className="text-xs uppercase tracking-[0.18em] text-stone-500">Fonts</span>
+          <span className="text-[0.68rem] uppercase tracking-[0.16em] text-stone-400">Sanskrit</span>
+          <div className="flex flex-wrap gap-1">
+            {sanskritFontOptions.map((option) => {
+              const active = sanskritFontPreset === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setSanskritFontPreset(option.value)}
+                  className={[
+                    'rounded-md border px-2 py-1 text-xs transition',
+                    active
+                      ? 'border-stone-900 bg-stone-900 text-stone-50'
+                      : 'border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white',
+                  ].join(' ')}
+                  aria-pressed={active}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+          <span className="text-[0.68rem] uppercase tracking-[0.16em] text-stone-400">Tamil</span>
+          <div className="flex flex-wrap gap-1">
+            {tamilFontOptions.map((option) => {
+              const active = tamilFontPreset === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setTamilFontPreset(option.value)}
+                  className={[
+                    'rounded-md border px-2 py-1 text-xs transition',
+                    active
+                      ? 'border-stone-900 bg-stone-900 text-stone-50'
+                      : 'border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white',
+                  ].join(' ')}
+                  aria-pressed={active}
+                >
+                  {option.label}
                 </button>
               );
             })}
