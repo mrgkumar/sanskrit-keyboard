@@ -206,6 +206,7 @@ test.describe('Veda Reader', () => {
     await expect(page.locator('main article > header').getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
     await expect(page.getByText('stotrasamhita/vedamantra-book · master', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Split' })).toBeVisible();
+    await expect(page.getByText('Script: Devanagari')).toBeVisible();
   });
 
   test('renders a document outline and jumps to the selected section', async ({ page }) => {

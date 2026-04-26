@@ -55,3 +55,51 @@ export const deriveDocumentOutline = (nodes: MantraNode[]) =>
       level: node.type === 'chapter' ? 1 : node.type === 'section' ? 2 : 3,
     }))
     .filter((entry) => Boolean(entry.label));
+
+export type ReaderSourceScript = 'devanagari' | 'tamil' | 'roman' | 'mixed' | 'unknown';
+
+const DEVANAGARI_SCRIPT_PATTERN = /[\p{Script=Devanagari}]/gu;
+const TAMIL_SCRIPT_PATTERN = /[\p{Script=Tamil}]/gu;
+const LATIN_SCRIPT_PATTERN = /[\p{Script=Latin}]/gu;
+
+const countScriptMatches = (value: string, pattern: RegExp) => value.match(pattern)?.length ?? 0;
+
+export const detectReaderSourceScript = (value: string): ReaderSourceScript => {
+  const devanagariCount = countScriptMatches(value, DEVANAGARI_SCRIPT_PATTERN);
+  const tamilCount = countScriptMatches(value, TAMIL_SCRIPT_PATTERN);
+  const latinCount = countScriptMatches(value, LATIN_SCRIPT_PATTERN);
+
+  const counts: Array<[ReaderSourceScript, number]> = [
+    ['devanagari', devanagariCount],
+    ['tamil', tamilCount],
+    ['roman', latinCount],
+  ];
+
+  const nonZeroCounts = counts.filter(([, count]) => count > 0);
+  if (nonZeroCounts.length === 0) {
+    return 'unknown';
+  }
+
+  if (nonZeroCounts.length === 1) {
+    return nonZeroCounts[0][0];
+  }
+
+  const maxCount = Math.max(...nonZeroCounts.map(([, count]) => count));
+  const dominantScripts = nonZeroCounts.filter(([, count]) => count === maxCount);
+  return dominantScripts.length === 1 ? dominantScripts[0][0] : 'mixed';
+};
+
+export const formatReaderSourceScriptLabel = (script: ReaderSourceScript) => {
+  switch (script) {
+    case 'devanagari':
+      return 'Devanagari';
+    case 'tamil':
+      return 'Tamil';
+    case 'roman':
+      return 'Roman';
+    case 'mixed':
+      return 'Mixed script';
+    default:
+      return 'Unknown';
+  }
+};
