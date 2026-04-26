@@ -1,6 +1,7 @@
 'use client';
 
 import { useReaderStore } from '@/store/useReaderStore';
+import { readerThemeTextClass } from './readerTheme';
 import {
   detectReaderSourceScript,
   formatReaderSourceScriptLabel,
@@ -17,10 +18,12 @@ export function ReaderStatusBar() {
   const pageSize = useReaderStore((state) => state.pageSize);
   const fontSize = useReaderStore((state) => state.fontSize);
   const lineHeight = useReaderStore((state) => state.lineHeight);
+  const theme = useReaderStore((state) => state.theme);
   const sourceScript = activeDocument ? detectReaderSourceScript(activeDocument.rawTex) : 'unknown';
+  const bodyTextClass = readerThemeTextClass(theme, 'text-stone-600', 'text-white/75');
 
   return (
-    <footer className="border-t border-stone-300/70 bg-inherit/90 px-4 py-2 text-xs text-stone-600 backdrop-blur">
+    <footer className={`border-t border-stone-300/70 bg-inherit/90 px-4 py-2 text-xs ${bodyTextClass} backdrop-blur`}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <span>
           Manifest: {manifestStatus}

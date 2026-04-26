@@ -13,7 +13,9 @@ import {
   getReaderDisplayScriptLabel,
   type ReaderDisplayScript,
 } from '@/lib/veda-book/renderText';
+import { useReaderStore } from '@/store/useReaderStore';
 import type { SanskritFontPreset, TamilFontPreset } from '@/store/types';
+import { readerThemeTextClass } from './readerTheme';
 
 interface ReaderSearchResultsProps {
   open: boolean;
@@ -60,6 +62,11 @@ export function ReaderSearchResults({
   const [isDragging, setIsDragging] = useState(false);
   const [draftQuery, setDraftQuery] = useState(query);
   const deferredDraftQuery = useDeferredValue(draftQuery);
+  const theme = useReaderStore((state) => state.theme);
+  const titleTextClass = readerThemeTextClass(theme, 'text-stone-900');
+  const mutedTextClass = readerThemeTextClass(theme, 'text-stone-500', 'text-white/70');
+  const bodyTextClass = readerThemeTextClass(theme, 'text-stone-700');
+  const inputTextClass = readerThemeTextClass(theme, 'text-stone-900');
 
   useEffect(() => {
     if (!open) {
@@ -245,8 +252,8 @@ export function ReaderSearchResults({
             <Search className="h-4 w-4" />
           </div>
           <div>
-            <div className="text-[0.65rem] uppercase tracking-[0.22em] text-stone-500">Search</div>
-            <div className="text-sm font-semibold text-stone-900">Search current document</div>
+            <div className={`text-[0.65rem] uppercase tracking-[0.22em] ${mutedTextClass}`}>Search</div>
+            <div className={`text-sm font-semibold ${titleTextClass}`}>Search current document</div>
           </div>
         </div>
 
@@ -255,7 +262,7 @@ export function ReaderSearchResults({
             type="button"
             onClick={onPreviousHit}
             disabled={hitCount === 0}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300/70 bg-white/80 text-stone-500 hover:bg-white hover:text-stone-800 disabled:cursor-not-allowed disabled:opacity-40"
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300/70 bg-white/80 ${bodyTextClass} hover:bg-white hover:text-white disabled:cursor-not-allowed disabled:opacity-40`}
             aria-label="Previous match"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -264,18 +271,18 @@ export function ReaderSearchResults({
             type="button"
             onClick={onNextHit}
             disabled={hitCount === 0}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300/70 bg-white/80 text-stone-500 hover:bg-white hover:text-stone-800 disabled:cursor-not-allowed disabled:opacity-40"
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300/70 bg-white/80 ${bodyTextClass} hover:bg-white hover:text-white disabled:cursor-not-allowed disabled:opacity-40`}
             aria-label="Next match"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
-          <div className="min-w-[4.25rem] text-right text-[0.65rem] uppercase tracking-[0.22em] text-stone-500">
+          <div className={`min-w-[4.25rem] text-right text-[0.65rem] uppercase tracking-[0.22em] ${mutedTextClass}`}>
             {hitCount > 0 ? `${activeIndex + 1}/${hitCount}` : '0/0'}
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300/70 bg-white/80 text-stone-500 hover:bg-white hover:text-stone-800"
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300/70 bg-white/80 ${bodyTextClass} hover:bg-white hover:text-white`}
             aria-label="Close search panel"
           >
             <X className="h-4 w-4" />
@@ -296,12 +303,12 @@ export function ReaderSearchResults({
               placeholder="Type Roman / ITRANS here"
               autoComplete="off"
               spellCheck={false}
-              className="w-full bg-transparent text-sm font-medium text-stone-900 outline-none placeholder:text-stone-400"
+              className={`w-full bg-transparent text-sm font-medium ${inputTextClass} outline-none placeholder:text-stone-400`}
               data-testid="reader-search-input"
             />
           </label>
-          <div className="mt-2 rounded-xl bg-stone-50 px-3 py-2 text-sm text-stone-700">
-            <div className="flex items-center justify-between gap-2 text-[0.65rem] uppercase tracking-[0.22em] text-stone-400">
+          <div className={`mt-2 rounded-xl bg-stone-50 px-3 py-2 text-sm ${bodyTextClass}`}>
+            <div className={`flex items-center justify-between gap-2 text-[0.65rem] uppercase tracking-[0.22em] ${mutedTextClass}`}>
               <span>Ghost preview</span>
               <span>{getReaderDisplayScriptLabel(displayScript)}</span>
             </div>
@@ -309,25 +316,25 @@ export function ReaderSearchResults({
               {previewText ? (
                 <span className="pointer-events-none select-none opacity-80">
                   {displayScript === 'original' ? (
-                    <span className="font-medium text-stone-800">{previewText}</span>
+                    <span className={`font-medium ${titleTextClass}`}>{previewText}</span>
                   ) : (
                     <ScriptText
                       script={displayScript}
                       text={previewText}
                       sanskritFontPreset={sanskritFontPreset}
                       tamilFontPreset={tamilFontPreset}
-                      className="font-medium text-stone-800"
+                      className={`font-medium ${titleTextClass}`}
                     />
                   )}
                 </span>
               ) : (
-                <span className="text-stone-400">Type Roman / ITRANS to see a live preview.</span>
+                <span className={mutedTextClass}>Type Roman / ITRANS to see a live preview.</span>
               )}
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-stone-200/80 bg-white/55 px-4 py-3 text-sm text-stone-600">
+        <div className={`rounded-2xl border border-stone-200/80 bg-white/55 px-4 py-3 text-sm ${bodyTextClass}`}>
           {hitCount > 0 ? (
             <p className="leading-6">
               {`Use Prev / Next or Enter / Shift+Enter to move through ${hitCount} match${hitCount === 1 ? '' : 'es'}.`}
@@ -338,7 +345,7 @@ export function ReaderSearchResults({
         </div>
       </div>
 
-      <div className="flex items-center justify-between border-t border-stone-200/80 px-4 py-2 text-xs uppercase tracking-[0.16em] text-stone-500">
+      <div className={`flex items-center justify-between border-t border-stone-200/80 px-4 py-2 text-xs uppercase tracking-[0.16em] ${mutedTextClass}`}>
         <span>{displayScript === 'original' ? 'Original text' : getReaderDisplayScriptLabel(displayScript)} preview</span>
         <span>Esc closes</span>
       </div>

@@ -2,10 +2,18 @@
 
 import { AlertTriangle } from 'lucide-react';
 import { useReaderStore } from '@/store/useReaderStore';
+import { readerThemeClass, readerThemeTextClass } from './readerTheme';
 
 export function DiagnosticsPanel() {
   const activeDocument = useReaderStore((state) => state.activeDocument);
+  const theme = useReaderStore((state) => state.theme);
   const diagnostics = activeDocument?.diagnostics ?? [];
+  const mutedTextClass = readerThemeTextClass(theme, 'text-stone-500', 'text-white/70');
+  const bodyTextClass = readerThemeTextClass(theme, 'text-stone-700');
+  const titleTextClass = readerThemeTextClass(theme, 'text-stone-800');
+  const panelClass = readerThemeClass(theme, 'border-stone-300/70 bg-white/75', 'border-slate-700/80 bg-slate-950/80');
+  const badgeClass = readerThemeClass(theme, 'border-stone-300/70 bg-white/70', 'border-slate-700/80 bg-slate-900/80');
+  const itemClass = readerThemeClass(theme, 'border-stone-300/70 bg-stone-50', 'border-slate-700/80 bg-slate-900/60');
   const counts = diagnostics.reduce(
     (accumulator, diagnostic) => {
       accumulator[diagnostic.level] += 1;
@@ -16,31 +24,31 @@ export function DiagnosticsPanel() {
 
   return (
     <section
-      className="border-t border-stone-300/70 bg-white/75 px-4 py-3 backdrop-blur"
+      className={`border-t px-4 py-3 backdrop-blur ${panelClass}`}
       data-testid="reader-diagnostics-panel"
     >
-      <div className="flex items-center gap-2 text-sm font-medium text-stone-800">
+      <div className={`flex items-center gap-2 text-sm font-medium ${titleTextClass}`}>
         <AlertTriangle className="h-4 w-4" />
         Diagnostics
       </div>
-      <div className="mt-2 flex flex-wrap gap-2 text-xs uppercase tracking-[0.14em] text-stone-500">
-        <span className="rounded-full border border-stone-300/70 bg-white/70 px-2 py-1">Info {counts.info}</span>
-        <span className="rounded-full border border-stone-300/70 bg-white/70 px-2 py-1">Warnings {counts.warning}</span>
-        <span className="rounded-full border border-stone-300/70 bg-white/70 px-2 py-1">Errors {counts.error}</span>
+      <div className={`mt-2 flex flex-wrap gap-2 text-xs uppercase tracking-[0.14em] ${mutedTextClass}`}>
+        <span className={`rounded-full border px-2 py-1 ${badgeClass}`}>Info {counts.info}</span>
+        <span className={`rounded-full border px-2 py-1 ${badgeClass}`}>Warnings {counts.warning}</span>
+        <span className={`rounded-full border px-2 py-1 ${badgeClass}`}>Errors {counts.error}</span>
       </div>
       <div className="mt-3 space-y-2">
         {diagnostics.length === 0 ? (
-          <div className="text-sm text-stone-500">No parser diagnostics.</div>
+          <div className={`text-sm ${mutedTextClass}`}>No parser diagnostics.</div>
         ) : (
           diagnostics.map((diagnostic) => (
             <div
               key={diagnostic.id}
-              className="rounded-md border border-stone-300/70 bg-stone-50 px-3 py-2 text-sm text-stone-700"
+              className={`rounded-md border px-3 py-2 text-sm ${bodyTextClass} ${itemClass}`}
             >
-              <div className="flex flex-wrap items-center gap-2 font-medium uppercase tracking-[0.14em] text-stone-500">
+              <div className={`flex flex-wrap items-center gap-2 font-medium uppercase tracking-[0.14em] ${mutedTextClass}`}>
                 <span>{diagnostic.level}</span>
                 {diagnostic.line ? (
-                  <span className="rounded-full border border-stone-300/70 bg-white/70 px-2 py-0.5 text-[0.65rem] tracking-[0.18em]">
+                  <span className={`rounded-full border px-2 py-0.5 text-[0.65rem] tracking-[0.18em] text-inherit ${badgeClass}`}>
                     L{diagnostic.line}
                     {diagnostic.column ? `:${diagnostic.column}` : ''}
                   </span>
@@ -53,7 +61,7 @@ export function DiagnosticsPanel() {
                       const target = document.getElementById(diagnostic.nodeId!);
                       target?.scrollIntoView({ block: 'center', behavior: 'instant' });
                     }}
-                    className="rounded-full border border-stone-300/70 bg-white/80 px-2 py-0.5 text-[0.65rem] tracking-[0.18em] text-stone-700 transition hover:bg-white"
+                    className={`rounded-full border px-2 py-0.5 text-[0.65rem] tracking-[0.18em] text-inherit transition hover:bg-white ${badgeClass}`}
                   >
                     Jump to source
                   </button>
@@ -61,7 +69,7 @@ export function DiagnosticsPanel() {
               </div>
               <div>{diagnostic.message}</div>
               {diagnostic.source ? (
-                <pre className="mt-2 overflow-auto text-xs text-stone-500">{diagnostic.source}</pre>
+                <pre className={`mt-2 overflow-auto text-xs ${mutedTextClass}`}>{diagnostic.source}</pre>
               ) : null}
             </div>
           ))

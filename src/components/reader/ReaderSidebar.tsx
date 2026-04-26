@@ -9,6 +9,7 @@ import {
   filterManifestEntries,
   type ManifestTreeFolderNode,
 } from '@/lib/veda-book/buildManifest';
+import { readerThemeTextClass } from './readerTheme';
 
 interface ReaderSidebarProps {
   collapsed?: boolean;
@@ -20,6 +21,8 @@ const renderEntryButton = (
   entry: ManifestTreeFolderNode['entries'][number],
   active: boolean,
   onClick: (event: MouseEvent<HTMLButtonElement>) => void,
+  titleTextClass: string,
+  bodyTextClass: string,
 ) => (
   <button
     key={entry.id}
@@ -31,14 +34,14 @@ const renderEntryButton = (
     }}
     className={[
       'w-full rounded-md border px-3 py-3 text-left transition',
-      active ? 'border-stone-900 bg-stone-900 text-stone-50' : 'border-transparent bg-white/60 text-stone-800 hover:border-stone-300/70 hover:bg-white',
+      active ? 'border-stone-900 bg-stone-900 text-stone-50' : `border-transparent bg-white/60 ${titleTextClass} hover:border-stone-300/70 hover:bg-white`,
     ].join(' ')}
   >
     <div className="flex items-start gap-2">
-      <FileText className="mt-0.5 h-4 w-4 shrink-0 opacity-70" />
+      <FileText className={`mt-0.5 h-4 w-4 shrink-0 opacity-70 ${bodyTextClass}`} />
       <div className="min-w-0">
         <div className="truncate text-sm font-medium">{entry.title}</div>
-        <div className="truncate text-[0.72rem] uppercase tracking-[0.14em] opacity-70">
+        <div className="truncate text-[0.72rem] uppercase tracking-[0.14em] opacity-70 text-inherit">
           {entry.folderPath || entry.category} · {entry.path}
         </div>
       </div>
@@ -55,14 +58,16 @@ const renderTreeNode = (
   node: ManifestTreeFolderNode,
   options: {
     activePath: string | null;
-    onSelectDocument?: () => void;
     onOpenDocument: (path: string) => Promise<void>;
     expandedFolders: Set<string>;
     onToggleFolder: (path: string) => void;
     level?: number;
+    mutedTextClass: string;
+    bodyTextClass: string;
+    titleTextClass: string;
   },
 ) => {
-  const { activePath, onOpenDocument, expandedFolders, onToggleFolder, level = 0 } = options;
+  const { activePath, onOpenDocument, expandedFolders, onToggleFolder, level = 0, mutedTextClass, bodyTextClass, titleTextClass } = options;
   const isRoot = node.path.length === 0;
   const folderLabel = isRoot ? 'Root' : node.name;
   const isExpanded = isRoot || expandedFolders.has(node.path);
@@ -72,13 +77,13 @@ const renderTreeNode = (
       {isRoot ? (
         <div
           className={[
-            'flex items-center gap-2 uppercase tracking-[0.18em] text-stone-400',
+            `flex items-center gap-2 uppercase tracking-[0.18em] ${mutedTextClass}`,
             level === 0 ? 'px-3 pb-1 text-[0.68rem]' : 'pl-4 text-[0.66rem]',
           ].join(' ')}
         >
-          <Folder className="h-3.5 w-3.5 shrink-0" />
+          <Folder className={`h-3.5 w-3.5 shrink-0 ${bodyTextClass}`} />
           <span>{folderLabel}</span>
-          <span className="normal-case tracking-[0.08em] text-stone-500">documents</span>
+          <span className={`normal-case tracking-[0.08em] ${mutedTextClass}`}>documents</span>
         </div>
       ) : (
         <button
@@ -88,18 +93,20 @@ const renderTreeNode = (
           aria-label={`${isExpanded ? 'Collapse' : 'Expand'} folder ${node.path}`}
           data-testid={`reader-folder-toggle-${node.path}`}
           className={[
-            'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left uppercase tracking-[0.18em] text-stone-400 transition',
-            'hover:bg-stone-100/80 hover:text-stone-600',
+            `flex w-full items-center gap-2 rounded-md px-3 py-2 text-left uppercase tracking-[0.18em] ${mutedTextClass} transition`,
+            'hover:bg-stone-100/80 hover:text-white',
             level === 0 ? 'text-[0.68rem]' : 'text-[0.66rem]',
           ].join(' ')}
         >
-          <ChevronRight className={[
-            'h-3.5 w-3.5 shrink-0 transition-transform',
-            isExpanded ? 'rotate-90' : 'rotate-0',
-          ].join(' ')} />
-          <Folder className="h-3.5 w-3.5 shrink-0" />
+          <ChevronRight
+            className={[
+              `h-3.5 w-3.5 shrink-0 transition-transform ${bodyTextClass}`,
+              isExpanded ? 'rotate-90' : 'rotate-0',
+            ].join(' ')}
+          />
+          <Folder className={`h-3.5 w-3.5 shrink-0 ${bodyTextClass}`} />
           <span className="min-w-0 truncate">{folderLabel}</span>
-          <span className="normal-case tracking-[0.08em] text-stone-500">{node.path}</span>
+          <span className={`normal-case tracking-[0.08em] ${mutedTextClass}`}>{node.path}</span>
         </button>
       )}
 
@@ -111,7 +118,7 @@ const renderTreeNode = (
                 const active = activePath === entry.path;
                 return renderEntryButton(entry, active, () => {
                   void onOpenDocument(entry.path);
-                });
+                }, titleTextClass, bodyTextClass);
               })}
             </div>
           ) : null}
@@ -144,6 +151,10 @@ export function ReaderSidebar({ collapsed = false, onToggleCollapsed, onSelectDo
   const openDocument = useReaderStore((state) => state.openDocument);
   const searchQuery = useReaderStore((state) => state.searchQuery);
   const setSearchQuery = useReaderStore((state) => state.setSearchQuery);
+  const theme = useReaderStore((state) => state.theme);
+  const mutedTextClass = readerThemeTextClass(theme, 'text-stone-500', 'text-white/70');
+  const bodyTextClass = readerThemeTextClass(theme, 'text-stone-700');
+  const titleTextClass = readerThemeTextClass(theme, 'text-stone-800');
 
   const filteredEntries = useMemo(() => {
     if (!manifest) {
@@ -210,20 +221,20 @@ export function ReaderSidebar({ collapsed = false, onToggleCollapsed, onSelectDo
           <button
             type="button"
             onClick={onToggleCollapsed}
-            className="flex h-10 w-full items-center justify-center rounded-md border border-stone-300/70 bg-white/70 text-xs font-semibold uppercase tracking-[0.18em] text-stone-700 transition hover:bg-white"
+            className={`flex h-10 w-full items-center justify-center rounded-md border border-stone-300/70 bg-white/70 text-xs font-semibold uppercase tracking-[0.18em] ${bodyTextClass} transition hover:bg-white`}
             aria-label="Expand sidebar"
             title="Expand sidebar"
           >
             <Search className="h-4 w-4" />
           </button>
         ) : (
-          <label className="flex items-center gap-2 rounded-md border border-stone-300/70 bg-white/70 px-3 py-2">
-            <Search className="h-4 w-4 text-stone-500" />
+          <label className={`flex items-center gap-2 rounded-md border border-stone-300/70 bg-white/70 px-3 py-2 ${bodyTextClass}`}>
+            <Search className={`h-4 w-4 ${mutedTextClass}`} />
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Search titles or paths"
-              className="w-full bg-transparent text-sm outline-none placeholder:text-stone-400"
+              className={`w-full bg-transparent text-sm outline-none placeholder:text-stone-400 ${bodyTextClass}`}
             />
           </label>
         )}
@@ -231,13 +242,13 @@ export function ReaderSidebar({ collapsed = false, onToggleCollapsed, onSelectDo
 
       <div className="min-h-0 flex-1 px-2 py-2">
         {manifestStatus === 'loading' ? (
-          <div className="space-y-2 p-2 text-sm text-stone-500">Loading manifest...</div>
+          <div className={`space-y-2 p-2 text-sm ${mutedTextClass}`}>Loading manifest...</div>
         ) : null}
 
         {manifestError ? <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">{manifestError}</div> : null}
 
         {!collapsed && manifest ? (
-          <div className="px-1 pb-2 text-xs uppercase tracking-[0.18em] text-stone-500">
+          <div className={`px-1 pb-2 text-xs uppercase tracking-[0.18em] ${mutedTextClass}`}>
             {filteredEntries.length} of {manifest.entries.length} documents
           </div>
         ) : null}
@@ -258,8 +269,13 @@ export function ReaderSidebar({ collapsed = false, onToggleCollapsed, onSelectDo
                 onOpenDocument: handleOpenDocument,
                 expandedFolders,
                 onToggleFolder: handleToggleFolder,
+                mutedTextClass,
+                bodyTextClass,
+                titleTextClass,
               })
-            ) : null}
+            ) : (
+              <div className={`px-3 py-2 text-sm ${mutedTextClass}`}>No documents available.</div>
+            )}
           </div>
         </div>
 
@@ -268,7 +284,7 @@ export function ReaderSidebar({ collapsed = false, onToggleCollapsed, onSelectDo
             <button
               type="button"
               onClick={onToggleCollapsed}
-              className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-stone-300/70 bg-white/75 text-stone-700 shadow-sm transition hover:bg-white"
+              className={`inline-flex h-12 w-12 items-center justify-center rounded-full border border-stone-300/70 bg-white/75 ${bodyTextClass} shadow-sm transition hover:bg-white`}
               aria-label="Expand sidebar"
               title="Expand sidebar"
             >

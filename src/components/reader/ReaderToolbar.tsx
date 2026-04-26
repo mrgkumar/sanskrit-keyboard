@@ -23,6 +23,7 @@ import {
   serializeReaderDocumentText,
 } from '@/lib/veda-book/renderText';
 import type { SanskritFontPreset, TamilFontPreset } from '@/store/types';
+import { readerThemeTextClass } from './readerTheme';
 
 const modeOptions: Array<{ mode: ReaderMode; label: string; icon: ReactNode }> = [
   { mode: 'reader', label: 'Reader', icon: <BookOpenText className="h-4 w-4" /> },
@@ -81,6 +82,11 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
   const nextTheme = themeOrder[(currentThemeIndex + 1) % themeOrder.length];
   const copyLabel = copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Copy failed' : 'Copy text';
   const hasDocumentSearchHits = documentSearchHitCount > 0;
+  const bodyTextClass = readerThemeTextClass(theme, 'text-stone-700');
+  const mutedTextClass = readerThemeTextClass(theme, 'text-stone-500', 'text-white/70');
+  const titleTextClass = readerThemeTextClass(theme, 'text-stone-900');
+  const softTextClass = readerThemeTextClass(theme, 'text-stone-400', 'text-white/60');
+
   useEffect(() => {
     if (copyStatus !== 'copied') {
       return undefined;
@@ -115,14 +121,14 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
           <button
             type="button"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-300/70 bg-white/60 shadow-sm transition hover:bg-white"
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-300/70 bg-white/60 shadow-sm transition hover:bg-white ${bodyTextClass}`}
             aria-label="Toggle sidebar"
           >
             <Menu className="h-4 w-4" />
           </button>
           <div>
-            <div className="text-[0.7rem] uppercase tracking-[0.22em] text-stone-500">Veda Reader</div>
-            <div className="text-sm font-medium text-stone-900">GitHub Pages source reader</div>
+            <div className={`text-[0.7rem] uppercase tracking-[0.22em] ${mutedTextClass}`}>Veda Reader</div>
+            <div className={`text-sm font-medium ${titleTextClass}`}>GitHub Pages source reader</div>
           </div>
         </div>
 
@@ -138,7 +144,7 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
                   'inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition',
                   active
                     ? 'border-stone-900 bg-stone-900 text-stone-50'
-                    : 'border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white',
+                    : `border-stone-300/70 bg-white/70 ${bodyTextClass} hover:bg-white`,
                 ].join(' ')}
               >
                 {option.icon}
@@ -149,8 +155,8 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
         </div>
 
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-stone-300/70 bg-white/55 px-2 py-1">
-          <Languages className="h-4 w-4 text-stone-500" />
-          <span className="text-xs uppercase tracking-[0.18em] text-stone-500">Display</span>
+          <Languages className={`h-4 w-4 ${mutedTextClass}`} />
+          <span className={`text-xs uppercase tracking-[0.18em] ${mutedTextClass}`}>Display</span>
           <div className="flex flex-wrap gap-1">
             {displayScriptOptions.map((script) => {
               const active = displayScript === script;
@@ -163,7 +169,7 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
                     'rounded-md border px-2 py-1 text-xs transition',
                     active
                       ? 'border-stone-900 bg-stone-900 text-stone-50'
-                      : 'border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white',
+                      : `border-stone-300/70 bg-white/70 ${bodyTextClass} hover:bg-white`,
                   ].join(' ')}
                   aria-pressed={active}
                   title={`Display as ${getReaderDisplayScriptLabel(script)}`}
@@ -176,8 +182,8 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
         </div>
 
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-stone-300/70 bg-white/55 px-2 py-1">
-          <span className="text-xs uppercase tracking-[0.18em] text-stone-500">Fonts</span>
-          <span className="text-[0.68rem] uppercase tracking-[0.16em] text-stone-400">Sanskrit</span>
+          <span className={`text-xs uppercase tracking-[0.18em] ${mutedTextClass}`}>Fonts</span>
+          <span className={`text-[0.68rem] uppercase tracking-[0.16em] ${softTextClass}`}>Sanskrit</span>
           <div className="flex flex-wrap gap-1">
             {sanskritFontOptions.map((option) => {
               const active = sanskritFontPreset === option.value;
@@ -190,7 +196,7 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
                     'rounded-md border px-2 py-1 text-xs transition',
                     active
                       ? 'border-stone-900 bg-stone-900 text-stone-50'
-                      : 'border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white',
+                      : `border-stone-300/70 bg-white/70 ${bodyTextClass} hover:bg-white`,
                   ].join(' ')}
                   aria-pressed={active}
                 >
@@ -199,7 +205,7 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
               );
             })}
           </div>
-          <span className="text-[0.68rem] uppercase tracking-[0.16em] text-stone-400">Tamil</span>
+          <span className={`text-[0.68rem] uppercase tracking-[0.16em] ${softTextClass}`}>Tamil</span>
           <div className="flex flex-wrap gap-1">
             {tamilFontOptions.map((option) => {
               const active = tamilFontPreset === option.value;
@@ -212,7 +218,7 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
                     'rounded-md border px-2 py-1 text-xs transition',
                     active
                       ? 'border-stone-900 bg-stone-900 text-stone-50'
-                      : 'border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white',
+                      : `border-stone-300/70 bg-white/70 ${bodyTextClass} hover:bg-white`,
                   ].join(' ')}
                   aria-pressed={active}
                 >
@@ -224,7 +230,7 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
         </div>
 
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-stone-300/70 bg-white/55 px-2 py-1">
-          <span className="text-xs uppercase tracking-[0.18em] text-stone-500">Page</span>
+          <span className={`text-xs uppercase tracking-[0.18em] ${mutedTextClass}`}>Page</span>
           <div className="flex flex-wrap gap-1">
             {pageSizeOptions.map((value) => {
               const active = pageSize === value;
@@ -237,7 +243,7 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
                     'rounded-md border px-2 py-1 text-xs transition',
                     active
                       ? 'border-stone-900 bg-stone-900 text-stone-50'
-                      : 'border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white',
+                      : `border-stone-300/70 bg-white/70 ${bodyTextClass} hover:bg-white`,
                   ].join(' ')}
                   aria-pressed={active}
                   title={`Set page size to ${getReaderPageSizeLabel(value)}`}
@@ -253,11 +259,11 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
           <button
             type="button"
             onClick={() => setDocumentSearchOpen(true)}
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white"
+            className={`relative inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-300/70 bg-white/70 ${bodyTextClass} hover:bg-white`}
             aria-label="Open document search"
             title="Open document search"
           >
-            <Search className={['h-4 w-4', documentSearchOpen ? 'text-stone-950' : 'text-stone-700'].join(' ')} />
+            <Search className={['h-4 w-4', documentSearchOpen ? 'text-white' : bodyTextClass].join(' ')} />
             {hasDocumentSearchHits ? (
               <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold leading-5 text-white">
                 {documentSearchHitCount > 9 ? '9+' : documentSearchHitCount}
@@ -267,7 +273,7 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
           <button
             type="button"
             onClick={() => setTypography({ fontSize: Math.max(15, fontSize - 1) })}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white"
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-300/70 bg-white/70 ${bodyTextClass} hover:bg-white`}
             aria-label="Decrease font size"
           >
             <Minus className="h-4 w-4" />
@@ -275,26 +281,26 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
           <button
             type="button"
             onClick={() => setTypography({ fontSize: Math.min(30, fontSize + 1) })}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white"
+            className={`inline-flex h-10 w-10 items-center justify-center rounded-md border border-stone-300/70 bg-white/70 ${bodyTextClass} hover:bg-white`}
             aria-label="Increase font size"
           >
             <Plus className="h-4 w-4" />
           </button>
           <div className="flex items-center gap-1 rounded-md border border-stone-300/70 bg-white/70 px-2 py-1">
-            <span className="text-[0.68rem] uppercase tracking-[0.16em] text-stone-400">Leading</span>
+            <span className={`text-[0.68rem] uppercase tracking-[0.16em] ${softTextClass}`}>Leading</span>
             <button
               type="button"
               onClick={() => setTypography({ lineHeight: Math.max(1.2, Number((lineHeight - 0.1).toFixed(2))) })}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-300/70 bg-white/80 text-stone-700 hover:bg-white"
+              className={`inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-300/70 bg-white/80 ${bodyTextClass} hover:bg-white`}
               aria-label="Decrease line height"
             >
               <Minus className="h-3.5 w-3.5" />
             </button>
-            <div className="min-w-12 text-center text-xs font-medium text-stone-700">{lineHeight.toFixed(2)}</div>
+            <div className={`min-w-12 text-center text-xs font-medium ${bodyTextClass}`}>{lineHeight.toFixed(2)}</div>
             <button
               type="button"
               onClick={() => setTypography({ lineHeight: Math.min(2.4, Number((lineHeight + 0.1).toFixed(2))) })}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-300/70 bg-white/80 text-stone-700 hover:bg-white"
+              className={`inline-flex h-8 w-8 items-center justify-center rounded-md border border-stone-300/70 bg-white/80 ${bodyTextClass} hover:bg-white`}
               aria-label="Increase line height"
             >
               <Plus className="h-3.5 w-3.5" />
@@ -303,7 +309,7 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
           <button
             type="button"
             onClick={() => setTheme(nextTheme)}
-            className="inline-flex items-center gap-2 rounded-md border border-stone-300/70 bg-white/70 px-3 py-2 text-sm text-stone-700 hover:bg-white"
+            className={`inline-flex items-center gap-2 rounded-md border border-stone-300/70 bg-white/70 px-3 py-2 text-sm ${bodyTextClass} hover:bg-white`}
           >
             <SunMoon className="h-4 w-4" />
             <span>{theme}</span>
@@ -315,7 +321,7 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
               'inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition',
               diagnosticsOpen
                 ? 'border-stone-900 bg-stone-900 text-stone-50'
-                : 'border-stone-300/70 bg-white/70 text-stone-700 hover:bg-white',
+                : `border-stone-300/70 bg-white/70 ${bodyTextClass} hover:bg-white`,
             ].join(' ')}
           >
             <SplitSquareHorizontal className="h-4 w-4" />
@@ -324,7 +330,7 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
           <button
             type="button"
             onClick={() => void loadManifest({ force: true })}
-            className="inline-flex items-center gap-2 rounded-md border border-stone-300/70 bg-white/70 px-3 py-2 text-sm text-stone-700 hover:bg-white"
+            className={`inline-flex items-center gap-2 rounded-md border border-stone-300/70 bg-white/70 px-3 py-2 text-sm ${bodyTextClass} hover:bg-white`}
           >
             <RefreshCw className="h-4 w-4" />
             <span>Refresh</span>
@@ -333,7 +339,7 @@ export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps
             type="button"
             onClick={() => void handleCopyText()}
             disabled={!activeDocument}
-            className="inline-flex items-center gap-2 rounded-md border border-stone-300/70 bg-white/70 px-3 py-2 text-sm text-stone-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+            className={`inline-flex items-center gap-2 rounded-md border border-stone-300/70 bg-white/70 px-3 py-2 text-sm ${bodyTextClass} hover:bg-white disabled:cursor-not-allowed disabled:opacity-60`}
             aria-label={`Copy visible text as ${getReaderDisplayScriptLabel(displayScript)}`}
           >
             <Copy className="h-4 w-4" />

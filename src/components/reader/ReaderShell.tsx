@@ -9,6 +9,7 @@ import { MantraDocumentView } from './MantraDocumentView';
 import { SourcePanel } from './SourcePanel';
 import { DiagnosticsPanel } from './DiagnosticsPanel';
 import { ReaderStatusBar } from './ReaderStatusBar';
+import { readerThemeTextClass } from './readerTheme';
 import { useReaderStore } from '@/store/useReaderStore';
 import { DEFAULT_OUTPUT_TARGET_SETTINGS } from '@/lib/vedic/mapping';
 import { collectReaderSearchHits } from '@/lib/veda-book/renderText';
@@ -46,6 +47,8 @@ export function ReaderShell() {
   const theme = useReaderStore((state) => state.theme);
   const deferredDocumentSearchQuery = useDeferredValue(documentSearchQuery);
   const lastEscapeAtRef = useRef(0);
+  const mutedTextClass = readerThemeTextClass(theme, 'text-stone-500', 'text-white/70');
+  const bodyTextClass = readerThemeTextClass(theme, 'text-stone-700', 'text-white');
 
   useEffect(() => {
     if (documentSearchOpen) {
@@ -192,7 +195,7 @@ export function ReaderShell() {
               <div className="flex items-center justify-between gap-2 border-b border-stone-300/70 px-3 py-3">
                 <span
                   className={[
-                    'text-sm font-medium uppercase tracking-[0.18em] text-stone-500 transition-opacity',
+                    `text-sm font-medium uppercase tracking-[0.18em] ${mutedTextClass} transition-opacity`,
                     sidebarCollapsed ? 'md:opacity-0 md:pointer-events-none' : 'opacity-100',
                   ].join(' ')}
                 >
@@ -202,7 +205,7 @@ export function ReaderShell() {
                   <button
                     type="button"
                     onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                    className="hidden rounded-md border border-stone-300/70 bg-white/70 px-2 py-1 text-xs text-stone-700 transition hover:bg-white md:inline-flex"
+                    className={`hidden rounded-md border border-stone-300/70 bg-white/70 px-2 py-1 text-xs ${bodyTextClass} transition hover:bg-white md:inline-flex`}
                     aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                     title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                   >

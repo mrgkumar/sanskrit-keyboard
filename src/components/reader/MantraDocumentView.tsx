@@ -17,6 +17,7 @@ import {
 } from '@/lib/veda-book/renderText';
 import type { ReaderDisplayScript } from '@/lib/veda-book/types';
 import { useReaderStore } from '@/store/useReaderStore';
+import { readerThemeTextClass } from './readerTheme';
 
 interface MantraDocumentViewProps {
   document: MantraDocument | null;
@@ -33,6 +34,7 @@ const renderTextNode = (
   displayScript: ReaderDisplayScript,
   sanskritFontPreset: 'noto-sans' | 'chandas' | 'sampradaya' | 'sanskrit2003' | 'siddhanta',
   tamilFontPreset: 'hybrid' | 'noto-serif' | 'anek',
+  themeTextClass: string,
 ) => {
   const sourceScript = detectReaderSourceScript(text);
   const renderedText =
@@ -44,7 +46,7 @@ const renderTextNode = (
 
   if (displayScript === 'original') {
     if (sourceScript === 'mixed' || sourceScript === 'unknown') {
-      return <span className="whitespace-pre-wrap break-words">{renderedText}</span>;
+      return <span className={`whitespace-pre-wrap break-words ${themeTextClass}`}>{renderedText}</span>;
     }
 
     return (
@@ -53,7 +55,7 @@ const renderTextNode = (
         text={renderedText}
         sanskritFontPreset={sanskritFontPreset}
         tamilFontPreset={tamilFontPreset}
-        className="whitespace-pre-wrap break-words"
+        className={`whitespace-pre-wrap break-words ${themeTextClass}`}
       />
     );
   }
@@ -64,7 +66,7 @@ const renderTextNode = (
       text={renderedText}
       sanskritFontPreset={sanskritFontPreset}
       tamilFontPreset={tamilFontPreset}
-      className="whitespace-pre-wrap break-words"
+      className={`whitespace-pre-wrap break-words ${themeTextClass}`}
     />
   );
 };
@@ -75,9 +77,11 @@ const renderHighlightedTextNode = (
   sanskritFontPreset: 'noto-sans' | 'chandas' | 'sampradaya' | 'sanskrit2003' | 'siddhanta',
   tamilFontPreset: 'hybrid' | 'noto-serif' | 'anek',
   searchTokens: string[],
+  themeTextClass: string,
+  isDarkTheme: boolean,
 ) => {
   if (searchTokens.length === 0) {
-    return renderTextNode(text, displayScript, sanskritFontPreset, tamilFontPreset);
+    return renderTextNode(text, displayScript, sanskritFontPreset, tamilFontPreset, themeTextClass);
   }
 
   const fragments: React.ReactNode[] = [];
@@ -105,7 +109,13 @@ const renderHighlightedTextNode = (
       <span
         key={`${start}-${end}`}
         data-reader-search-word-hit={isMatch ? 'true' : undefined}
-        className={isMatch ? 'rounded-[0.15rem] bg-amber-200/70 px-0.5 py-0.5 text-amber-950 ring-1 ring-amber-400/50' : undefined}
+        className={
+          isMatch
+            ? isDarkTheme
+              ? 'rounded-[0.15rem] bg-amber-400/25 px-0.5 py-0.5 text-white ring-1 ring-amber-300/40'
+              : 'rounded-[0.15rem] bg-amber-200/70 px-0.5 py-0.5 text-amber-950 ring-1 ring-amber-400/50'
+            : undefined
+        }
       >
         {displayScript === 'original' ? (
           sourceScript === 'devanagari' || sourceScript === 'roman' || sourceScript === 'tamil' ? (
@@ -114,10 +124,10 @@ const renderHighlightedTextNode = (
               text={renderedSlice}
               sanskritFontPreset={sanskritFontPreset}
               tamilFontPreset={tamilFontPreset}
-              className="whitespace-pre-wrap break-words"
+              className={`whitespace-pre-wrap break-words ${themeTextClass}`}
             />
           ) : (
-            <span className="whitespace-pre-wrap break-words">{renderedSlice}</span>
+            <span className={`whitespace-pre-wrap break-words ${themeTextClass}`}>{renderedSlice}</span>
           )
         ) : (
           <ScriptText
@@ -125,7 +135,7 @@ const renderHighlightedTextNode = (
             text={renderedSlice}
             sanskritFontPreset={sanskritFontPreset}
             tamilFontPreset={tamilFontPreset}
-            className="whitespace-pre-wrap break-words"
+            className={`whitespace-pre-wrap break-words ${themeTextClass}`}
           />
         )}
       </span>,
@@ -148,58 +158,60 @@ const renderNode = (
   tamilFontPreset: 'hybrid' | 'noto-serif' | 'anek',
   searchTokens: string[],
   highlightWords: boolean,
+  themeTextClass: string,
+  isDarkTheme: boolean,
 ) => {
   switch (node.type) {
     case 'chapter':
       return (
-        <h1 className="text-balance font-semibold tracking-tight" style={{ fontSize: '1.75em', lineHeight: 1.15 }}>
-          {highlightWords ? renderHighlightedTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, searchTokens) : renderTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset)}
+          <h1 className="text-balance font-semibold tracking-tight" style={{ fontSize: '1.75em', lineHeight: 1.15 }}>
+          {highlightWords ? renderHighlightedTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, searchTokens, themeTextClass, isDarkTheme) : renderTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, themeTextClass)}
         </h1>
       );
     case 'section':
       return (
         <h2 className="font-semibold tracking-tight" style={{ fontSize: '1.45em', lineHeight: 1.2 }}>
-          {highlightWords ? renderHighlightedTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, searchTokens) : renderTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset)}
+          {highlightWords ? renderHighlightedTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, searchTokens, themeTextClass, isDarkTheme) : renderTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, themeTextClass)}
         </h2>
       );
     case 'subsection':
       return (
         <h3 className="font-semibold tracking-tight" style={{ fontSize: '1.2em', lineHeight: 1.22 }}>
-          {highlightWords ? renderHighlightedTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, searchTokens) : renderTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset)}
+          {highlightWords ? renderHighlightedTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, searchTokens, themeTextClass, isDarkTheme) : renderTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, themeTextClass)}
         </h3>
       );
     case 'center':
       return (
         <div className="text-center font-medium" style={{ fontSize: '1.05em', lineHeight: 1.35 }}>
-          {highlightWords ? renderHighlightedTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, searchTokens) : renderTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset)}
+          {highlightWords ? renderHighlightedTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, searchTokens, themeTextClass, isDarkTheme) : renderTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, themeTextClass)}
         </div>
       );
     case 'sourceRef':
       return (
-        <div className="inline-flex items-center gap-2 rounded-full border border-stone-300/70 bg-white/70 px-3 py-1 uppercase tracking-[0.16em] text-stone-600" style={{ fontSize: '0.72em' }}>
+        <div className="inline-flex items-center gap-2 rounded-full border border-stone-300/70 bg-white/70 px-3 py-1 uppercase tracking-[0.16em] text-inherit" style={{ fontSize: '0.72em' }}>
           <span>{node.source}</span>
-          <span>{highlightWords ? renderHighlightedTextNode(node.values.join(' · '), displayScript, sanskritFontPreset, tamilFontPreset, searchTokens) : renderTextNode(node.values.join(' · '), displayScript, sanskritFontPreset, tamilFontPreset)}</span>
+          <span>{highlightWords ? renderHighlightedTextNode(node.values.join(' · '), displayScript, sanskritFontPreset, tamilFontPreset, searchTokens, themeTextClass, isDarkTheme) : renderTextNode(node.values.join(' · '), displayScript, sanskritFontPreset, tamilFontPreset, themeTextClass)}</span>
         </div>
       );
     case 'pageBreak':
-      return <div className="my-6 border-t border-dashed border-stone-300/80" />;
+      return <div className={isDarkTheme ? 'my-6 border-t border-dashed border-slate-700/80' : 'my-6 border-t border-dashed border-stone-300/80'} />;
     case 'warning':
       return (
-        <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-amber-900" style={{ fontSize: '0.92em', lineHeight: 1.45 }}>
+        <div className={isDarkTheme ? 'rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-white' : 'rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-amber-900'} style={{ fontSize: '0.92em', lineHeight: 1.45 }}>
           {node.message}
         </div>
       );
     case 'raw':
       return (
         <pre className="whitespace-pre-wrap" style={{ fontSize: '1em', lineHeight: 1.6 }}>
-          {highlightWords ? renderHighlightedTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, searchTokens) : renderTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset)}
+          {highlightWords ? renderHighlightedTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, searchTokens, themeTextClass, isDarkTheme) : renderTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, themeTextClass)}
         </pre>
       );
     case 'paragraph':
     default:
       return (
         <p className="whitespace-pre-wrap" style={{ fontSize: '1em', lineHeight: 1.65 }}>
-          {highlightWords ? renderHighlightedTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, searchTokens) : renderTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset)}
+          {highlightWords ? renderHighlightedTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, searchTokens, themeTextClass, isDarkTheme) : renderTextNode(node.text, displayScript, sanskritFontPreset, tamilFontPreset, themeTextClass)}
         </p>
       );
   }
@@ -220,6 +232,7 @@ export function MantraDocumentView({
   const fontSize = useReaderStore((state) => state.fontSize);
   const lineHeight = useReaderStore((state) => state.lineHeight);
   const pageSize = useReaderStore((state) => state.pageSize);
+  const theme = useReaderStore((state) => state.theme);
   const documentSearchQuery = useReaderStore((state) => state.documentSearchQuery);
   const documentSearchActiveIndex = useReaderStore((state) => state.documentSearchActiveIndex);
   const lastReadPosition = useReaderStore((state) => (sourcePath ? state.lastReadPositions[sourcePath] ?? 0 : 0));
@@ -229,6 +242,11 @@ export function MantraDocumentView({
   const searchDisplayScript = searchScopeDisplayScript ?? activeDisplayScript;
   const outline = document ? deriveDocumentOutline(document.nodes) : [];
   const pageWidth = getReaderPageSizeWidth(pageSize);
+  const isDarkTheme = theme === 'dark';
+  const mutedTextClass = readerThemeTextClass(theme, 'text-stone-500', 'text-white/70');
+  const bodyTextClass = readerThemeTextClass(theme, 'text-stone-600', 'text-white');
+  const titleTextClass = readerThemeTextClass(theme, 'text-stone-900', 'text-white');
+  const softerTextClass = readerThemeTextClass(theme, 'text-stone-400', 'text-white/60');
   const searchTokens = useMemo(() => {
     if (!deferredDocumentSearchQuery.trim()) {
       return [] as string[];
@@ -320,10 +338,10 @@ export function MantraDocumentView({
     return (
       <section className="flex min-h-0 flex-1 items-center justify-center px-4 py-10">
         <div className="max-w-xl text-center">
-          <div className="text-sm uppercase tracking-[0.18em] text-stone-500">
+          <div className={`text-sm uppercase tracking-[0.18em] ${mutedTextClass}`}>
             {documentStatus === 'loading' || documentStatus === 'refreshing' ? 'Loading document' : 'Reader'}
           </div>
-          <p className="mt-4 text-lg text-stone-600">
+          <p className={`mt-4 text-lg ${bodyTextClass}`}>
             Select a mantra from the sidebar to render the source document here.
           </p>
         </div>
@@ -350,16 +368,16 @@ export function MantraDocumentView({
               : '',
           ].join(' ')}
         >
-          <div className="text-[0.7rem] uppercase tracking-[0.22em] text-stone-500">{document.sourcePath}</div>
+          <div className={`text-[0.7rem] uppercase tracking-[0.22em] ${mutedTextClass}`}>{document.sourcePath}</div>
           {panelLabel ? (
-            <div className="mt-1 text-[0.7rem] uppercase tracking-[0.22em] text-stone-400">{panelLabel}</div>
+            <div className={`mt-1 text-[0.7rem] uppercase tracking-[0.22em] ${softerTextClass}`}>{panelLabel}</div>
           ) : null}
           <h1 className="mt-2 font-semibold tracking-tight text-balance" style={{ fontSize: '1.8em', lineHeight: 1.1 }}>
           {searchHitNodeIds.has('reader-document-title')
-            ? renderHighlightedTextNode(document.title, activeDisplayScript, sanskritFontPreset, tamilFontPreset, searchTokens)
-            : renderTextNode(document.title, activeDisplayScript, sanskritFontPreset, tamilFontPreset)}
+            ? renderHighlightedTextNode(document.title, activeDisplayScript, sanskritFontPreset, tamilFontPreset, searchTokens, titleTextClass, isDarkTheme)
+            : renderTextNode(document.title, activeDisplayScript, sanskritFontPreset, tamilFontPreset, titleTextClass)}
           </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-stone-600">
+          <div className={`mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm ${bodyTextClass}`}>
             <span>{document.sourceRepo} · {document.sourceBranch}</span>
             <a
               href={buildReaderSourceDocumentUrl(document.sourceRepo, document.sourceBranch, document.sourcePath)}
@@ -374,7 +392,7 @@ export function MantraDocumentView({
 
         {outline.length > 1 ? (
           <nav className="rounded-xl border border-stone-300/70 bg-white/60 p-3" aria-label="Document outline">
-            <div className="text-[0.7rem] uppercase tracking-[0.22em] text-stone-500">Outline</div>
+            <div className={`text-[0.7rem] uppercase tracking-[0.22em] ${mutedTextClass}`}>Outline</div>
             <div className="mt-3 space-y-1">
               {outline.map((entry) => (
                 <a
@@ -383,14 +401,14 @@ export function MantraDocumentView({
                   className={[
                     'block w-full rounded-md px-3 py-2 text-left text-sm transition',
                     entry.level === 1
-                      ? 'font-semibold text-stone-900'
+                      ? `font-semibold ${titleTextClass}`
                       : entry.level === 2
-                        ? 'pl-5 text-stone-800'
-                        : 'pl-8 text-stone-700',
+                        ? `pl-5 ${bodyTextClass}`
+                        : `pl-8 ${bodyTextClass}`,
                     'hover:bg-stone-100',
                   ].join(' ')}
                 >
-                  {renderTextNode(entry.label, activeDisplayScript, sanskritFontPreset, tamilFontPreset)}
+                  {renderTextNode(entry.label, activeDisplayScript, sanskritFontPreset, tamilFontPreset, bodyTextClass)}
                 </a>
               ))}
             </div>
@@ -408,7 +426,7 @@ export function MantraDocumentView({
                 searchHits.some((hit) => hit.nodeId === node.id) ? 'bg-amber-50/70 p-3 ring-1 ring-amber-300/70' : '',
               ].join(' ')}
             >
-              {renderNode(node, activeDisplayScript, sanskritFontPreset, tamilFontPreset, searchTokens, searchHitNodeIds.has(node.id))}
+              {renderNode(node, activeDisplayScript, sanskritFontPreset, tamilFontPreset, searchTokens, searchHitNodeIds.has(node.id), titleTextClass, isDarkTheme)}
             </div>
           ))}
         </div>
