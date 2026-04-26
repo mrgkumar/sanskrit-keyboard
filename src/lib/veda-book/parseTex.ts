@@ -2,28 +2,60 @@ import type { MantraNode, ParserDiagnostic } from './types';
 import { createReaderNodeId } from './renderText';
 
 const LINE_BREAK_PATTERN = /\r\n?/g;
-const COMMENT_DIRECTIVE_PATTERN = /^\s*%\s*!TeX[^\n]*$/gim;
-const STRUCTURAL_SEPARATOR_PATTERN = /\s*%\s*/g;
+const COMMENT_DIRECTIVE_PATTERN = /^\s*%\s*!TeX[^\n]*$/im;
+const TEXTUAL_LINE_PATTERN = /[\p{L}\p{N}\p{Script=Devanagari}\u0C80-\u0CFF\u0B80-\u0BFF\u0D00-\u0D7F]/u;
+const IGNORED_COMMANDS = new Set([
+  'begingroup',
+  'endgroup',
+  'newcommand',
+  'renewcommand',
+  'setcounter',
+  'pagenumbering',
+  'setlength',
+  'fontspec',
+  'lhead',
+  'rhead',
+  'fancyfoot',
+  'chaptertitle',
+]);
 
-const stripTeXComments = (input: string) =>
-  input
-    .split('\n')
-    .map((line) => {
-      let result = '';
-      let escaped = false;
+const stripInlineTeXComments = (line: string) => {
+  let result = '';
+  let escaped = false;
 
-      for (let index = 0; index < line.length; index += 1) {
-        const char = line[index];
-        if (char === '%' && !escaped) {
-          break;
-        }
-        result += char;
-        escaped = char === '\\' && !escaped;
-      }
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === '%' && !escaped) {
+      break;
+    }
+    result += char;
+    escaped = char === '\\' && !escaped;
+  }
 
-      return result;
-    })
-    .join('\n');
+  return result;
+};
+
+const normalizeTeXLine = (line: string) => {
+  const trimmedStart = line.trimStart();
+  if (!trimmedStart) {
+    return '';
+  }
+
+  if (COMMENT_DIRECTIVE_PATTERN.test(line)) {
+    return '';
+  }
+
+  if (trimmedStart.startsWith('%')) {
+    const commentBody = trimmedStart.slice(1).trimStart();
+    if (commentBody && !commentBody.startsWith('\\') && TEXTUAL_LINE_PATTERN.test(commentBody)) {
+      return commentBody;
+    }
+
+    return '';
+  }
+
+  return stripInlineTeXComments(line);
+};
 
 const makeDiagnostic = (
   level: ParserDiagnostic['level'],
@@ -205,12 +237,17 @@ const parseFragment = (fragment: string, diagnostics: ParserDiagnostic[], nodes:
     const supportedNode = nodeFromMacro(macro.command, macro.args, nodes.length);
     if (supportedNode) {
       nodes.push(supportedNode);
-      cursor = nextCommandIndex + commandSlice.length - macro.tail.length;
       if (macro.tail) {
-        flushText(macro.tail);
-        cursor = nextCommandIndex + commandSlice.length;
+        parseFragment(macro.tail, diagnostics, nodes);
       }
-      continue;
+      return;
+    }
+
+    if (IGNORED_COMMANDS.has(macro.command)) {
+      if (macro.tail) {
+        parseFragment(macro.tail, diagnostics, nodes);
+      }
+      return;
     }
 
     diagnostics.push(makeDiagnostic('warning', buildUnsupportedMacroWarning([macro.command]), fragment));
@@ -226,9 +263,11 @@ const parseFragment = (fragment: string, diagnostics: ParserDiagnostic[], nodes:
 
 const parseParagraphBlocks = (source: string, diagnostics: ParserDiagnostic[]) => {
   const normalized = source.replace(LINE_BREAK_PATTERN, '\n');
-  const stripped = stripTeXComments(normalized).replace(COMMENT_DIRECTIVE_PATTERN, '');
-  const structuralSource = stripped.replace(STRUCTURAL_SEPARATOR_PATTERN, '\n');
-  const blocks = structuralSource.split(/\n{2,}/);
+  const stripped = normalized
+    .split('\n')
+    .map((line) => normalizeTeXLine(line))
+    .join('\n');
+  const blocks = stripped.split(/\n{2,}/);
   const nodes: MantraNode[] = [];
 
   blocks.forEach((block) => {

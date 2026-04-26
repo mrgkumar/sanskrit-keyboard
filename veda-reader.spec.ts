@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { parseTexDocument } from '@/lib/veda-book/parseTex';
 
 const MANTRAS_INDEX = String.raw`\input{mantras/PurushaSuktam.tex}
 \input{mantras/AnotherMantra.tex}
@@ -58,6 +59,28 @@ const mockReaderSources = async (page: Parameters<typeof test>[0]['page']) => {
 };
 
 test.describe('Veda Reader', () => {
+  test('parser preserves visible percent-prefixed verse lines and ignores boilerplate wrappers', async () => {
+    const source = String.raw`
+% !TeX root = vedamantrabook.tex
+\begingroup
+\chapt{पुरुषसूक्तम्}
+
+% स॒हस्र॑शीर्‌षा॒ पुरु॑षः।
+% स॒ह॒स्रा॒क्षः स॒हस्र॑पात्।
+\endgroup
+`;
+
+    const parsed = parseTexDocument(source, { sourcePath: 'mantras/PurushaSuktam.tex' });
+
+    expect(parsed.nodes.some((node) => node.type === 'chapter' && node.text === 'पुरुषसूक्तम्')).toBeTruthy();
+    expect(
+      parsed.nodes.some(
+        (node) => node.type === 'paragraph' && node.text.includes('स॒हस्र॑शीर्‌षा॒ पुरु॑षः।'),
+      ),
+    ).toBeTruthy();
+    expect(parsed.diagnostics.some((diagnostic) => diagnostic.message.includes('begingroup'))).toBeFalsy();
+  });
+
   test('loads the manifest, renders a document, and supports mode switching', async ({ page }) => {
     await mockReaderSources(page);
     await page.addInitScript(() => {
