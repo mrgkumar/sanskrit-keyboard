@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ReaderToolbar } from './ReaderToolbar';
+import { ReaderSearchResults } from './ReaderSearchResults';
 import { ReaderSidebar } from './ReaderSidebar';
 import { MantraDocumentView } from './MantraDocumentView';
 import { SourcePanel } from './SourcePanel';
@@ -30,8 +31,10 @@ export function ReaderShell() {
   const openDocument = useReaderStore((state) => state.openDocument);
   const readerMode = useReaderStore((state) => state.readerMode);
   const documentSearchQuery = useReaderStore((state) => state.documentSearchQuery);
+  const documentSearchActiveIndex = useReaderStore((state) => state.documentSearchActiveIndex);
   const displayScript = useReaderStore((state) => state.displayScript);
   const sanskritFontPreset = useReaderStore((state) => state.sanskritFontPreset);
+  const setDocumentSearchActiveIndex = useReaderStore((state) => state.setDocumentSearchActiveIndex);
   const setSidebarOpen = useReaderStore((state) => state.setSidebarOpen);
   const sidebarOpen = useReaderStore((state) => state.sidebarOpen);
   const theme = useReaderStore((state) => state.theme);
@@ -51,20 +54,26 @@ export function ReaderShell() {
   const currentThemeClass = themeClassName[theme];
   const splitMode = readerMode === 'split';
   const compareMode = readerMode === 'compare';
-  const documentSearchHitCount = useMemo(() => {
+  const documentSearchHits = useMemo(() => {
     if (!activeDocument || !documentSearchQuery.trim()) {
-      return 0;
+      return [];
     }
 
     return collectReaderSearchHits(activeDocument, documentSearchQuery, displayScript, DEFAULT_OUTPUT_TARGET_SETTINGS, {
       sanskritFontPreset,
-    }).length;
+    });
   }, [activeDocument, documentSearchQuery, displayScript, sanskritFontPreset]);
 
   return (
     <div className={`${currentThemeClass} min-h-dvh`}>
       <div className="flex min-h-dvh flex-col">
-        <ReaderToolbar documentSearchHitCount={documentSearchHitCount} />
+        <ReaderToolbar documentSearchHitCount={documentSearchHits.length} />
+        <ReaderSearchResults
+          hits={documentSearchHits}
+          activeIndex={documentSearchActiveIndex}
+          query={documentSearchQuery}
+          onSelectHit={setDocumentSearchActiveIndex}
+        />
         <div className="flex min-h-0 flex-1">
           <aside
             className={[

@@ -9,6 +9,17 @@ const MANTRAS_INDEX = String.raw`\input{mantras/PurushaSuktam.tex}
 \input{mantras/OutlineMantra.tex}
 `;
 
+const APP_URL = process.env.APP_URL ?? 'http://127.0.0.1:3000';
+const APP_BASE_PATH = new URL(APP_URL).pathname.replace(/\/$/, '');
+
+const withAppBasePath = (path: string) => {
+  if (!APP_BASE_PATH || APP_BASE_PATH === '/') {
+    return path;
+  }
+
+  return `${APP_BASE_PATH}${path}`;
+};
+
 const PURUSHA_SUKTAM = String.raw`\chapt{पुरुषसूक्तम्}
 
 न तस्य कार्यं करणं च विद्यते।
@@ -196,7 +207,7 @@ test.describe('Veda Reader', () => {
     await mockReaderSources(page);
     await clearReaderStorage(page);
 
-    await page.goto('/reader');
+    await page.goto(withAppBasePath('/reader'));
 
     await expect(page.getByText('Veda Reader')).toBeVisible();
     await expect(page.locator('aside').getByRole('button', { name: /पुरुषसूक्तम्/ }).first()).toBeVisible();
@@ -220,7 +231,7 @@ test.describe('Veda Reader', () => {
     await page.getByRole('button', { name: 'Reader' }).click();
     await page.getByRole('button', { name: 'Devanagari' }).click();
     await page.getByRole('textbox', { name: 'Search document' }).fill('tasya');
-    await expect(page.getByText('1/1')).toBeVisible();
+    await expect(page.getByText('1/1', { exact: true })).toBeVisible();
     await expect(page.locator('[data-reader-search-hit="true"]').first()).toContainText('न तस्य कार्यं करणं च विद्यते');
 
     await page.getByRole('button', { name: 'Reader' }).click();
@@ -257,12 +268,31 @@ test.describe('Veda Reader', () => {
     await mockReaderSources(page);
     await clearReaderStorage(page);
 
-    await page.goto('/reader?path=mantras/PurushaSuktam.tex');
+    await page.goto(withAppBasePath('/reader?path=mantras/PurushaSuktam.tex'));
 
     await expect(page.locator('main article > header').getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
     await expect(page.getByText('stotrasamhita/vedamantra-book · master', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Split' })).toBeVisible();
     await expect(page.getByText('Script: Devanagari')).toBeVisible();
+  });
+
+  test('renders search result list and jumps to the selected match', async ({ page }) => {
+    await mockReaderSources(page);
+    await clearReaderStorage(page);
+
+    await page.goto(withAppBasePath('/reader?path=mantras/OutlineMantra.tex'));
+    await page.getByRole('button', { name: 'Devanagari' }).click();
+    await page.getByRole('textbox', { name: 'Search document' }).fill('अनुच्छेद');
+
+    const searchResults = page.getByTestId('reader-search-results');
+    await expect(searchResults).toBeVisible();
+    await expect(searchResults.getByText(/matches for/)).toBeVisible();
+    await expect(searchResults.getByRole('button')).toHaveCount(17);
+
+    await searchResults.getByRole('button').nth(1).click();
+
+    await expect(searchResults.getByText('Active 2/17')).toBeVisible();
+    await expect(page.getByText('2/17', { exact: true })).toBeVisible();
   });
 
   test('renders a document outline and jumps to the selected section', async ({ page }) => {
@@ -273,7 +303,7 @@ test.describe('Veda Reader', () => {
     const outlineDocument = parseTexDocument(OUTLINE_MANTRA, { sourcePath: 'mantras/OutlineMantra.tex' });
     const subsectionNode = outlineDocument.nodes.find((node) => node.type === 'subsection');
 
-    await page.goto('/reader?path=mantras/OutlineMantra.tex');
+    await page.goto(withAppBasePath('/reader?path=mantras/OutlineMantra.tex'));
 
     await expect(page.getByRole('navigation', { name: 'Document outline' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'द्वितीयः विभागः' })).toBeVisible();
@@ -290,7 +320,7 @@ test.describe('Veda Reader', () => {
   test('manual live upstream verification only', async ({ page }) => {
     test.skip(process.env.LIVE_UPSTREAM !== '1', 'manual live upstream verification only');
 
-    await page.goto('/reader?path=mantras/PurushaSuktam.tex');
+    await page.goto(withAppBasePath('/reader?path=mantras/PurushaSuktam.tex'));
 
     await expect(page.getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible({
       timeout: 20000,
