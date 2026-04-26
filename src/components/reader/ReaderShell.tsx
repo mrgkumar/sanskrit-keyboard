@@ -54,6 +54,44 @@ export function ReaderShell() {
   const currentThemeClass = themeClassName[theme];
   const splitMode = readerMode === 'split';
   const compareMode = readerMode === 'compare';
+
+  useEffect(() => {
+    if (!manifest) {
+      return;
+    }
+
+    let refreshTimer: number | null = null;
+    const scheduleRefresh = () => {
+      if (refreshTimer !== null) {
+        return;
+      }
+
+      refreshTimer = window.setTimeout(() => {
+        refreshTimer = null;
+        void loadManifest({ force: true });
+      }, 0);
+    };
+
+    const handleFocus = () => {
+      scheduleRefresh();
+    };
+
+    const handleVisibilityChange = () => {
+      scheduleRefresh();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (refreshTimer !== null) {
+        window.clearTimeout(refreshTimer);
+      }
+    };
+  }, [loadManifest, manifest]);
+
   const documentSearchHits = useMemo(() => {
     if (!activeDocument || !documentSearchQuery.trim()) {
       return [];

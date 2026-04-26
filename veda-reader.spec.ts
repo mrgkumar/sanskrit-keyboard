@@ -14,6 +14,12 @@ const MANTRAS_INDEX = String.raw`\input{mantras/PurushaSuktam.tex}
 \input{mantras/OutlineMantra.tex}
 `;
 
+const MANTRAS_INDEX_REFRESHED = String.raw`\input{mantras/PurushaSuktam.tex}
+\input{mantras/AnotherMantra.tex}
+\input{mantras/OutlineMantra.tex}
+\input{mantras/RefreshedMantra.tex}
+`;
+
 const APP_URL = process.env.APP_URL ?? 'http://127.0.0.1:3000';
 const APP_BASE_PATH = new URL(APP_URL).pathname.replace(/\/$/, '');
 
@@ -110,15 +116,23 @@ const DIAGNOSTICS_MANTRA = String.raw`\chapt{सूचनाः}
 \foo{diagnostic}
 `;
 
+const REFRESHED_MANTRA = String.raw`\chapt{नवीनः ग्रन्थः}
+
+अयं तु अद्यतनः पाठः।
+`;
+
 const mockReaderSources = async (page: Parameters<typeof test>[0]['page']) => {
+  let mantrasIndexRequests = 0;
+
   await page.route('**/raw.githubusercontent.com/**', async (route) => {
     const url = route.request().url();
 
     if (url.includes('mantras.tex')) {
+      mantrasIndexRequests += 1;
       await route.fulfill({
         status: 200,
         contentType: 'text/plain; charset=utf-8',
-        body: MANTRAS_INDEX,
+        body: mantrasIndexRequests > 1 ? MANTRAS_INDEX_REFRESHED : MANTRAS_INDEX,
       });
       return;
     }
@@ -155,6 +169,15 @@ const mockReaderSources = async (page: Parameters<typeof test>[0]['page']) => {
         status: 200,
         contentType: 'text/plain; charset=utf-8',
         body: DIAGNOSTICS_MANTRA,
+      });
+      return;
+    }
+
+    if (url.includes('RefreshedMantra.tex')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/plain; charset=utf-8',
+        body: REFRESHED_MANTRA,
       });
       return;
     }
@@ -388,6 +411,23 @@ test.describe('Veda Reader', () => {
     await expect(warningBlock).not.toBeInViewport();
     await page.getByTestId('reader-diagnostics-panel').getByTestId('diagnostic-jump').click();
     await expect(warningBlock).toBeInViewport();
+  });
+
+  test('refreshes the manifest when the reader regains focus', async ({ page }) => {
+    await mockReaderSources(page);
+    await clearReaderStorage(page);
+
+    await page.goto(withAppBasePath('/reader'));
+
+    await expect(page.locator('aside').getByRole('button', { name: /पुरुषसूक्तम्/ }).first()).toBeVisible();
+    await expect(page.locator('aside').getByRole('button', { name: /Refreshed Mantra/ })).toHaveCount(0);
+
+    await page.evaluate(() => {
+      window.dispatchEvent(new FocusEvent('focus'));
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await expect(page.locator('aside').getByRole('button', { name: /Refreshed Mantra/ }).first()).toBeVisible();
   });
 
   test('renders a document outline and jumps to the selected section', async ({ page }) => {
