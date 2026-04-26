@@ -8,7 +8,11 @@ import {
 } from '@/lib/veda-book/renderText';
 
 export function ReaderStatusBar() {
-  const { activeDocument, displayScript, documentStatus, manifest, manifestStatus } = useReaderStore();
+  const activeDocument = useReaderStore((state) => state.activeDocument);
+  const displayScript = useReaderStore((state) => state.displayScript);
+  const documentStatus = useReaderStore((state) => state.documentStatus);
+  const manifest = useReaderStore((state) => state.manifest);
+  const manifestStatus = useReaderStore((state) => state.manifestStatus);
   const sourceScript = activeDocument ? detectReaderSourceScript(activeDocument.rawTex) : 'unknown';
 
   return (

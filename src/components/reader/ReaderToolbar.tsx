@@ -49,30 +49,28 @@ interface ReaderToolbarProps {
 }
 
 export function ReaderToolbar({ documentSearchHitCount = 0 }: ReaderToolbarProps) {
-  const {
-    activeDocument,
-    displayScript,
-    diagnosticsOpen,
-    documentSearchActiveIndex,
-    documentSearchQuery,
-    fontSize,
-    loadManifest,
-    readerMode,
-    sanskritFontPreset,
-    tamilFontPreset,
-    setSanskritFontPreset,
-    setTamilFontPreset,
-    setDisplayScript,
-    setDiagnosticsOpen,
-    setReaderMode,
-    setSidebarOpen,
-    setTheme,
-    setTypography,
-    setDocumentSearchActiveIndex,
-    setDocumentSearchQuery,
-    sidebarOpen,
-    theme,
-  } = useReaderStore();
+  const activeDocument = useReaderStore((state) => state.activeDocument);
+  const displayScript = useReaderStore((state) => state.displayScript);
+  const diagnosticsOpen = useReaderStore((state) => state.diagnosticsOpen);
+  const documentSearchActiveIndex = useReaderStore((state) => state.documentSearchActiveIndex);
+  const documentSearchQuery = useReaderStore((state) => state.documentSearchQuery);
+  const fontSize = useReaderStore((state) => state.fontSize);
+  const loadManifest = useReaderStore((state) => state.loadManifest);
+  const readerMode = useReaderStore((state) => state.readerMode);
+  const sanskritFontPreset = useReaderStore((state) => state.sanskritFontPreset);
+  const tamilFontPreset = useReaderStore((state) => state.tamilFontPreset);
+  const setSanskritFontPreset = useReaderStore((state) => state.setSanskritFontPreset);
+  const setTamilFontPreset = useReaderStore((state) => state.setTamilFontPreset);
+  const setDisplayScript = useReaderStore((state) => state.setDisplayScript);
+  const setDiagnosticsOpen = useReaderStore((state) => state.setDiagnosticsOpen);
+  const setReaderMode = useReaderStore((state) => state.setReaderMode);
+  const setSidebarOpen = useReaderStore((state) => state.setSidebarOpen);
+  const setTheme = useReaderStore((state) => state.setTheme);
+  const setTypography = useReaderStore((state) => state.setTypography);
+  const setDocumentSearchActiveIndex = useReaderStore((state) => state.setDocumentSearchActiveIndex);
+  const setDocumentSearchQuery = useReaderStore((state) => state.setDocumentSearchQuery);
+  const sidebarOpen = useReaderStore((state) => state.sidebarOpen);
+  const theme = useReaderStore((state) => state.theme);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
 
   const currentThemeIndex = themeOrder.indexOf(theme);

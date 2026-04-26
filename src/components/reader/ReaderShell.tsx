@@ -21,22 +21,20 @@ const themeClassName = {
 export function ReaderShell() {
   const searchParams = useSearchParams();
   const initialPath = searchParams.get('path') ?? undefined;
-  const {
-    activeDocument,
-    activePath,
-    diagnosticsOpen,
-    documentStatus,
-    loadManifest,
-    manifest,
-    openDocument,
-    readerMode,
-    documentSearchQuery,
-    displayScript,
-    sanskritFontPreset,
-    setSidebarOpen,
-    sidebarOpen,
-    theme,
-  } = useReaderStore();
+  const activeDocument = useReaderStore((state) => state.activeDocument);
+  const activePath = useReaderStore((state) => state.activePath);
+  const diagnosticsOpen = useReaderStore((state) => state.diagnosticsOpen);
+  const documentStatus = useReaderStore((state) => state.documentStatus);
+  const loadManifest = useReaderStore((state) => state.loadManifest);
+  const manifest = useReaderStore((state) => state.manifest);
+  const openDocument = useReaderStore((state) => state.openDocument);
+  const readerMode = useReaderStore((state) => state.readerMode);
+  const documentSearchQuery = useReaderStore((state) => state.documentSearchQuery);
+  const displayScript = useReaderStore((state) => state.displayScript);
+  const sanskritFontPreset = useReaderStore((state) => state.sanskritFontPreset);
+  const setSidebarOpen = useReaderStore((state) => state.setSidebarOpen);
+  const sidebarOpen = useReaderStore((state) => state.sidebarOpen);
+  const theme = useReaderStore((state) => state.theme);
 
   useEffect(() => {
     void loadManifest();

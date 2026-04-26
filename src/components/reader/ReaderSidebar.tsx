@@ -11,15 +11,13 @@ interface ReaderSidebarProps {
 
 export function ReaderSidebar({ onSelectDocument }: ReaderSidebarProps) {
   const router = useRouter();
-  const {
-    activePath,
-    manifest,
-    manifestError,
-    manifestStatus,
-    openDocument,
-    searchQuery,
-    setSearchQuery,
-  } = useReaderStore();
+  const activePath = useReaderStore((state) => state.activePath);
+  const manifest = useReaderStore((state) => state.manifest);
+  const manifestError = useReaderStore((state) => state.manifestError);
+  const manifestStatus = useReaderStore((state) => state.manifestStatus);
+  const openDocument = useReaderStore((state) => state.openDocument);
+  const searchQuery = useReaderStore((state) => state.searchQuery);
+  const setSearchQuery = useReaderStore((state) => state.setSearchQuery);
 
   const entries = manifest ? filterManifestEntries(manifest.entries, searchQuery) : [];
 

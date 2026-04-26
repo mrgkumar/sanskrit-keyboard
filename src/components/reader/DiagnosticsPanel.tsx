@@ -4,7 +4,7 @@ import { AlertTriangle } from 'lucide-react';
 import { useReaderStore } from '@/store/useReaderStore';
 
 export function DiagnosticsPanel() {
-  const { activeDocument } = useReaderStore();
+  const activeDocument = useReaderStore((state) => state.activeDocument);
   const diagnostics = activeDocument?.diagnostics ?? [];
   const counts = diagnostics.reduce(
     (accumulator, diagnostic) => {
