@@ -15,6 +15,7 @@ export interface ParserDiagnostic {
   source?: string;
   line?: number;
   column?: number;
+  nodeId?: string;
 }
 
 export type MantraNode =

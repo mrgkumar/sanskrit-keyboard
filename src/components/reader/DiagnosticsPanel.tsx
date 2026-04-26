@@ -45,6 +45,19 @@ export function DiagnosticsPanel() {
                     {diagnostic.column ? `:${diagnostic.column}` : ''}
                   </span>
                 ) : null}
+                {diagnostic.nodeId ? (
+                  <button
+                    type="button"
+                    data-testid="diagnostic-jump"
+                    onClick={() => {
+                      const target = document.getElementById(diagnostic.nodeId!);
+                      target?.scrollIntoView({ block: 'center', behavior: 'instant' });
+                    }}
+                    className="rounded-full border border-stone-300/70 bg-white/80 px-2 py-0.5 text-[0.65rem] tracking-[0.18em] text-stone-700 transition hover:bg-white"
+                  >
+                    Jump to source
+                  </button>
+                ) : null}
               </div>
               <div>{diagnostic.message}</div>
               {diagnostic.source ? (

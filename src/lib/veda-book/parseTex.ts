@@ -65,6 +65,7 @@ const makeDiagnostic = (
     line?: number;
     column?: number;
     command?: string;
+    nodeId?: string;
   },
 ): ParserDiagnostic => ({
   id: `diag-${level}-${Math.random().toString(36).slice(2, 8)}`,
@@ -73,6 +74,7 @@ const makeDiagnostic = (
   source: options?.source,
   line: options?.line,
   column: options?.column,
+  nodeId: options?.nodeId,
 });
 
 const readBalancedGroup = (input: string, startIndex: number) => {
@@ -247,17 +249,19 @@ const parseFragment = (
 
     if (macro.kind === 'malformed') {
       const location = getLineColumnAtIndex(fragment, nextCommandIndex, baseLine);
+      const nodeId = createReaderNodeId('warning', nodes.length);
       diagnostics.push(
         makeDiagnostic('error', `Could not parse \\${macro.command} arguments.`, {
           source: fragment,
           line: location.line,
           column: location.column,
           command: macro.command,
+          nodeId,
         }),
       );
       nodes.push({
         type: 'warning',
-        id: createReaderNodeId('warning', nodes.length),
+        id: nodeId,
         message: `Malformed command: \\${macro.command}`,
         source: fragment,
       });
@@ -283,53 +287,24 @@ const parseFragment = (
     }
 
     const location = getLineColumnAtIndex(fragment, nextCommandIndex, baseLine);
+    const nodeId = createReaderNodeId('warning', nodes.length);
     diagnostics.push(
       makeDiagnostic('warning', buildUnsupportedMacroWarning([macro.command]), {
         source: fragment,
         line: location.line,
         column: location.column,
         command: macro.command,
+        nodeId,
       }),
     );
     nodes.push({
       type: 'warning',
-      id: createReaderNodeId('warning', nodes.length),
+      id: nodeId,
       message: buildUnsupportedMacroWarning([macro.command]),
       source: fragment,
     });
     return;
   }
-};
-
-const recordStandaloneMacroDiagnostic = (
-  fragment: string,
-  diagnostics: ParserDiagnostic[],
-  baseLine: number,
-) => {
-  const trimmed = fragment.trim();
-  if (!trimmed.startsWith('\\')) {
-    return;
-  }
-
-  const macro = parseStandaloneMacro(trimmed);
-  if (!macro || macro.kind !== 'macro') {
-    return;
-  }
-
-  const supportedNode = nodeFromMacro(macro.command, macro.args ?? [], 0);
-  if (supportedNode || IGNORED_COMMANDS.has(macro.command)) {
-    return;
-  }
-
-  const location = getLineColumnAtIndex(trimmed, trimmed.indexOf('\\'), baseLine);
-  diagnostics.push(
-    makeDiagnostic('warning', buildUnsupportedMacroWarning([macro.command]), {
-      source: fragment,
-      line: location.line,
-      column: location.column,
-      command: macro.command,
-    }),
-  );
 };
 
 const parseParagraphBlocks = (source: string, diagnostics: ParserDiagnostic[]) => {
@@ -371,7 +346,6 @@ const parseParagraphBlocks = (source: string, diagnostics: ParserDiagnostic[]) =
     if (!fragment) {
       return;
     }
-    recordStandaloneMacroDiagnostic(fragment, diagnostics, block.startLine);
     parseFragment(fragment, diagnostics, nodes, block.startLine);
   });
 

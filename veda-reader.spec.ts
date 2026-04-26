@@ -84,6 +84,32 @@ const OUTLINE_MANTRA = String.raw`\chapt{दीर्घपाठम्}
 अन्तिमं पङ्क्तिः।
 `;
 
+const DIAGNOSTICS_MANTRA = String.raw`\chapt{सूचनाः}
+
+प्रथमं अनुच्छेदम्।
+द्वितीयं अनुच्छेदम्।
+तृतीयं अनुच्छेदम्।
+चतुर्थं अनुच्छेदम्।
+पञ्चमं अनुच्छेदम्।
+षष्ठं अनुच्छेदम्।
+सप्तमं अनुच्छेदम्।
+अष्टमं अनुच्छेदम्।
+नवमं अनुच्छेदम्।
+दशमं अनुच्छेदम्।
+एकादशं अनुच्छेदम्।
+द्वादशं अनुच्छेदम्।
+त्रयोदशं अनुच्छेदम्।
+चतुर्दशं अनुच्छेदम्।
+पञ्चदशं अनुच्छेदम्।
+षोडशं अनुच्छेदम्।
+सप्तदशं अनुच्छेदम्।
+अष्टादशं अनुच्छेदम्।
+एकोनविंशतिः अनुच्छेदः।
+विंशतिः अनुच्छेदः।
+
+\foo{diagnostic}
+`;
+
 const mockReaderSources = async (page: Parameters<typeof test>[0]['page']) => {
   await page.route('**/raw.githubusercontent.com/**', async (route) => {
     const url = route.request().url();
@@ -120,6 +146,15 @@ const mockReaderSources = async (page: Parameters<typeof test>[0]['page']) => {
         status: 200,
         contentType: 'text/plain; charset=utf-8',
         body: OUTLINE_MANTRA,
+      });
+      return;
+    }
+
+    if (url.includes('DiagnosticsMantra.tex')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/plain; charset=utf-8',
+        body: DIAGNOSTICS_MANTRA,
       });
       return;
     }
@@ -304,6 +339,21 @@ test.describe('Veda Reader', () => {
 
     await expect(searchResults.getByText('Active 2/17')).toBeVisible();
     await expect(page.getByText('2/17', { exact: true })).toBeVisible();
+  });
+
+  test('diagnostic entries jump to the rendered warning block', async ({ page }) => {
+    await mockReaderSources(page);
+    await clearReaderStorage(page);
+    await page.setViewportSize({ width: 1280, height: 520 });
+
+    await page.goto(withAppBasePath('/reader?path=mantras/DiagnosticsMantra.tex'));
+    await page.getByRole('button', { name: 'Diagnostics' }).click();
+
+    const warningBlock = page.locator('main article').getByText('Unsupported macro(s): \\foo', { exact: true });
+
+    await expect(warningBlock).not.toBeInViewport();
+    await page.getByTestId('reader-diagnostics-panel').getByTestId('diagnostic-jump').click();
+    await expect(warningBlock).toBeInViewport();
   });
 
   test('renders a document outline and jumps to the selected section', async ({ page }) => {
