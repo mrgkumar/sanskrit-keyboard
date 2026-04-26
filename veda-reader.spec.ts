@@ -97,4 +97,14 @@ test.describe('Veda Reader', () => {
     await expect(page.getByText('stotrasamhita/vedamantra-book · master', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Split' })).toBeVisible();
   });
+
+  test.skip(process.env.LIVE_UPSTREAM !== '1', 'manual live upstream verification only', async ({ page }) => {
+    await page.goto('/reader?path=mantras/PurushaSuktam.tex');
+
+    await expect(page.getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible({
+      timeout: 20000,
+    });
+    await expect(page.getByRole('button', { name: 'Source' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Split' })).toBeVisible();
+  });
 });
