@@ -37,7 +37,8 @@ export function SourcePanel({ document, documentStatus }: SourcePanelProps) {
       <div className="min-h-0 flex-1 overflow-auto p-4">
         <div className="mx-auto w-full" style={{ maxWidth: pageWidth }}>
           <pre
-            className="whitespace-pre-wrap break-words font-mono text-stone-800"
+            className="script-text-devanagari whitespace-pre-wrap break-words text-stone-800"
+            data-font-preset="chandas"
             style={{ fontSize: `${fontSize}px`, lineHeight }}
           >
             {document?.rawTex ?? 'Open a document to view its raw source.'}

@@ -1632,6 +1632,28 @@ const getPreviousSignificantUnicodeChar = (chars: string[], startIndex: number) 
 
 export const canonicalizeDevanagariPaste = (unicode: string) => detransliterate(unicode);
 
+const DEVANAGARI_PASTE_PATTERN = /[\u0900-\u097F]/u;
+const TAMIL_PASTE_PATTERN = /[\p{Script=Tamil}]/u;
+
+export const canonicalizeReaderSearchPaste = (text: string) => {
+  if (!text) {
+    return text;
+  }
+
+  if (DEVANAGARI_PASTE_PATTERN.test(text)) {
+    return detransliterate(text);
+  }
+
+  if (TAMIL_PASTE_PATTERN.test(text)) {
+    const reversed = reverseTamilInput(text, { inputMode: 'tamil-precision', outputMode: 'canonical' });
+    if (reversed.status === 'success') {
+      return reversed.canonicalRoman;
+    }
+  }
+
+  return text;
+};
+
 
 export const detransliterate = (
   unicode: string,

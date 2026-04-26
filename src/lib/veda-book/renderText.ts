@@ -117,13 +117,34 @@ export type ReaderDisplayScript = 'original' | OutputScript;
 const isRenderableReaderScript = (script: ReaderDisplayScript | ReaderSourceScript): script is OutputScript =>
   script === 'roman' || script === 'devanagari' || script === 'tamil';
 
-export const getCanonicalReaderSourceText = (text: string, sourceScript: ReaderSourceScript) => {
+export const normalizeReaderSourceText = (
+  text: string,
+  sourceScript: ReaderSourceScript,
+  options?: { sanskritFontPreset?: SanskritFontPreset },
+) => {
   if (!text) {
     return text;
   }
 
   if (sourceScript === 'devanagari') {
-    return detransliterate(text);
+    return normalizeDevanagariDisplayText(text, options?.sanskritFontPreset)
+      .replace(/(\u0903)\u200C?([\u0951\u0952\u1CDA])/gu, '$2$1');
+  }
+
+  return text;
+};
+
+export const getCanonicalReaderSourceText = (
+  text: string,
+  sourceScript: ReaderSourceScript,
+  options?: { sanskritFontPreset?: SanskritFontPreset },
+) => {
+  if (!text) {
+    return text;
+  }
+
+  if (sourceScript === 'devanagari') {
+    return detransliterate(normalizeReaderSourceText(text, sourceScript, options));
   }
 
   if (sourceScript === 'roman') {
@@ -153,16 +174,9 @@ export const formatReaderDisplayText = (
     return text;
   }
 
-  const canonicalSource = getCanonicalReaderSourceText(text, sourceScript);
+  const canonicalSource = getCanonicalReaderSourceText(text, sourceScript, options);
   if (canonicalSource === null) {
     return text;
-  }
-
-  if (displayScript === 'devanagari') {
-    return normalizeDevanagariDisplayText(
-      formatSourceForScript(canonicalSource, 'devanagari', settings, options),
-      options?.sanskritFontPreset,
-    );
   }
 
   return formatSourceForScript(canonicalSource, displayScript, settings, options);
@@ -201,7 +215,6 @@ export const buildReaderSourceDocumentUrl = (sourceRepo: string, sourceBranch: s
 export const formatReaderSearchText = (
   text: string,
   displayScript: ReaderDisplayScript,
-  sourceScript: ReaderSourceScript,
   settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
   options?: { sanskritFontPreset?: SanskritFontPreset },
 ) => {
@@ -215,18 +228,12 @@ export const formatReaderSearchText = (
   }
 
   const queryScript = detectReaderSourceScript(trimmed);
-  const canonicalSource = getCanonicalReaderSourceText(trimmed, queryScript);
+  const canonicalSource = getCanonicalReaderSourceText(trimmed, queryScript, options);
   if (canonicalSource === null) {
     return normalizeReaderSearchText(trimmed);
   }
 
-  const renderedQuery =
-    displayScript === 'devanagari'
-      ? normalizeDevanagariDisplayText(
-          formatSourceForScript(canonicalSource, 'devanagari', settings, options),
-          options?.sanskritFontPreset,
-        )
-      : formatSourceForScript(canonicalSource, displayScript, settings, options);
+  const renderedQuery = formatReaderDisplayText(trimmed, displayScript, queryScript, settings, options);
 
   return normalizeReaderSearchText(renderedQuery);
 };
@@ -244,7 +251,7 @@ export const collectReaderSearchHits = (
   settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
   options?: { sanskritFontPreset?: SanskritFontPreset },
 ) => {
-  const normalizedQuery = formatReaderSearchText(query, displayScript, detectReaderSourceScript(document.rawTex), settings, options);
+  const normalizedQuery = formatReaderSearchText(query, displayScript, settings, options);
   if (!normalizedQuery) {
     return [] as ReaderSearchHit[];
   }

@@ -360,6 +360,20 @@ test.describe('Veda Reader', () => {
     expect(formatReaderDisplayText(tamilText, 'tamil', 'tamil', DEFAULT_OUTPUT_TARGET_SETTINGS)).toBe('ஶாந்தி॒:');
   });
 
+  test('reader devanagari rendering normalizes corpus accent order before translating', async () => {
+    const devanagariSource = String.raw`ॐ शं न॒स्तन्नो॒ मा हा॑सीत्॥ ॐ शान्तिः॒ शान्तिः॒ शान्तिः॑॥`;
+
+    expect(formatReaderDisplayText(devanagariSource, 'roman', 'devanagari', DEFAULT_OUTPUT_TARGET_SETTINGS)).toBe(
+      "OM shaM na_stanno_ mA hA'sIt|| OM shAnti_: shAnti_: shAnti':||",
+    );
+    expect(formatReaderDisplayText(devanagariSource, 'tamil', 'devanagari', DEFAULT_OUTPUT_TARGET_SETTINGS)).toBe(
+      'ஓம் ஶம் ந॒ஸ்தந்நோ॒ மா ஹா॑ஸீத்॥ ஓம் ஶாந்தி॒: ஶாந்தி॒: ஶாந்தி॑:॥',
+    );
+    expect(
+      formatReaderDisplayText(devanagariSource, 'devanagari', 'devanagari', DEFAULT_OUTPUT_TARGET_SETTINGS),
+    ).toContain('शान्ति॒ः');
+  });
+
   test('loads the manifest, renders a document, and supports mode switching', async ({ page }) => {
     await mockReaderSources(page);
     await clearReaderStorage(page);
@@ -519,17 +533,112 @@ test.describe('Veda Reader', () => {
 
     await page.goto(withAppBasePath('/reader?path=mantras/OutlineMantra.tex'));
     await page.getByRole('button', { name: 'Devanagari' }).click();
-    await page.getByRole('textbox', { name: 'Search document' }).fill('अनुच्छेद');
+    await page.getByRole('button', { name: 'Open document search' }).click();
 
-    const searchResults = page.getByTestId('reader-search-results');
-    await expect(searchResults).toBeVisible();
-    await expect(searchResults.getByText(/matches for/)).toBeVisible();
-    await expect(searchResults.getByRole('button')).toHaveCount(17);
+    const searchPanel = page.getByTestId('reader-search-panel');
+    await expect(searchPanel).toBeVisible();
 
-    await searchResults.getByRole('button').nth(1).click();
+    await searchPanel.getByTestId('reader-search-input').fill('अनुच्छेद');
 
-    await expect(searchResults.getByText('Active 2/17')).toBeVisible();
+    await expect(searchPanel.getByText(/matches/)).toBeVisible();
+    await expect(searchPanel.locator('[aria-pressed]')).toHaveCount(17);
+    await expect(page.locator('[data-reader-search-word-hit="true"]').first()).toBeVisible();
+
+    await searchPanel.locator('[aria-pressed]').nth(1).click();
+
+    await expect(searchPanel.getByText('2/17', { exact: true })).toBeVisible();
     await expect(page.getByText('2/17', { exact: true })).toBeVisible();
+  });
+
+  test('reader search panel renders hits in the selected script font', async ({ page }) => {
+    await mockReaderSources(page);
+    await clearReaderStorage(page);
+
+    await page.goto(withAppBasePath('/reader?path=mantras/PurushaSuktam.tex'));
+    await page.getByRole('button', { name: 'Tamil' }).click();
+    await page.getByRole('button', { name: 'Open document search' }).click();
+
+    const searchPanel = page.getByTestId('reader-search-panel');
+    await searchPanel.getByTestId('reader-search-input').fill('tasya');
+
+    await expect(searchPanel.getByText(/match/i)).toBeVisible();
+    await expect(searchPanel.locator('[data-font-preset="anek"]').first()).toBeVisible();
+    await expect(page.locator('[data-reader-search-word-hit="true"]').first()).toBeVisible();
+  });
+
+  test('pasting devanagari into the reader search converts it to itrans', async ({ page }) => {
+    await mockReaderSources(page);
+    await clearReaderStorage(page);
+
+    await page.goto(withAppBasePath('/reader?path=mantras/PurushaSuktam.tex'));
+    await page.getByRole('button', { name: 'Open document search' }).click();
+
+    const searchInput = page.getByTestId('reader-search-input');
+    const devanagariText = 'पुरुषसूक्तम्';
+    const expectedItrans = detransliterate(devanagariText);
+
+    await searchInput.evaluate((element, text) => {
+      const input = element as HTMLInputElement;
+      const dataTransfer = new DataTransfer();
+      dataTransfer.setData('text/plain', String(text));
+      input.dispatchEvent(
+        new ClipboardEvent('paste', {
+          bubbles: true,
+          cancelable: true,
+          clipboardData: dataTransfer,
+        }),
+      );
+    }, devanagariText);
+
+    await expect(searchInput).toHaveValue(expectedItrans);
+    await expect(page.locator('[data-reader-search-word-hit="true"]').first()).toBeVisible();
+  });
+
+  test('pasting tamil into the reader search converts it to itrans', async ({ page }) => {
+    await mockReaderSources(page);
+    await clearReaderStorage(page);
+
+    await page.goto(withAppBasePath('/reader?path=mantras/PurushaSuktam.tex'));
+    await page.getByRole('button', { name: 'Open document search' }).click();
+
+    const searchInput = page.getByTestId('reader-search-input');
+    const tamilText = formatSourceForScript('पुरुषसूक्तम्', 'tamil', DEFAULT_OUTPUT_TARGET_SETTINGS);
+    const expectedItrans = detransliterate(tamilText);
+
+    await searchInput.evaluate((element, text) => {
+      const input = element as HTMLInputElement;
+      const dataTransfer = new DataTransfer();
+      dataTransfer.setData('text/plain', String(text));
+      input.dispatchEvent(
+        new ClipboardEvent('paste', {
+          bubbles: true,
+          cancelable: true,
+          clipboardData: dataTransfer,
+        }),
+      );
+    }, tamilText);
+
+    await expect(searchInput).toHaveValue(expectedItrans);
+    await expect(page.locator('[data-reader-search-word-hit="true"]').first()).toBeVisible();
+  });
+
+  test('double escape clears the search query', async ({ page }) => {
+    await mockReaderSources(page);
+    await clearReaderStorage(page);
+
+    await page.goto(withAppBasePath('/reader?path=mantras/OutlineMantra.tex'));
+    await page.getByRole('button', { name: 'Open document search' }).click();
+
+    const searchPanel = page.getByTestId('reader-search-panel');
+    await searchPanel.getByTestId('reader-search-input').fill('अनुच्छेद');
+    await expect(page.locator('[data-reader-search-word-hit="true"]')).toHaveCount(17);
+
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+
+    await expect(searchPanel).toHaveCount(0);
+    await page.getByRole('button', { name: 'Open document search' }).click();
+    await expect(page.getByTestId('reader-search-input')).toHaveValue('');
   });
 
   test('diagnostic entries jump to the rendered warning block', async ({ page }) => {

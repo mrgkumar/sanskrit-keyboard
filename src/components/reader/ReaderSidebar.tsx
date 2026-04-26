@@ -11,6 +11,8 @@ import {
 } from '@/lib/veda-book/buildManifest';
 
 interface ReaderSidebarProps {
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
   onSelectDocument?: () => void;
 }
 
@@ -130,7 +132,7 @@ const renderTreeNode = (
   );
 };
 
-export function ReaderSidebar({ onSelectDocument }: ReaderSidebarProps) {
+export function ReaderSidebar({ collapsed = false, onToggleCollapsed, onSelectDocument }: ReaderSidebarProps) {
   const router = useRouter();
   const sidebarScrollRef = useRef<HTMLDivElement | null>(null);
   const pendingScrollTopRef = useRef<number | null>(null);
@@ -203,16 +205,28 @@ export function ReaderSidebar({ onSelectDocument }: ReaderSidebarProps) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="sticky top-0 z-10 border-b border-stone-300/70 bg-inherit/95 px-4 py-3 backdrop-blur">
-        <label className="flex items-center gap-2 rounded-md border border-stone-300/70 bg-white/70 px-3 py-2">
-          <Search className="h-4 w-4 text-stone-500" />
-          <input
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search titles or paths"
-            className="w-full bg-transparent text-sm outline-none placeholder:text-stone-400"
-          />
-        </label>
+      <div className="sticky top-0 z-10 border-b border-stone-300/70 bg-inherit/95 px-3 py-3 backdrop-blur">
+        {collapsed ? (
+          <button
+            type="button"
+            onClick={onToggleCollapsed}
+            className="flex h-10 w-full items-center justify-center rounded-md border border-stone-300/70 bg-white/70 text-xs font-semibold uppercase tracking-[0.18em] text-stone-700 transition hover:bg-white"
+            aria-label="Expand sidebar"
+            title="Expand sidebar"
+          >
+            <Search className="h-4 w-4" />
+          </button>
+        ) : (
+          <label className="flex items-center gap-2 rounded-md border border-stone-300/70 bg-white/70 px-3 py-2">
+            <Search className="h-4 w-4 text-stone-500" />
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search titles or paths"
+              className="w-full bg-transparent text-sm outline-none placeholder:text-stone-400"
+            />
+          </label>
+        )}
       </div>
 
       <div className="min-h-0 flex-1 px-2 py-2">
@@ -222,14 +236,17 @@ export function ReaderSidebar({ onSelectDocument }: ReaderSidebarProps) {
 
         {manifestError ? <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">{manifestError}</div> : null}
 
-        {manifest ? (
+        {!collapsed && manifest ? (
           <div className="px-1 pb-2 text-xs uppercase tracking-[0.18em] text-stone-500">
             {filteredEntries.length} of {manifest.entries.length} documents
           </div>
         ) : null}
 
         <div
-          className="overflow-y-auto pr-1"
+          className={[
+            'overflow-y-auto pr-1',
+            collapsed ? 'pointer-events-none opacity-0 md:opacity-0' : 'opacity-100',
+          ].join(' ')}
           data-testid="reader-sidebar-scroll"
           ref={sidebarScrollRef}
           style={{ height: 'calc(100dvh - 14rem)' }}
@@ -245,6 +262,20 @@ export function ReaderSidebar({ onSelectDocument }: ReaderSidebarProps) {
             ) : null}
           </div>
         </div>
+
+        {collapsed ? (
+          <div className="flex flex-1 items-center justify-center px-2 pb-3 pt-4">
+            <button
+              type="button"
+              onClick={onToggleCollapsed}
+              className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-stone-300/70 bg-white/75 text-stone-700 shadow-sm transition hover:bg-white"
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+            >
+              <Folder className="h-4 w-4" />
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );
