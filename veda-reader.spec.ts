@@ -1,4 +1,9 @@
 import { test, expect } from '@playwright/test';
+import {
+  READER_MANIFEST_CACHE_KEY,
+  READER_PARSED_DOCUMENT_CACHE_PREFIX,
+  READER_RAW_DOCUMENT_CACHE_PREFIX,
+} from '@/lib/veda-book/constants';
 import { parseTexDocument } from '@/lib/veda-book/parseTex';
 import { deriveDocumentTitleFromNodes, serializeReaderDocumentText } from '@/lib/veda-book/renderText';
 import { detransliterate, formatSourceForScript } from '@/lib/vedic/utils';
@@ -171,6 +176,12 @@ test.describe('Veda Reader', () => {
       ),
     ).toBeTruthy();
     expect(parsed.diagnostics.some((diagnostic) => diagnostic.message.includes('begingroup'))).toBeFalsy();
+  });
+
+  test('uses versioned cache keys for reader data', async () => {
+    expect(READER_MANIFEST_CACHE_KEY).toContain(':v2:');
+    expect(READER_RAW_DOCUMENT_CACHE_PREFIX).toContain(':v2:');
+    expect(READER_PARSED_DOCUMENT_CACHE_PREFIX).toContain(':v2:');
   });
 
   test('derives document titles from parsed header nodes', async () => {

@@ -7,6 +7,10 @@ export const VEDA_BOOK_MANTRAS_INDEX_PATH = 'mantras.tex';
 export const READER_PREFERENCES_STORAGE_KEY = 'veda-reader-preferences-v1';
 
 export const READER_CACHE_PREFIX = 'veda-reader';
-export const READER_MANIFEST_CACHE_KEY = `${READER_CACHE_PREFIX}:manifest`;
-export const READER_RAW_DOCUMENT_CACHE_PREFIX = `${READER_CACHE_PREFIX}:raw`;
-export const READER_PARSED_DOCUMENT_CACHE_PREFIX = `${READER_CACHE_PREFIX}:parsed`;
+export const READER_CACHE_SCHEMA_VERSION = 'v2';
+
+export const readerCacheKey = (scope: string) => `${READER_CACHE_PREFIX}:${READER_CACHE_SCHEMA_VERSION}:${scope}`;
+
+export const READER_MANIFEST_CACHE_KEY = readerCacheKey('manifest');
+export const READER_RAW_DOCUMENT_CACHE_PREFIX = readerCacheKey('raw');
+export const READER_PARSED_DOCUMENT_CACHE_PREFIX = readerCacheKey('parsed');
