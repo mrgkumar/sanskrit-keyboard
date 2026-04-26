@@ -14,6 +14,7 @@ import {
 } from '@/lib/veda-book/cache';
 import { fetchRawTex } from '@/lib/veda-book/fetchSource';
 import { parseTexDocument } from '@/lib/veda-book/parseTex';
+import { deriveDocumentTitleFromNodes } from '@/lib/veda-book/renderText';
 
 interface ReaderStoreState extends ReaderPreferences {
   manifest: VedaManifest | null;
@@ -87,6 +88,25 @@ const upsertDocument = (
   ...documentsByPath,
   [document.sourcePath]: document,
 });
+
+const updateManifestEntryTitle = (manifest: VedaManifest | null, path: string, title: string) => {
+  if (!manifest) {
+    return null;
+  }
+
+  const existing = manifest.entries.find((entry) => entry.path === path);
+  if (!existing || existing.title === title) {
+    return manifest;
+  }
+
+  return {
+    ...manifest,
+    entries: manifest.entries.map((entry) => (entry.path === path ? { ...entry, title } : entry)),
+  };
+};
+
+const fallbackTitleFromPath = (path: string) =>
+  path.split('/').pop()?.replace(/\.tex$/i, '') ?? path;
 
 export const useReaderStore = create<ReaderStoreState>((set, get) => {
   const initialPreferences = readStoredPreferences();
@@ -199,12 +219,34 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
         if (!options?.force) {
           const cachedParsed = await getCachedParsedDocument(path);
           if (cachedParsed) {
+            const resolvedTitle = deriveDocumentTitleFromNodes(
+              cachedParsed.nodes,
+              cachedParsed.title || fallbackTitleFromPath(path),
+            );
+            const normalizedDocument =
+              resolvedTitle === cachedParsed.title
+                ? cachedParsed
+                : {
+                    ...cachedParsed,
+                    title: resolvedTitle,
+                  };
+
             set((state) => ({
-              activeDocument: cachedParsed,
-              documentsByPath: upsertDocument(state.documentsByPath, cachedParsed),
+              activeDocument: normalizedDocument,
+              documentsByPath: upsertDocument(state.documentsByPath, normalizedDocument),
               documentStatus: 'ready',
               documentError: null,
+              manifest: updateManifestEntryTitle(state.manifest, path, resolvedTitle) ?? state.manifest,
             }));
+
+            if (resolvedTitle !== cachedParsed.title) {
+              const nextManifest = updateManifestEntryTitle(get().manifest, path, resolvedTitle);
+              if (nextManifest) {
+                set({ manifest: nextManifest });
+                void setCachedManifest(nextManifest);
+              }
+              void setCachedParsedDocument(normalizedDocument);
+            }
             return;
           }
         }
@@ -213,11 +255,12 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
         const rawTex =
           cachedRaw?.rawTex ?? (await fetchRawTex(path, { force: options?.force }));
         const parsed = parseTexDocument(rawTex, { sourcePath: path });
+        const fallbackTitle =
+          get().manifest?.entries.find((entry) => entry.path === path)?.title ?? fallbackTitleFromPath(path);
+        const resolvedTitle = deriveDocumentTitleFromNodes(parsed.nodes, fallbackTitle);
         const document: MantraDocument = {
           id: path,
-          title:
-            get()
-              .manifest?.entries.find((entry) => entry.path === path)?.title ?? path.split('/').pop()?.replace(/\.tex$/i, '') ?? path,
+          title: resolvedTitle,
           sourceRepo: get().manifest?.sourceRepo ?? 'stotrasamhita/vedamantra-book',
           sourceBranch: get().manifest?.branch ?? 'master',
           sourcePath: path,
@@ -245,7 +288,13 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
           documentsByPath: upsertDocument(state.documentsByPath, document),
           documentStatus: 'ready',
           documentError: null,
+          manifest: updateManifestEntryTitle(state.manifest, path, resolvedTitle) ?? state.manifest,
         }));
+
+        const nextManifest = updateManifestEntryTitle(get().manifest, path, resolvedTitle);
+        if (nextManifest) {
+          void setCachedManifest(nextManifest);
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : `Unable to load ${path}.`;
         set((state) => ({

@@ -1,3 +1,5 @@
+import type { MantraNode } from './types';
+
 const CAMEL_BOUNDARY_PATTERN = /([a-z0-9])([A-Z])/g;
 const NON_ALNUM_BOUNDARY_PATTERN = /[_-]+/g;
 
@@ -24,3 +26,13 @@ export const normalizeReaderSearchText = (value: string) =>
     .trim();
 
 export const createReaderNodeId = (prefix: string, index: number) => `${prefix}-${index + 1}`;
+
+export const deriveDocumentTitleFromNodes = (nodes: MantraNode[], fallbackTitle: string) => {
+  const titleNode = nodes.find(
+    (node) =>
+      (node.type === 'chapter' || node.type === 'section' || node.type === 'subsection') &&
+      node.text.trim(),
+  );
+
+  return titleNode?.text.trim() || fallbackTitle;
+};

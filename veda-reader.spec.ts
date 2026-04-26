@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { parseTexDocument } from '@/lib/veda-book/parseTex';
+import { deriveDocumentTitleFromNodes } from '@/lib/veda-book/renderText';
 
 const MANTRAS_INDEX = String.raw`\input{mantras/PurushaSuktam.tex}
 \input{mantras/AnotherMantra.tex}
@@ -81,6 +82,11 @@ test.describe('Veda Reader', () => {
     expect(parsed.diagnostics.some((diagnostic) => diagnostic.message.includes('begingroup'))).toBeFalsy();
   });
 
+  test('derives document titles from parsed header nodes', async () => {
+    const parsed = parseTexDocument(PURUSHA_SUKTAM, { sourcePath: 'mantras/PurushaSuktam.tex' });
+    expect(deriveDocumentTitleFromNodes(parsed.nodes, 'Purusha Suktam')).toBe('पुरुषसूक्तम्');
+  });
+
   test('loads the manifest, renders a document, and supports mode switching', async ({ page }) => {
     await mockReaderSources(page);
     await page.addInitScript(() => {
@@ -90,14 +96,15 @@ test.describe('Veda Reader', () => {
     await page.goto('/reader');
 
     await expect(page.getByText('Veda Reader')).toBeVisible();
-    await expect(page.getByText('पुरुषसूक्तम्')).toBeVisible();
+    await expect(page.locator('aside').getByRole('button', { name: /पुरुषसूक्तम्/ }).first()).toBeVisible();
+    await expect(page.locator('main article > header').getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Source' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Source' }).click();
     await expect(page.getByText('\\chapt{पुरुषसूक्तम्}')).toBeVisible();
 
     await page.getByRole('button', { name: 'Split' }).click();
-    await expect(page.getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
+    await expect(page.locator('main article > header').getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
     await expect(page.getByText('\\centerline{ॐ तत्सत्}')).toBeVisible();
 
     await page.getByRole('button', { name: 'Diagnostics' }).click();
@@ -105,7 +112,8 @@ test.describe('Veda Reader', () => {
 
     await page.getByPlaceholder('Search titles or paths').fill('Another');
     await page.getByRole('button', { name: 'Another Mantra' }).click();
-    await expect(page.getByRole('heading', { name: 'अन्य मन्‍त्रः' })).toBeVisible();
+    await expect(page.locator('main article > header').getByRole('heading', { name: 'अन्य मन्‍त्रः' })).toBeVisible();
+    await expect(page.locator('aside').getByRole('button', { name: 'अन्य मन्‍त्रः' })).toBeVisible();
     await expect(page).toHaveURL(/\/reader\/\?path=mantras%2FAnotherMantra\.tex$/);
   });
 
@@ -117,7 +125,7 @@ test.describe('Veda Reader', () => {
 
     await page.goto('/reader?path=mantras/PurushaSuktam.tex');
 
-    await expect(page.getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
+    await expect(page.locator('main article > header').getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
     await expect(page.getByText('stotrasamhita/vedamantra-book · master', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Split' })).toBeVisible();
   });
