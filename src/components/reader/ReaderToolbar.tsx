@@ -1,8 +1,10 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import {
   BookOpenText,
+  Copy,
   FileText,
   Languages,
   Menu,
@@ -14,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useReaderStore } from '@/store/useReaderStore';
 import type { ReaderDisplayScript, ReaderMode } from '@/lib/veda-book/types';
-import { getReaderDisplayScriptLabel } from '@/lib/veda-book/renderText';
+import { getReaderDisplayScriptLabel, serializeReaderDocumentText } from '@/lib/veda-book/renderText';
 
 const modeOptions: Array<{ mode: ReaderMode; label: string; icon: ReactNode }> = [
   { mode: 'reader', label: 'Reader', icon: <BookOpenText className="h-4 w-4" /> },
@@ -27,6 +29,7 @@ const themeOrder = ['sepia', 'light', 'dark'] as const;
 
 export function ReaderToolbar() {
   const {
+    activeDocument,
     displayScript,
     diagnosticsOpen,
     fontSize,
@@ -41,9 +44,38 @@ export function ReaderToolbar() {
     sidebarOpen,
     theme,
   } = useReaderStore();
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
 
   const currentThemeIndex = themeOrder.indexOf(theme);
   const nextTheme = themeOrder[(currentThemeIndex + 1) % themeOrder.length];
+  const copyLabel = copyStatus === 'copied' ? 'Copied' : copyStatus === 'error' ? 'Copy failed' : 'Copy text';
+
+  useEffect(() => {
+    if (copyStatus !== 'copied') {
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(() => setCopyStatus('idle'), 1200);
+    return () => window.clearTimeout(timeout);
+  }, [copyStatus]);
+
+  const handleCopyText = async () => {
+    if (!activeDocument) {
+      return;
+    }
+
+    const text = serializeReaderDocumentText(activeDocument, displayScript, {
+      romanOutputStyle: 'canonical',
+      tamilOutputStyle: 'precision',
+    });
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyStatus('copied');
+    } catch {
+      setCopyStatus('error');
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-stone-300/70 bg-inherit/90 backdrop-blur">
@@ -157,6 +189,16 @@ export function ReaderToolbar() {
           >
             <RefreshCw className="h-4 w-4" />
             <span>Refresh</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleCopyText()}
+            disabled={!activeDocument}
+            className="inline-flex items-center gap-2 rounded-md border border-stone-300/70 bg-white/70 px-3 py-2 text-sm text-stone-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label={`Copy visible text as ${getReaderDisplayScriptLabel(displayScript)}`}
+          >
+            <Copy className="h-4 w-4" />
+            <span>{copyLabel}</span>
           </button>
         </div>
       </div>

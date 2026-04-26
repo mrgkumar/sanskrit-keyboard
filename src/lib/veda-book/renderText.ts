@@ -1,7 +1,7 @@
 import type { OutputScript, OutputTargetSettings } from '@/lib/vedic/mapping';
 import { detransliterate, formatSourceForScript, normalizeDevanagariDisplayText, reverseTamilInput } from '@/lib/vedic/utils';
 import type { SanskritFontPreset } from '@/store/types';
-import type { MantraNode } from './types';
+import type { MantraDocument, MantraNode } from './types';
 
 const CAMEL_BOUNDARY_PATTERN = /([a-z0-9])([A-Z])/g;
 const NON_ALNUM_BOUNDARY_PATTERN = /[_-]+/g;
@@ -169,3 +169,65 @@ export const formatReaderDisplayText = (
 
 export const getReaderDisplayScriptLabel = (script: ReaderDisplayScript) =>
   script === 'original' ? 'Original' : formatReaderSourceScriptLabel(script);
+
+const formatReaderNodeText = (
+  text: string,
+  displayScript: ReaderDisplayScript,
+  sourceScript: ReaderSourceScript,
+  settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
+  options?: { sanskritFontPreset?: SanskritFontPreset },
+) => formatReaderDisplayText(text, displayScript, sourceScript, settings, options);
+
+export const serializeReaderDocumentText = (
+  document: MantraDocument,
+  displayScript: ReaderDisplayScript,
+  settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
+  options?: { sanskritFontPreset?: SanskritFontPreset },
+) => {
+  const sourceScript = detectReaderSourceScript(document.rawTex);
+  const lines: string[] = [];
+
+  const appendBlock = (text: string, blankLineBefore = false) => {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    if (blankLineBefore && lines.length > 0 && lines[lines.length - 1] !== '') {
+      lines.push('');
+    }
+
+    lines.push(trimmed);
+  };
+
+  appendBlock(formatReaderNodeText(document.title, displayScript, sourceScript, settings, options));
+
+  for (const node of document.nodes) {
+    switch (node.type) {
+      case 'chapter':
+      case 'section':
+      case 'subsection':
+      case 'paragraph':
+      case 'center':
+      case 'raw':
+        appendBlock(formatReaderNodeText(node.text, displayScript, sourceScript, settings, options), true);
+        break;
+      case 'sourceRef':
+        appendBlock(
+          `${node.source}: ${formatReaderNodeText(node.values.join(' · '), displayScript, sourceScript, settings, options)}`,
+          true,
+        );
+        break;
+      case 'warning':
+        appendBlock(`Warning: ${node.message}`, true);
+        break;
+      case 'pageBreak':
+        lines.push('');
+        break;
+      default:
+        break;
+    }
+  }
+
+  return lines.join('\n');
+};

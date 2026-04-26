@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { parseTexDocument } from '@/lib/veda-book/parseTex';
-import { deriveDocumentTitleFromNodes } from '@/lib/veda-book/renderText';
+import { deriveDocumentTitleFromNodes, serializeReaderDocumentText } from '@/lib/veda-book/renderText';
 import { detransliterate, formatSourceForScript } from '@/lib/vedic/utils';
 import { DEFAULT_OUTPUT_TARGET_SETTINGS } from '@/lib/vedic/mapping';
 
@@ -168,6 +168,28 @@ test.describe('Veda Reader', () => {
     const unsupported = parsed.diagnostics.find((diagnostic) => diagnostic.message.includes('\\foo'));
     expect(unsupported?.line).toBe(7);
     expect(unsupported?.column).toBe(1);
+  });
+
+  test('serializes visible reader text using the shared transliteration engine', async () => {
+    const parsed = parseTexDocument(PURUSHA_SUKTAM, { sourcePath: 'mantras/PurushaSuktam.tex' });
+    const document = {
+      id: 'mantras/PurushaSuktam.tex',
+      title: deriveDocumentTitleFromNodes(parsed.nodes, 'Purusha Suktam'),
+      sourceRepo: 'stotrasamhita/vedamantra-book',
+      sourceBranch: 'master',
+      sourcePath: 'mantras/PurushaSuktam.tex',
+      rawTex: PURUSHA_SUKTAM,
+      nodes: parsed.nodes,
+      diagnostics: parsed.diagnostics,
+      fetchedAt: '2026-04-26T00:00:00.000Z',
+    };
+
+    const romanText = serializeReaderDocumentText(document, 'roman', DEFAULT_OUTPUT_TARGET_SETTINGS);
+    const tamilText = serializeReaderDocumentText(document, 'tamil', DEFAULT_OUTPUT_TARGET_SETTINGS);
+
+    expect(romanText).toContain(detransliterate('पुरुषसूक्तम्'));
+    expect(tamilText).toContain('ப');
+    expect(tamilText).not.toContain('पुरुषसूक्तम्');
   });
 
   test('loads the manifest, renders a document, and supports mode switching', async ({ page }) => {
