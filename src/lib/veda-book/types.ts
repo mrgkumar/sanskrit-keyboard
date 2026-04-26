@@ -4,7 +4,7 @@ import type { SanskritFontPreset, TamilFontPreset } from '@/store/types';
 export type ReaderMode = 'reader' | 'source' | 'split' | 'compare';
 export type ReaderTheme = 'light' | 'sepia' | 'dark';
 export type ReaderDisplayScript = 'original' | OutputScript;
-export type ReaderPageSize = 'a4' | 'letter' | 'legal';
+export type ReaderPageSize = 'a4' | 'web';
 export type LoadStatus = 'idle' | 'loading' | 'ready' | 'refreshing' | 'error';
 
 export type ParserDiagnosticLevel = 'info' | 'warning' | 'error';

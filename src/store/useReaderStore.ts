@@ -69,9 +69,11 @@ const readStoredPreferences = (): ReaderPreferences => {
     }
 
     const parsed = JSON.parse(raw) as Partial<ReaderPreferences>;
+    const pageSize = parsed.pageSize === 'a4' || parsed.pageSize === 'web' ? parsed.pageSize : 'web';
     return {
       ...DEFAULT_READER_PREFERENCES,
       ...parsed,
+      pageSize,
     };
   } catch {
     return DEFAULT_READER_PREFERENCES;

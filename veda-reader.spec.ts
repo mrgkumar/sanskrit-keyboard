@@ -290,9 +290,9 @@ test.describe('Veda Reader', () => {
     await expect(page.getByText('Page: A4')).toBeVisible();
     await expect(page.locator('main article').first()).toHaveAttribute('style', /max-width:\s*8\.27in/);
 
-    await page.getByRole('button', { name: 'Letter' }).click();
-    await expect(page.getByText('Page: Letter')).toBeVisible();
-    await expect(page.locator('main article').first()).toHaveAttribute('style', /max-width:\s*8\.5in/);
+    await page.getByRole('button', { name: 'Web' }).click();
+    await expect(page.getByText('Page: Web')).toBeVisible();
+    await expect(page.locator('main article').first()).toHaveAttribute('style', /max-width:\s*none/);
 
     await page.getByRole('button', { name: 'Chandas' }).click();
     await expect(page.locator('main article > header [data-font-preset="chandas"]').first()).toBeVisible();

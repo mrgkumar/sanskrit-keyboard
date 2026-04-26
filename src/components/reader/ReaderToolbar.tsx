@@ -35,7 +35,7 @@ const modeOptions: Array<{ mode: ReaderMode; label: string; icon: ReactNode }> =
 
 const displayScriptOptions: ReaderDisplayScript[] = ['original', 'devanagari', 'roman', 'tamil'];
 const themeOrder = ['sepia', 'light', 'dark'] as const;
-const pageSizeOptions: ReaderPageSize[] = ['a4', 'letter', 'legal'];
+const pageSizeOptions: ReaderPageSize[] = ['a4', 'web'];
 const sanskritFontOptions: Array<{ value: SanskritFontPreset; label: string }> = [
   { value: 'siddhanta', label: 'Siddhanta' },
   { value: 'noto-sans', label: 'Noto Sans' },

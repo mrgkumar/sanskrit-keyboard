@@ -172,12 +172,11 @@ export const getReaderDisplayScriptLabel = (script: ReaderDisplayScript) =>
 
 const READER_PAGE_SIZE_WIDTHS: Record<ReaderPageSize, string> = {
   a4: '8.27in',
-  letter: '8.5in',
-  legal: '8.5in',
+  web: 'none',
 };
 
 export const getReaderPageSizeLabel = (pageSize: ReaderPageSize) =>
-  pageSize === 'a4' ? 'A4' : pageSize === 'letter' ? 'Letter' : 'Legal';
+  pageSize === 'a4' ? 'A4' : 'Web';
 
 export const getReaderPageSizeWidth = (pageSize: ReaderPageSize) => READER_PAGE_SIZE_WIDTHS[pageSize];
 
