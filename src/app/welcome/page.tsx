@@ -21,32 +21,32 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 font-sans selection:bg-blue-100 selection:text-blue-900">
+    <div className="flex min-h-screen flex-col bg-slate-50 font-sans selection:bg-blue-100 selection:text-blue-900">
       {/* Background Decor */}
-      <div className="fixed top-0 right-0 w-[600px] h-[600px] bg-blue-100/30 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-      <div className="fixed bottom-0 left-0 w-[400px] h-[400px] bg-amber-100/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+      <div className="pointer-events-none fixed right-0 top-0 h-[28rem] w-[28rem] translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-100/30 blur-[120px] sm:h-[36rem] sm:w-[36rem]" />
+      <div className="pointer-events-none fixed bottom-0 left-0 h-[20rem] w-[20rem] -translate-x-1/2 translate-y-1/2 rounded-full bg-amber-100/20 blur-[100px] sm:h-[24rem] sm:w-[24rem]" />
 
       {/* Header */}
-      <header className="flex flex-col items-center pt-20 pb-12 shrink-0 relative z-10">
-        <div className="w-20 h-20 bg-blue-600 rounded-[2rem] flex items-center justify-center mb-8 shadow-2xl shadow-blue-200 animate-in zoom-in duration-700">
-          <span className="text-white font-black text-4xl">S</span>
+      <header className="relative z-10 shrink-0 flex flex-col items-center px-4 pb-10 pt-12 text-center sm:pt-16 lg:pt-20">
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-[1.75rem] bg-blue-600 shadow-2xl shadow-blue-200 animate-in zoom-in duration-700 sm:mb-8 sm:h-20 sm:w-20">
+          <span className="text-3xl font-black text-white sm:text-4xl">S</span>
         </div>
-        <h1 className="text-4xl font-black text-slate-900 tracking-tight text-center px-4">
+        <h1 className="max-w-3xl px-4 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
           The Invisible Interface
         </h1>
-        <p className="text-slate-500 font-bold uppercase text-xs tracking-[0.4em] mt-4 text-center">
+        <p className="mt-4 text-xs font-bold uppercase tracking-[0.28em] text-slate-500 sm:tracking-[0.4em]">
           Sanskrit Keyboard Walkthrough
         </p>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-4xl mx-auto w-full px-6 pb-24 relative z-10 space-y-24">
+      <main className="relative z-10 mx-auto flex w-full max-w-4xl flex-1 flex-col gap-16 px-4 pb-20 sm:px-6 sm:pb-24 lg:gap-24 lg:px-6">
         
         {/* Philosophy */}
         <section className="space-y-6 text-center">
           <div className="max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold text-slate-800">Typing, Transformed</h2>
-            <p className="mt-4 text-lg text-slate-600 leading-relaxed">
+            <h2 className="text-2xl font-bold text-slate-800 sm:text-3xl">Typing, Transformed</h2>
+            <p className="mt-4 text-base leading-relaxed text-slate-600 sm:text-lg">
               Sanskrit Keyboard is designed for scholars who need to move at the speed of thought. 
               No menus, no distractions—just a fluid transliteration experience that learns your patterns.
             </p>
@@ -54,13 +54,13 @@ export default function WelcomePage() {
         </section>
 
         {/* Attributes & Inspiration */}
-        <section className="max-w-3xl mx-auto py-12 px-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm space-y-8">
+        <section className="mx-auto max-w-3xl space-y-8 rounded-[2rem] border border-slate-100 bg-white px-5 py-8 shadow-sm sm:rounded-[2.5rem] sm:px-8 sm:py-12">
           <div className="text-center space-y-2">
             <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase">Attributes & Inspiration</h2>
             <div className="w-12 h-1 bg-blue-600 mx-auto rounded-full" />
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-8 text-sm leading-relaxed">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-6 text-sm leading-relaxed md:grid-cols-2 lg:grid-cols-4 lg:gap-x-8 lg:gap-y-8">
             <div className="space-y-3">
               <h4 className="font-bold text-blue-700 uppercase tracking-wider text-[10px]">Data & Research</h4>
               <p className="text-slate-600">
@@ -89,7 +89,7 @@ export default function WelcomePage() {
               </p>
             </div>
 
-            <div className="lg:col-span-4 md:col-span-2 space-y-4 pt-4 border-t border-slate-50">
+            <div className="space-y-4 border-t border-slate-50 pt-4 md:col-span-2 lg:col-span-4">
               <h4 className="font-bold text-blue-700 uppercase tracking-wider text-[10px] text-center">The Scholarly Mission</h4>
               <p className="text-slate-600 text-center italic max-w-2xl mx-auto">
                 &quot;Driven by the gap in Vedic swara support in Tamil transliteration. This work is dedicated to my Guru, family, and friends who motivated the quest for 100% cross-script precision.&quot;
@@ -102,11 +102,11 @@ export default function WelcomePage() {
         </section>
 
         {/* Feature Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:gap-8">
           
           {/* Feature 1: ITRANS */}
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          <div className="group rounded-3xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-8">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 transition-transform group-hover:scale-110">
               <Keyboard className="w-6 h-6 text-blue-600" />
             </div>
             <h3 className="text-xl font-bold text-slate-900">Natural ITRANS Entry</h3>
@@ -121,8 +121,8 @@ export default function WelcomePage() {
           </div>
 
           {/* Feature 2: Autocomplete */}
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-            <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          <div className="group rounded-3xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-8">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 transition-transform group-hover:scale-110">
               <Zap className="w-6 h-6 text-amber-600" />
             </div>
             <h3 className="text-xl font-bold text-slate-900">Intelligent Flow</h3>
@@ -139,8 +139,8 @@ export default function WelcomePage() {
           </div>
 
           {/* Feature 3: Vedic Markers */}
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-            <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          <div className="group rounded-3xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-8">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50 transition-transform group-hover:scale-110">
               <Sparkles className="w-6 h-6 text-purple-600" />
             </div>
             <h3 className="text-xl font-bold text-slate-900">Vedic Precision</h3>
@@ -164,8 +164,8 @@ export default function WelcomePage() {
           </div>
 
           {/* Feature 4: Blocks */}
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-            <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          <div className="group rounded-3xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:p-8">
+            <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-green-50 transition-transform group-hover:scale-110">
               <MousePointer2 className="w-6 h-6 text-green-600" />
             </div>
             <h3 className="text-xl font-bold text-slate-900">Block Management</h3>
@@ -187,14 +187,14 @@ export default function WelcomePage() {
         </div>
 
         {/* Reference Drawer Tip */}
-        <section className="bg-blue-600 rounded-[3rem] p-12 text-white shadow-2xl shadow-blue-200">
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            <div className="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center shrink-0">
+        <section className="rounded-[2rem] bg-blue-600 p-6 text-white shadow-2xl shadow-blue-200 sm:rounded-[3rem] sm:p-8 lg:p-12">
+          <div className="flex flex-col items-center gap-6 md:flex-row md:gap-8">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-white/20 sm:h-24 sm:w-24">
               <BookOpen className="w-10 h-10 text-white" />
             </div>
-            <div>
+            <div className="text-center md:text-left">
               <h2 className="text-2xl font-bold">Always Within Reach</h2>
-              <p className="mt-2 text-blue-100 leading-relaxed text-lg">
+              <p className="mt-2 text-base leading-relaxed text-blue-100 sm:text-lg">
                 Forgotten a mapping? The **Reference Drawer** is available anytime. Click the book icon or search for characters instantly.
               </p>
             </div>
@@ -202,14 +202,14 @@ export default function WelcomePage() {
         </section>
 
         {/* Final CTA */}
-        <section className="text-center py-12 space-y-8">
+        <section className="space-y-6 py-10 text-center sm:py-12">
           <h2 className="text-3xl font-black text-slate-900">Ready to enter the flow?</h2>
           <div className="flex flex-col items-center gap-4">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+            <div className="flex w-full flex-col items-stretch gap-4 sm:w-auto sm:flex-row sm:items-center">
               <Link 
                 href="/"
                 onClick={markAsVisited}
-                className="flex items-center justify-center gap-3 px-12 py-5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-[2rem] shadow-2xl transition-all hover:scale-105 active:scale-95 group text-lg"
+                className="group flex items-center justify-center gap-3 rounded-[2rem] bg-slate-900 px-8 py-4 text-base font-bold text-white shadow-2xl transition-all hover:bg-slate-800 hover:scale-105 active:scale-95 sm:px-12 sm:py-5 sm:text-lg"
               >
                 <span>Launch Engine</span>
                 <Sparkles className="w-5 h-5 text-amber-400 group-hover:rotate-12 transition-transform" />
@@ -217,13 +217,13 @@ export default function WelcomePage() {
               <Link
                 href="/reader"
                 onClick={markAsVisited}
-                className="flex items-center justify-center gap-3 px-12 py-5 bg-white hover:bg-slate-50 text-slate-900 font-bold rounded-[2rem] border border-slate-200 shadow-lg transition-all hover:scale-105 active:scale-95 group text-lg"
+                className="group flex items-center justify-center gap-3 rounded-[2rem] border border-slate-200 bg-white px-8 py-4 text-base font-bold text-slate-900 shadow-lg transition-all hover:scale-105 hover:bg-slate-50 active:scale-95 sm:px-12 sm:py-5 sm:text-lg"
               >
                 <span>Open Reader</span>
                 <BookOpen className="w-5 h-5 text-blue-600 group-hover:rotate-[-6deg] transition-transform" />
               </Link>
             </div>
-            <p className="text-slate-400 text-sm flex items-center gap-2">
+            <p className="flex items-center gap-2 text-sm text-slate-400">
               <CheckCircle2 className="w-4 h-4 text-green-500" />
               Settings are saved automatically
             </p>
@@ -233,12 +233,12 @@ export default function WelcomePage() {
       </main>
 
       {/* Help Link Footer */}
-      <footer className="px-8 py-12 border-t border-slate-100 text-center relative z-10 bg-white/50 backdrop-blur-sm space-y-4">
-        <p className="text-slate-400 text-xs font-medium uppercase tracking-[0.2em]">
+      <footer className="relative z-10 space-y-4 border-t border-slate-100 bg-white/50 px-4 py-10 text-center backdrop-blur-sm sm:px-6 sm:py-12">
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
           Scholarly Standard • Sanskrit Keyboard
         </p>
-        <div className="flex justify-center items-center gap-8">
-          <Link href="/help" className="text-blue-600 font-bold text-xs uppercase tracking-widest hover:underline flex items-center gap-1.5">
+        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-8">
+          <Link href="/help" className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-blue-600 hover:underline">
             <BookOpen className="w-3.5 h-3.5" />
             Full Documentation
           </Link>
@@ -246,7 +246,7 @@ export default function WelcomePage() {
             href="https://github.com/mrgkumar/sanskrit-keyboard/issues" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="text-slate-500 hover:text-rose-600 font-bold text-xs uppercase tracking-widest hover:underline flex items-center gap-1.5 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-slate-500 transition-colors hover:text-rose-600 hover:underline"
           >
             <Bug className="w-3.5 h-3.5" />
             Report Issue

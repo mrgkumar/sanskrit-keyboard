@@ -1,6 +1,6 @@
 'use client';
 
-import { useDeferredValue, useEffect, useMemo, useRef } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ReaderToolbar } from './ReaderToolbar';
 import { ReaderSearchResults } from './ReaderSearchResults';
@@ -47,14 +47,25 @@ export function ReaderShell() {
   const theme = useReaderStore((state) => state.theme);
   const deferredDocumentSearchQuery = useDeferredValue(documentSearchQuery);
   const lastEscapeAtRef = useRef(0);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [toolbarHidden, setToolbarHidden] = useState(false);
   const mutedTextClass = readerThemeTextClass(theme, 'text-stone-500', 'text-white/70');
   const bodyTextClass = readerThemeTextClass(theme, 'text-stone-700', 'text-white');
 
   useEffect(() => {
     if (documentSearchOpen) {
       lastEscapeAtRef.current = 0;
+      setToolbarHidden(false);
     }
   }, [documentSearchOpen]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsMobileViewport(mediaQuery.matches);
+    update();
+    mediaQuery.addEventListener('change', update);
+    return () => mediaQuery.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     void loadManifest();
@@ -114,6 +125,44 @@ export function ReaderShell() {
   }, [loadManifest, manifest]);
 
   useEffect(() => {
+    if (isMobileViewport) {
+      setToolbarHidden(false);
+      return undefined;
+    }
+
+    const revealToolbar = () => setToolbarHidden(false);
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.clientY <= 56) {
+        revealToolbar();
+      }
+    };
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+    };
+  }, [isMobileViewport]);
+
+  const handleReaderScrollActivity = (scrollTop: number) => {
+    if (isMobileViewport) {
+      return;
+    }
+
+    if (documentSearchOpen || diagnosticsOpen) {
+      setToolbarHidden(false);
+      return;
+    }
+
+    if (scrollTop <= 12) {
+      setToolbarHidden(false);
+      return;
+    }
+
+    setToolbarHidden(true);
+  };
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
         event.preventDefault();
@@ -169,7 +218,18 @@ export function ReaderShell() {
   return (
     <div className={`${currentThemeClass} min-h-dvh`}>
       <div className="flex min-h-dvh flex-col">
-        <ReaderToolbar documentSearchHitCount={documentSearchHits.length} />
+        {toolbarHidden && !isMobileViewport ? (
+          <button
+            type="button"
+            onPointerEnter={() => setToolbarHidden(false)}
+            onFocus={() => setToolbarHidden(false)}
+            onClick={() => setToolbarHidden(false)}
+            className={`sticky top-0 z-40 h-2 w-full border-b border-stone-300/70 bg-inherit/90 backdrop-blur`}
+            aria-label="Show reader toolbar"
+          />
+        ) : (
+          <ReaderToolbar documentSearchHitCount={documentSearchHits.length} compact={isMobileViewport} hidden={toolbarHidden && !isMobileViewport} />
+        )}
         <ReaderSearchResults
           open={documentSearchOpen}
           query={documentSearchQuery}
@@ -239,30 +299,32 @@ export function ReaderShell() {
           <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden">
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               {readerMode === 'source' ? (
-                <SourcePanel document={activeDocument} documentStatus={documentStatus} />
+                <SourcePanel document={activeDocument} documentStatus={documentStatus} onScrollActivity={handleReaderScrollActivity} />
               ) : compareMode ? (
-                <div className="grid min-h-0 flex-1 gap-4 px-4 pb-4 pt-3 lg:grid-cols-2">
+                <div className="grid min-h-0 flex-1 gap-3 px-3 pb-3 pt-2 md:grid-cols-2 md:px-4 md:pb-4 md:pt-3">
                   <MantraDocumentView
                     document={activeDocument}
                     documentStatus={documentStatus}
                     displayScriptOverride="original"
                     searchScopeDisplayScript={displayScript}
                     panelLabel="Original"
+                    onScrollActivity={handleReaderScrollActivity}
                   />
                   <MantraDocumentView
                     document={activeDocument}
                     documentStatus={documentStatus}
                     searchScopeDisplayScript={displayScript}
                     panelLabel="Selected display"
+                    onScrollActivity={handleReaderScrollActivity}
                   />
                 </div>
               ) : splitMode ? (
-                <div className="grid min-h-0 flex-1 gap-4 px-4 pb-4 pt-3 lg:grid-cols-2">
-                  <MantraDocumentView document={activeDocument} documentStatus={documentStatus} />
-                  <SourcePanel document={activeDocument} documentStatus={documentStatus} />
+                <div className="grid min-h-0 flex-1 gap-3 px-3 pb-3 pt-2 md:grid-cols-2 md:px-4 md:pb-4 md:pt-3">
+                  <MantraDocumentView document={activeDocument} documentStatus={documentStatus} onScrollActivity={handleReaderScrollActivity} />
+                  <SourcePanel document={activeDocument} documentStatus={documentStatus} onScrollActivity={handleReaderScrollActivity} />
                 </div>
               ) : (
-                <MantraDocumentView document={activeDocument} documentStatus={documentStatus} />
+                <MantraDocumentView document={activeDocument} documentStatus={documentStatus} onScrollActivity={handleReaderScrollActivity} />
               )}
             </div>
 

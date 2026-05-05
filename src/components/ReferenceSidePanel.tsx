@@ -11,21 +11,39 @@ export const ReferenceSidePanel: React.FC = () => {
   const { isReferencePanelOpen, toggleReferencePanel, deletedBuffer, activeBuffer } = useFlowStore();
 
   return (
-    <div className={clsx(
-      "fixed right-0 top-0 h-full w-96 bg-white shadow-lg z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200",
-      isReferencePanelOpen ? "translate-x-0" : "translate-x-full"
-    )}>
-      {/* Panel Header */}
-      <div className="flex justify-end p-4 border-b border-slate-200">
-        <button onClick={toggleReferencePanel} className="text-slate-400 hover:text-slate-600">
-          <X className="w-6 h-6" />
-        </button>
-      </div>
+    <>
+      {isReferencePanelOpen ? (
+        <button
+          type="button"
+          aria-label="Close reference drawer"
+          onClick={toggleReferencePanel}
+          className="fixed inset-0 z-40 bg-slate-950/25 backdrop-blur-[1px] lg:hidden"
+        />
+      ) : null}
+      <div
+        className={clsx(
+          'fixed right-0 top-0 z-50 h-dvh w-[min(100vw-0.75rem,24rem)] translate-x-full transform overflow-hidden border-l border-slate-200 bg-white shadow-lg transition-transform duration-300 ease-in-out sm:w-[min(100vw-1rem,28rem)] md:w-96',
+          isReferencePanelOpen ? 'translate-x-0' : 'translate-x-full',
+        )}
+      >
+        {/* Panel Header */}
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <div className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Reference</div>
+          <button
+            type="button"
+            onClick={toggleReferencePanel}
+            className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            aria-label="Close reference drawer"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-      {/* Panel Content - ReferenceLibrary */}
-      <div className="h-[calc(100%-65px)]"> {/* Adjust height based on header */}
-        <ReferenceLibrary deletedBuffer={deletedBuffer} activeBuffer={activeBuffer} />
+        {/* Panel Content - ReferenceLibrary */}
+        <div className="h-[calc(100dvh-57px)] overflow-hidden">
+          <ReferenceLibrary deletedBuffer={deletedBuffer} activeBuffer={activeBuffer} />
+        </div>
       </div>
-    </div>
+    </>
   );
 };

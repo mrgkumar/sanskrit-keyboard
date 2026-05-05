@@ -60,6 +60,7 @@ export function ReaderSearchResults({
   const commitTimerRef = useRef<number | null>(null);
   const [position, setPosition] = useState<PanelPosition>(DEFAULT_PANEL_POSITION);
   const [isDragging, setIsDragging] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [draftQuery, setDraftQuery] = useState(query);
   const deferredDraftQuery = useDeferredValue(draftQuery);
   const theme = useReaderStore((state) => state.theme);
@@ -123,6 +124,15 @@ export function ReaderSearchResults({
 
     inputRef.current?.focus();
   }, [open]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsMobileViewport(mediaQuery.matches);
+    update();
+
+    mediaQuery.addEventListener('change', update);
+    return () => mediaQuery.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     if (!isDragging) {
@@ -236,16 +246,26 @@ export function ReaderSearchResults({
     <section
       ref={panelRef}
       className={clsx(
-        'fixed z-50 flex resize flex-col overflow-auto rounded-2xl border border-white/50 bg-white/70 shadow-2xl backdrop-blur-2xl',
-        isDragging && 'select-none',
+        'fixed z-50 flex flex-col overflow-hidden rounded-2xl border border-white/50 bg-white/85 shadow-2xl backdrop-blur-2xl',
+        isMobileViewport ? 'left-3 right-3 top-auto bottom-3 h-[min(30rem,calc(100dvh-5.5rem))] resize-none' : 'resize',
+        isDragging && !isMobileViewport && 'select-none',
       )}
-      style={{ left: position.x, top: position.y, width: 'min(42rem, calc(100vw - 24px))', height: 'min(32rem, calc(100vh - 24px))' }}
+      style={
+        isMobileViewport
+          ? undefined
+          : {
+              left: position.x,
+              top: position.y,
+              width: 'min(42rem, calc(100vw - 24px))',
+              height: 'min(32rem, calc(100vh - 24px))',
+            }
+      }
       data-testid="reader-search-panel"
       aria-label="Document search panel"
     >
       <div
         className="flex items-center justify-between gap-3 border-b border-stone-200/80 px-4 py-3"
-        onPointerDown={startDragging}
+        onPointerDown={isMobileViewport ? undefined : startDragging}
       >
         <div className="flex items-center gap-2">
           <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-stone-900 text-white">
@@ -262,7 +282,7 @@ export function ReaderSearchResults({
             type="button"
             onClick={onPreviousHit}
             disabled={hitCount === 0}
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300/70 bg-white/80 ${bodyTextClass} hover:bg-white hover:text-white disabled:cursor-not-allowed disabled:opacity-40`}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300/70 bg-white/80 ${bodyTextClass} transition hover:bg-white hover:text-white disabled:cursor-not-allowed disabled:opacity-40`}
             aria-label="Previous match"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -271,7 +291,7 @@ export function ReaderSearchResults({
             type="button"
             onClick={onNextHit}
             disabled={hitCount === 0}
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300/70 bg-white/80 ${bodyTextClass} hover:bg-white hover:text-white disabled:cursor-not-allowed disabled:opacity-40`}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300/70 bg-white/80 ${bodyTextClass} transition hover:bg-white hover:text-white disabled:cursor-not-allowed disabled:opacity-40`}
             aria-label="Next match"
           >
             <ChevronRight className="h-4 w-4" />
@@ -282,7 +302,7 @@ export function ReaderSearchResults({
           <button
             type="button"
             onClick={handleClose}
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300/70 bg-white/80 ${bodyTextClass} hover:bg-white hover:text-white`}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300/70 bg-white/80 ${bodyTextClass} transition hover:bg-white hover:text-white`}
             aria-label="Close search panel"
           >
             <X className="h-4 w-4" />
@@ -290,7 +310,7 @@ export function ReaderSearchResults({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 py-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
         <div className="rounded-2xl border border-stone-200/80 bg-white/80 px-4 py-3 shadow-sm">
           <label className="block">
             <span className="sr-only">Search document</span>

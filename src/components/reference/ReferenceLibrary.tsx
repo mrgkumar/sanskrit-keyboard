@@ -143,14 +143,14 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
     .filter((m): m is NonNullable<typeof m> => !!m);
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="flex h-full w-full flex-col">
       {/* Header */}
-      <div className="p-8 border-b border-slate-100 bg-slate-50/50">
+      <div className="border-b border-slate-100 bg-slate-50/50 p-4 sm:p-6 lg:p-8">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
-          <p className="text-slate-500 text-sm mt-1">{description}</p>
+          <p className="mt-1 text-sm text-slate-500">{description}</p>
           {primaryOutputScript === 'tamil' && (
-            <div className="mt-4 p-3 bg-blue-50/50 rounded-lg border border-blue-100 text-blue-800">
+            <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50/50 p-3 text-blue-800">
               <p className="text-xs font-bold uppercase tracking-wide">Vedic Swara Representation (Tamil)</p>
               <p className="mt-1 text-sm">
                 Vedic accents (Svaras) like {'&apos;'} (udatta), {'_'} (anudatta), {'&apos;&apos;'} (double svarita) are represented by their ITRANS codes in square brackets (e.g., <span className="font-mono">[&apos;]</span> for udatta) in Tamil script, as direct equivalents are not available.
@@ -161,33 +161,33 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
       </div>
 
       {/* Search */}
-      <div className="p-6 border-b border-slate-100 relative">
+      <div className="relative border-b border-slate-100 p-4 sm:p-6">
         <Search className="absolute left-10 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
         <input 
           type="text" 
           placeholder="Search characters or shortcuts..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-        className="w-full pl-12 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-blue-500 transition-all text-lg"
+        className="w-full rounded-2xl border-2 border-slate-100 bg-slate-50 py-3 pl-12 pr-4 text-base transition-all focus:border-blue-500 focus:outline-none sm:py-4 sm:pr-6 sm:text-lg"
         />
       </div>
 
       {/* Mappings List */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto p-8 flex flex-col gap-6">
+      <div ref={containerRef} className="flex flex-1 flex-col gap-5 overflow-y-auto p-4 sm:gap-6 sm:p-6 lg:p-8">
         {/* Best Guess Section */}
         {bestGuessMappings.length > 0 && !search && (
-          <div className="space-y-4 mb-2">
-            <h3 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 pl-2 bg-amber-50/50 py-1 rounded w-fit px-3">
+          <div className="mb-2 space-y-4">
+            <h3 className="inline-flex w-fit items-center gap-2 rounded bg-amber-50/50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">
               <Sparkles className="w-3 h-3" /> Quick Access
             </h3>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {bestGuessMappings.map((m, i) => (
                 <div
                   key={`best-${i}`}
                   onClick={() => handleInsert(m.itrans)}
-                  className="flex flex-col items-center justify-center p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md hover:border-amber-200 hover:bg-amber-50/30 transition-all group cursor-pointer active:scale-95"
+                  className="group flex cursor-pointer flex-col items-center justify-center rounded-xl border border-slate-100 bg-white p-3 transition-all hover:border-amber-200 hover:bg-amber-50/30 hover:shadow-md active:scale-95"
                 >
-                  <div className="text-2xl font-serif text-slate-900 group-hover:scale-110 transition-transform">
+                  <div className="text-xl font-serif text-slate-900 transition-transform group-hover:scale-110 sm:text-2xl">
                     <ScriptText 
                       script={primaryOutputScript} 
                       text={m.unicode}
@@ -195,7 +195,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
                       tamilFontPreset={displaySettings.tamilFontPreset}
                     />
                   </div>
-                  <kbd className="mt-1 px-1.5 py-0.5 bg-slate-50 border border-slate-200 rounded text-[10px] text-amber-700 font-mono font-bold">{m.itrans}</kbd>
+                  <kbd className="mt-1 rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] font-bold text-amber-700">{m.itrans}</kbd>
                 </div>
               ))}
             </div>
@@ -220,14 +220,14 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
             <div key={cat} className="space-y-3">
               <button 
                 onClick={() => toggleReferenceCategory(cat)}
-                className="w-full flex items-center justify-between gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 pl-2 bg-blue-50/50 py-2 rounded-lg px-3 group hover:bg-blue-100/50 transition-colors"
+                className="group flex w-full items-center justify-between gap-2 rounded-lg bg-blue-50/50 px-3 py-2 pl-2 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 transition-colors hover:bg-blue-100/50"
               >
                 <span className="capitalize">{cat}s</span>
                 {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
               </button>
               
               {isExpanded && (
-                <div className="space-y-6 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="space-y-5 pt-1 animate-in fade-in slide-in-from-top-1 duration-200 sm:space-y-6">
                   {Object.entries(subGroups).sort(([a], [b]) => {
                     if (a === 'Standard') return -1;
                     if (b === 'Standard') return 1;
@@ -237,7 +237,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
                       {subName !== 'Standard' && (
                         <h4 className="text-[9px] font-bold uppercase tracking-widest text-slate-400 ml-1">{subName}</h4>
                       )}
-                      <div className="grid grid-cols-1 gap-1">
+                      <div className="grid grid-cols-1 gap-2">
                         {items.sort((a, b) => {
                           if (a.unicode !== b.unicode) return a.unicode.localeCompare(b.unicode);
                           return a.itrans.length - b.itrans.length;
@@ -248,10 +248,10 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
                               key={i}
                               onClick={() => handleInsert(m.itrans)}
                               data-itrans={m.itrans}
-                              className="flex items-center justify-between gap-4 p-3 bg-white border border-slate-100 rounded-xl hover:shadow-md hover:border-blue-200 hover:bg-blue-50/30 transition-all group cursor-pointer active:scale-95"
+                              className="group flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-slate-100 bg-white p-3 transition-all hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-md active:scale-95 sm:gap-4"
                             >
                               <div className="flex items-baseline gap-3">
-                                <div className="text-3xl font-serif text-slate-900 group-hover:scale-110 transition-transform">
+                                <div className="text-2xl font-serif text-slate-900 transition-transform group-hover:scale-110 sm:text-3xl">
                                   <ScriptText 
                                     script={primaryOutputScript} 
                                     text={m.unicode}
@@ -270,7 +270,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
                                 )}
                               </div>
                               <div className="min-w-0 text-right">
-                                <kbd className="inline-flex px-2 py-1 bg-slate-50 border border-slate-200 rounded text-blue-600 font-mono font-bold text-sm tracking-tight">{m.itrans}</kbd>
+                                <kbd className="inline-flex rounded border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-sm font-bold tracking-tight text-blue-600">{m.itrans}</kbd>
                                 {getAlternateAcceptedInputs(m.itrans, inputScheme).length > 0 && (
                                   <p className="mt-1 text-[10px] font-medium text-slate-400">
                                     Also {getAlternateAcceptedInputs(m.itrans, inputScheme).join(', ')}
@@ -289,7 +289,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
           );
         })}
         {/* Zero-width joiners - Now inside scrollable area */}
-        <div className="mt-4 border-t border-slate-100 pt-8 pb-4">
+        <div className="mt-4 border-t border-slate-100 pb-4 pt-8">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Zero-width joiners</p>
@@ -324,10 +324,7 @@ export const ReferenceLibrary: React.FC<ReferenceLibraryProps> = ({ deletedBuffe
         </div>
       </div>
 
-
-
-
-      <div className="p-6 bg-slate-50 text-center border-t border-slate-100">
+      <div className="border-t border-slate-100 bg-slate-50 p-4 text-center sm:p-6">
         <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
           Scholarly Standard • Optimized for Flow State
         </p>

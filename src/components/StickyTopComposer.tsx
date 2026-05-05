@@ -54,6 +54,7 @@ export const StickyTopComposer: React.FC = () => {
   const comparisonPreviewCaretRef = React.useRef<HTMLSpanElement>(null);
   const isPointerSelectingRef = React.useRef(false);
   const isProgrammaticSelectionRef = React.useRef(false);
+  const [isCompactViewport, setIsCompactViewport] = React.useState(false);
 
   const [showShiftEnterHint, setShowShiftEnterHint] = React.useState(false);
   const hintTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -64,6 +65,14 @@ export const StickyTopComposer: React.FC = () => {
       clearTimeout(hintTimeoutRef.current);
     }
     hintTimeoutRef.current = setTimeout(() => setShowShiftEnterHint(false), 3000);
+  }, []);
+  React.useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 1024px)');
+    const update = () => setIsCompactViewport(mediaQuery.matches);
+    update();
+
+    mediaQuery.addEventListener('change', update);
+    return () => mediaQuery.removeEventListener('change', update);
   }, []);
   const scrollSyncSourceRef = React.useRef<'source' | 'preview' | null>(null);
   const programmaticScrollTargetRef = React.useRef<HTMLElement | null>(null);
@@ -110,7 +119,7 @@ export const StickyTopComposer: React.FC = () => {
     autoSwapVisargaSvarita,
   } = displaySettings;
   const composerTypography = typography.composer;
-  const isStackedComposer = composerLayout === 'stacked';
+  const isStackedComposer = composerLayout === 'stacked' || isCompactViewport;
   const isComposerCompareMode = comparisonOutputScript !== 'off';
   const {
     composerComparePreviewHeight,
@@ -1265,7 +1274,11 @@ export const StickyTopComposer: React.FC = () => {
         <div
           className={clsx(
             'flex min-h-0 flex-col gap-3 overflow-hidden',
-            isStackedComposer ? 'max-h-[82vh]' : 'max-h-[52vh] md:max-h-[54vh]'
+            isStackedComposer
+              ? isCompactViewport
+                ? 'max-h-[calc(100dvh-9.5rem)]'
+                : 'max-h-[82vh]'
+              : 'max-h-[52vh] md:max-h-[54vh]'
           )}
           data-testid="sticky-composer-shell"
           data-layout={composerLayout}

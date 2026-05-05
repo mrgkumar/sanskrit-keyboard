@@ -27,6 +27,7 @@ interface MantraDocumentViewProps {
   panelLabel?: string;
   searchHitCount?: number;
   activeSearchHitIndex?: number;
+  onScrollActivity?: (scrollTop: number) => void;
 }
 
 const renderTextNode = (
@@ -223,6 +224,7 @@ export function MantraDocumentView({
   displayScriptOverride,
   searchScopeDisplayScript,
   panelLabel,
+  onScrollActivity,
 }: MantraDocumentViewProps) {
   const scrollRegionRef = useRef<HTMLElement | null>(null);
   const sourcePath = document?.sourcePath ?? null;
@@ -292,6 +294,7 @@ export function MantraDocumentView({
     }
 
     const handleScroll = () => {
+      onScrollActivity?.(element.scrollTop);
       if (element.scrollTop <= 0) {
         return;
       }
@@ -303,7 +306,7 @@ export function MantraDocumentView({
     return () => {
       element.removeEventListener('scroll', handleScroll);
     };
-  }, [sourcePath, setLastReadPosition]);
+  }, [onScrollActivity, sourcePath, setLastReadPosition]);
 
   useLayoutEffect(() => {
     if (!sourcePath || documentStatus !== 'ready' || documentSearchQuery.trim() || lastReadPosition <= 0) {

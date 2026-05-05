@@ -8,9 +8,10 @@ import { readerThemeClass, readerThemeTextClass } from './readerTheme';
 interface SourcePanelProps {
   document: MantraDocument | null;
   documentStatus: 'idle' | 'loading' | 'ready' | 'refreshing' | 'error';
+  onScrollActivity?: (scrollTop: number) => void;
 }
 
-export function SourcePanel({ document, documentStatus }: SourcePanelProps) {
+export function SourcePanel({ document, documentStatus, onScrollActivity }: SourcePanelProps) {
   const pageSize = useReaderStore((state) => state.pageSize);
   const fontSize = useReaderStore((state) => state.fontSize);
   const lineHeight = useReaderStore((state) => state.lineHeight);
@@ -41,7 +42,10 @@ export function SourcePanel({ document, documentStatus }: SourcePanelProps) {
           </a>
         ) : null}
       </div>
-      <div className="min-h-0 flex-1 overflow-auto p-4">
+      <div
+        className="min-h-0 flex-1 overflow-auto p-4"
+        onScroll={(event) => onScrollActivity?.((event.currentTarget as HTMLElement).scrollTop)}
+      >
         <div className="mx-auto w-full" style={{ maxWidth: pageWidth }}>
           <pre
             className={`script-text-devanagari whitespace-pre-wrap break-words ${codeTextClass}`}
