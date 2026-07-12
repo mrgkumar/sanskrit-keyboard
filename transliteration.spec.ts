@@ -763,6 +763,14 @@ test("Tamil Precision display normalization keeps च॒न्द्रां as
   expect(normalizeTamilPrecisionDisplayText(line)).toContain('ச॒ந்த்³ராம்');
 });
 
+test('Tamil Precision copy text keeps pulli attached before superscripts in vocalic clusters', () => {
+  const rendered = formatSourceForScript('maddhR^idayapa~Nkaje', 'tamil', DEFAULT_OUTPUT_TARGET_SETTINGS);
+
+  expect(rendered).toBe('மத்³த்⁴ரு¹த³யபங்கஜே');
+  expect(normalizeTamilPrecisionDisplayText(rendered)).toBe(rendered);
+  expect(rendered).not.toContain('த⁴்');
+});
+
 test("Tamil Precision display normalization moves Vedic accents before trailing ம்", () => {
   expect(normalizeTamilPrecisionDisplayText('ஹிர॑ண்யவர்ணாம்॒')).toBe('ஹிர॑ண்யவர்ணா॒ம்');
 });

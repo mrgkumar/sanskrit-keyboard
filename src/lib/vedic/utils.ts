@@ -652,7 +652,12 @@ const formatTamilPrecisionSource = (itrans: string, asciiFallback: boolean) => {
 
       const dependentVocalic = DEVANAGARI_DEPENDENT_VOCALICS_TO_TAMIL[next];
       if (dependentVocalic) {
-        formatted += `${consonantBase}${consonantMarker}${renderTamilPrecisionToken(dependentVocalic, asciiFallback)}`;
+        const renderedDependentVocalic = renderTamilPrecisionToken(dependentVocalic, asciiFallback);
+        if (consonantMarker && renderedDependentVocalic.startsWith(DEVANAGARI_TO_TAMIL_PULLI)) {
+          formatted += `${consonantBase}${DEVANAGARI_TO_TAMIL_PULLI}${consonantMarker}${renderedDependentVocalic.slice(DEVANAGARI_TO_TAMIL_PULLI.length)}`;
+        } else {
+          formatted += `${consonantBase}${consonantMarker}${renderedDependentVocalic}`;
+        }
         index += 1;
         continue;
       }
