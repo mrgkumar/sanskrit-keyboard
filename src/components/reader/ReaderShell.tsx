@@ -51,6 +51,13 @@ export function ReaderShell() {
   const [toolbarHidden, setToolbarHidden] = useState(false);
   const mutedTextClass = readerThemeTextClass(theme, 'text-stone-500', 'text-white/70');
   const bodyTextClass = readerThemeTextClass(theme, 'text-stone-700', 'text-white');
+  const hydratePreferences = useReaderStore((state) => state.hydratePreferences);
+  const hydrateLastReadPositions = useReaderStore((state) => state.hydrateLastReadPositions);
+
+  useEffect(() => {
+    hydratePreferences();
+    hydrateLastReadPositions();
+  }, [hydrateLastReadPositions, hydratePreferences]);
 
   useEffect(() => {
     if (documentSearchOpen) {

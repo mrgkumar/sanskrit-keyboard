@@ -245,12 +245,31 @@ const getLineColumnAtIndex = (fragment: string, index: number, baseLine: number)
   };
 };
 
+const VERSE_LINE_END_PATTERN = /[।॥]\s*$/u;
+const DISCRETIONARY_HYPHEN_PATTERN = /\\-/g;
+
+const shouldPreserveLineBreaks = (block: { lines: Array<{ text: string }> }) => {
+  const lines = block.lines.map((line) => line.text.trim()).filter(Boolean);
+  if (lines.length < 2) {
+    return false;
+  }
+
+  const verseEndingCount = lines.filter((line) => VERSE_LINE_END_PATTERN.test(line)).length;
+  if (verseEndingCount === 0) {
+    return false;
+  }
+
+  const averageLength = lines.reduce((total, line) => total + line.length, 0) / lines.length;
+  return averageLength <= 48 || (lines.length >= 4 && averageLength <= 60);
+};
+
 const parseFragment = (
   fragment: string,
   diagnostics: ParserDiagnostic[],
   nodes: MantraNode[],
   baseLine: number,
 ) => {
+  const sanitizedFragment = fragment.replace(DISCRETIONARY_HYPHEN_PATTERN, '');
   let cursor = 0;
 
   const flushText = (text: string) => {
@@ -266,16 +285,16 @@ const parseFragment = (
     });
   };
 
-  while (cursor < fragment.length) {
-    const nextCommandIndex = fragment.indexOf('\\', cursor);
-    const textEnd = nextCommandIndex === -1 ? fragment.length : nextCommandIndex;
-    flushText(fragment.slice(cursor, textEnd));
+  while (cursor < sanitizedFragment.length) {
+    const nextCommandIndex = sanitizedFragment.indexOf('\\', cursor);
+    const textEnd = nextCommandIndex === -1 ? sanitizedFragment.length : nextCommandIndex;
+    flushText(sanitizedFragment.slice(cursor, textEnd));
 
     if (nextCommandIndex === -1) {
       break;
     }
 
-    const commandSlice = fragment.slice(nextCommandIndex);
+    const commandSlice = sanitizedFragment.slice(nextCommandIndex);
     const macro = parseStandaloneMacro(commandSlice);
     if (!macro) {
       cursor = nextCommandIndex + 1;
@@ -377,7 +396,13 @@ const parseParagraphBlocks = (source: string, diagnostics: ParserDiagnostic[]) =
   flushBlock();
 
   blocks.forEach((block) => {
-    const fragment = block.lines.map((line) => line.text).join('\n').trim();
+    const preserveLineBreaks = shouldPreserveLineBreaks(block);
+    const fragment = block.lines
+      .map((line) => line.text.trim())
+      .filter(Boolean)
+      .join(preserveLineBreaks ? '\n' : ' ')
+      .replace(preserveLineBreaks ? /[ \t]+\n[ \t]+/g : /\s+/g, preserveLineBreaks ? '\n' : ' ')
+      .trim();
     if (!fragment) {
       return;
     }

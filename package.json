@@ -34,6 +34,8 @@
     "test:transliteration": "playwright test transliteration.spec.ts",
     "test:transliteration:forward": "playwright test transliteration.spec.ts --grep \"Forward\"",
     "test:transliteration:reverse": "playwright test transliteration.spec.ts --grep \"Reverse\"",
+    "verify:reader-layout": "python3 scripts/verify-reader-layout.py",
+    "audit:reader-tamil-copy": "playwright test reader-tamil-copy-audit.spec.ts --reporter=line",
     "test-detransliterate": "npm run test:transliteration:reverse",
     "test-detransliterate-sampled": "npm run test:transliteration"
   },

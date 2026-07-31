@@ -67,6 +67,11 @@ const ANOTHER_MANTRA = String.raw`\chapt{अन्य मन्‍त्रः}
 द्वितीयं परीक्षणम्।
 `;
 
+const PRECISION_MANTRA = String.raw`\chapt{प्रयोगः}
+
+ऋ॒तम्।
+`;
+
 const OUTLINE_MANTRA = String.raw`\chapt{दीर्घपाठम्}
 
 प्रथमं अनुच्छेदम्।
@@ -199,6 +204,15 @@ const mockReaderSources = async (page: Parameters<typeof test>[0]['page']) => {
       return;
     }
 
+    if (url.includes('PrecisionMantra.tex')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/plain; charset=utf-8',
+        body: PRECISION_MANTRA,
+      });
+      return;
+    }
+
     if (url.includes('RefreshedMantra.tex')) {
       await route.fulfill({
         status: 200,
@@ -251,6 +265,26 @@ const clearReaderStorage = async (page: Parameters<typeof test>[0]['page']) => {
   });
 };
 
+const installClipboardMock = async (page: Parameters<typeof test>[0]['page']) => {
+  await page.addInitScript(() => {
+    const writes: string[] = [];
+    Object.defineProperty(window, '__readerClipboardWrites', {
+      value: writes,
+      configurable: true,
+      writable: true,
+    });
+
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {
+        writeText: async (text: string) => {
+          writes.push(text);
+        },
+      },
+      configurable: true,
+    });
+  });
+};
+
 test.describe('Veda Reader', () => {
   test('parser preserves visible percent-prefixed verse lines and ignores boilerplate wrappers', async () => {
     const source = String.raw`
@@ -272,6 +306,84 @@ test.describe('Veda Reader', () => {
       ),
     ).toBeTruthy();
     expect(parsed.diagnostics.some((diagnostic) => diagnostic.message.includes('begingroup'))).toBeFalsy();
+  });
+
+  test('parser collapses soft line wraps inside a paragraph', async () => {
+    const source = String.raw`
+\chapt{शीक्षावल्ली}
+
+प्रथमं अनुच्छेदम्
+द्वितीयं वाक्यम्
+तृतीयं वाक्यम्
+`;
+
+    const parsed = parseTexDocument(source, { sourcePath: 'mantras/TaittiriyaUpanishad.tex' });
+    const paragraph = parsed.nodes.find((node) => node.type === 'paragraph');
+
+    expect(paragraph?.text).toBe('प्रथमं अनुच्छेदम् द्वितीयं वाक्यम् तृतीयं वाक्यम्');
+    expect(paragraph?.text).not.toContain('\n');
+  });
+
+  test('parser preserves verse line breaks inside stanza blocks', async () => {
+    const source = String.raw`
+\chapt{रुद्राद्यायः}
+
+नमस्ते रुद्र मन्यव॒ उ॒तो त॒ इष॑वे॒ नमः॑।
+नम॑स्ते अस्तु॒ धन्व॑ने बा॒हुभ्या॑मु॒त ते॒ नमः॑।
+या त॒ इषुः॑ शि॒वत॑मा शि॒वं ब॒भूव॑ ते॒ धनुः॑।
+`;
+
+    const parsed = parseTexDocument(source, { sourcePath: 'mantras/RudraAdhyaya.tex' });
+    const paragraph = parsed.nodes.find((node) => node.type === 'paragraph');
+
+    expect(paragraph?.text).toContain('\n');
+    expect(paragraph?.text).toBe(
+      'नमस्ते रुद्र मन्यव॒ उ॒तो त॒ इष॑वे॒ नमः॑।\nनम॑स्ते अस्तु॒ धन्व॑ने बा॒हुभ्या॑मु॒त ते॒ नमः॑।\nया त॒ इषुः॑ शि॒वत॑मा शि॒वं ब॒भूव॑ ते॒ धनुः॑।',
+    );
+  });
+
+  test('parser strips discretionary tex hyphens from visible text', async () => {
+    const source = String.raw`
+\chapt{महानारायणोपनिषत्}
+
+अधिलोकमधि\-ज्यौतिषमधि\-विद्यमधि\-प्रज॑मध्या॒त्मम्।
+`;
+
+    const parsed = parseTexDocument(source, { sourcePath: 'mantras/Mahanarayanopanishat.tex' });
+    const paragraph = parsed.nodes.find((node) => node.type === 'paragraph');
+
+    expect(paragraph?.text).toBe('अधिलोकमधिज्यौतिषमधिविद्यमधिप्रज॑मध्या॒त्मम्।');
+    expect(paragraph?.text).not.toContain('\\-');
+  });
+
+  test('parser preserves the exact shanti stanza line breaks', async () => {
+    const source = String.raw`
+\chapt{शिक्षावल्ली}
+
+ॐ। शं नो॑ मि॒त्रः शं वरु॑णः।
+शं नो॑ भवत्वर्य॒मा।
+शं न॒ इन्द्रो॒ बृह॒स्पतिः॑।
+शं नो॒ विष्णु॑रुरुक्र॒मः।
+नमो॒ ब्रह्म॑णे।
+नम॑स्ते वायो।
+त्वमे॒व प्र॒त्यक्षं॒ ब्रह्मा॑सि।
+त्वमे॒व प्र॒त्यक्षं॒ ब्रह्म॑ वदिष्यामि।
+ऋ॒तं व॑दिष्यामि।
+स॒त्यं व॑दिष्यामि।
+तन्माम॑वतु।
+तद्व॒क्तार॑मवतु।
+अव॑तु॒ माम्।
+अव॑तु व॒क्तारम्᳚।
+ॐ शान्तिः॒ शान्तिः॒ शान्तिः॑॥१॥
+`;
+
+    const parsed = parseTexDocument(source, { sourcePath: 'mantras/Shikshavalli.tex' });
+    const paragraph = parsed.nodes.find((node) => node.type === 'paragraph');
+
+    expect(paragraph?.text).toBe(
+      'ॐ। शं नो॑ मि॒त्रः शं वरु॑णः।\nशं नो॑ भवत्वर्य॒मा।\nशं न॒ इन्द्रो॒ बृह॒स्पतिः॑।\nशं नो॒ विष्णु॑रुरुक्र॒मः।\nनमो॒ ब्रह्म॑णे।\nनम॑स्ते वायो।\nत्वमे॒व प्र॒त्यक्षं॒ ब्रह्मा॑सि।\nत्वमे॒व प्र॒त्यक्षं॒ ब्रह्म॑ वदिष्यामि।\nऋ॒तं व॑दिष्यामि।\nस॒त्यं व॑दिष्यामि।\nतन्माम॑वतु।\nतद्व॒क्तार॑मवतु।\nअव॑तु॒ माम्।\nअव॑तु व॒क्तारम्᳚।\nॐ शान्तिः॒ शान्तिः॒ शान्तिः॑॥१॥',
+    );
+    expect(paragraph?.text).toContain('\n');
   });
 
   test('parser supports corpus chapter, subsection, and page break macros', async () => {
@@ -350,6 +462,62 @@ test.describe('Veda Reader', () => {
     expect(tamilText).not.toContain('पुरुषसूक्तम्');
   });
 
+  test('copies visible reader text in devanagari and tamil using the shared serializer', async ({ page }) => {
+    await mockReaderSources(page);
+    await clearReaderStorage(page);
+    await installClipboardMock(page);
+
+    const parsed = parseTexDocument(PURUSHA_SUKTAM, { sourcePath: 'mantras/PurushaSuktam.tex' });
+    const document = {
+      id: 'mantras/PurushaSuktam.tex',
+      title: deriveDocumentTitleFromNodes(parsed.nodes, 'Purusha Suktam'),
+      sourceRepo: 'stotrasamhita/vedamantra-book',
+      sourceBranch: 'master',
+      sourcePath: 'mantras/PurushaSuktam.tex',
+      rawTex: PURUSHA_SUKTAM,
+      nodes: parsed.nodes,
+      diagnostics: parsed.diagnostics,
+      fetchedAt: '2026-04-26T00:00:00.000Z',
+    };
+
+    const expectedDevanagari = serializeReaderDocumentText(document, 'devanagari', DEFAULT_OUTPUT_TARGET_SETTINGS);
+    const expectedTamil = serializeReaderDocumentText(document, 'tamil', DEFAULT_OUTPUT_TARGET_SETTINGS);
+
+    await page.goto(withAppBasePath('/reader?path=mantras/PurushaSuktam.tex'));
+    await page.getByRole('button', { name: 'Open reader options' }).click();
+
+    await page.getByRole('button', { name: 'Devanagari' }).click();
+    await page.getByRole('button', { name: 'Copy visible text as Devanagari' }).click();
+    await expect
+      .poll(() => page.evaluate(() => (window as typeof window & { __readerClipboardWrites?: string[] }).__readerClipboardWrites ?? []))
+      .toEqual([expectedDevanagari]);
+
+    await page.getByRole('button', { name: 'Tamil' }).click();
+    await page.getByRole('button', { name: 'Copy visible text as Tamil' }).click();
+    await expect
+      .poll(() => page.evaluate(() => (window as typeof window & { __readerClipboardWrites?: string[] }).__readerClipboardWrites ?? []))
+      .toEqual([expectedDevanagari, expectedTamil]);
+  });
+
+  test('copies tamil precision text in the same order that the reader renders it', async ({ page }) => {
+    await mockReaderSources(page);
+    await clearReaderStorage(page);
+    await installClipboardMock(page);
+
+    await page.goto(withAppBasePath('/reader?path=mantras/PrecisionMantra.tex'));
+    await page.getByRole('button', { name: 'Open reader options' }).click();
+    await page.getByRole('button', { name: 'Tamil' }).click();
+    await page.getByRole('button', { name: 'Copy visible text as Tamil' }).click();
+
+    const renderedSnippet = await page.locator('main article p').first().innerText();
+    const clipboardWrites = await page.evaluate(
+      () => (window as typeof window & { __readerClipboardWrites?: string[] }).__readerClipboardWrites ?? [],
+    );
+
+    expect(clipboardWrites).toHaveLength(1);
+    expect(clipboardWrites[0]).toContain(renderedSnippet);
+  });
+
   test('normalizes same-script reader text through the shared display pipeline', async () => {
     const devanagariText = String.raw`स॒ह॑स्र॒शीर्‌षा॑`;
     const tamilText = String.raw`ஶாந்தி:‌॒`;
@@ -396,6 +564,7 @@ test.describe('Veda Reader', () => {
       /github\.com\/stotrasamhita\/vedamantra-book\/blob\/master\/mantras\/PurushaSuktam\.tex$/,
     );
 
+    await page.getByRole('button', { name: 'Open reader options' }).click();
     await page.getByRole('button', { name: 'Increase font size' }).click();
     await page.getByRole('button', { name: 'Increase line height' }).click();
     await expect(page.locator('main article').first()).toHaveAttribute('style', /font-size:\s*20px/);
@@ -419,13 +588,17 @@ test.describe('Veda Reader', () => {
     await expect(page.locator('main article > header').getByRole('heading', { name: 'पुरुषसूक्तम्' })).toBeVisible();
     await expect(page.getByText('\\centerline{ॐ तत्सत्}')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Reader' }).click();
+    await page.getByRole('button', { name: 'Reader', exact: true }).click();
+    await page.getByRole('button', { name: 'Open reader options' }).click();
     await page.getByRole('button', { name: 'Devanagari' }).click();
-    await page.getByRole('textbox', { name: 'Search document' }).fill('tasya');
+    await page.getByRole('button', { name: 'Open document search' }).click();
+    await page.getByTestId('reader-search-input').fill('tasya');
     await expect(page.getByText('1/1', { exact: true })).toBeVisible();
     await expect(page.locator('[data-reader-search-hit="true"]').first()).toContainText('न तस्य कार्यं करणं च विद्यते');
+    await page.keyboard.press('Escape');
 
-    await page.getByRole('button', { name: 'Reader' }).click();
+    await page.getByRole('button', { name: 'Reader', exact: true }).click();
+    await page.getByRole('button', { name: 'Open reader options' }).click();
     await page.getByRole('button', { name: 'Original' }).click();
     await expect(page.getByText('Display: Original')).toBeVisible();
 
@@ -532,6 +705,7 @@ test.describe('Veda Reader', () => {
     await clearReaderStorage(page);
 
     await page.goto(withAppBasePath('/reader?path=mantras/OutlineMantra.tex'));
+    await page.getByRole('button', { name: 'Open reader options' }).click();
     await page.getByRole('button', { name: 'Devanagari' }).click();
     await page.getByRole('button', { name: 'Open document search' }).click();
 
@@ -727,6 +901,26 @@ test.describe('Veda Reader', () => {
 
     const restoredScrollTop = await scrollRegion.evaluate((element) => (element as HTMLElement).scrollTop);
     expect(Math.abs(restoredScrollTop - initialScrollTop)).toBeLessThan(20);
+  });
+
+  test('hides the desktop toolbar while scrolling and reveals it near the top edge', async ({ page }) => {
+    await mockReaderSources(page);
+    await clearReaderStorage(page);
+    await page.setViewportSize({ width: 1280, height: 520 });
+
+    await page.goto(withAppBasePath('/reader?path=mantras/OutlineMantra.tex'));
+
+    const toolbarTitle = page.getByText('GitHub Pages source reader');
+    const scrollRegion = page.getByTestId('reader-document-scroll');
+
+    await expect(toolbarTitle).toBeVisible();
+    await scrollRegion.hover();
+    await page.mouse.wheel(0, 1800);
+    await page.waitForTimeout(180);
+    await expect(toolbarTitle).toBeHidden();
+
+    await page.mouse.move(24, 8);
+    await expect(toolbarTitle).toBeVisible();
   });
 
   test('manual live upstream verification only', async ({ page }) => {

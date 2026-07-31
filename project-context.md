@@ -4,13 +4,14 @@ This is the quick reference for the current implementation in the active Next.js
 
 ## 1. What The App Is
 
-Sanskrit Keyboard is a transliteration workspace for scholarly Sanskrit and Vedic text entry. The main experience is:
+Sanskrit Keyboard is a transliteration workspace for scholarly Sanskrit and Vedic text entry, plus a separate reader surface for upstream `.tex` study material. The main experiences are:
 
 - type in ITRANS
 - see live output in Roman, Devanagari, or Tamil
 - edit chunk-by-chunk for longer passages
 - keep a reference drawer available for mappings and shortcuts
 - copy source or rendered output in several formats
+- browse and study source documents in a separate `/reader` route
 
 The app is not a generic editor. It is a transliteration-focused tool with a strong read/edit split and browser-local session persistence.
 
@@ -36,6 +37,7 @@ The app is not a generic editor. It is a transliteration-focused tool with a str
 - `app/src/app/reference/page.tsx`: Reference browser route / study surface.
 - `app/src/app/welcome/page.tsx`: Onboarding walkthrough for new users.
 - `app/src/app/settings/mappings/page.tsx`: Read-only input scheme/settings route with a searchable mapping library.
+- `app/src/app/reader/page.tsx`: Separate Veda Reader route for upstream `.tex` source documents.
 
 ## 4. Current Workspace Layout
 
@@ -63,6 +65,17 @@ The live app has two major regions:
 - single click in immersive mode selects a line
 - double click in immersive mode returns to read mode and scrolls to the corresponding line
 
+### Reader surface
+
+The `/reader` route is a separate study surface for the `stotrasamhita/vedamantra-book` corpus. It has its own store, manifest/cache flow, and document browser:
+
+- recursive folder tree filtered to `.tex` files
+- source, reader, split, and compare views
+- separate typography controls for font presets, size, line height, and page width
+- transliteration-aware search with a floating panel
+- source-link back to the upstream GitHub document
+- local cache for manifest, raw source, and parsed document data
+
 ## 5. State Model
 
 `app/src/store/useFlowStore.ts` is the central store.
@@ -85,6 +98,8 @@ Important view modes:
 - `review`: Reviewing changes
 - `immersive`: Full-height reading experience
 - `document`: Full document view
+
+Reader-specific display modes live in `app/src/store/useReaderStore.ts` and are intentionally separate from the workspace view modes.
 
 ## 6. Typography And Display Controls
 
@@ -201,6 +216,8 @@ The app provides session management features:
 - **Rename:** Update the name of existing sessions.
 - **Automatic Saving:** Current workspace state is periodically saved to the active session.
 
+The reader route also uses browser-local cache/persistence for its manifest and cached document data, but it stays separate from the main session store.
+
 ## 11. Main Components
 
 The most important files for agent work are:
@@ -209,6 +226,11 @@ The most important files for agent work are:
 - `app/src/components/StickyTopComposer.tsx`
 - `app/src/components/MobileOptimizationNotice.tsx` (handles desktop-only warnings)
 - `app/src/components/MainDocumentArea.tsx`
+- `app/src/components/reader/ReaderShell.tsx`
+- `app/src/components/reader/ReaderSidebar.tsx`
+- `app/src/components/reader/ReaderToolbar.tsx`
+- `app/src/components/reader/MantraDocumentView.tsx`
+- `app/src/components/reader/SourcePanel.tsx`
 - `app/src/components/ReferenceSidePanel.tsx`
 - `app/src/components/reference/ReferenceLibrary.tsx`
 - `app/src/components/engine/WordPredictionTray.tsx`
@@ -218,6 +240,7 @@ The most important files for agent work are:
 - `app/src/lib/vedic/mapping.ts`
 - `app/src/lib/vedic/utils.ts`
 - `app/src/store/useFlowStore.ts`
+- `app/src/store/useReaderStore.ts`
 - `app/src/store/types.ts`
 
 ## 12. Testing

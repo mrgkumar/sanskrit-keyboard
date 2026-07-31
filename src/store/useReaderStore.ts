@@ -57,6 +57,8 @@ interface ReaderStoreState extends ReaderPreferences {
   setDocumentSearchActiveIndex: (index: number) => void;
   setDocumentSearchOpen: (open: boolean) => void;
   setLastReadPosition: (path: string, scrollTop: number) => void;
+  hydratePreferences: () => void;
+  hydrateLastReadPositions: () => void;
   loadManifest: (options?: { force?: boolean }) => Promise<void>;
   refreshManifest: () => Promise<void>;
   openDocument: (path: string, options?: { force?: boolean }) => Promise<void>;
@@ -176,10 +178,8 @@ const fallbackTitleFromPath = (path: string) =>
   path.split('/').pop()?.replace(/\.tex$/i, '') ?? path;
 
 export const useReaderStore = create<ReaderStoreState>((set, get) => {
-  const initialPreferences = readStoredPreferences();
-
   return {
-    ...initialPreferences,
+    ...DEFAULT_READER_PREFERENCES,
     manifest: null,
     manifestStatus: 'idle',
     manifestError: null,
@@ -191,7 +191,19 @@ export const useReaderStore = create<ReaderStoreState>((set, get) => {
     documentSearchQuery: '',
     documentSearchActiveIndex: 0,
     documentSearchOpen: false,
-    lastReadPositions: readStoredLastReadPositions(),
+    lastReadPositions: {},
+    hydratePreferences: () => {
+      const preferences = readStoredPreferences();
+      set((state) => ({
+        ...state,
+        ...preferences,
+      }));
+    },
+    hydrateLastReadPositions: () => {
+      set({
+        lastReadPositions: readStoredLastReadPositions(),
+      });
+    },
     setReaderMode: (readerMode) => {
       set({ readerMode });
       persistPreferences(selectPreferences(get()));

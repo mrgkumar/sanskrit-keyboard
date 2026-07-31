@@ -3,6 +3,7 @@ import {
   detransliterate,
   formatSourceForScript,
   normalizeDevanagariDisplayText,
+  normalizeTamilPrecisionDisplayText,
   reverseTamilInput,
 } from '@/lib/vedic/utils';
 import type { SanskritFontPreset } from '@/store/types';
@@ -297,6 +298,25 @@ const formatReaderNodeText = (
   options?: { sanskritFontPreset?: SanskritFontPreset },
 ) => formatReaderNodeDisplayText(text, displayScript, settings, options);
 
+const formatReaderNodeCopyText = (
+  text: string,
+  displayScript: ReaderDisplayScript,
+  settings: Pick<OutputTargetSettings, 'romanOutputStyle' | 'tamilOutputStyle'>,
+  options?: { sanskritFontPreset?: SanskritFontPreset },
+) => {
+  const renderedText = formatReaderNodeText(text, displayScript, settings, options);
+
+  if (displayScript === 'devanagari') {
+    return normalizeDevanagariDisplayText(renderedText, options?.sanskritFontPreset);
+  }
+
+  if (displayScript === 'tamil') {
+    return normalizeTamilPrecisionDisplayText(renderedText);
+  }
+
+  return renderedText;
+};
+
 export const serializeReaderDocumentText = (
   document: MantraDocument,
   displayScript: ReaderDisplayScript,
@@ -318,7 +338,7 @@ export const serializeReaderDocumentText = (
     lines.push(trimmed);
   };
 
-  appendBlock(formatReaderNodeText(document.title, displayScript, settings, options));
+  appendBlock(formatReaderNodeCopyText(document.title, displayScript, settings, options));
 
   for (const node of document.nodes) {
     switch (node.type) {
@@ -328,11 +348,11 @@ export const serializeReaderDocumentText = (
       case 'paragraph':
       case 'center':
       case 'raw':
-        appendBlock(formatReaderNodeText(node.text, displayScript, settings, options), true);
+        appendBlock(formatReaderNodeCopyText(node.text, displayScript, settings, options), true);
         break;
       case 'sourceRef':
         appendBlock(
-          `${node.source}: ${formatReaderNodeText(node.values.join(' · '), displayScript, settings, options)}`,
+          `${node.source}: ${formatReaderNodeCopyText(node.values.join(' · '), displayScript, settings, options)}`,
           true,
         );
         break;
