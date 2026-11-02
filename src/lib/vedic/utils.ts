@@ -630,6 +630,11 @@ const formatTamilPrecisionSource = (itrans: string, asciiFallback: boolean) => {
     const current = unicode[index];
     const next = unicode[index + 1] ?? '';
 
+    if (current >= '\u0966' && current <= '\u096F') {
+      formatted += String(current.charCodeAt(0) - 0x0966);
+      continue;
+    }
+
     const independentVowel = DEVANAGARI_INDEPENDENT_VOWELS[current];
     if (independentVowel) {
       formatted += renderTamilPrecisionToken(independentVowel, asciiFallback);
